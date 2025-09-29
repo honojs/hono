@@ -1,4 +1,3 @@
-// Version 2
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
@@ -32,17 +31,17 @@ const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\
 
 export type ExtractValidationResponse<VF> = VF extends (value: any, c: any) => infer R
   ? R extends Promise<infer PR>
-    ? PR extends Response
-      ? PR
-      : PR extends TypedResponse<infer T, infer S, infer F>
+    ? PR extends TypedResponse<infer T, infer S, infer F>
       ? TypedResponse<T, S, F>
+      : PR extends Response
+      ? PR
       : PR extends undefined
       ? never // undefined → never
       : never // anything else → never
-    : R extends Response
-    ? R
     : R extends TypedResponse<infer T, infer S, infer F>
     ? TypedResponse<T, S, F>
+    : R extends Response
+    ? R
     : R extends undefined
     ? never // undefined → never
     : never // anything else → never
@@ -172,7 +171,7 @@ export const validator = <
 
     c.req.addValidatedData(target, res as never)
 
-    await next()
+    return await next() as ExtractValidationResponse<VF>
   }
 }
 
