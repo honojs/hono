@@ -136,7 +136,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, P, I> & M1, H<E3, P, I2, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, P, I2, MergeTypedResponse<R> | MergeMiddlewareResponseStrict<M1>>,
+    S & ToSchema<M, P, I2, MergeTypedResponse<R> | MergeMiddlewareResponse<M1>>,
     BasePath
   >
 
@@ -175,8 +175,8 @@ export interface HandlerInterface<
         P,
         I3,
         | MergeTypedResponse<R>
-        | MergeMiddlewareResponseStrict<M1>
-        | MergeMiddlewareResponseStrict<M2>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
       >,
     BasePath
   >
@@ -2252,7 +2252,15 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
   ? T
   : TypedResponse
 
-type MergeMiddlewareResponse<T> = MergeTypedResponse<ExtractHandlerResponse<T>>
+type MergeTypedResponseStrict<T> = T extends Promise<infer T2>
+  ? T2 extends TypedResponse
+    ? T2
+    : never
+  : T extends TypedResponse
+  ? T
+  : never
+
+type MergeMiddlewareResponse<T> = MergeTypedResponseStrict<ExtractHandlerResponse<T>>
 
 ////////////////////////////////////////
 //////                             /////
