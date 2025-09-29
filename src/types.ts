@@ -80,15 +80,16 @@ export type Handler<
 export type MiddlewareHandler<
   E extends Env = any,
   P extends string = string,
-  I extends Input = {}
-> = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
+  I extends Input = {},
+  R extends HandlerResponse<any> = never
+> = (c: Context<E, P, I>, next: Next) => Promise<R | void>
 
 export type H<
   E extends Env = any,
   P extends string = any,
   I extends Input = BlankInput,
   R extends HandlerResponse<any> = any
-> = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
+> = Handler<E, P, I, R> | MiddlewareHandler<E, P, I, R>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 
@@ -176,11 +177,19 @@ export interface HandlerInterface<
     I extends Input = BlankInput,
     I2 extends Input = I,
     E2 extends Env = E,
-    E3 extends Env = IntersectNonAnyTypes<[E, E2]>
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    // Middleware
+    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
+    // Middleware return type
+    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>
   >(
     path: P,
-    ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2, R>]
-  ): HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R>>, BasePath>
+    ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
+  ): HonoBase<
+    E,
+    S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R> | MergeTypedResponse<MR1>>,
+    BasePath
+  >
 
   // app.get(handler x 4)
   <
@@ -212,11 +221,31 @@ export interface HandlerInterface<
     I3 extends Input = I & I2,
     E2 extends Env = E,
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
-    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    // Middleware
+    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
+    M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
+    // Middleware return type
+    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
+    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>
   >(
     path: P,
-    ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2>, H<E4, MergedPath, I3, R>]
-  ): HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I3, MergeTypedResponse<R>>, BasePath>
+    ...handlers: [
+      H<E2, MergedPath, I, any> & M1,
+      H<E3, MergedPath, I2, any> & M2,
+      H<E4, MergedPath, I3, R>
+    ]
+  ): HonoBase<
+    E,
+    S &
+      ToSchema<
+        M,
+        MergePath<BasePath, P>,
+        I3,
+        MergeTypedResponse<R> | MergeTypedResponse<MR1> | MergeTypedResponse<MR2>
+      >,
+    BasePath
+  >
 
   // app.get(handler x 5)
   <
@@ -252,16 +281,37 @@ export interface HandlerInterface<
     E2 extends Env = E,
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
-    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    // Middleware
+    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
+    M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
+    M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
+    // Middleware return type
+    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
+    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
+    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>
   >(
     path: P,
     ...handlers: [
-      H<E2, MergedPath, I>,
-      H<E3, MergedPath, I2>,
-      H<E4, MergedPath, I3>,
+      H<E2, MergedPath, I> & M1,
+      H<E3, MergedPath, I2> & M2,
+      H<E4, MergedPath, I3> & M3,
       H<E5, MergedPath, I4, R>
     ]
-  ): HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I4, MergeTypedResponse<R>>, BasePath>
+  ): HonoBase<
+    E,
+    S &
+      ToSchema<
+        M,
+        MergePath<BasePath, P>,
+        I4,
+        | MergeTypedResponse<R>
+        | MergeTypedResponse<MR1>
+        | MergeTypedResponse<MR2>
+        | MergeTypedResponse<MR3>
+      >,
+    BasePath
+  >
 
   // app.get(handler x 6)
   <
@@ -308,17 +358,41 @@ export interface HandlerInterface<
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    // Middleware
+    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
+    M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
+    M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
+    M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>,
+    // Middleware return type
+    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
+    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
+    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
+    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>
   >(
     path: P,
     ...handlers: [
-      H<E2, MergedPath, I>,
-      H<E3, MergedPath, I2>,
-      H<E4, MergedPath, I3>,
-      H<E5, MergedPath, I4>,
+      H<E2, MergedPath, I> & MR1,
+      H<E3, MergedPath, I2> & MR2,
+      H<E4, MergedPath, I3> & MR3,
+      H<E5, MergedPath, I4> & MR4,
       H<E6, MergedPath, I5, R>
     ]
-  ): HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I5, MergeTypedResponse<R>>, BasePath>
+  ): HonoBase<
+    E,
+    S &
+      ToSchema<
+        M,
+        MergePath<BasePath, P>,
+        I5,
+        | MergeTypedResponse<R>
+        | MergeTypedResponse<MR1>
+        | MergeTypedResponse<MR2>
+        | MergeTypedResponse<MR3>
+        | MergeTypedResponse<MR4>
+      >,
+    BasePath
+  >
 
   // app.get(handler x 7)
   <
@@ -1981,6 +2055,18 @@ export type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
 export type ExtractSchema<T> = UnionToIntersection<
   T extends HonoBase<infer _, infer S, any> ? S : never
 >
+
+export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise<infer R>
+  ? R extends void
+    ? never // Handler returns void → never
+    : R extends Response | TypedResponse<any, any, any>
+    ? R // Handler returns a response → keep it
+    : never // Something else → never
+  : T extends (c: any, next: any) => infer R
+  ? R extends Response | TypedResponse<any, any, any>
+    ? R
+    : never
+  : never
 
 type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
 export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
