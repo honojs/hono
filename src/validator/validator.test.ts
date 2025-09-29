@@ -70,7 +70,7 @@ describe('Basic', () => {
     },
     validator('query', (value, c) => {
       type verify = Expect<Equal<Record<string, string | string[]>, typeof value>>
-      if (!value) {
+      if (!value.q) {
         return c.text('Invalid!', 400)
       }
     }),
