@@ -11,6 +11,7 @@ import type {
 
 function sanitizeHeaderValue(value: string): string {
   // Check if the value contains non-ASCII characters (char codes > 127)
+  // eslint-disable-next-line no-control-regex
   const hasNonAscii = /[^\x00-\x7F]/.test(value)
   if (!hasNonAscii) {
     return value
@@ -22,6 +23,7 @@ function sanitizeHeaderValue(value: string): string {
     return new TextDecoder('latin1').decode(utf8Bytes)
   } catch {
     // Fallback: remove non-ASCII characters
+    // eslint-disable-next-line no-control-regex
     return value.replace(/[^\x00-\x7F]/g, '')
   }
 }
