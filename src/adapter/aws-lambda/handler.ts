@@ -9,6 +9,23 @@ import type {
   LambdaContext,
 } from './types'
 
+function sanitizeHeaderValue(value: string): string {
+  // Check if the value contains non-ASCII characters (char codes > 127)
+  const hasNonAscii = /[^\x00-\x7F]/.test(value)
+  if (!hasNonAscii) {
+    return value
+  }
+
+  try {
+    // Convert UTF-8 string to bytes and interpret as Latin-1
+    const utf8Bytes = new TextEncoder().encode(value)
+    return new TextDecoder('latin1').decode(utf8Bytes)
+  } catch {
+    // Fallback: remove non-ASCII characters
+    return value.replace(/[^\x00-\x7F]/g, '')
+  }
+}
+
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
 
 // When calling HTTP API or Lambda directly through function urls
@@ -414,7 +431,7 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
     if (event.headers) {
       for (const [k, v] of Object.entries(event.headers)) {
         if (v) {
-          headers.set(k, v)
+          headers.set(k, sanitizeHeaderValue(v))
         }
       }
     }
@@ -423,7 +440,12 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
         if (values) {
           // avoid duplicating already set headers
           const foundK = headers.get(k)
-          values.forEach((v) => (!foundK || !foundK.includes(v)) && headers.append(k, v))
+          values.forEach((v) => {
+            const sanitizedValue = sanitizeHeaderValue(v)
+            return (
+              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
+            )
+          })
         }
       }
     }
@@ -448,13 +470,14 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
       for (const [key, values] of Object.entries(event.multiValueHeaders)) {
         if (values && Array.isArray(values)) {
           // https://www.rfc-editor.org/rfc/rfc9110.html#name-common-rules-for-defining-f
-          headers.set(key, values.join('; '))
+          const sanitizedValue = sanitizeHeaderValue(values.join('; '))
+          headers.set(key, sanitizedValue)
         }
       }
     } else {
       for (const [key, value] of Object.entries(event.headers ?? {})) {
         if (value) {
-          headers.set(key, value)
+          headers.set(key, sanitizeHeaderValue(value))
         }
       }
     }
