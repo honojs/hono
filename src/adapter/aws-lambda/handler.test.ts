@@ -291,78 +291,19 @@ describe('EventProcessor.createRequest', () => {
   })
 
   describe('non-ASCII header value processing', () => {
-    it('Should correctly process ALB request with non-ASCII header values', async () => {
-      const event: LambdaEvent = {
-        headers: {
-          'content-type': 'application/json',
-          'cf-ipcity': 'São Paulo', // City name with non-ASCII characters
-          'x-custom-city': 'Москва', // Cyrillic characters
-        },
-        httpMethod: 'GET',
-        path: '/',
-        body: null,
-        isBase64Encoded: false,
-        requestContext: {
-          elb: {
-            targetGroupArn:
-              'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a',
-          },
-        },
-      }
-
-      const processor = getProcessor(event)
-      const request = processor.createRequest(event)
-
-      expect(request.method).toBe('GET')
-      expect(request.url).toBe('https://undefined/')
-      expect(request.headers.get('cf-ipcity')).toBeDefined()
-      expect(request.headers.get('x-custom-city')).toBeDefined()
-    })
-
-    it('Should correctly process ALB request with non-ASCII multi-value header values', async () => {
-      const event: LambdaEvent = {
-        multiValueHeaders: {
-          'content-type': ['application/json'],
-          'cf-ipcity': ['São Paulo', 'München'], // City names with non-ASCII characters
-        },
-        httpMethod: 'GET',
-        path: '/',
-        body: null,
-        isBase64Encoded: false,
-        requestContext: {
-          elb: {
-            targetGroupArn:
-              'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a',
-          },
-        },
-      }
-
-      const processor = getProcessor(event)
-      const request = processor.createRequest(event)
-
-      expect(request.method).toBe('GET')
-      expect(request.url).toBe('https://undefined/')
-      expect(request.headers.get('cf-ipcity')).toBeDefined()
-      expect(request.headers.get('cf-ipcity')).toContain(';')
-    })
-
-    it('Should correctly process APIGateway v1 request with non-ASCII header values', async () => {
+    it('Should encode non-ASCII header values with encodeURIComponent', async () => {
       const event: LambdaEvent = {
         ...baseV1Event,
         headers: {
-          'content-type': 'application/json',
-          'cf-ipcity': 'São Paulo', // City name with non-ASCII characters
-          'x-custom-city': 'Москва', // Cyrillic characters
+          'x-city': '炎', // Non-ASCII character
         },
       }
 
       const processor = getProcessor(event)
       const request = processor.createRequest(event)
 
-      expect(request.method).toBe('GET')
-      expect(request.url).toBe('https://id.execute-api.us-east-1.amazonaws.com/my/path')
-      expect(request.headers.get('cf-ipcity')).toBeDefined()
-      expect(request.headers.get('x-custom-city')).toBeDefined()
+      const xCity = request.headers.get('x-city') ?? ''
+      expect(decodeURIComponent(xCity)).toBe('炎')
     })
   })
 })

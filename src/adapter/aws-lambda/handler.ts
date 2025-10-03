@@ -16,16 +16,7 @@ function sanitizeHeaderValue(value: string): string {
   if (!hasNonAscii) {
     return value
   }
-
-  try {
-    // Convert UTF-8 string to bytes and interpret as Latin-1
-    const utf8Bytes = new TextEncoder().encode(value)
-    return new TextDecoder('latin1').decode(utf8Bytes)
-  } catch {
-    // Fallback: remove non-ASCII characters
-    // eslint-disable-next-line no-control-regex
-    return value.replace(/[^\x00-\x7F]/g, '')
-  }
+  return encodeURIComponent(value)
 }
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
