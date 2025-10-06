@@ -60,6 +60,11 @@ describe('JSONParsed', () => {
       type Expected = { a: number }
       expectTypeOf<Actual>().toEqualTypeOf<Expected>()
     })
+    it('should convert invalid type with { toJSON() => T to T', () => {
+      type Actual = JSONParsed<bigint & { toJSON(): string }>
+      type Expected = string
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
   })
 
   describe('invalid types', () => {
