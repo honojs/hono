@@ -54,11 +54,9 @@ export type JSONValue = JSONObject | JSONArray | JSONPrimitive
  * which defaults to `bigint | ReadonlyArray<bigint>`.
  * You can set it to `never` to disable this check.
  */
-export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends TError
-  ? never
-  : T extends {
-      toJSON(): infer J
-    }
+export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
+  toJSON(): infer J
+}
   ? (() => J) extends () => JSONPrimitive
     ? J
     : (() => J) extends () => { toJSON(): unknown }
@@ -83,7 +81,9 @@ export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends T
           : JSONParsed<T[K], TError>
       }
   : T extends unknown
-  ? JSONValue
+  ? T extends TError
+    ? never
+    : JSONValue
   : never
 
 /**
