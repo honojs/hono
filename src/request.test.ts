@@ -267,6 +267,24 @@ describe('Body methods with caching', () => {
     expect(await req.text()).toEqual(text)
   })
 
+  test('req.raw.json() should work after req.json() is called', async () => {
+    const data = { foo: 'bar' }
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    )
+
+    // First call to req.json() - consumes the body
+    const firstResult = await req.json()
+    expect(firstResult).toEqual(data)
+
+    // Second call to req.raw.json() - should work with cached body
+    const secondResult = await req.raw.json()
+    expect(secondResult).toEqual(data)
+  })
+
   test('req.arrayBuffer()', async () => {
     const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
     const req = new HonoRequest(
