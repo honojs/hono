@@ -174,9 +174,7 @@ export interface HandlerInterface<
         M,
         P,
         I3,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
+        MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>
       >,
     BasePath
   >
