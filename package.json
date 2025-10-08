@@ -6,6 +6,9 @@
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/types/index.d.ts",
+  "bin": {
+    "hono": "./dist/bin/serve.cjs"
+  },
   "files": [
     "dist"
   ],
