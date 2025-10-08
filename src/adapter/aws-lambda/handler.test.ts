@@ -1,4 +1,4 @@
-import type { LambdaEvent } from './handler'
+import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
 import { getProcessor, isContentEncodingBinary, defaultIsContentTypeBinary } from './handler'
 
 // Base event objects to reduce duplication
@@ -287,6 +287,52 @@ describe('EventProcessor.createRequest', () => {
       cookie: 'cookie1; cookie2',
       header1: 'value1',
       header2: 'value1,value2',
+    })
+  })
+
+  it('Should return valid Request object from version 2.0 Lattice event', async () => {
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      // query string parameters from the path take precedence over the explicit notation below
+      path: '/my/path?parameter1=value1&parameter1=value2&parameter2=value',
+      method: 'POST',
+      headers: {
+        cookie: ['cookie1=value1; cookie2=value2'],
+        'content-type': ['application/x-www-form-urlencoded'],
+        header1: ['value1'],
+        header2: ['value1', 'value2'],
+        host: ['my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws'],
+      },
+      queryStringParameters: {
+        parameter1: ['value1', 'value2'],
+        parameter2: ['value'],
+      },
+      body: 'SGVsbG8gZnJvbSBMYW1iZGE=',
+      isBase64Encoded: true,
+      requestContext: {
+        serviceNetworkArn: '',
+        serviceArn: '',
+        targetGroupArn: '',
+        identity: {},
+        region: 'us-east-1',
+        timeEpoch: '1583348638390123',
+      },
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(await request.text()).toEqual('Hello from Lambda')
+    expect(request.method).toEqual('POST')
+    expect(request.url).toEqual(
+      'https://my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws/my/path?parameter1=value1&parameter1=value2&parameter2=value'
+    )
+    expect(Object.fromEntries(request.headers)).toEqual({
+      'content-type': 'application/x-www-form-urlencoded',
+      cookie: 'cookie1=value1; cookie2=value2',
+      header1: 'value1',
+      header2: 'value1, value2',
+      host: 'my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws',
     })
   })
 
