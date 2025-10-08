@@ -91,7 +91,24 @@ const esmBuild = () =>
     plugins: [addExtension('.js')],
   })
 
-Promise.all([esmBuild(), cjsBuild()])
+const binBuild = async () => {
+  await build({
+    bundle: true,
+    entryPoints: ['./bin/serve.ts'],
+    platform: 'node',
+    outdir: './dist/bin',
+    outExtension: { '.js': '.cjs' },
+    logOverride: {
+      'direct-eval': 'silent',
+    },
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+  })
+  return fs.promises.chmod('./dist/bin/serve.cjs', 0o755)
+}
+
+Promise.all([esmBuild(), cjsBuild(), binBuild()])
 
 await $`tsc ${
   isWatch ? '-w' : ''
