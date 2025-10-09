@@ -6,13 +6,7 @@ import { Hono } from '../src/hono'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { logger } from '../src/middleware/logger'
 // import all the middleware and helpers
-
-[
-  basicAuth,
-  logger,
-  serveStatic,
-  proxy,
-].forEach((f) => {
+;[basicAuth, logger, serveStatic, proxy].forEach((f) => {
   if (typeof f === 'function') {
     // useless process to avoid being deleted by bundler
   }
@@ -28,7 +22,10 @@ const { values } = parseArgs({
 const app = new Hono()
 
 values.use?.forEach((use) => {
-  app.use((eval(use)))
+  app.use(async (c, next) => {
+    const evalRes = eval(use)
+    return typeof evalRes === 'function' ? evalRes(c, next) : evalRes
+  })
 })
 
 serve(
