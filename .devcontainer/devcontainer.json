@@ -1,21 +1,20 @@
 {
-    "build": {
-        "dockerfile": "Dockerfile"
-    },
-    "customizations": {
-        "vscode": {
-            "settings": {
-                "deno.enable": false,
-                "eslint.validate": [
-                    "javascript",
-                    "javascriptreact",
-                    "typescript",
-                    "typescriptreact"
-                ],
-                "editor.codeActionsOnSave": {
-                    "source.fixAll.eslint": true
-                }
-            }
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerEnv": {
+    "HOME": "/home/node"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "deno.enable": false,
+        "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
         }
+      },
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
     }
+  }
 }

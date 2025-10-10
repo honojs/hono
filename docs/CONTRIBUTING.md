@@ -6,7 +6,7 @@ You can contribute in the following ways.
 - Create an Issue - Propose a new feature. Report a bug.
 - Pull Request - Fix a bug and typo. Refactor the code.
 - Create third-party middleware - Instruct below.
-- Share - Share your thoughts on the Blog, Twitter, and others.
+- Share - Share your thoughts on the Blog, X, and others.
 - Make your application - Please try to use Hono.
 
 Note:
@@ -16,11 +16,21 @@ I want to write the code as I like.
 So, if you propose great ideas, but I do not appropriate them, the idea may not be accepted.
 
 Although, don't worry!
-Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
+Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool and hot, beautiful, and ultrafast.
+
+## Installing dependencies
+
+The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
+
+After that, please install the dependency environment.
+
+```bash
+bun install --frozen-lockfile
+```
 
 ## PRs
 
-Please ensure your PR passes tests with `yarn test:all`. Also please ensure the Deno code is generated with `yarn denoify`.
+Please ensure your PR passes tests with `bun run test`.
 
 ## Third-party middleware
 
@@ -36,3 +46,11 @@ It may be under the "honojs organization" and distributed in the `@honojs` names
 
 The monorepo "[honojs/middleware](https://github.com/honojs/middleware)" manages these middleware.
 If you want to do it, create the issue about your middleware.
+
+## Local Development
+
+```bash
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install --frozen-lockfile
+docker compose up -d --build
+docker compose exec hono bash
+```

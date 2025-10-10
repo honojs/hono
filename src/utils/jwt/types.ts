@@ -1,15 +1,14 @@
+/**
+ * @module
+ * Type definitions for JWT utilities.
+ */
+
 export class JwtAlgorithmNotImplemented extends Error {
   constructor(alg: string) {
     super(`${alg} is not an implemented algorithm`)
     this.name = 'JwtAlgorithmNotImplemented'
   }
 }
-
-/**
- * Export for backward compatibility
- * @deprecated Use JwtAlgorithmNotImplemented instead
- **/
-export const JwtAlorithmNotImplemented = JwtAlgorithmNotImplemented
 
 export class JwtTokenInvalid extends Error {
   constructor(token: string) {
@@ -34,8 +33,31 @@ export class JwtTokenExpired extends Error {
 
 export class JwtTokenIssuedAt extends Error {
   constructor(currentTimestamp: number, iat: number) {
-    super(`Incorrect "iat" claim must be a older than "${currentTimestamp}" (iat: "${iat}")`)
+    super(
+      `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
+    )
     this.name = 'JwtTokenIssuedAt'
+  }
+}
+
+export class JwtTokenIssuer extends Error {
+  constructor(expected: string | RegExp, iss: string | null) {
+    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : 'none'} `)
+    this.name = 'JwtTokenIssuer'
+  }
+}
+
+export class JwtHeaderInvalid extends Error {
+  constructor(header: object) {
+    super(`jwt header is invalid: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderInvalid'
+  }
+}
+
+export class JwtHeaderRequiresKid extends Error {
+  constructor(header: object) {
+    super(`required "kid" in jwt header: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderRequiresKid'
   }
 }
 
@@ -46,8 +68,38 @@ export class JwtTokenSignatureMismatched extends Error {
   }
 }
 
-export enum AlgorithmTypes {
-  HS256 = 'HS256',
-  HS384 = 'HS384',
-  HS512 = 'HS512',
+export enum CryptoKeyUsage {
+  Encrypt = 'encrypt',
+  Decrypt = 'decrypt',
+  Sign = 'sign',
+  Verify = 'verify',
+  DeriveKey = 'deriveKey',
+  DeriveBits = 'deriveBits',
+  WrapKey = 'wrapKey',
+  UnwrapKey = 'unwrapKey',
 }
+
+/**
+ * JWT Payload
+ */
+export type JWTPayload = {
+  [key: string]: unknown
+  /**
+   * The token is checked to ensure it has not expired.
+   */
+  exp?: number
+  /**
+   * The token is checked to ensure it is not being used before a specified time.
+   */
+  nbf?: number
+  /**
+   * The token is checked to ensure it is not issued in the future.
+   */
+  iat?: number
+  /**
+   * The token is checked to ensure it has been issued by a trusted issuer.
+   */
+  iss?: string
+}
+
+export type { HonoJsonWebKey } from './jws'

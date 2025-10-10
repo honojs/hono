@@ -1,8 +1,44 @@
 import { Context } from './context'
-import { HonoRequest } from './request'
+import { setCookie } from './helper/cookie'
+
+const makeResponseHeaderImmutable = (res: Response) => {
+  Object.defineProperty(res, 'headers', {
+    value: new Proxy(res.headers, {
+      set(target, prop, value) {
+        if (prop === 'set') {
+          throw new TypeError('Cannot modify headers: Headers are immutable')
+        }
+        return Reflect.set(target, prop, value)
+      },
+      get(target, prop, receiver) {
+        if (prop === 'set') {
+          return function () {
+            throw new TypeError('Cannot modify headers: Headers are immutable')
+          }
+        }
+        const value = Reflect.get(target, prop)
+        if (typeof value === 'function') {
+          return Object.defineProperties(
+            function (...args: unknown[]) {
+              // @ts-expect-error: `this` context is intentionally dynamic for proxy method binding
+              return Reflect.apply(value, this === receiver ? target : this, args)
+            },
+            {
+              name: { value: value.name },
+              length: { value: value.length },
+            }
+          )
+        }
+        return value
+      },
+    }),
+    writable: false,
+  })
+  return res
+}
 
 describe('Context', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
 
   let c: Context
   beforeEach(() => {
@@ -28,14 +64,29 @@ describe('Context', () => {
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const text = await res.text()
     expect(text).toBe('{"message":"Hello"}')
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
   it('c.html()', async () => {
-    const res = await c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
+    const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
+    expect(res.status).toBe(201)
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+    expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')
+    expect(res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('c.html() with async', async () => {
+    const resPromise: Promise<Response> = c.html(
+      new Promise<string>((resolve) => setTimeout(() => resolve('<h1>Hello! Hono!</h1>'), 0)),
+      201,
+      {
+        'X-Custom': 'Message',
+      }
+    )
+    const res = await resPromise
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('text/html')
     expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')
@@ -49,6 +100,33 @@ describe('Context', () => {
     res = c.redirect('https://example.com/destination')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
+  it('c.redirect() w/ URL', async () => {
+    const res = c.redirect(new URL('/destination', 'https://example.com'))
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
+  it('c.redirect() w/ multibytes', async () => {
+    const res = c.redirect('https://example.com/こんにちは')
+    expect(res.headers.get('Location')).toBe(
+      'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF'
+    )
+  })
+
+  const unchangedURLString = [
+    'https://example.com/%hello', // invalid ASCII chars
+    'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc',
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com', // with ://
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com&scope=email%20profile', // with spaces and ://
+  ]
+
+  unchangedURLString.forEach((urlString) => {
+    it(`c.redirect() w/ ${urlString}`, () => {
+      const res = c.redirect(urlString)
+      expect(res.headers.get('Location')).toBe(urlString)
+    })
   })
 
   it('c.header()', async () => {
@@ -66,6 +144,37 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.set() and c.get()', async () => {
+    expect(c.get('foo')).toBe(undefined)
+    c.set('foo', 'bar')
+    expect(c.get('foo')).toBe('bar')
+    expect(c.get('foo2')).toBe(undefined)
+  })
+
+  it('c.var', async () => {
+    expect(c.var.foo).toBe(undefined)
+    c.set('foo', 'bar')
+    expect(c.var.foo).toBe('bar')
+    expect(c.var.foo2).toBe(undefined)
+  })
+
+  it('c.notFound()', async () => {
+    const res = c.notFound()
+    expect(res).instanceOf(Response)
+  })
+
+  it('Should set headers if already this.#headers is created by `c.header()`', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', 'Buzz', { append: true })
+    const res = c.body('Hi', {
+      headers: {
+        'X-Message': 'Hi',
+      },
+    })
+    expect(res.headers.get('X-Foo')).toBe('Bar, Buzz')
+    expect(res.headers.get('X-Message')).toBe('Hi')
+  })
+
   it('c.header() - append, c.html()', async () => {
     c.header('X-Foo', 'Bar', { append: true })
     const res = await c.html('<h1>This rendered fine</h1>')
@@ -76,11 +185,17 @@ describe('Context', () => {
     c.header('X-Foo', 'Bar')
     c.header('X-Foo', undefined)
     c.header('X-Foo2', 'Bar')
-    let res = c.body('Hi')
+    const res = c.body('Hi')
     expect(res.headers.get('X-Foo')).toBe(null)
     c.header('X-Foo2', undefined)
-    res = c.res
-    expect(res.headers.get('X-Foo2')).toBe(null)
+    const res2 = c.body('Hi')
+    expect(res2.headers.get('X-Foo2')).toBe(null)
+  })
+
+  it('c.header() - clear the header when append is true', async () => {
+    c.header('X-Foo', 'Bar', { append: true })
+    c.header('X-Foo', undefined)
+    expect(c.res.headers.get('X-Foo')).toBe(null)
   })
 
   it('c.body() - multiple header', async () => {
@@ -89,6 +204,29 @@ describe('Context', () => {
     })
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar, Buzz')
+  })
+
+  it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - content-type can set explicitly via c.res.headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - Different header settings require ensuring order', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Content-Type', 'image/png')
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
   })
 
   it('c.status()', async () => {
@@ -101,7 +239,7 @@ describe('Context', () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })
@@ -118,7 +256,6 @@ describe('Context', () => {
     expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
     expect(res.headers.get('x-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
-    expect(await res.text()).toBe('this is body')
 
     // res is already set.
     c.res = res
@@ -126,6 +263,21 @@ describe('Context', () => {
     c.status(202)
     expect(c.res.headers.get('X-Custom4')).toBe('Message4')
     expect(c.res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
+  })
+
+  it('Inherit current status if not specified', async () => {
+    c.status(201)
+    const res = c.newResponse('this is body', {
+      headers: {
+        'x-custom3': 'Message3',
+        'x-custom2': 'Message2-Override',
+      },
+    })
+    expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
+    expect(res.headers.get('x-Custom3')).toBe('Message3')
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
   })
 
   it('Should append the previous headers to new Response', () => {
@@ -154,7 +306,7 @@ describe('Context', () => {
   })
 
   it('Should be able read env', async () => {
-    const req = new HonoRequest(new Request('http://localhost/'))
+    const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
       env: {
@@ -181,34 +333,169 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
+})
 
-  // The `c.runtime()` will be removed in v4.
-  it('returns current runtime (node)', async () => {
-    c = new Context(req)
-    expect(c.runtime).toBe('node')
+describe('event and executionCtx', () => {
+  const req = new Request('http://localhost/')
+
+  it('Should return the event if accessing c.event', () => {
+    const respondWith = vi.fn()
+    const c = new Context(req, {
+      // @ts-expect-error the type is not correct
+      executionCtx: {
+        respondWith: respondWith,
+      },
+    })
+    expect(() => c.event).not.toThrowError()
+    c.event.respondWith(new Response())
+    expect(respondWith).toHaveBeenCalled()
+  })
+
+  it('Should throw an error if accessing c.event', () => {
+    const c = new Context(req)
+    expect(() => c.event).toThrowError()
+  })
+
+  it('Should return the executionCtx if accessing c.executionCtx', () => {
+    const pathThroughOnException = vi.fn()
+    const waitUntil = vi.fn()
+    const c = new Context(req, {
+      executionCtx: {
+        passThroughOnException: pathThroughOnException,
+        waitUntil: waitUntil,
+        props: {},
+      },
+      env: {},
+    })
+    expect(() => c.executionCtx).not.toThrowError()
+    c.executionCtx.passThroughOnException()
+    expect(pathThroughOnException).toHaveBeenCalled()
+    const asyncFunc = async () => {}
+    c.executionCtx.waitUntil(asyncFunc())
+    expect(waitUntil).toHaveBeenCalled()
+  })
+
+  it('Should throw an error if accessing c.executionCtx', () => {
+    const c = new Context(req)
+    expect(() => c.executionCtx).toThrowError()
   })
 })
 
 describe('Context header', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
   })
+
   it('Should return only one content-type value', async () => {
     c.header('Content-Type', 'foo')
     const res = await c.html('foo')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
   })
+
   it('Should rewrite header values correctly', async () => {
     c.res = await c.html('foo')
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
+
+  it('Should set header values if the #this.headers is set and the arg is ResponseInit', async () => {
+    c.header('foo', 'bar')
+    const res = c.body('foo', {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    })
+    expect(res.headers.get('foo')).toBe('bar')
+  })
+
+  it('Should set cookie headers when re-assigning Response to `c.res`', () => {
+    const cookies = ['foo=bar; Path=/', 'foo2=bar2; Path=/']
+    const res = new Response(null)
+    res.headers.append('set-cookie', cookies[0])
+    res.headers.append('set-cookie', cookies[1])
+    c.res = res
+    expect(c.res.headers.getSetCookie().length).toBe(2)
+
+    // Re-assign
+    const newCookies = ['foo3=bar3; Path=/']
+    const newResponse = new Response(null)
+    newResponse.headers.append('set-cookie', newCookies[0])
+    c.res = newResponse
+    expect(c.res.headers.getSetCookie().length).toBe(cookies.length)
+    expect(c.res.headers.getSetCookie()).toEqual(cookies)
+  })
+
+  it('Should keep previous cookies in response headers', () => {
+    c.res.headers.append('set-cookie', 'foo=bar; Path=/')
+    setCookie(c, 'foo2', 'bar2', { path: '/' })
+    const res = c.json({ message: 'Hello' })
+    const cookies = res.headers.getSetCookie()
+    expect(cookies.includes('foo=bar; Path=/')).toBe(true)
+    expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
+  })
+
+  it('Should set set-cookie header values if c.res is already defined', () => {
+    c.res = new Response(null, {
+      headers: [
+        ['set-cookie', 'a'],
+        ['set-cookie', 'b'],
+        ['set-cookie', 'c'],
+      ],
+    })
+    const res = c.text('Hi')
+    expect(res.headers.get('set-cookie')).toBe('a, b, c')
+  })
+
+  it('Should be able to overwrite a fetch response with a new response.', async () => {
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    c.res = new Response('foo', {
+      headers: {
+        'X-Custom': 'Message',
+      },
+    })
+    expect(await c.res.text()).toBe('foo')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should be able to overwrite a response with a fetch response.', async () => {
+    c.res = new Response('foo', {
+      headers: {
+        'X-Custom': 'Message',
+      },
+    })
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    expect(await c.res.text()).toBe('bar')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should be able to set headers if the context is finalized', async () => {
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    expect(c.finalized).toBe(true)
+    c.header('X-Custom', 'Message')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should handle headers with array values correctly', async () => {
+    c.header('X-Array', 'value1')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Array': ['new1', 'new2'],
+    })
+    expect(res.headers.get('X-Array')).toBe('new1, new2')
+  })
+
+  it('Should remove existing header when new value is empty array', async () => {
+    c.header('X-Test', 'existing')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Test': [],
+    })
+    expect(res.headers.get('X-Test')).toBeNull()
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -247,6 +534,22 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h2>Hello</h2>')
   })
 
+  it('c.body() should retain context cookies from context and original response', async () => {
+    setCookie(c, 'context', '1')
+    setCookie(c, 'context', '2')
+
+    const originalResponse = new Response('', {
+      headers: {
+        'set-cookie': 'response=1; Path=/',
+      },
+    })
+    const res = c.body('', originalResponse)
+    const cookies = res.headers.getSetCookie()
+    expect(cookies.includes('context=1; Path=/')).toBe(true)
+    expect(cookies.includes('context=2; Path=/')).toBe(true)
+    expect(cookies.includes('response=1; Path=/')).toBe(true)
+  })
+
   it('c.text()', async () => {
     const originalResponse = new Response(JSON.stringify({ foo: 'bar' }))
     const res = c.text('foo', originalResponse)
@@ -260,47 +563,6 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
-
-  it('c.streamText()', async () => {
-    const res = c.streamText(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(`${i}`)
-        await stream.sleep(1)
-      }
-    })
-
-    expect(res.status).toBe(200)
-    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
-    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('transfer-encoding')).toBe('chunked')
-
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(decoder.decode(value)).toEqual(`${i}`)
-    }
-  })
-
-  it('c.stream()', async () => {
-    const res = c.stream(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(new Uint8Array([i]))
-        await stream.sleep(1)
-      }
-    })
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(value).toEqual(new Uint8Array([i]))
-    }
-  })
 })
 
 declare module './context' {
@@ -310,7 +572,7 @@ declare module './context' {
 }
 
 describe('c.render', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)

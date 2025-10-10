@@ -1,10 +1,11 @@
+/** @jsxImportSource ./ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
-import { resolveStream } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
-import { Suspense, renderToReadableStream } from './streaming'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from './index'
+import { use } from './hooks'
+import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
@@ -42,7 +43,51 @@ describe('Streaming', () => {
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>'
+    )
+
+    expect(contentEvaluatedCount).toEqual(1)
+  })
+
+  it('Suspense with StreamingContext', async () => {
+    let contentEvaluatedCount = 0
+    const Content = () => {
+      contentEvaluatedCount++
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(() => resolve(<h1>Hello</h1>), 10)
+      )
+      return content
+    }
+
+    const stream = renderToReadableStream(
+      <StreamingContext value={{ scriptNonce: 'test-nonce' }}>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      </StreamingContext>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script nonce="test-nonce">
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -90,7 +135,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p>thrown a promise then resolved</p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p>thrown a promise then resolved</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -128,6 +173,134 @@ d.replaceWith(c.content)
     expect(chunks).toEqual(['<h1>Hello</h1>'])
 
     suspenseCounter -= 1 // fallback is not rendered
+  })
+
+  it('nullish children', async () => {
+    const stream = renderToReadableStream(
+      <div>
+        <Suspense fallback={<p>Loading...</p>}>{[null, undefined]}</Suspense>
+      </div>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual(['<div></div>'])
+
+    suspenseCounter -= 1 // fallback is not rendered
+  })
+
+  it('async nullish children', async () => {
+    let resolved = false
+    const Content = () => {
+      if (!resolved) {
+        resolved = true
+        throw new Promise<void>((r) =>
+          setTimeout(() => {
+            resolved = true
+            r()
+          }, 10)
+        )
+      }
+      return <h1>Hello</h1>
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+        {[null, undefined]}
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>'
+    )
+  })
+
+  it('boolean children', async () => {
+    const stream = renderToReadableStream(
+      <div>
+        <Suspense fallback={<p>Loading...</p>}>{[true, false]}</Suspense>
+      </div>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual(['<div></div>'])
+
+    suspenseCounter -= 1 // fallback is not rendered
+  })
+
+  it('async boolean children', async () => {
+    let resolved = false
+    const Content = () => {
+      if (!resolved) {
+        resolved = true
+        throw new Promise<void>((r) =>
+          setTimeout(() => {
+            resolved = true
+            r()
+          }, 10)
+        )
+      }
+      return <h1>Hello</h1>
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+        {[true, false]}
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>'
+    )
   })
 
   it('children Suspense', async () => {
@@ -206,7 +379,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p></p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p></p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -240,7 +413,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p></p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p></p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -260,10 +433,12 @@ d.replaceWith(c.content)
       return <p>{content}</p>
     }
 
+    const onError = vi.fn()
     const stream = renderToReadableStream(
       <Suspense fallback={<p>Loading...</p>}>
         <Content />
-      </Suspense>
+      </Suspense>,
+      onError
     )
 
     const chunks = []
@@ -271,6 +446,8 @@ d.replaceWith(c.content)
     for await (const chunk of stream as any) {
       chunks.push(textDecoder.decode(chunk))
     }
+
+    expect(onError).toBeCalledTimes(1)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
@@ -280,6 +457,55 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<p>Loading...</p><!--/$-->'
     )
+  })
+
+  it('closed()', async () => {
+    const Content = async () => {
+      await new Promise<void>((resolve) =>
+        setTimeout(() => {
+          vi.spyOn(ReadableStreamDefaultController.prototype, 'enqueue').mockImplementation(() => {
+            throw new Error('closed')
+          })
+          resolve()
+        }, 10)
+      )
+      return <p>content</p>
+    }
+
+    const onError = vi.fn()
+    const stream = renderToReadableStream(
+      <>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      </>,
+      onError
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(onError).toBeCalledTimes(1)
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--><template id="H:${
+        suspenseCounter + 1
+      }"></template><p>Loading...</p><!--/$-->`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<p>Loading...</p><!--/$--><p>Loading...</p><!--/$-->'
+    )
+
+    suspenseCounter++
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    vi.restoreAllMocks()
   })
 
   it('Multiple "await" call', async () => {
@@ -314,7 +540,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><h2>World</h2></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><h2>World</h2></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -360,7 +586,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template>Loading<span>...</span><!--/$-->`,
-      `<template><h1>Hello</h1></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -416,7 +642,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><template id=\"H:${
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><template id=\"H:${
         suspenseCounter + 1
       }\"></template><p>Loading sub content...</p><!--/$--></template><script>
 ((d,c,n) => {
@@ -427,7 +653,7 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
-      `<template><h2>World</h2></template><script>
+      `<template data-hono-target="H:${suspenseCounter + 1}"><h2>World</h2></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter + 1}')
@@ -519,11 +745,16 @@ d.replaceWith(c.content)
       return content
     }
 
-    const str = await resolveStream(await (
-      <Suspense fallback={<p>Loading...</p>}>
-        <Content />
-      </Suspense>
-    ).toString())
+    const str = await resolveCallback(
+      await (
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      ).toString(),
+      HtmlEscapedCallbackPhase.Stream,
+      false,
+      {}
+    )
 
     expect(str).toEqual('<h1>Hello</h1>')
     expect(contentEvaluatedCount).toEqual(1)
@@ -552,5 +783,66 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual(['<h1>Hello</h1>'])
+
+    suspenseCounter++
+  })
+
+  describe('use()', async () => {
+    it('render to string', async () => {
+      const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
+      const Content = () => {
+        const message = use(promise)
+        return <h1>{message}</h1>
+      }
+
+      const str = await resolveCallback(
+        await (
+          <Suspense fallback={<p>Loading...</p>}>
+            <Content />
+          </Suspense>
+        ).toString(),
+        HtmlEscapedCallbackPhase.Stream,
+        false,
+        {}
+      )
+      expect(str).toEqual('<h1>Hello from use()</h1>')
+    })
+
+    it('render to stream', async () => {
+      const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
+      const Content = () => {
+        const message = use(promise)
+        return <h1>{message}</h1>
+      }
+
+      const stream = renderToReadableStream(
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      )
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+        `<template data-hono-target="H:${suspenseCounter}"><h1>Hello from use()</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<h1>Hello from use()</h1>'
+      )
+    })
   })
 })

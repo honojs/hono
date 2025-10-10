@@ -1,6 +1,7 @@
-// @denoify-ignore
-import { Hono } from '../../hono'
-import type { Env, MiddlewareHandler } from '../../types'
+import { Context } from '../../context'
+import type { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
+import type { BlankSchema, Env, Input, MiddlewareHandler, Schema } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
 
@@ -8,41 +9,97 @@ import type { Env, MiddlewareHandler } from '../../types'
 type Params<P extends string = any> = Record<P, string | string[]>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EventContext<Env = {}, P extends string = any, Data = {}> = {
+export type EventContext<Env = {}, P extends string = any, Data = Record<string, unknown>> = {
   request: Request
   functionPath: string
   waitUntil: (promise: Promise<unknown>) => void
   passThroughOnException: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any
   next: (input?: Request | string, init?: RequestInit) => Promise<Response>
   env: Env & { ASSETS: { fetch: typeof fetch } }
   params: Params<P>
   data: Data
 }
 
-interface HandleInterface {
+declare type PagesFunction<
+  Env = unknown,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (app: Hono<any, any, any>): (eventContext: EventContext) => Response | Promise<Response>
-  /** @deprecated
-   * Use `app.basePath()` to set a sub path instead of passing the second argument.
-   * The `handle` will have only one argument in v4.
-   */
-  <E extends Env, S extends {}, BasePath extends string>(app: Hono<E, S, BasePath>, path: string): (
-    eventContext: EventContext
-  ) => Response | Promise<Response>
-}
+  Params extends string = any,
+  Data extends Record<string, unknown> = Record<string, unknown>
+> = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
-export const handle: HandleInterface =
-  (subApp: Hono, path?: string) => (eventContext: EventContext) => {
-    const app = path ? new Hono().route(path, subApp as never) : subApp
+export const handle =
+  <E extends Env = Env, S extends Schema = BlankSchema, BasePath extends string = '/'>(
+    app: Hono<E, S, BasePath>
+  ): PagesFunction<E['Bindings']> =>
+  (eventContext) => {
     return app.fetch(
       eventContext.request,
       { ...eventContext.env, eventContext },
       {
         waitUntil: eventContext.waitUntil,
         passThroughOnException: eventContext.passThroughOnException,
+        props: {},
       }
     )
   }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function handleMiddleware<E extends Env = {}, P extends string = any, I extends Input = {}>(
+  middleware: MiddlewareHandler<
+    E & {
+      Bindings: {
+        eventContext: EventContext
+      }
+    },
+    P,
+    I
+  >
+): PagesFunction<E['Bindings']> {
+  return async (executionCtx) => {
+    const context = new Context(executionCtx.request, {
+      env: { ...executionCtx.env, eventContext: executionCtx },
+      executionCtx,
+    })
+
+    let response: Response | void = undefined
+
+    try {
+      response = await middleware(context, async () => {
+        try {
+          context.res = await executionCtx.next()
+        } catch (error) {
+          if (error instanceof Error) {
+            context.error = error
+          } else {
+            throw error
+          }
+        }
+      })
+    } catch (error) {
+      if (error instanceof Error) {
+        context.error = error
+      } else {
+        throw error
+      }
+    }
+
+    if (response) {
+      return response
+    }
+
+    if (context.error instanceof HTTPException) {
+      return context.error.getResponse()
+    }
+
+    if (context.error) {
+      throw context.error
+    }
+
+    return context.res
+  }
+}
 
 declare abstract class FetcherLike {
   fetch(input: RequestInfo, init?: RequestInit): Promise<Response>

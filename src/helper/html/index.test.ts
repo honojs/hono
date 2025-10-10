@@ -1,9 +1,10 @@
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { html, raw } from '.'
 
 describe('Tagged Template Literals', () => {
   it('Should escape special characters', () => {
     const name = 'John "Johnny" Smith'
-    // eslint-disable-next-line quotes
+
     expect(html`<p>I'm ${name}.</p>`.toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
   })
 
@@ -28,13 +29,49 @@ describe('Tagged Template Literals', () => {
       '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href="http://example.com/">My Website</a></p>'
     )
   })
+
+  describe('Promise', () => {
+    it('Should return Promise<string> when some variables contains Promise<string> in variables', async () => {
+      const name = Promise.resolve('John "Johnny" Smith')
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+
+      expect((await res).toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+    })
+
+    it('Should return raw value when some variables contains Promise<HtmlEscapedString> in variables', async () => {
+      const name = Promise.resolve(raw('John "Johnny" Smith'))
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+      expect((await res).toString()).toBe('<p>I\'m John "Johnny" Smith.</p>')
+    })
+  })
+
+  describe('HtmlEscapedString', () => {
+    it('Should preserve callbacks', async () => {
+      const name = raw('Hono', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] = buffer[0].replace('Hono', 'Hono!')
+          }
+          return undefined
+        },
+      ])
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+
+      expect((await res).toString()).toBe("<p>I'm Hono.</p>")
+      expect(await resolveCallback(await res, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
+        "<p>I'm Hono!.</p>"
+      )
+    })
+  })
 })
 
 describe('raw', () => {
   it('Should be marked as escaped.', () => {
     const name = 'John &quot;Johnny&quot; Smith'
     expect(html`<p>I'm ${raw(name)}.</p>`.toString()).toBe(
-      // eslint-disable-next-line quotes
       "<p>I'm John &quot;Johnny&quot; Smith.</p>"
     )
   })

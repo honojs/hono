@@ -1,10 +1,10 @@
-// @denoify-ignore
+/** @jsxImportSource ./ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from './index'
-import type { Context, FC } from './index'
+import { Suspense, renderToReadableStream } from './streaming'
+import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
+import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
   title: string
@@ -102,6 +102,7 @@ describe('JSX middleware', () => {
     }
 
     app.get('/', (c) => {
+      // prettier-ignore
       return c.html(
         html`<html><body>${(<AsyncComponent />)}</body></html>`
       )
@@ -110,6 +111,39 @@ describe('JSX middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<html><body><h1>Hello from async component</h1></body></html>')
+  })
+
+  it('Should handle async component error', async () => {
+    const componentError = new Error('Error from async error component')
+
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <h1>Hello from async component</h1>
+    }
+    const AsyncErrorComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      throw componentError
+    }
+
+    let raisedError: any
+    app.onError((e, c) => {
+      raisedError = e
+      return c.html('<html><body><h1>Error from onError</h1></body></html>', 500)
+    })
+    app.get('/', (c) => {
+      return c.html(
+        <>
+          <AsyncComponent />
+          <AsyncErrorComponent />
+        </>
+      )
+    })
+
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(500)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<html><body><h1>Error from onError</h1></body></html>')
+    expect(raisedError).toBe(componentError)
   })
 })
 
@@ -125,9 +159,14 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
-  it('Empty elements are rended withtout closing tag', () => {
+  it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
+  })
+
+  it('Empty elements with children are rended with children and closing tag', () => {
+    const template = <link>https://example.com</link>
+    expect(template.toString()).toBe('<link>https://example.com</link>')
   })
 
   it('Props value is null', () => {
@@ -149,7 +188,7 @@ describe('render to string', () => {
     it('Should get an error if both dangerouslySetInnerHTML and children are specified', () => {
       expect(() =>
         (<span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>).toString()
-      ).toThrow()
+      ).toThrow(Error)
     })
   })
 
@@ -291,6 +330,48 @@ describe('render to string', () => {
     })
   })
 
+  describe('download attribute', () => {
+    it('<a download={true}></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download={true}></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download={false}></a> should be rendered as <a></a>', () => {
+      const template = <a download={false}></a>
+      expect(template.toString()).toBe('<a></a>')
+    })
+
+    it('<a download></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download="test"></a> should be rendered as <a download="test"></a>', () => {
+      const template = <a download='test'></a>
+      expect(template.toString()).toBe('<a download="test"></a>')
+    })
+  })
+
+  describe('Function', () => {
+    it('should be ignored used in on* props', () => {
+      const onClick = () => {}
+      const template = <button onClick={onClick}>Click</button>
+      expect(template.toString()).toBe('<button>Click</button>')
+    })
+
+    it('should be ignored used in ref props', () => {
+      const ref = () => {}
+      const template = <div ref={ref}>Content</div>
+      expect(template.toString()).toBe('<div>Content</div>')
+    })
+
+    it('should raise an error if used in other props', () => {
+      const onClick = () => {}
+      const template = <button data-handler={onClick}>Click</button>
+      expect(() => template.toString()).toThrow(Error)
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#functions-as-children
   describe('Functions as Children', () => {
     it('Function', () => {
@@ -312,14 +393,14 @@ describe('render to string', () => {
 
       const template = <ListOfTenThings />
       expect(template.toString()).toBe(
-        '<div><div key="0">This is item 0 in the list</div><div key="1">This is item 1 in the list</div><div key="2">This is item 2 in the list</div><div key="3">This is item 3 in the list</div><div key="4">This is item 4 in the list</div><div key="5">This is item 5 in the list</div><div key="6">This is item 6 in the list</div><div key="7">This is item 7 in the list</div><div key="8">This is item 8 in the list</div><div key="9">This is item 9 in the list</div></div>'
+        '<div><div>This is item 0 in the list</div><div>This is item 1 in the list</div><div>This is item 2 in the list</div><div>This is item 3 in the list</div><div>This is item 4 in the list</div><div>This is item 5 in the list</div><div>This is item 6 in the list</div><div>This is item 7 in the list</div><div>This is item 8 in the list</div><div>This is item 9 in the list</div></div>'
       )
     })
   })
 
   describe('FC', () => {
     it('Should define the type correctly', () => {
-      const Layout: FC<{ title: string }> = (props) => {
+      const Layout: FC<PropsWithChildren<{ title: string }>> = (props) => {
         return (
           <html>
             <head>
@@ -341,6 +422,24 @@ describe('render to string', () => {
         '<html><head><title>Home page</title></head><body><h1>Hono</h1><p>Hono is great</p></body></html>'
       )
     })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', (item) => {
+        const Component: FC = (() => {
+          return item
+        }) as FC
+        const template = <Component />
+        expect(template.toString()).toBe('')
+      })
+
+      it('falsy value', () => {
+        const Component: FC = (() => {
+          return 0
+        }) as unknown as FC
+        const template = <Component />
+        expect(template.toString()).toBe('0')
+      })
+    })
   })
 
   describe('style attribute', () => {
@@ -350,19 +449,23 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
-            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
+            fontFamily: 'Menlo, Consolas, "DejaVu Sans Mono", monospace',
           }}
         >
           Hello
         </h1>
       )
       expect(template.toString()).toBe(
-        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, DejaVu Sans Mono, monospace">Hello</h1>'
+        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, &quot;DejaVu Sans Mono&quot;, monospace">Hello</h1>'
       )
     })
     it('should not convert the strings', () => {
       const template = <h1 style='color:red;font-size:small'>Hello</h1>
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
+    })
+    it('should render variable without any name conversion', () => {
+      const template = <h1 style={{ '--myVar': 1 }}>Hello</h1>
+      expect(template.toString()).toBe('<h1 style="--myVar:1px">Hello</h1>')
     })
   })
 
@@ -372,6 +475,41 @@ describe('render to string', () => {
       const template = <span data-text={escapedString}>Hello</span>
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
     })
+  })
+
+  describe('head', () => {
+    it('Simple head elements should be rendered as is', () => {
+      const template = (
+        <head>
+          <title>Hono!</title>
+          <meta name='description' content='A description' />
+          <script src='script.js'></script>
+        </head>
+      )
+      expect(template.toString()).toBe(
+        '<head><title>Hono!</title><meta name="description" content="A description"/><script src="script.js"></script></head>'
+      )
+    })
+  })
+})
+
+describe('className', () => {
+  it('should convert to class attribute for intrinsic elements', () => {
+    const template = <h1 className='h1'>Hello</h1>
+    expect(template.toString()).toBe('<h1 class="h1">Hello</h1>')
+  })
+
+  it('should convert to class attribute for custom elements', () => {
+    const template = <custom-element className='h1'>Hello</custom-element>
+    expect(template.toString()).toBe('<custom-element class="h1">Hello</custom-element>')
+  })
+
+  it('should not convert to class attribute for custom components', () => {
+    const CustomComponent: FC<{ className: string }> = ({ className }) => (
+      <div data-class-name={className}>Hello</div>
+    )
+    const template = <CustomComponent className='h1' />
+    expect(template.toString()).toBe('<div data-class-name="h1">Hello</div>')
   })
 })
 
@@ -488,14 +626,216 @@ describe('Fragment', () => {
   })
 })
 
+describe('StrictMode', () => {
+  it('Should render children', () => {
+    const template = (
+      <StrictMode>
+        <p>1</p>
+        <p>2</p>
+      </StrictMode>
+    )
+    expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+})
+
+describe('SVG', () => {
+  it('simple', () => {
+    const template = (
+      <svg>
+        <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+      </svg>
+    )
+    expect(template.toString()).toBe(
+      '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+    )
+  })
+
+  it('title element', () => {
+    const template = (
+      <>
+        <head>
+          <title>Document Title</title>
+        </head>
+        <svg>
+          <title>SVG Title</title>
+        </svg>
+      </>
+    )
+    expect(template.toString()).toBe(
+      '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
+    )
+  })
+
+  describe('attribute', () => {
+    describe('camelCase', () => {
+      test.each`
+        key
+        ${'attributeName'}
+        ${'baseFrequency'}
+        ${'calcMode'}
+        ${'clipPathUnits'}
+        ${'diffuseConstant'}
+        ${'edgeMode'}
+        ${'filterUnits'}
+        ${'gradientTransform'}
+        ${'gradientUnits'}
+        ${'kernelMatrix'}
+        ${'kernelUnitLength'}
+        ${'keyPoints'}
+        ${'keySplines'}
+        ${'keyTimes'}
+        ${'lengthAdjust'}
+        ${'limitingConeAngle'}
+        ${'markerHeight'}
+        ${'markerUnits'}
+        ${'markerWidth'}
+        ${'maskContentUnits'}
+        ${'maskUnits'}
+        ${'numOctaves'}
+        ${'pathLength'}
+        ${'patternContentUnits'}
+        ${'patternTransform'}
+        ${'patternUnits'}
+        ${'pointsAtX'}
+        ${'pointsAtY'}
+        ${'pointsAtZ'}
+        ${'preserveAlpha'}
+        ${'preserveAspectRatio'}
+        ${'primitiveUnits'}
+        ${'refX'}
+        ${'refY'}
+        ${'repeatCount'}
+        ${'repeatDur'}
+        ${'specularConstant'}
+        ${'specularExponent'}
+        ${'spreadMethod'}
+        ${'startOffset'}
+        ${'stdDeviation'}
+        ${'stitchTiles'}
+        ${'surfaceScale'}
+        ${'crossorigin'}
+        ${'systemLanguage'}
+        ${'tableValues'}
+        ${'targetX'}
+        ${'targetY'}
+        ${'textLength'}
+        ${'viewBox'}
+        ${'xChannelSelector'}
+        ${'yChannelSelector'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
+
+    describe('kebab-case', () => {
+      test.each`
+        key
+        ${'alignmentBaseline'}
+        ${'baselineShift'}
+        ${'clipPath'}
+        ${'clipRule'}
+        ${'colorInterpolation'}
+        ${'colorInterpolationFilters'}
+        ${'dominantBaseline'}
+        ${'fillOpacity'}
+        ${'fillRule'}
+        ${'floodColor'}
+        ${'floodOpacity'}
+        ${'fontFamily'}
+        ${'fontSize'}
+        ${'fontSizeAdjust'}
+        ${'fontStretch'}
+        ${'fontStyle'}
+        ${'fontVariant'}
+        ${'fontWeight'}
+        ${'imageRendering'}
+        ${'letterSpacing'}
+        ${'lightingColor'}
+        ${'markerEnd'}
+        ${'markerMid'}
+        ${'markerStart'}
+        ${'overlinePosition'}
+        ${'overlineThickness'}
+        ${'paintOrder'}
+        ${'pointerEvents'}
+        ${'shapeRendering'}
+        ${'stopColor'}
+        ${'stopOpacity'}
+        ${'strikethroughPosition'}
+        ${'strikethroughThickness'}
+        ${'strokeDasharray'}
+        ${'strokeDashoffset'}
+        ${'strokeLinecap'}
+        ${'strokeLinejoin'}
+        ${'strokeMiterlimit'}
+        ${'strokeOpacity'}
+        ${'strokeWidth'}
+        ${'textAnchor'}
+        ${'textDecoration'}
+        ${'textRendering'}
+        ${'transformOrigin'}
+        ${'underlinePosition'}
+        ${'underlineThickness'}
+        ${'unicodeBidi'}
+        ${'vectorEffect'}
+        ${'wordSpacing'}
+        ${'writingMode'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(
+          `<svg><g ${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="test"></g></svg>`
+        )
+      })
+    })
+
+    describe('data-*', () => {
+      test.each`
+        key
+        ${'data-foo'}
+        ${'data-foo-bar'}
+        ${'data-fooBar'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
+  })
+})
+
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
+  let ErrorConsumer: FC
+  let AsyncConsumer: FC
+  let AsyncErrorConsumer: FC
   beforeAll(() => {
     ThemeContext = createContext('light')
     Consumer = () => {
       const theme = useContext(ThemeContext)
       return <span>{theme}</span>
+    }
+    ErrorConsumer = () => {
+      throw new Error('ErrorConsumer')
+    }
+    AsyncConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return <span>{theme}</span>
+    }
+    AsyncErrorConsumer = async () => {
+      throw new Error('AsyncErrorConsumer')
     }
   })
 
@@ -535,10 +875,197 @@ describe('Context', () => {
       )
       expect(template.toString()).toBe('<span>dark</span><span>black</span><span>dark</span>')
     })
+
+    it('should reset context by error', () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ErrorConsumer />
+        </ThemeContext.Provider>
+      )
+      expect(() => template.toString()).toThrow()
+
+      const nextRequest = <Consumer />
+      expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+  })
+
+  describe('<Context> as a provider ', () => {
+    it('has a child', () => {
+      const template = (
+        <ThemeContext value='dark'>
+          <Consumer />
+        </ThemeContext>
+      )
+      expect(template.toString()).toBe('<span>dark</span>')
+    })
   })
 
   it('default value', () => {
     const template = <Consumer />
     expect(template.toString()).toBe('<span>light</span>')
+  })
+
+  describe('with Suspence', () => {
+    const RedTheme = () => (
+      <ThemeContext.Provider value='red'>
+        <Consumer />
+      </ThemeContext.Provider>
+    )
+
+    it('Should preserve context in sync component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <Consumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual(['<span>dark</span><span>black</span>'])
+    })
+
+    it('Should preserve context in async component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <AsyncConsumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        '<template id="H:0"></template><span>red</span><!--/$-->',
+        `<template data-hono-target="H:0"><span>dark</span><span>black</span></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+    })
+  })
+
+  describe('async component', () => {
+    const ParentAsyncConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return (
+        <div>
+          <span>{theme}</span>
+          <AsyncConsumer />
+        </div>
+      )
+    }
+
+    const ParentAsyncErrorConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return (
+        <div>
+          <span>{theme}</span>
+          <AsyncErrorConsumer />
+        </div>
+      )
+    }
+
+    it('simple', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <AsyncConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<span>dark</span>')
+    })
+
+    it('nested', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ParentAsyncConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe(
+        '<div><span>dark</span><span>dark</span></div>'
+      )
+    })
+
+    it('should reset context by error', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ParentAsyncErrorConsumer />
+        </ThemeContext.Provider>
+      )
+      await expect(async () => (await template.toString()).toString()).rejects.toThrow()
+
+      const nextRequest = <Consumer />
+      expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+  })
+})
+
+describe('version', () => {
+  it('should be defined with semantic versioning format', () => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+-hono-jsx$/)
+  })
+})
+
+describe('default export', () => {
+  ;[
+    'version',
+    'memo',
+    'Fragment',
+    'isValidElement',
+    'createElement',
+    'cloneElement',
+    'ErrorBoundary',
+    'createContext',
+    'useContext',
+    'useState',
+    'useEffect',
+    'useRef',
+    'useCallback',
+    'useReducer',
+    'useDebugValue',
+    'createRef',
+    'forwardRef',
+    'useImperativeHandle',
+    'useSyncExternalStore',
+    'use',
+    'startTransition',
+    'useTransition',
+    'useDeferredValue',
+    'startViewTransition',
+    'useViewTransition',
+    'useMemo',
+    'useLayoutEffect',
+    'useInsertionEffect',
+    'useActionState',
+    'useOptimistic',
+    'Suspense',
+    'StrictMode',
+  ].forEach((key) => {
+    it(key, () => {
+      expect((DefaultExport as any)[key]).toBeDefined()
+    })
   })
 })

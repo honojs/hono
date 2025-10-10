@@ -5,10 +5,12 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/qs": "^6.9.17",
     "tsx": "^3.12.2"
   },
   "dependencies": {
     "fast-querystring": "^1.1.1",
-    "mitata": "^0.1.6"
+    "mitata": "^0.1.6",
+    "qs": "^6.13.0"
   }
 }

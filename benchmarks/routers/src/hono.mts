@@ -1,3 +1,4 @@
+import { PatternRouter } from '../../../src/router/pattern-router/index.ts'
 import { RegExpRouter } from '../../../src/router/reg-exp-router/index.ts'
 import { TrieRouter } from '../../../src/router/trie-router/index.ts'
 import type { Router } from '../../../src/router.ts'
@@ -18,3 +19,4 @@ const createHonoRouter = (name: string, router: Router<unknown>): RouterInterfac
 
 export const regExpRouter = createHonoRouter('RegExpRouter', new RegExpRouter())
 export const trieRouter = createHonoRouter('TrieRouter', new TrieRouter())
+export const patternRouter = createHonoRouter('PatternRouter', new PatternRouter())

@@ -1,5 +1,31 @@
-import { SHA256 as sha256CryptoJS } from 'crypto-js'
-import { timingSafeEqual, bufferToString, bufferToFormData } from './buffer'
+import { createHash } from 'crypto'
+import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
+
+describe('equal', () => {
+  it('should return true for identical ArrayBuffers', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = buffer1
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+
+  it('should return false for ArrayBuffers of different lengths', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = new ArrayBuffer(2)
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return false for ArrayBuffers with different content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([2, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return true for ArrayBuffers with identical content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([1, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+})
 
 describe('buffer', () => {
   it('positive', async () => {
@@ -16,7 +42,11 @@ describe('buffer', () => {
     expect(await timingSafeEqual(undefined, undefined)).toBe(true)
     expect(await timingSafeEqual(true, true)).toBe(true)
     expect(await timingSafeEqual(false, false)).toBe(true)
-    expect(await timingSafeEqual(true, true, (d: string) => sha256CryptoJS(d).toString()))
+    expect(
+      await timingSafeEqual(true, true, (d: boolean) =>
+        createHash('sha256').update(d.toString()).digest('hex')
+      )
+    )
   })
 
   it('negative', async () => {
@@ -43,6 +73,7 @@ describe('buffer', () => {
     expect(await timingSafeEqual({ a: 1 }, { a: 2 })).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2])).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2, 3])).toBe(false)
+    expect(await timingSafeEqual('a', 'b', () => undefined)).toBe(false)
   })
 })
 
@@ -51,6 +82,10 @@ describe('bufferToString', () => {
     const bytes = [227, 129, 130, 227, 129, 132, 227, 129, 134, 227, 129, 136, 227, 129, 138]
     const buffer = Uint8Array.from(bytes).buffer
     expect(bufferToString(buffer)).toBe('あいうえお')
+  })
+  it('should return the passed arguments as is ', () => {
+    const notBuffer = 'あいうえお' as unknown as ArrayBuffer
+    expect(bufferToString(notBuffer)).toBe('あいうえお')
   })
 })
 

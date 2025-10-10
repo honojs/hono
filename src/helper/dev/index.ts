@@ -1,8 +1,16 @@
+/**
+ * @module
+ * Dev Helper for Hono.
+ */
+
 import type { Hono } from '../../hono'
 import type { Env, RouterRoute } from '../../types'
+import { getColorEnabled } from '../../utils/color'
+import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
 interface ShowRoutesOptions {
   verbose?: boolean
+  colorize?: boolean
 }
 
 interface RouteData {
@@ -12,21 +20,24 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-const isMiddleware = (handler: Function) => handler.length > 1
-const handlerName = (handler: Function) => {
+const handlerName = (handler: Function): string => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
 }
 
 export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
-  return hono.routes.map(({ path, method, handler }: RouterRoute) => ({
-    path,
-    method,
-    name: handlerName(handler),
-    isMiddleware: isMiddleware(handler),
-  }))
+  return hono.routes.map(({ path, method, handler }: RouterRoute) => {
+    const targetHandler = findTargetHandler(handler)
+    return {
+      path,
+      method,
+      name: handlerName(targetHandler),
+      isMiddleware: isMiddleware(targetHandler),
+    }
+  })
 }
 
-export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
+export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions): void => {
+  const colorEnabled = opts?.colorize ?? getColorEnabled()
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0
@@ -49,7 +60,8 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       }
       const { method, path, routes } = data
 
-      console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
+      const methodStr = colorEnabled ? `\x1b[32m${method}\x1b[0m` : method
+      console.log(`${methodStr} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
       if (!opts?.verbose) {
         return
@@ -59,4 +71,9 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
         console.log(`${' '.repeat(maxMethodLength + 3)} ${name}`)
       })
     })
+}
+
+export const getRouterName = <E extends Env>(app: Hono<E>): string => {
+  app.router.match('GET', '/')
+  return app.router.name
 }

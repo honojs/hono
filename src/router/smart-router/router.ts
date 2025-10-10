@@ -1,39 +1,40 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { Router, Result } from '../../router'
-import { UnsupportedPathError, MESSAGE_MATCHER_IS_ALREADY_BUILT } from '../../router'
+import type { Result, Router } from '../../router'
+import { MESSAGE_MATCHER_IS_ALREADY_BUILT, UnsupportedPathError } from '../../router'
 
 export class SmartRouter<T> implements Router<T> {
   name: string = 'SmartRouter'
-  routers: Router<T>[] = []
-  routes?: [string, string, T][] = []
+  #routers: Router<T>[] = []
+  #routes?: [string, string, T][] = []
 
-  constructor(init: Pick<SmartRouter<T>, 'routers'>) {
-    Object.assign(this, init)
+  constructor(init: { routers: Router<T>[] }) {
+    this.#routers = init.routers
   }
 
   add(method: string, path: string, handler: T) {
-    if (!this.routes) {
+    if (!this.#routes) {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
-    this.routes.push([method, path, handler])
+    this.#routes.push([method, path, handler])
   }
 
   match(method: string, path: string): Result<T> {
-    if (!this.routes) {
+    if (!this.#routes) {
       throw new Error('Fatal error')
     }
 
-    const { routers, routes } = this
+    const routers = this.#routers
+    const routes = this.#routes
+
     const len = routers.length
     let i = 0
     let res
     for (; i < len; i++) {
       const router = routers[i]
       try {
-        routes.forEach((args) => {
-          router.add(...args)
-        })
+        for (let i = 0, len = routes.length; i < len; i++) {
+          router.add(...routes[i])
+        }
         res = router.match(method, path)
       } catch (e) {
         if (e instanceof UnsupportedPathError) {
@@ -43,8 +44,8 @@ export class SmartRouter<T> implements Router<T> {
       }
 
       this.match = router.match.bind(router)
-      this.routers = [router]
-      this.routes = undefined
+      this.#routers = [router]
+      this.#routes = undefined
       break
     }
 
@@ -59,11 +60,11 @@ export class SmartRouter<T> implements Router<T> {
     return res as Result<T>
   }
 
-  get activeRouter() {
-    if (this.routes || this.routers.length !== 1) {
+  get activeRouter(): Router<T> {
+    if (this.#routes || this.#routers.length !== 1) {
       throw new Error('No active router has been determined yet.')
     }
 
-    return this.routers[0]
+    return this.#routers[0]
   }
 }

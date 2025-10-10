@@ -5,7 +5,7 @@
     "rootDir": "./src/",
     "outDir": "./dist/types/",
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": true
   },
   "include": [
     "src/**/*.ts",
@@ -13,8 +13,11 @@
   ],
   "exclude": [
     "src/mod.ts",
+    "src/helper.ts",
     "src/middleware.ts",
     "src/deno/**/*.ts",
-    "src/**/*.test.ts"
+    "src/test-utils/*.ts",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
   ]
 }

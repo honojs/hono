@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx",
+    "lib": ["deno.ns", "dom", "dom.iterable"]
+  },
+  "unstable": ["sloppy-imports"],
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.3",
+    "hono/jsx/jsx-runtime": "../../src/jsx/jsx-runtime.ts"
+  }
+}

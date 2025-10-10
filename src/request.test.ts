@@ -1,6 +1,10 @@
 import { HonoRequest } from './request'
 import type { RouterRoute } from './types'
 
+type RecursiveRecord<K extends string, T> = {
+  [key in K]: T | RecursiveRecord<K, T>
+}
+
 describe('Query', () => {
   test('req.query() and req.queries()', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
@@ -34,7 +38,22 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
-  test('req.param() withth ParamStash', () => {
+  test('req.param() should return empty string for zero-length match', () => {
+    // Simulate a route like '/:remaining{.*}' matching '/'
+    const rawRequest = new Request('http://localhost/')
+    const req = new HonoRequest<'/:remaining{.*}'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''], // ParamStash with empty string for remaining
+    ])
+
+    // Single param access should be empty string, not undefined
+    expect(req.param('remaining')).toBe('')
+
+    // All params should include key with empty string value
+    const all = req.param()
+    expect(all).toEqual({ remaining: '' })
+  })
+  test('req.param() with ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
@@ -68,6 +87,24 @@ describe('Param', () => {
     expect(req.param('id')).toBe('456')
     expect(req.param('name')).toBe('key')
   })
+
+  test('req.param() returns empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param('remaining')).toBe('')
+  })
+
+  test('req.param() without argument returns object with empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param()).toEqual({ remaining: '' })
+  })
 })
 
 describe('matchedRoutes', () => {
@@ -77,17 +114,20 @@ describe('matchedRoutes', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
     ])
 
     expect(req.matchedRoutes).toEqual([
-      { handler: handlerA, method: 'GET', path: '/:id' },
-      { handler: handlerB, method: 'GET', path: '/:id/:name' },
+      { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' },
+      { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' },
     ])
   })
 })
@@ -99,9 +139,12 @@ describe('routePath', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
@@ -157,18 +200,42 @@ describe('headers', () => {
     const foo = req.header('foo')
     expect(foo).toEqual('')
   })
+
+  test('Keys of the arguments for req.header() are not case-sensitive', () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: 'abc',
+          lowercase: 'lowercase value',
+        },
+      })
+    )
+    expect(req.header('Content-Type')).toBe('application/json')
+    expect(req.header('ApiKey')).toBe('abc')
+  })
 })
 
-describe('Body methods', () => {
+const text = '{"foo":"bar"}'
+const json = { foo: 'bar' }
+const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
+
+describe('Body methods with caching', () => {
   test('req.text()', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
         method: 'POST',
-        body: 'foo',
+        body: text,
       })
     )
-    expect(await req.text()).toBe('foo')
-    expect(await req.text()).toBe('foo') // Should be cached
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: 'text/plain;charset=utf-8',
+      })
+    )
   })
 
   test('req.json()', async () => {
@@ -178,12 +245,30 @@ describe('Body methods', () => {
         body: '{"foo":"bar"}',
       })
     )
-    expect(await req.json()).toEqual({ foo: 'bar' })
-    expect(await req.json()).toEqual({ foo: 'bar' }) // Should be cached
+    expect(await req.json()).toEqual(json)
+    expect(await req.text()).toEqual(text)
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: 'text/plain;charset=utf-8',
+      })
+    )
+  })
+
+  test('req.json() should keep the content as is', async () => {
+    const text = '{ "foo" : "bar" }'
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: text,
+      })
+    )
+    expect(await req.json()).toEqual(JSON.parse(text))
+    expect(await req.text()).toEqual(text)
   })
 
   test('req.arrayBuffer()', async () => {
-    const buffer = new ArrayBuffer(8)
+    const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
     const req = new HonoRequest(
       new Request('http://localhost', {
         method: 'POST',
@@ -191,12 +276,18 @@ describe('Body methods', () => {
       })
     )
     expect(await req.arrayBuffer()).toEqual(buffer)
-    expect(await req.arrayBuffer()).toEqual(buffer) // Should be cached
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: '',
+      })
+    )
   })
 
   test('req.blob()', async () => {
-    const blob = new Blob(['foo'], {
-      type: 'text/plain',
+    const blob = new Blob(['{"foo":"bar"}'], {
+      type: 'application/json',
     })
     const req = new HonoRequest(
       new Request('http://localhost', {
@@ -205,7 +296,9 @@ describe('Body methods', () => {
       })
     )
     expect(await req.blob()).toEqual(blob)
-    expect(await req.blob()).toEqual(blob) // Should be cached
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.arrayBuffer()).toEqual(buffer)
   })
 
   test('req.formData()', async () => {
@@ -218,6 +311,70 @@ describe('Body methods', () => {
       })
     )
     expect((await req.formData()).get('foo')).toBe('bar')
-    expect((await req.formData()).get('foo')).toBe('bar') // Should be cached
+    expect(async () => await req.text()).not.toThrow()
+    expect(async () => await req.arrayBuffer()).not.toThrow()
+    expect(async () => await req.blob()).not.toThrow()
+  })
+
+  describe('req.parseBody()', async () => {
+    it('should parse form data', async () => {
+      const data = new FormData()
+      data.append('foo', 'bar')
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: data,
+        })
+      )
+      expect((await req.parseBody())['foo']).toBe('bar')
+      expect(async () => await req.text()).not.toThrow()
+      expect(async () => await req.arrayBuffer()).not.toThrow()
+      expect(async () => await req.blob()).not.toThrow()
+    })
+
+    describe('Return type', () => {
+      let req: HonoRequest
+      beforeEach(() => {
+        const data = new FormData()
+        data.append('foo', 'bar')
+        req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            body: data,
+          })
+        )
+      })
+
+      it('without options', async () => {
+        expectTypeOf((await req.parseBody())['key']).toEqualTypeOf<string | File>()
+      })
+
+      it('{all: true}', async () => {
+        expectTypeOf((await req.parseBody({ all: true }))['key']).toEqualTypeOf<
+          string | File | (string | File)[]
+        >()
+      })
+
+      it('{dot: true}', async () => {
+        expectTypeOf((await req.parseBody({ dot: true }))['key']).toEqualTypeOf<
+          string | File | RecursiveRecord<string, string | File>
+        >()
+      })
+
+      it('{all: true, dot: true}', async () => {
+        expectTypeOf((await req.parseBody({ all: true, dot: true }))['key']).toEqualTypeOf<
+          | string
+          | File
+          | (string | File)[]
+          | RecursiveRecord<string, string | File | (string | File)[]>
+        >()
+      })
+
+      it('specify return type explicitly', async () => {
+        expectTypeOf(
+          await req.parseBody<{ key1: string; key2: string }>({ all: true, dot: true })
+        ).toEqualTypeOf<{ key1: string; key2: string }>()
+      })
+    })
   })
 })

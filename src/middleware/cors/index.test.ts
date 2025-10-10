@@ -5,6 +5,7 @@ describe('CORS by Middleware', () => {
   const app = new Hono()
 
   app.use('/api/*', cors())
+
   app.use(
     '/api2/*',
     cors({
@@ -46,25 +47,71 @@ describe('CORS by Middleware', () => {
     })
   )
 
+  app.use(
+    '/api7/*',
+    cors({
+      origin: (origin) => (origin === 'http://example.com' ? origin : '*'),
+      allowMethods: (origin) =>
+        origin === 'http://example.com'
+          ? ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
+          : ['GET', 'HEAD'],
+    })
+  )
+
+  app.use(
+    '/api8/*',
+    cors({
+      origin: (origin) =>
+        new Promise<string>((resolve) =>
+          resolve(origin.endsWith('.example.com') ? origin : 'http://example.com')
+        ),
+    })
+  )
+
+  app.use(
+    '/api9/*',
+    cors({
+      origin: (origin) =>
+        new Promise<string>((resolve) => resolve(origin === 'http://example.com' ? origin : '*')),
+      allowMethods: (origin) =>
+        new Promise<string[]>((resolve) =>
+          resolve(
+            origin === 'http://example.com'
+              ? ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
+              : ['GET', 'HEAD']
+          )
+        ),
+    })
+  )
+
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api2/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api3/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api4/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api5/abc', () => {
+    return new Response(JSON.stringify({ success: true }))
+  })
+
+  app.get('/api7/abc', () => {
     return new Response(JSON.stringify({ success: true }))
   })
 
   it('GET default', async () => {
     const res = await app.request('http://localhost/api/abc')
 
+    expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Vary')).toBeNull()
   })
@@ -75,6 +122,7 @@ describe('CORS by Middleware', () => {
     const res = await app.request(req)
 
     expect(res.status).toBe(204)
+    expect(res.statusText).toBe('No Content')
     expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')[0]).toBe('GET')
     expect(res.headers.get('Access-Control-Allow-Headers')?.split(',')).toEqual([
       'X-PINGOTHER',
@@ -83,7 +131,10 @@ describe('CORS by Middleware', () => {
   })
 
   it('Preflight with options', async () => {
-    const req = new Request('https://localhost/api2/abc', { method: 'OPTIONS' })
+    const req = new Request('https://localhost/api2/abc', {
+      method: 'OPTIONS',
+      headers: { origin: 'http://example.com' },
+    })
     const res = await app.request(req)
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
@@ -105,6 +156,15 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
 
+  it('Disallow an unmatched origin', async () => {
+    const req = new Request('https://localhost/api2/abc', {
+      method: 'OPTIONS',
+      headers: { origin: 'http://example.net' },
+    })
+    const res = await app.request(req)
+    expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
+  })
+
   it('Allow multiple origins', async () => {
     let req = new Request('http://localhost/api3/abc', {
       headers: {
@@ -116,7 +176,10 @@ describe('CORS by Middleware', () => {
 
     req = new Request('http://localhost/api3/abc')
     res = await app.request(req)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(
+      res.headers.has('Access-Control-Allow-Origin'),
+      'An unmatched origin should be disallowed'
+    ).toBeFalsy()
 
     req = new Request('http://localhost/api3/abc', {
       headers: {
@@ -124,7 +187,23 @@ describe('CORS by Middleware', () => {
       },
     })
     res = await app.request(req)
+    expect(
+      res.headers.has('Access-Control-Allow-Origin'),
+      'An unmatched origin should be disallowed'
+    ).toBeFalsy()
+  })
+
+  it('Allow different Vary header value', async () => {
+    const res = await app.request('http://localhost/api3/abc', {
+      headers: {
+        Vary: 'accept-encoding',
+        Origin: 'http://example.com',
+      },
+    })
+
+    expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')).toBe('accept-encoding')
   })
 
   it('Allow origins by function', async () => {
@@ -149,6 +228,28 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
   })
 
+  it('Allow origins by promise returning function', async () => {
+    let req = new Request('http://localhost/api8/abc', {
+      headers: {
+        Origin: 'http://subdomain.example.com',
+      },
+    })
+    let res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://subdomain.example.com')
+
+    req = new Request('http://localhost/api8/abc')
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+
+    req = new Request('http://localhost/api8/abc', {
+      headers: {
+        Referer: 'http://evil-example.com/',
+      },
+    })
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
   it('With raw Response object', async () => {
     const res = await app.request('http://localhost/api5/abc')
 
@@ -157,8 +258,56 @@ describe('CORS by Middleware', () => {
   })
 
   it('Should not return duplicate header values', async () => {
-    const res = await app.request('http://localhost/api6/abc')
+    const res = await app.request('http://localhost/api6/abc', {
+      headers: {
+        origin: 'http://example.com',
+      },
+    })
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
+  it('Allow methods by function', async () => {
+    const req = new Request('http://localhost/api7/abc', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+      method: 'OPTIONS',
+    })
+    const res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD,POST,PATCH,DELETE')
+
+    const req2 = new Request('http://localhost/api7/abc', {
+      headers: {
+        Origin: 'http://example.org',
+      },
+      method: 'OPTIONS',
+    })
+    const res2 = await app.request(req2)
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
+  })
+
+  it('Allow methods by promise returning function', async () => {
+    const req = new Request('http://localhost/api9/abc', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+      method: 'OPTIONS',
+    })
+    const res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD,POST,PATCH,DELETE')
+
+    const req2 = new Request('http://localhost/api9/abc', {
+      headers: {
+        Origin: 'http://example.org',
+      },
+      method: 'OPTIONS',
+    })
+    const res2 = await app.request(req2)
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
 })

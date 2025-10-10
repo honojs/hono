@@ -1,12 +1,20 @@
 import { raw } from '../helper/html'
-import type { HtmlEscapedString } from '../utils/html'
-import type { FC, Child } from './index'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+import { DOM_RENDERER } from './constants'
+import { useContext } from './context'
+import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
+import type { HasRenderToDom } from './dom/render'
+import { StreamingContext } from './streaming'
+import type { Child, FC, PropsWithChildren } from './'
 
 let errorBoundaryCounter = 0
 
 export const childrenToString = async (children: Child[]): Promise<HtmlEscapedString[]> => {
   try {
-    return children.map((c) => c.toString()) as HtmlEscapedString[]
+    return children
+      .flat()
+      .map((c) => (c == null || typeof c === 'boolean' ? '' : c.toString())) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       await e
@@ -17,19 +25,21 @@ export const childrenToString = async (children: Child[]): Promise<HtmlEscapedSt
   }
 }
 
-type ErrorHandler = (error: Error) => void
-type FallbackRender = (error: Error) => Child
+export type ErrorHandler = (error: Error) => void
+export type FallbackRender = (error: Error) => Child
 
 /**
  * @experimental
  * `ErrorBoundary` is an experimental feature.
  * The API might be changed.
  */
-export const ErrorBoundary: FC<{
-  fallback?: Child
-  fallbackRender?: FallbackRender
-  onError?: ErrorHandler
-}> = async ({ children, fallback, fallbackRender, onError }) => {
+export const ErrorBoundary: FC<
+  PropsWithChildren<{
+    fallback?: Child
+    fallbackRender?: FallbackRender
+    onError?: ErrorHandler
+  }>
+> = async ({ children, fallback, fallbackRender, onError }) => {
   if (!children) {
     return raw('')
   }
@@ -38,14 +48,20 @@ export const ErrorBoundary: FC<{
     children = [children]
   }
 
+  const nonce = useContext(StreamingContext)?.scriptNonce
+
+  let fallbackStr: string | undefined
   const fallbackRes = (error: Error): HtmlEscapedString => {
     onError?.(error)
-    return (fallback || fallbackRender?.(error) || '').toString() as HtmlEscapedString
+    return (fallbackStr || fallbackRender?.(error) || '').toString() as HtmlEscapedString
   }
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
-    resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
+    resArray = children.map((c) =>
+      c == null || typeof c === 'boolean' ? '' : c.toString()
+    ) as HtmlEscapedString[]
   } catch (e) {
+    fallbackStr = await fallback?.toString()
     if (e instanceof Promise) {
       resArray = [
         e.then(() => childrenToString(children as Child[])).catch((e) => fallbackRes(e)),
@@ -56,6 +72,7 @@ export const ErrorBoundary: FC<{
   }
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
+    fallbackStr ||= await fallback?.toString()
     const index = errorBoundaryCounter++
     const replaceRe = RegExp(`(<template id="E:${index}"></template>.*?)(.*?)(<!--E:${index}-->)`)
     const caught = false
@@ -70,7 +87,7 @@ export const ErrorBoundary: FC<{
       }
       return buffer
         ? ''
-        : `<template>${fallbackResString}</template><script>
+        : `<template data-hono-target="E:${index}">${fallbackResString}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -80,15 +97,26 @@ d.replaceWith(c.content)
 })(document)
 </script>`
     }
+
+    let error: unknown
+    const promiseAll = Promise.all(resArray).catch((e) => (error = e))
     return raw(`<template id="E:${index}"></template><!--E:${index}-->`, [
-      ({ buffer }) => {
-        return Promise.all(resArray)
-          .then((htmlArray) => {
+      ({ phase, buffer, context }) => {
+        if (phase === HtmlEscapedCallbackPhase.BeforeStream) {
+          return
+        }
+        return promiseAll
+          .then(async (htmlArray: HtmlEscapedString[]) => {
+            if (error) {
+              throw error
+            }
             htmlArray = htmlArray.flat()
             const content = htmlArray.join('')
-            const html = buffer
+            let html = buffer
               ? ''
-              : `<template>${content}</template><script>
+              : `<template data-hono-target="E:${index}">${content}</template><script${
+                  nonce ? ` nonce="${nonce}"` : ''
+                }>
 ((d,c) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -115,12 +143,21 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
               .map((html) => (html as HtmlEscapedString).callbacks || [])
               .flat()
 
+            if (phase === HtmlEscapedCallbackPhase.Stream) {
+              html = await resolveCallback(
+                html,
+                HtmlEscapedCallbackPhase.BeforeStream,
+                true,
+                context
+              )
+            }
+
             let resolvedCount = 0
-            const promises = callbacks.map(
+            const promises = callbacks.map<HtmlEscapedCallback>(
               (c) =>
-                ({ buffer }: { buffer: [string] }) =>
-                  c({ buffer })
-                    .then((content) => {
+                (...args) =>
+                  c(...args)
+                    ?.then((content) => {
                       resolvedCount++
 
                       if (buffer) {
@@ -140,7 +177,7 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
 d=d.getElementById('E:${index}')
 if(!d)return
 n=d.nextSibling
-do{n=n.nextSibling}while(n.nodeType!=8||n.nodeValue!='E:${index}')
+while(n.nodeType!=8||n.nodeValue!='E:${index}'){n=n.nextSibling}
 n.remove()
 d.remove()
 })(document)
@@ -161,3 +198,4 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
+;(ErrorBoundary as HasRenderToDom)[DOM_RENDERER] = ErrorBoundaryDomRenderer

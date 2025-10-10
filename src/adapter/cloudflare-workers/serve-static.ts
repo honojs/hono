@@ -1,56 +1,42 @@
-// @denoify-ignore
-import type { KVNamespace } from '@cloudflare/workers-types'
-import type { MiddlewareHandler } from '../../types'
-import { getContentFromKVAsset } from '../../utils/cloudflare'
-import { getFilePath } from '../../utils/filepath'
-import { getMimeType } from '../../utils/mime'
+import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
+import type { ServeStaticOptions as BaseServeStaticOptions } from '../../middleware/serve-static'
+import type { Env, MiddlewareHandler } from '../../types'
+import { getContentFromKVAsset } from './utils'
 
-export type ServeStaticOptions = {
-  root?: string
-  path?: string
-  manifest?: object | string
-  namespace?: KVNamespace
-  rewriteRequestPath?: (path: string) => string
+export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> & {
+  // namespace is KVNamespace
+  namespace?: unknown
+  manifest: object | string
 }
 
-const DEFAULT_DOCUMENT = 'index.html'
-
-// This middleware is available only on Cloudflare Workers.
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
-  return async (c, next) => {
-    // Do nothing if Response is already set
-    if (c.finalized) {
-      await next()
-      return
+/**
+ * @deprecated
+ * `serveStatic` in the Cloudflare Workers adapter is deprecated.
+ * You can serve static files directly using Cloudflare Static Assets.
+ * @see https://developers.cloudflare.com/workers/static-assets/
+ * Cloudflare Static Assets is currently in open beta. If this doesn't work for you,
+ * please consider using Cloudflare Pages. You can start to create the Cloudflare Pages
+ * application with the `npm create hono@latest` command.
+ */
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E>
+): MiddlewareHandler => {
+  return async function serveStatic(c, next) {
+    const getContent = async (path: string) => {
+      return getContentFromKVAsset(path, {
+        manifest: options.manifest,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        namespace: options.namespace
+          ? options.namespace
+          : c.env
+          ? c.env.__STATIC_CONTENT
+          : undefined,
+      })
     }
-
-    const url = new URL(c.req.url)
-    const filename = options.path ?? decodeURI(url.pathname)
-    const path = getFilePath({
-      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT,
-    })
-
-    if (!path) return await next()
-
-    const content = await getContentFromKVAsset(path, {
-      manifest: options.manifest,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
-    })
-    if (content) {
-      const mimeType = getMimeType(path)
-      if (mimeType) {
-        c.header('Content-Type', mimeType)
-      }
-      // Return Response object
-      return c.body(content)
-    } else {
-      console.warn(`Static file: ${path} is not found`)
-      await next()
-    }
-    return
+    return baseServeStatic({
+      ...options,
+      getContent,
+    })(c, next)
   }
 }

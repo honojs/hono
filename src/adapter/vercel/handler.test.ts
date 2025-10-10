@@ -1,28 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
 import { handle } from './handler'
 
 describe('Adapter for Next.js', () => {
-  it('Should return 200 response with a `waitUntil` value', async () => {
+  it('Should return 200 response', async () => {
     const app = new Hono()
-    app.get('/api/foo', async (c) => {
+    app.get('/api/author/:name', async (c) => {
+      const name = c.req.param('name')
       return c.json({
-        path: '/api/foo',
-        /**
-         * Checking if the `waitUntil` value is passed.
-         */
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        waitUntil: c.executionCtx.waitUntil() as any,
+        path: '/api/author/:name',
+        name,
       })
     })
     const handler = handle(app)
-    const req = new Request('http://localhost/api/foo')
-    const res = await handler(req, { waitUntil: () => 'waitUntil' } as any)
+    const req = new Request('http://localhost/api/author/hono')
+    const res = await handler(req)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      path: '/api/foo',
-      waitUntil: 'waitUntil',
+      path: '/api/author/:name',
+      name: 'hono',
     })
   })
 
@@ -38,10 +33,6 @@ describe('Adapter for Next.js', () => {
 
     const handler = handle(app)
     const req = new Request('http://localhost/api/error')
-    expect(() =>
-      handler(req, {
-        waitUntil: () => {},
-      } as any)
-    ).toThrowError('Custom Error')
+    expect(() => handler(req)).toThrowError('Custom Error')
   })
 })

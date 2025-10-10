@@ -1,59 +1,42 @@
-import type { Context } from '../../context'
-import type { Next } from '../../types'
-import { getFilePath } from '../../utils/filepath'
-import { getMimeType } from '../../utils/mime'
+import { join } from 'node:path'
+import type { ServeStaticOptions } from '../../middleware/serve-static'
+import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
+import type { Env, MiddlewareHandler } from '../../types'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const { open } = Deno
+const { open, lstatSync, errors } = Deno
 
-export type ServeStaticOptions = {
-  root?: string
-  path?: string
-  rewriteRequestPath?: (path: string) => string
-}
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E>
+): MiddlewareHandler => {
+  return async function serveStatic(c, next) {
+    const getContent = async (path: string) => {
+      try {
+        if (isDir(path)) {
+          return null
+        }
 
-const DEFAULT_DOCUMENT = 'index.html'
-
-export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
-  return async (c: Context, next: Next) => {
-    // Do nothing if Response is already set
-    if (c.finalized) {
-      await next()
-      return
-    }
-
-    const url = new URL(c.req.url)
-    const filename = options.path ?? decodeURI(url.pathname)
-    let path = getFilePath({
-      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT,
-    })
-
-    if (!path) return await next()
-
-    path = `./${path}`
-
-    let file
-
-    try {
-      file = await open(path)
-    } catch (e) {
-      console.warn(`${e}`)
-    }
-
-    if (file) {
-      const mimeType = getMimeType(path)
-      if (mimeType) {
-        c.header('Content-Type', mimeType)
+        const file = await open(path)
+        return file.readable
+      } catch (e) {
+        if (!(e instanceof errors.NotFound)) {
+          console.warn(`${e}`)
+        }
+        return null
       }
-      // Return Response object with stream
-      return c.body(file.readable)
-    } else {
-      console.warn(`Static file: ${path} is not found`)
-      await next()
     }
-    return
+    const isDir = (path: string) => {
+      let isDir
+      try {
+        const stat = lstatSync(path)
+        isDir = stat.isDirectory
+      } catch {}
+      return isDir
+    }
+    return baseServeStatic({
+      ...options,
+      getContent,
+      join,
+      isDir,
+    })(c, next)
   }
 }

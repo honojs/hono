@@ -1,13 +1,7 @@
 import { compose } from './compose'
 import { Context } from './context'
-import { HonoRequest } from './request'
 import type { Params } from './router'
-
-type C = {
-  req: Record<string, string>
-  res: Record<string, string>
-  finalized: boolean
-}
+import type { Next } from './types'
 
 type MiddlewareTuple = [[Function, unknown], Params]
 
@@ -20,26 +14,26 @@ function buildMiddlewareTuple(fn: Function, params?: Params): MiddlewareTuple {
 describe('compose', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const a = async (c: C, next: Function) => {
-    c.req['log'] = 'log'
+  const a = async (c: Context, next: Next) => {
+    c.set('log', 'log')
     await next()
   }
 
-  const b = async (c: C, next: Function) => {
+  const b = async (c: Context, next: Next) => {
     await next()
-    c.res['headers'] = 'custom-header'
+    c.header('x-custom-header', 'custom-header')
   }
 
-  const c = async (c: C, next: Function) => {
-    c.req['xxx'] = 'yyy'
+  const c = async (c: Context, next: Next) => {
+    c.set('xxx', 'yyy')
     await next()
-    c.res['zzz'] = c.req['xxx']
+    c.set('zzz', 'xxx')
   }
 
-  const handler = async (c: C, next: Function) => {
-    c.req['log'] = `${c.req.log} message`
+  const handler = async (c: Context, next: Next) => {
+    c.set('log', `${c.get('log')} message`)
     await next()
-    c.res = { message: 'new response' }
+    return c.json({ message: 'new response' })
   }
 
   middleware.push(buildMiddlewareTuple(a))
@@ -48,21 +42,19 @@ describe('compose', () => {
   middleware.push(buildMiddlewareTuple(handler))
 
   it('Request', async () => {
-    const c: C = { req: {}, res: {}, finalized: false }
-    const composed = compose<C>(middleware)
-    const context = await composed(c)
-    expect(context.req['log']).not.toBeNull()
-    expect(context.req['log']).toBe('log message')
-    expect(context.req['xxx']).toBe('yyy')
+    const composed = compose(middleware)
+    const context = await composed(new Context(new Request('http://localhost/')))
+    expect(context.get('log')).not.toBeNull()
+    expect(context.get('log')).toBe('log message')
+    expect(context.get('xxx')).toBe('yyy')
   })
   it('Response', async () => {
-    const c: C = { req: {}, res: {}, finalized: false }
-    const composed = compose<C>(middleware)
-    const context = await composed(c)
-    expect(context.res['headers']).not.toBeNull()
-    expect(context.res['headers']).toBe('custom-header')
-    expect(context.res['message']).toBe('new response')
-    expect(context.res['zzz']).toBe('yyy')
+    const composed = compose(middleware)
+    const context = await composed(new Context(new Request('http://localhost/')))
+    expect(context.res.headers.get('x-custom-header')).not.toBeNull()
+    expect(context.res.headers.get('x-custom-header')).toBe('custom-header')
+    expect((await context.res.json())['message']).toBe('new response')
+    expect(context.get('zzz')).toBe('xxx')
   })
 })
 
@@ -71,32 +63,37 @@ describe('compose with returning a promise, non-async function', () => {
     buildMiddlewareTuple(() => {
       return new Promise((resolve) =>
         setTimeout(() => {
-          resolve({ message: 'new response' })
-        }, 1)
+          resolve(
+            new Response(JSON.stringify({ message: 'new response' }), {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            })
+          )
+        })
       )
     }),
   ]
 
   it('Response', async () => {
-    const c: C = { req: {}, res: {}, finalized: false }
-    const composed = compose<C>(handlers)
-    const context = await composed(c)
-    expect(context.res['message']).toBe('new response')
+    const composed = compose(handlers)
+    const context = await composed(new Context(new Request('http://localhost/')))
+    expect((await context.res.json())['message']).toBe('new response')
   })
 })
 
 describe('Handler and middlewares', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
 
-  const mHandlerFoo = async (c: Context, next: Function) => {
+  const mHandlerFoo = async (c: Context, next: Next) => {
     c.req.raw.headers.append('x-header-foo', 'foo')
     await next()
   }
 
-  const mHandlerBar = async (c: Context, next: Function) => {
+  const mHandlerBar = async (c: Context, next: Next) => {
     await next()
     c.header('x-header-bar', 'bar')
   }
@@ -111,7 +108,7 @@ describe('Handler and middlewares', () => {
   middleware.push(buildMiddlewareTuple(handler))
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware)
+    const composed = compose(middleware)
     const context = await composed(c)
     const res = context.res
     expect(res).not.toBeNull()
@@ -124,12 +121,12 @@ describe('Handler and middlewares', () => {
 describe('compose with Context - 200 success', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
   const handler = (c: Context) => {
     return c.text('Hello')
   }
-  const mHandler = async (_c: Context, next: Function) => {
+  const mHandler = async (_c: Context, next: Next) => {
     await next()
   }
 
@@ -137,7 +134,7 @@ describe('compose with Context - 200 success', () => {
   middleware.push(buildMiddlewareTuple(mHandler))
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware)
+    const composed = compose(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
@@ -148,14 +145,14 @@ describe('compose with Context - 200 success', () => {
 describe('compose with Context - 404 not found', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
   const onNotFoundAsync = async (c: Context) => {
     return c.text('onNotFoundAsync', 404)
   }
-  const mHandler = async (_c: Context, next: Function) => {
+  const mHandler = async (_c: Context, next: Next) => {
     await next()
   }
 
@@ -163,7 +160,7 @@ describe('compose with Context - 404 not found', () => {
 
   it('Should return 404 Response', async () => {
     const c: Context = new Context(req)
-    const composed = compose<Context>(middleware, undefined, onNotFound)
+    const composed = compose(middleware, undefined, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
@@ -173,7 +170,7 @@ describe('compose with Context - 404 not found', () => {
 
   it('Should return 404 Response - async handler', async () => {
     const c: Context = new Context(req)
-    const composed = compose<Context>(middleware, undefined, onNotFoundAsync)
+    const composed = compose(middleware, undefined, onNotFoundAsync)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
@@ -185,12 +182,12 @@ describe('compose with Context - 404 not found', () => {
 describe('compose with Context - 401 not authorized', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
   const handler = (c: Context) => {
     return c.text('Hello')
   }
-  const mHandler = async (c: Context, next: Function) => {
+  const mHandler = async (c: Context, next: Next) => {
     await next()
     c.res = new Response('Not authorized', { status: 401 })
   }
@@ -199,7 +196,7 @@ describe('compose with Context - 401 not authorized', () => {
   middleware.push(buildMiddlewareTuple(handler))
 
   it('Should return 401 Response', async () => {
-    const composed = compose<Context>(middleware)
+    const composed = compose(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(401)
@@ -211,13 +208,13 @@ describe('compose with Context - 401 not authorized', () => {
 describe('compose with Context - next() below', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
   const handler = (c: Context) => {
     const message = c.req.header('x-custom') || 'blank'
     return c.text(message)
   }
-  const mHandler = async (c: Context, next: Function) => {
+  const mHandler = async (c: Context, next: Next) => {
     c.req.raw.headers.append('x-custom', 'foo')
     await next()
   }
@@ -226,7 +223,7 @@ describe('compose with Context - next() below', () => {
   middleware.push(buildMiddlewareTuple(handler))
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware)
+    const composed = compose(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
@@ -238,7 +235,7 @@ describe('compose with Context - next() below', () => {
 describe('compose with Context - 500 error', () => {
   const middleware: MiddlewareTuple[] = []
 
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
 
   it('Error on handler', async () => {
@@ -246,7 +243,7 @@ describe('compose with Context - 500 error', () => {
       throw new Error()
     }
 
-    const mHandler = async (_c: Context, next: Function) => {
+    const mHandler = async (_c: Context, next: Next) => {
       await next()
     }
 
@@ -256,7 +253,7 @@ describe('compose with Context - 500 error', () => {
     const onNotFound = (c: Context) => c.text('NotFound', 404)
     const onError = (_error: Error, c: Context) => c.text('onError', 500)
 
-    const composed = compose<Context>(middleware, onError, onNotFound)
+    const composed = compose(middleware, onError, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
@@ -272,7 +269,7 @@ describe('compose with Context - 500 error', () => {
     middleware.push(buildMiddlewareTuple(handler))
     const onError = async (_error: Error, c: Context) => c.text('onError', 500)
 
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose(middleware, onError)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
@@ -281,29 +278,28 @@ describe('compose with Context - 500 error', () => {
   })
 
   it('Run all the middlewares', async () => {
-    const ctx: C = { req: {}, res: {}, finalized: false }
     const stack: number[] = []
     const middlewares = [
-      async (_ctx: C, next: Function) => {
+      async (_ctx: Context, next: Next) => {
         stack.push(0)
         await next()
       },
-      async (_ctx: C, next: Function) => {
+      async (_ctx: Context, next: Next) => {
         stack.push(1)
         await next()
       },
-      async (_ctx: C, next: Function) => {
+      async (_ctx: Context, next: Next) => {
         stack.push(2)
         await next()
       },
     ].map((h) => buildMiddlewareTuple(h))
     const composed = compose(middlewares)
-    await composed(ctx)
+    await composed(new Context(new Request('http://localhost/')))
     expect(stack).toEqual([0, 1, 2])
   })
 })
 describe('compose with Context - not finalized', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   const c: Context = new Context(req)
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
@@ -311,30 +307,55 @@ describe('compose with Context - not finalized', () => {
 
   it('Should not be finalized - lack `next()`', async () => {
     const middleware: MiddlewareTuple[] = []
-    const mHandler = async (_c: Context, next: Function) => {
+    const mHandler = async (_c: Context, next: Next) => {
       await next()
     }
     const mHandler2 = async () => {}
 
     middleware.push(buildMiddlewareTuple(mHandler))
     middleware.push(buildMiddlewareTuple(mHandler2))
-    const composed = compose<Context>(middleware, undefined, onNotFound)
+    const composed = compose(middleware, undefined, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
   })
 
   it('Should not be finalized - lack `return Response`', async () => {
     const middleware2: MiddlewareTuple[] = []
-    const mHandler3 = async (_c: Context, next: Function) => {
+    const mHandler3 = async (_c: Context, next: Next) => {
       await next()
     }
     const handler = async () => {}
     middleware2.push(buildMiddlewareTuple(mHandler3))
     middleware2.push(buildMiddlewareTuple(handler))
 
-    const composed = compose<Context>(middleware2, undefined, onNotFound)
+    const composed = compose(middleware2, undefined, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
+  })
+})
+describe('compose with Context - next', () => {
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+
+  it('Should throw multiple call error', async () => {
+    const middleware: MiddlewareTuple[] = []
+    const mHandler = async (_c: Context, next: Next) => {
+      await next()
+    }
+    const mHandler2 = async (_c: Context, next: Next) => {
+      await next()
+      await next()
+    }
+
+    middleware.push(buildMiddlewareTuple(mHandler))
+    middleware.push(buildMiddlewareTuple(mHandler2))
+
+    const composed = compose(middleware)
+    try {
+      await composed(c)
+    } catch (err) {
+      expect(err).toStrictEqual(new Error('next() called multiple times'))
+    }
   })
 })
 
@@ -345,7 +366,7 @@ describe('Compose', function () {
     const called: boolean[] = []
 
     stack.push(
-      buildMiddlewareTuple(async (_context: C, next: Function) => {
+      buildMiddlewareTuple(async (_context: Context, next: Next) => {
         called.push(true)
 
         arr.push(1)
@@ -355,7 +376,7 @@ describe('Compose', function () {
     )
 
     stack.push(
-      buildMiddlewareTuple(async (_context: C, next: Function) => {
+      buildMiddlewareTuple(async (_context: Context, next: Next) => {
         called.push(true)
 
         arr.push(2)
@@ -365,7 +386,7 @@ describe('Compose', function () {
     )
 
     stack.push(
-      buildMiddlewareTuple(async (_context: C, next: Function) => {
+      buildMiddlewareTuple(async (_context: Context, next: Next) => {
         called.push(true)
 
         arr.push(3)
@@ -374,7 +395,7 @@ describe('Compose', function () {
       })
     )
 
-    await compose(stack)({ res: null, finalized: false })
+    await compose(stack)(new Context(new Request('http://localhost/')))
     expect(called).toEqual([true, true, true])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6])
   })
@@ -385,7 +406,7 @@ describe('Compose', function () {
     const called: boolean[] = []
 
     stack.push(
-      buildMiddlewareTuple(async (_context: C, next: Function) => {
+      buildMiddlewareTuple(async (_context: Context, next: Next) => {
         called.push(true)
 
         arr.push(1)
@@ -402,7 +423,7 @@ describe('Compose', function () {
     )
 
     stack.push(
-      buildMiddlewareTuple(async (_context: C, next: Function) => {
+      buildMiddlewareTuple(async (_context: Context, next: Next) => {
         called.push(true)
 
         arr.push(3)
@@ -411,52 +432,55 @@ describe('Compose', function () {
       })
     )
 
-    await compose(stack)({ res: null, finalized: false })
+    await compose(stack)(new Context(new Request('http://localhost/')))
     expect(called).toEqual([true, true])
     expect(arr).toEqual([1, 2, 6])
   })
 
   it('should be able to be called twice', async () => {
-    type C = {
-      arr: number[]
-    }
     const stack = []
 
     stack.push(
-      buildMiddlewareTuple(async (context: C, next: Function) => {
-        context.arr.push(1)
+      buildMiddlewareTuple(async (context: Context, next: Next) => {
+        context.get('arr').push(1)
         await next()
-        context.arr.push(6)
+        context.get('arr').push(6)
       })
     )
 
     stack.push(
-      buildMiddlewareTuple(async (context: C, next: Function) => {
-        context.arr.push(2)
+      buildMiddlewareTuple(async (context: Context, next: Next) => {
+        context.get('arr').push(2)
         await next()
-        context.arr.push(5)
+        context.get('arr').push(5)
       })
     )
 
     stack.push(
-      buildMiddlewareTuple(async (context: C, next: Function) => {
-        context.arr.push(3)
+      buildMiddlewareTuple(async (context: Context, next: Next) => {
+        context.get('arr').push(3)
         await next()
-        context.arr.push(4)
+        context.get('arr').push(4)
       })
     )
 
     const fn = compose(stack)
-    const ctx1 = { arr: [] as number[], res: null, finalized: false }
-    const ctx2 = { arr: [] as number[], res: null, finalized: false }
+    const ctx1 = new Context(new Request('http://localhost/'))
+
+    ctx1.set('arr', [])
+
+    const ctx2 = new Context(new Request('http://localhost/'))
+
+    ctx2.set('arr', [])
+
     const out = [1, 2, 3, 4, 5, 6]
 
     await fn(ctx1)
 
-    expect(out).toEqual(ctx1.arr)
+    expect(out).toEqual(ctx1.get('arr'))
     await fn(ctx2)
 
-    expect(out).toEqual(ctx2.arr)
+    expect(out).toEqual(ctx2.get('arr'))
   })
 
   it('should create next functions that return a Promise', async () => {
@@ -464,13 +488,13 @@ describe('Compose', function () {
     const arr: unknown[] = []
     for (let i = 0; i < 5; i++) {
       stack.push(
-        buildMiddlewareTuple((_context: C, next: Function) => {
+        buildMiddlewareTuple((_context: Context, next: Next) => {
           arr.push(next())
         })
       )
     }
 
-    await compose(stack)({ res: null, finalized: false })
+    await compose(stack)(new Context(new Request('http://localhost/')))
 
     for (const next of arr) {
       const isPromise = !!(next as { then?: Function })?.then
@@ -479,7 +503,7 @@ describe('Compose', function () {
   })
 
   it('should work with 0 middleware', async () => {
-    await compose([])({ res: null, finalized: false })
+    await compose([])(new Context(new Request('http://localhost/')))
   })
 
   it('should work when yielding at the end of the stack', async () => {
@@ -487,13 +511,13 @@ describe('Compose', function () {
     let called = false
 
     stack.push(
-      buildMiddlewareTuple(async (_ctx: C, next: Function) => {
+      buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
         await next()
         called = true
       })
     )
 
-    await compose(stack)({ res: null, finalized: false })
+    await compose(stack)(new Context(new Request('http://localhost/')))
     expect(called).toBe(true)
   })
 
@@ -507,7 +531,7 @@ describe('Compose', function () {
     )
 
     try {
-      await compose(stack)({ res: null, finalized: false })
+      await compose(stack)(new Context(new Request('http://localhost/')))
       throw new Error('promise was not rejected')
     } catch (e) {
       expect(e).toBeInstanceOf(ExpectedError)
@@ -515,26 +539,26 @@ describe('Compose', function () {
   })
 
   it('should keep the context', async () => {
-    const ctx = { res: null, finalized: false }
+    const ctx = new Context(new Request('http://localhost/'))
 
     const stack = []
 
     stack.push(
-      buildMiddlewareTuple(async (ctx2: C, next: Function) => {
+      buildMiddlewareTuple(async (ctx2: Context, next: Next) => {
         await next()
         expect(ctx2).toEqual(ctx)
       })
     )
 
     stack.push(
-      buildMiddlewareTuple(async (ctx2: C, next: Function) => {
+      buildMiddlewareTuple(async (ctx2: Context, next: Next) => {
         await next()
         expect(ctx2).toEqual(ctx)
       })
     )
 
     stack.push(
-      buildMiddlewareTuple(async (ctx2: C, next: Function) => {
+      buildMiddlewareTuple(async (ctx2: Context, next: Next) => {
         await next()
         expect(ctx2).toEqual(ctx)
       })
@@ -548,13 +572,13 @@ describe('Compose', function () {
     const stack = []
 
     stack.push(
-      buildMiddlewareTuple(async (_ctx: C, next: Function) => {
+      buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
         arr.push(1)
         try {
           arr.push(6)
           await next()
           arr.push(7)
-        } catch (err) {
+        } catch {
           arr.push(2)
         }
         arr.push(3)
@@ -568,14 +592,14 @@ describe('Compose', function () {
       })
     )
 
-    await compose(stack)({ res: null, finalized: false })
+    await compose(stack)(new Context(new Request('http://localhost/')))
     expect(arr).toEqual([1, 6, 4, 2, 3])
   })
 
   it('should compose w/ next', async () => {
     let called = false
 
-    await compose([])({ res: null, finalized: false }, async () => {
+    await compose([])(new Context(new Request('http://localhost/')), async () => {
       called = true
     })
     expect(called).toBe(true)
@@ -591,7 +615,7 @@ describe('Compose', function () {
     )
 
     try {
-      await compose(stack)({ res: null, finalized: false })
+      await compose(stack)(new Context(new Request('http://localhost/')))
       throw new Error('promise was not rejected')
     } catch (e) {
       expect(e).toBeInstanceOf(ExpectedError)
@@ -605,21 +629,21 @@ describe('Compose', function () {
     await compose([
       buildMiddlewareTuple(
         compose([
-          buildMiddlewareTuple((_ctx: C, next: Function) => {
+          buildMiddlewareTuple((_ctx: Context, next: Next) => {
             called.push(1)
             return next()
           }),
-          buildMiddlewareTuple((_ctx: C, next: Function) => {
+          buildMiddlewareTuple((_ctx: Context, next: Next) => {
             called.push(2)
             return next()
           }),
         ])
       ),
-      buildMiddlewareTuple((_ctx: C, next: Function) => {
+      buildMiddlewareTuple((_ctx: Context, next: Next) => {
         called.push(3)
         return next()
       }),
-    ])({ res: null, finalized: false })
+    ])(new Context(new Request('http://localhost/')))
 
     expect(called).toEqual([1, 2, 3])
   })
@@ -627,11 +651,11 @@ describe('Compose', function () {
   it('should throw if next() is called multiple times', async () => {
     try {
       await compose([
-        buildMiddlewareTuple(async (_ctx: C, next: Function) => {
+        buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
           await next()
           await next()
         }),
-      ])({ res: null, finalized: false })
+      ])(new Context(new Request('http://localhost/')))
       throw new Error('boom')
     } catch (err) {
       expect(err instanceof Error && /multiple times/.test(err.message)).toBe(true)
@@ -643,56 +667,51 @@ describe('Compose', function () {
     await compose([
       buildMiddlewareTuple(
         compose([
-          buildMiddlewareTuple((_ctx: C, next: Function) => {
+          buildMiddlewareTuple((_ctx: Context, next: Next) => {
             val++
             return next()
           }),
-          buildMiddlewareTuple((_ctx: C, next: Function) => {
+          buildMiddlewareTuple((_ctx: Context, next: Next) => {
             val++
             return next()
           }),
         ])
       ),
-      buildMiddlewareTuple((_ctx: C, next: Function) => {
+      buildMiddlewareTuple((_ctx: Context, next: Next) => {
         val++
         return next()
       }),
-    ])({ res: null, finalized: false })
+    ])(new Context(new Request('http://localhost/')))
 
     expect(val).toEqual(3)
   })
 
   it('should return last return value', async () => {
-    type C = {
-      val: number
-      finalized: boolean
-      res: unknown
-    }
     const stack = []
 
     stack.push(
-      buildMiddlewareTuple(async (ctx: C, next: Function) => {
+      buildMiddlewareTuple(async (ctx: Context, next: Next) => {
         await next()
-        expect(ctx.val).toEqual(2)
-        ctx.val = 1
+        expect(ctx.get('val')).toEqual(2)
+        ctx.set('val', 1)
       })
     )
 
     stack.push(
-      buildMiddlewareTuple(async (ctx: C, next: Function) => {
-        ctx.val = 2
+      buildMiddlewareTuple(async (ctx: Context, next: Next) => {
+        ctx.set('val', 2)
         await next()
-        expect(ctx.val).toEqual(2)
+        expect(ctx.get('val')).toEqual(2)
       })
     )
 
-    const res = await compose<C>(stack)({ val: 0, res: null, finalized: false })
-    expect(res.val).toEqual(1)
+    const res = await compose(stack)(new Context(new Request('http://localhost/')))
+    expect(res.get('val')).toEqual(1)
   })
 
   it('should not affect the original middleware array', () => {
     const middleware: MiddlewareTuple[] = []
-    const fn1 = (_ctx: C, next: Function) => {
+    const fn1 = (_ctx: Context, next: Next) => {
       return next()
     }
     middleware.push(buildMiddlewareTuple(fn1))
@@ -709,32 +728,24 @@ describe('Compose', function () {
   })
 
   it('should not get stuck on the passed in next', async () => {
-    type C = {
-      middleware: number
-      next: number
-      finalized: boolean
-      res: unknown
-    }
-
     const middleware = [
-      buildMiddlewareTuple((ctx: C, next: Function) => {
-        ctx.middleware++
+      buildMiddlewareTuple((ctx: Context, next: Next) => {
+        ctx.set('middleware', ctx.get('middleware') + 1)
         return next()
       }),
     ]
-    const ctx = {
-      middleware: 0,
-      next: 0,
-      finalized: false,
-      res: null,
-    }
 
-    await compose<C>(middleware)(ctx, (ctx: C, next: Function) => {
-      ctx.next++
+    const ctx = new Context(new Request('http://localhost/'))
+
+    ctx.set('middleware', 0)
+    ctx.set('next', 0)
+
+    await compose(middleware)(ctx, ((ctx: Context, next: Next) => {
+      ctx.set('next', ctx.get('next') + 1)
       return next()
-    })
+    }) as Next)
 
-    expect(ctx.middleware).toEqual(1)
-    expect(ctx.next).toEqual(1)
+    expect(ctx.get('middleware')).toEqual(1)
+    expect(ctx.get('next')).toEqual(1)
   })
 })

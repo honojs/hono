@@ -1,5 +1,61 @@
 # Migration Guide
 
+## v4.3.11 to v4.4.0
+
+### `deno.land/x` to JSR
+
+There is no breaking change, but we no longer publish the module from `deno.land/x`. If you want to use Hono on Deno, use JSR instead of it.
+
+If you migrate, replace the path `deno.land/x` with JSR's.
+
+```ts
+// From
+import { Hono } from 'https://deno.land/x/hono/mod.ts'
+
+// To
+import { Hono } from 'jsr:@hono/hono'
+```
+
+You can see more details on our website: https://hono.dev/getting-started/deno
+
+## v3.12.x to v4.0.0
+
+There are some breaking changes.
+
+### Removal of deprecated features
+
+- AWS Lambda Adapter - `LambdaFunctionUrlRequestContext` is obsolete. Use `ApiGatewayRequestContextV2` instead.
+- Next.js Adapter - `hono/nextjs` is obsolete. Use `hono/vercel` instead.
+- Context - `c.jsonT()` is obsolete. Use `c.json()` instead.
+- Context - `c.stream()` and `c.streamText()` are obsolete. Use `stream()` and `streamText()` in `hono/streaming` instead.
+- Context - `c.env()` is obsolete. Use `getRuntimeKey()` in `hono/adapter` instead.
+- Hono - `app.showRoutes()` is obsolete. Use `showRoutes()` in `hono/dev` instead.
+- Hono - `app.routerName` is obsolete. Use `getRouterName()` in `hono/dev` instead.
+- Hono - `app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.
+- Hono - `app.handleEvent()` is obsolete. Use `app.fetch()` instead.
+- HonoRequest - `req.cookie()` is obsolete. Use `getCookie()` in `hono/cookie` instead.
+- HonoRequest - `headers()`, `body()`, `bodyUsed()`, `integrity()`, `keepalive()`, `referrer()`, and `signal()` are obsolete. Use the methods in `req.raw` such as `req.raw.headers()`.
+
+### `serveStatic` in Cloudflare Workers Adapter requires `manifest`
+
+If you use the Cloudflare Workers adapter's `serve-static`, you should specify the `manifest` option.
+
+```ts
+import manifest from '__STATIC_CONTENT_MANIFEST'
+
+// ...
+
+app.use('/static/*', serveStatic({ root: './assets', manifest }))
+```
+
+### Others
+
+- The default value of `docType` option in JSX Renderer Middleware is now `true`.
+- `FC` in `hono/jsx` does not pass `children`. Use `PropsWithChildren`.
+- Some Mime Types are removed https://github.com/honojs/hono/pull/2119.
+- Types for chaining routes with middleware matter: https://github.com/honojs/hono/pull/2046.
+- Types for the validator matter: https://github.com/honojs/hono/pull/2130.
+
 ## v2.7.8 to v3.0.0
 
 There are some breaking changes.
@@ -212,10 +268,10 @@ You do not have to use Body parse middleware to parse request body. Use `c.req.p
 
 ```ts
 // Parse Request body
- app.post('', (c) => {
-   const body = c.req.parseBody()
-   ...
- })
+app.post('', (c) => {
+  const body = c.req.parseBody()
+  ...
+})
 ```
 
 ### GraphQL Server middleware is obsolete

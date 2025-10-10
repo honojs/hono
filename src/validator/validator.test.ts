@@ -2,7 +2,15 @@
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
-import type { ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
+import { HTTPException } from '../http-exception'
+import type {
+  ErrorHandler,
+  ExtractSchema,
+  MiddlewareHandler,
+  ParsedFormValue,
+  ValidationTargets,
+} from '../types'
+import type { ContentfulStatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
@@ -30,7 +38,7 @@ const zodValidator = <
     return data
   })
 
-describe('Validator middleware', () => {
+describe('Basic', () => {
   const app = new Hono()
 
   const route = app.get(
@@ -55,7 +63,9 @@ describe('Validator middleware', () => {
         input: {
           query: undefined
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -75,51 +85,210 @@ describe('Validator middleware', () => {
   })
 })
 
-describe('Malformed JSON', () => {
-  const app = new Hono()
+const onErrorHandler: ErrorHandler = (e, c) => {
+  if (e instanceof HTTPException) {
+    return c.json({ message: e.message, success: false }, e.status)
+  }
+  return c.json({ message: e.message }, 500)
+}
 
+describe('JSON', () => {
+  const app = new Hono()
   app.post(
     '/post',
-    validator('json', (value, c) => {}),
+    validator('json', (value) => value),
     (c) => {
-      return c.text('Valid!')
+      return c.json(c.req.valid('json'))
     }
   )
 
-  it('Should return 400 response', async () => {
+  it('Should return 200 response with a valid JSON data', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data).toEqual({ foo: 'bar' })
   })
 
-  it('Should return 400 response, for request with wrong Content-Type header', async () => {
+  it('Should not validate if Content-Type is not set', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.foo).toBeUndefined()
+  })
+
+  it('Should not validate if Content-Type is wrong', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
   })
 
-  it('Should return 400 response, if Content-Type header does not start with application/json', async () => {
+  it('Should validate if Content-Type is a application/json with a charset', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate if Content-Type is a subtype like application/merge-patch+json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/merge-patch+json',
+      },
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate if Content-Type is application/vnd.api+json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/vnd.api+json',
+      },
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
+  it('Should not validate if Content-Type does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'Xapplication/json',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.foo).toBeUndefined()
+  })
+})
+
+describe('Malformed JSON', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('json', (value) => value),
+    (c) => {
+      return c.json(c.req.valid('json'))
+    }
+  )
+
+  it('Should return 400 response if the body data is not a valid JSON', async () => {
+    const formData = new FormData()
+    formData.append('foo', 'bar')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: formData,
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('FormData', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('form', (value) => value),
+    (c) => {
+      return c.json(c.req.valid('form'))
+    }
+  )
+
+  it('Should return 200 response with a valid form data', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: formData,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ message: 'hi' })
+  })
+
+  it('Should validate a URL Encoded Data', async () => {
+    const params = new URLSearchParams()
+    params.append('foo', 'bar')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+    })
+    expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      success: false,
-      message: 'Invalid HTTP header: Content-Type=Xapplication/json',
+      foo: 'bar',
+    })
+  })
+
+  it('Should validate if Content-Type is a application/x-www-form-urlencoded with a charset', async () => {
+    const params = new URLSearchParams()
+    params.append('foo', 'bar')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: 'bar',
+    })
+  })
+
+  it('Should return `foo[]` as an array', async () => {
+    const form = new FormData()
+    form.append('foo[]', 'bar1')
+    form.append('foo[]', 'bar2')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      'foo[]': ['bar1', 'bar2'],
+    })
+  })
+
+  it('Should return `foo` as an array if multiple values are appended', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar1')
+    form.append('foo', 'bar2')
+    form.append('foo', 'bar3')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: ['bar1', 'bar2', 'bar3'],
     })
   })
 })
@@ -128,24 +297,12 @@ describe('Malformed FormData request', () => {
   const app = new Hono()
   app.post(
     '/post',
-    validator('form', (value, c) => ({})),
+    validator('form', (value) => value),
     (c) => {
-      return c.text('Valid!')
+      return c.json(c.req.valid('form'))
     }
   )
-
-  it('Should return 400 response, for unsupported content type header', async () => {
-    const res = await app.request('http://localhost/post', {
-      method: 'POST',
-      body: 'hi',
-    })
-    expect(res.status).toBe(400)
-    const data = await res.json()
-    expect(data['success']).toBe(false)
-    expect(data['message']).toMatch(
-      /Malformed FormData request. \_*Response.formData: Could not parse content as FormData./
-    )
-  })
+  app.onError(onErrorHandler)
 
   it('Should return 400 response, for malformed content type header', async () => {
     const res = await app.request('http://localhost/post', {
@@ -156,10 +313,133 @@ describe('Malformed FormData request', () => {
       },
     })
     expect(res.status).toBe(400)
-    expect(await res.json()).toEqual({
-      success: false,
-      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
+    const data = await res.json()
+    expect(data['success']).toBe(false)
+    expect(data['message']).toMatch(/^Malformed FormData request./)
+  })
+})
+
+describe('JSON and FormData', () => {
+  const app = new Hono()
+  app.post(
+    '/',
+    validator('json', (value) => value),
+    validator('form', (value) => value),
+    async (c) => {
+      const jsonData = c.req.valid('json')
+      const formData = c.req.valid('form')
+      return c.json({
+        json: jsonData,
+        form: formData,
+      })
+    }
+  )
+
+  it('Should validate a JSON request', async () => {
+    const res = await app.request('/', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.json).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate a FormData request', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar')
+    const res = await app.request('/', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.form).toEqual({ foo: 'bar' })
+  })
+})
+
+describe('Cached contents', () => {
+  describe('json', () => {
+    const app = new Hono()
+    const bodyTypes = ['json', 'text', 'arrayBuffer', 'blob']
+
+    for (const type of bodyTypes) {
+      app.post(
+        `/${type}`,
+        async (c, next) => {
+          // @ts-expect-error not type safe
+          await c.req[type]()
+          await next()
+        },
+        validator('json', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
+          return value
+        }),
+        async (c) => {
+          const data = await c.req.json()
+          return c.json(data, 200)
+        }
+      )
+    }
+
+    for (const type of bodyTypes) {
+      const endpoint = `/${type}`
+      it(`Should return the cached JSON content - ${endpoint}`, async () => {
+        const res = await app.request(endpoint, {
+          method: 'POST',
+          body: JSON.stringify({ message: 'Hello' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ message: 'Hello' })
+      })
+    }
+  })
+
+  describe('Cached content', () => {
+    const app = new Hono()
+    const bodyTypes = ['formData', 'text', 'arrayBuffer', 'blob']
+
+    for (const type of bodyTypes) {
+      app.post(
+        `/${type}`,
+        async (c, next) => {
+          // @ts-expect-error not type safe
+          await c.req[type]()
+          await next()
+        },
+        validator('form', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
+          return value
+        }),
+        async (c) => {
+          return c.json({ message: 'OK' }, 200)
+        }
+      )
+    }
+
+    for (const type of bodyTypes) {
+      const endpoint = `/${type}`
+      it(`Should return the cached FormData content - ${endpoint}`, async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        const res = await app.request(endpoint, {
+          method: 'POST',
+          body: form,
+        })
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ message: 'OK' })
+      })
+    }
   })
 })
 
@@ -196,6 +476,8 @@ describe('Validator middleware with a custom validation function', () => {
             id: number
           }
         }
+        outputFormat: 'json'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -257,6 +539,8 @@ describe('Validator middleware with Zod validates JSON', () => {
             title: string
           }
         }
+        outputFormat: 'json'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -375,35 +659,6 @@ describe('Validator middleware with Zod validates query params', () => {
 
   it('Should validate query params and return 400 response', async () => {
     const res = await app.request('http://localhost/search?page=onetwothree')
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe('Invalid!')
-  })
-})
-
-describe('Validator middleware with Zod validates queries params - with `queries` will be obsolete in v4', () => {
-  const app = new Hono()
-
-  const schema = z.object({
-    tags: z.array(z.string()),
-  })
-
-  app.get('/posts', zodValidator('queries', schema), (c) => {
-    const res = c.req.valid('queries')
-    return c.json({
-      tags: res.tags,
-    })
-  })
-
-  it('Should validate queries params and return 200 response', async () => {
-    const res = await app.request('http://localhost/posts?tags=book&tags=movie')
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['book', 'movie'],
-    })
-  })
-
-  it('Should validate queries params and return 400 response', async () => {
-    const res = await app.request('http://localhost/posts')
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
   })
@@ -573,6 +828,8 @@ describe('Validator middleware with Zod multiple validators', () => {
           page: number
           title: string
         }
+        outputFormat: 'json'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -607,6 +864,11 @@ it('With path parameters', () => {
 
   const route = app.put(
     '/posts/:id',
+    validator('param', () => {
+      return {
+        id: '123',
+      }
+    }),
     validator('form', () => {
       return {
         title: 'Foo',
@@ -622,14 +884,16 @@ it('With path parameters', () => {
       $put: {
         input: {
           form: {
-            title: string
+            title: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           param: {
             id: string
           }
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -666,16 +930,18 @@ it('`on`', () => {
       $purge: {
         input: {
           form: {
-            tag: string
+            tag: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           query: {
-            q: string
+            q: string | string[]
           }
         }
         output: {
-          success: boolean
+          success: true
         }
+        outputFormat: 'json'
+        status: ContentfulStatusCode
       }
     }
   }
@@ -785,6 +1051,24 @@ describe('Clone Request object', () => {
       }
     )
 
+    app.post(
+      '/cached',
+      async (c, next) => {
+        await c.req.parseBody()
+        await next()
+      },
+      validator('form', (value) => {
+        if (value instanceof FormData) {
+          throw new Error('The value should not be a FormData')
+        }
+        return value
+      }),
+      (c) => {
+        const v = c.req.valid('form')
+        return c.json(v)
+      }
+    )
+
     it('Should not throw the error with c.req.parseBody()', async () => {
       const body = new FormData()
       body.append('foo', 'bar')
@@ -794,6 +1078,18 @@ describe('Clone Request object', () => {
       })
       const res = await app.request(req)
       expect(res.status).toBe(200)
+    })
+
+    it('Should not be an instance of FormData if the formData is cached', async () => {
+      const body = new FormData()
+      body.append('foo', 'bar')
+      const req = new Request('http://localhost/cached', {
+        method: 'POST',
+        body: body,
+      })
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: 'bar' })
     })
   })
 })
@@ -820,5 +1116,94 @@ describe('Async validator function', () => {
     expect(await res.json()).toEqual({
       page: '1',
     })
+  })
+})
+
+describe('Validator with using Zod directly', () => {
+  it('Should exclude Response & TypedResponse type', () => {
+    const testSchema = z.object({
+      name: z.string(),
+      age: z.number(),
+      type: z.enum(['a']),
+    })
+    const app = new Hono()
+
+    const route = app.post(
+      '/posts',
+      validator('json', (value, c) => {
+        const parsed = testSchema.safeParse(value)
+        if (!parsed.success) {
+          return c.json({ foo: 'bar' }, 401)
+        }
+        return parsed.data
+      }),
+      (c) => {
+        const data = c.req.valid('json')
+        expectTypeOf(data.name).toEqualTypeOf<string>()
+        return c.json(
+          {
+            message: 'Created!',
+          },
+          201
+        )
+      }
+    )
+
+    expectTypeOf<ExtractSchema<typeof route>>().toEqualTypeOf<{
+      '/posts': {
+        $post: {
+          input: {
+            json: {
+              type: 'a'
+              name: string
+              age: number
+            }
+          }
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: 201
+        }
+      }
+    }>()
+  })
+})
+
+describe('Transform', () => {
+  it('Should be number when the type is transformed', () => {
+    const route = new Hono().get(
+      '/',
+      validator('query', async () => {
+        return {
+          page: 1,
+        }
+      }),
+      (c) => {
+        const { page } = c.req.valid('query')
+        expectTypeOf(page).toEqualTypeOf<number>()
+        return c.json({ page })
+      }
+    )
+
+    type Expected = {
+      '/': {
+        $get: {
+          input: {
+            query: {
+              page: string | string[]
+            }
+          }
+          output: {
+            page: number
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+
+    type Actual = ExtractSchema<typeof route>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })

@@ -1,14 +1,14 @@
 import {
-  splitPath,
-  splitRoutingPath,
-  getPattern,
+  checkOptionalParameter,
   getPath,
   getPathNoStrict,
-  mergePath,
-  checkOptionalParameter,
+  getPattern,
   getQueryParam,
   getQueryParams,
   getQueryStrings,
+  mergePath,
+  splitPath,
+  splitRoutingPath,
 } from './url'
 
 describe('url', () => {
@@ -49,18 +49,46 @@ describe('url', () => {
     expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
   })
 
-  it('getPattern', () => {
-    let res = getPattern(':id')
-    expect(res).not.toBeNull()
-    expect(res?.[0]).toBe(':id')
-    expect(res?.[1]).toBe('id')
-    expect(res?.[2]).toBe(true)
-    res = getPattern(':id{[0-9]+}')
-    expect(res?.[0]).toBe(':id{[0-9]+}')
-    expect(res?.[1]).toBe('id')
-    expect(res?.[2]).toEqual(/^[0-9]+$/)
-    res = getPattern('*')
-    expect(res).toBe('*')
+  describe('getPattern', () => {
+    it('no pattern', () => {
+      const res = getPattern('id')
+      expect(res).toBeNull()
+    })
+
+    it('no pattern with next', () => {
+      const res = getPattern('id', 'next')
+      expect(res).toBeNull()
+    })
+
+    it('default pattern', () => {
+      const res = getPattern(':id')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('default pattern with next', () => {
+      const res = getPattern(':id', 'next')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('regex pattern', () => {
+      const res = getPattern(':id{[0-9]+}')
+      expect(res).toEqual([':id{[0-9]+}', 'id', /^[0-9]+$/])
+    })
+
+    it('regex pattern with next', () => {
+      const res = getPattern(':id{[0-9]+}', 'next')
+      expect(res).toEqual([':id{[0-9]+}#next', 'id', /^[0-9]+(?=\/next)/])
+    })
+
+    it('wildcard', () => {
+      const res = getPattern('*')
+      expect(res).toBe('*')
+    })
+
+    it('wildcard with next', () => {
+      const res = getPattern('*', 'next')
+      expect(res).toBe('*')
+    })
   })
 
   describe('getPath', () => {
@@ -82,6 +110,20 @@ describe('url', () => {
       expect(path).toBe('/hello/')
       path = getPath(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey/')
+    })
+
+    it('getPath - http+unix', () => {
+      const path = getPath(new Request('http+unix://%2Ftmp%2Fsocket%2Esock/hello/'))
+      expect(path).toBe('/hello/')
+    })
+
+    it.each([
+      'http:/example.com/hello', // invalid HTTP URL
+      'http:///hello', // invalid HTTP URL
+      'http://a/:/hello', // starts with `/:/`
+      'x://a/:/hello', // unknown schema
+    ])('getPath - %s', (url) => {
+      expect(getPath(new Request(url))).toBe(new URL(url).pathname)
     })
   })
 
@@ -124,6 +166,8 @@ describe('url', () => {
       expect(mergePath('/book', 'hey', 'say')).toBe('/book/hey/say')
       expect(mergePath('/book', '/hey/', '/say/')).toBe('/book/hey/say/')
       expect(mergePath('/book', '/hey/', '/say/', '/')).toBe('/book/hey/say/')
+      expect(mergePath('/book', '/hey', '/say', '/')).toBe('/book/hey/say')
+      expect(mergePath('/', '/book', '/hey', '/say', '/')).toBe('/book/hey/say')
 
       expect(mergePath('book', '/')).toBe('/book')
       expect(mergePath('book/', '/')).toBe('/book/')
@@ -154,6 +198,15 @@ describe('url', () => {
       expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
       expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
       expect(checkOptionalParameter('/:optional?')).toEqual(['/', '/:optional'])
+      expect(checkOptionalParameter('/v1/leaderboard/:version?/:platform?')).toEqual([
+        '/v1/leaderboard',
+        '/v1/leaderboard/:version',
+        '/v1/leaderboard/:version/:platform',
+      ])
+      expect(checkOptionalParameter('/api/:version/animal/:type?')).toEqual([
+        '/api/:version/animal',
+        '/api/:version/animal/:type',
+      ])
     })
   })
 
@@ -165,6 +218,7 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
         'a web framework'
       )
+      expect(getQueryParam('http://example.com/?name=%E0%A4%A', 'name')).toBe('%E0%A4%A')
 
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name0')).toBe('sam')
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name1')).toBe('tom')
@@ -219,6 +273,8 @@ describe('url', () => {
       expect(getQueryParams('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toEqual([
         'a web framework',
       ])
+      expect(getQueryParams('http://example.com/?name=%E0%A4%A', 'name')).toEqual(['%E0%A4%A'])
+
       let searchParams = new URLSearchParams()
       searchParams.append('tag', '炎')
       searchParams.append('tag', 'ほのお')
@@ -251,6 +307,9 @@ describe('url', () => {
       })
       expect(getQueryParams('http://example.com/?pretty', 'pretty')).toEqual([''])
       expect(getQueryParams('http://example.com/?pretty', 'prtt')).toBe(undefined)
+      expect(getQueryParams('http://example.com/?toString')).toEqual({
+        toString: [''],
+      })
     })
   })
 })

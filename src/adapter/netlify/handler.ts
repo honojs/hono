@@ -1,17 +1,10 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import type { Context } from 'https://edge.netlify.com/'
-import type { Hono } from '../../'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Hono } from '../../hono'
 
-export type Env = {
-  Bindings: {
-    context: Context
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const handle = (app: Hono<any, any>) => {
-  return (req: Request, context: Context) => {
+export const handle = (
+  app: Hono<any, any>
+): ((req: Request, context: any) => Response | Promise<Response>) => {
+  return (req: Request, context: any) => {
     return app.fetch(req, { context })
   }
 }

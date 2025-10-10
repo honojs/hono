@@ -13,7 +13,7 @@ const suite = new Suite()
   const doc = parse(html)
   if (doc.querySelector('p#c').textContent !== '3\nc') {
     throw new Error('Invalid output')
-  } 
+  }
 })
 
 suite

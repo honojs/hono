@@ -1,56 +1,32 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { existsSync } from 'fs'
-import type { Context } from '../../context'
-import type { Next } from '../../types'
-import { getFilePath } from '../../utils/filepath'
-import { getMimeType } from '../../utils/mime'
+import { stat } from 'node:fs/promises'
+import { join } from 'node:path'
+import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
+import type { ServeStaticOptions } from '../../middleware/serve-static'
+import type { Env, MiddlewareHandler } from '../../types'
 
-// @ts-ignore
-const { file } = Bun
-
-export type ServeStaticOptions = {
-  root?: string
-  path?: string
-  rewriteRequestPath?: (path: string) => string
-}
-
-const DEFAULT_DOCUMENT = 'index.html'
-
-export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
-  return async (c: Context, next: Next) => {
-    // Do nothing if Response is already set
-    if (c.finalized) {
-      await next()
-      return
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E>
+): MiddlewareHandler => {
+  return async function serveStatic(c, next) {
+    const getContent = async (path: string) => {
+      // @ts-ignore
+      const file = Bun.file(path)
+      return (await file.exists()) ? file : null
     }
-    const url = new URL(c.req.url)
-
-    const filename = options.path ?? decodeURI(url.pathname)
-    let path = getFilePath({
-      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT,
-    })
-
-    if (!path) return await next()
-
-    path = `./${path}`
-
-    if (existsSync(path)) {
-      const content = file(path)
-      if (content) {
-        const mimeType = getMimeType(path)
-        if (mimeType) {
-          c.header('Content-Type', mimeType)
-        }
-        // Return Response object
-        return c.body(content)
-      }
+    const isDir = async (path: string) => {
+      let isDir
+      try {
+        const stats = await stat(path)
+        isDir = stats.isDirectory()
+      } catch {}
+      return isDir
     }
-
-    console.warn(`Static file: ${path} is not found`)
-    await next()
-    return
+    return baseServeStatic({
+      ...options,
+      getContent,
+      join,
+      isDir,
+    })(c, next)
   }
 }

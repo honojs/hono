@@ -28,6 +28,15 @@ describe('Get with *', () => {
   })
 })
 
+describe('Get with * including JS reserved words', () => {
+  const node = new Node()
+  node.insert('get', '*', 'get all')
+  it('get /', () => {
+    expect(node.search('get', '/hello/constructor')[0].length).toBe(1)
+    expect(node.search('get', '/hello/__proto__')[0].length).toBe(1)
+  })
+})
+
 describe('Basic Usage', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')
@@ -60,6 +69,7 @@ describe('Name path', () => {
   node.insert('get', '/entry/:id', 'get entry')
   node.insert('get', '/entry/:id/comment/:comment_id', 'get comment')
   node.insert('get', '/map/:location/events', 'get events')
+  node.insert('get', '/about/:name/address/map', 'get address')
 
   it('get /entry/123', () => {
     const [res] = node.search('get', '/entry/123')
@@ -88,6 +98,39 @@ describe('Name path', () => {
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get events')
     expect(res[0][1]['location']).toBe('yokohama')
+  })
+
+  it('get /about/:name/address/map', () => {
+    const [res] = node.search('get', '/about/foo/address/map')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('get address')
+    expect(res[0][1]['name']).toBe('foo')
+  })
+
+  it('Should not return a previous param value', () => {
+    const node = new Node()
+    node.insert('delete', '/resource/:id', 'resource')
+    const [resA] = node.search('delete', '/resource/a')
+    const [resB] = node.search('delete', '/resource/b')
+    expect(resA).not.toBeNull()
+    expect(resA.length).toBe(1)
+    expect(resA[0][0]).toEqual('resource')
+    expect(resA[0][1]).toEqual({ id: 'a' })
+    expect(resB).not.toBeNull()
+    expect(resB.length).toBe(1)
+    expect(resB[0][0]).toEqual('resource')
+    expect(resB[0][1]).toEqual({ id: 'b' })
+  })
+
+  it('Should return a sorted values', () => {
+    const node = new Node()
+    node.insert('get', '/resource/a', 'A')
+    node.insert('get', '/resource/*', 'Star')
+    const [res] = node.search('get', '/resource/a')
+    expect(res).not.toBeNull()
+    expect(res.length).toBe(2)
+    expect(res[0][0]).toEqual('A')
+    expect(res[1][0]).toEqual('Star')
   })
 })
 
@@ -469,22 +512,15 @@ describe('Duplicate param name', () => {
       expect(res[0][0]).toBe('foo')
       expect(res[0][1]).toEqual({ id: '123', action: 'action' })
     })
+  })
 
-    it('get /posts/456', () => {
-      const [res] = node.search('get', '/posts/456')
-      expect(res.length).toBe(2)
-      expect(res[0][0]).toBe('foo')
-      expect(res[0][1]).toEqual({ id: 'posts', action: '456' })
-      expect(res[1][0]).toBe('bar')
-      expect(res[1][1]).toEqual({ id: '456' })
-
-      it('get /posts/456', () => {
-        const [res] = node.search('get', '/posts/abc/comments/edf')
-        expect(res.length).toBe(1)
-        expect(res[0][0]).toBe('comment')
-        expect(res[0][1]).toEqual({ id: 'abc', comment_id: 'edf' })
-      })
-    })
+  it('get /posts/456 for comments', () => {
+    const node = new Node()
+    node.insert('get', '/posts/:id/comments/:comment_id', 'comment')
+    const [res] = node.search('get', '/posts/abc/comments/edf')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('comment')
+    expect(res[0][1]).toEqual({ id: 'abc', comment_id: 'edf' })
   })
 
   describe('child', () => {
@@ -723,5 +759,48 @@ describe('Routing order With named parameters', () => {
     expect(res[0][1]).toEqual({ slug: 'b' })
     expect(res[1][0]).toEqual('no-slug-b')
     expect(res[1][1]).toEqual({})
+  })
+})
+
+describe('The same name is used for path params', () => {
+  describe('Basic', () => {
+    const node = new Node()
+    node.insert('get', '/:a/:b/:c', 'abc')
+    node.insert('get', '/:a/:b/:c/:d', 'abcd')
+    it('/1/2/3', () => {
+      const [res] = node.search('get', '/1/2/3')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('abc')
+      expect(res[0][1]).toEqual({ a: '1', b: '2', c: '3' })
+    })
+  })
+
+  describe('Complex', () => {
+    const node = new Node()
+    node.insert('get', '/:a', 'a')
+    node.insert('get', '/:b/:a', 'ba')
+    it('/about/me', () => {
+      const [res] = node.search('get', '/about/me')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('ba')
+      expect(res[0][1]).toEqual({ b: 'about', a: 'me' })
+    })
+  })
+
+  describe('Complex with tails', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:id2/comments', 'a')
+    node.insert('get', '/posts/:id/comments', 'b')
+    it('/posts/123/comments', () => {
+      const [res] = node.search('get', '/posts/123/comments')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(2)
+      expect(res[0][0]).toEqual('a')
+      expect(res[0][1]).toEqual({ id: 'posts', id2: '123' })
+      expect(res[1][0]).toEqual('b')
+      expect(res[1][1]).toEqual({ id: '123' })
+    })
   })
 })

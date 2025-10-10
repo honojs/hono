@@ -1,5 +1,10 @@
+/**
+ * @module
+ * Logger Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
-import { getPath } from '../../utils/url'
+import { getColorEnabledAsync } from '../../utils/color'
 
 enum LogPrefix {
   Outgoing = '-->',
@@ -20,25 +25,29 @@ const time = (start: number) => {
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
-const colorStatus = (status: number) => {
-  const out: { [key: string]: string } = {
-    7: `\x1b[35m${status}\x1b[0m`,
-    5: `\x1b[31m${status}\x1b[0m`,
-    4: `\x1b[33m${status}\x1b[0m`,
-    3: `\x1b[36m${status}\x1b[0m`,
-    2: `\x1b[32m${status}\x1b[0m`,
-    1: `\x1b[32m${status}\x1b[0m`,
-    0: `\x1b[33m${status}\x1b[0m`,
+const colorStatus = async (status: number) => {
+  const colorEnabled = await getColorEnabledAsync()
+  if (colorEnabled) {
+    switch ((status / 100) | 0) {
+      case 5: // red = error
+        return `\x1b[31m${status}\x1b[0m`
+      case 4: // yellow = warning
+        return `\x1b[33m${status}\x1b[0m`
+      case 3: // cyan = redirect
+        return `\x1b[36m${status}\x1b[0m`
+      case 2: // green = success
+        return `\x1b[32m${status}\x1b[0m`
+    }
   }
-
-  const calculateStatus = (status / 100) | 0
-
-  return out[calculateStatus]
+  // Fallback to unsupported status code.
+  // E.g.) Bun and Deno supports new Response with 101, but Node.js does not.
+  // And those may evolve to accept more status.
+  return `${status}`
 }
 
 type PrintFunc = (str: string, ...rest: string[]) => void
 
-function log(
+async function log(
   fn: PrintFunc,
   prefix: string,
   method: string,
@@ -48,23 +57,39 @@ function log(
 ) {
   const out =
     prefix === LogPrefix.Incoming
-      ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      ? `${prefix} ${method} ${path}`
+      : `${prefix} ${method} ${path} ${await colorStatus(status)} ${elapsed}`
   fn(out)
 }
 
+/**
+ * Logger Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/logger}
+ *
+ * @param {PrintFunc} [fn=console.log] - Optional function for customized logging behavior.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(logger())
+ * app.get('/', (c) => c.text('Hello Hono!'))
+ * ```
+ */
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
-    const { method } = c.req
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const path = getPath(c.req.raw)
+    const { method, url } = c.req
 
-    log(fn, LogPrefix.Incoming, method, path)
+    const path = url.slice(url.indexOf('/', 8))
+
+    await log(fn, LogPrefix.Incoming, method, path)
 
     const start = Date.now()
 
     await next()
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    await log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
 }

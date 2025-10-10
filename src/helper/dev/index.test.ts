@@ -1,6 +1,7 @@
 import { Hono } from '../../hono'
+import { RegExpRouter } from '../../router/reg-exp-router'
 import type { Handler, MiddlewareHandler } from '../../types'
-import { inspectRoutes, showRoutes } from '.'
+import { getRouterName, inspectRoutes, showRoutes } from '.'
 
 const namedMiddleware: MiddlewareHandler = (_, next) => next()
 const namedHandler: Handler = (c) => c.text('hi')
@@ -33,6 +34,24 @@ describe('inspectRoutes()', () => {
       { path: '/', method: 'DELETE', name: '[handler]', isMiddleware: false },
       { path: '/', method: 'OPTIONS', name: '[handler]', isMiddleware: false },
       { path: '/static', method: 'GET', name: '[handler]', isMiddleware: false },
+    ])
+  })
+
+  it('should return [handler] also for sub app', async () => {
+    const subApp = new Hono()
+
+    subApp.get('/', (c) => c.json(0))
+    subApp.onError((_, c) => c.json(0))
+
+    const mainApp = new Hono()
+    mainApp.route('/', subApp)
+    expect(inspectRoutes(mainApp)).toEqual([
+      {
+        isMiddleware: false,
+        method: 'GET',
+        name: '[handler]',
+        path: '/',
+      },
     ])
   })
 })
@@ -90,5 +109,73 @@ describe('showRoutes()', () => {
       '\x1b[32mGET\x1b[0m      /static',
       '           [handler]',
     ])
+  })
+
+  it('should render not colorized output', async () => {
+    showRoutes(app, { colorize: false })
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+})
+
+describe('showRoutes() in NO_COLOR', () => {
+  let logs: string[] = []
+
+  let originalLog: typeof console.log
+  beforeAll(() => {
+    vi.stubEnv('NO_COLOR', '1')
+    originalLog = console.log
+    console.log = (...args) => logs.push(...args)
+  })
+  afterAll(() => {
+    vi.unstubAllEnvs()
+    console.log = originalLog
+  })
+
+  beforeEach(() => {
+    logs = []
+  })
+  it('should render not colorized output', async () => {
+    showRoutes(app)
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+  it('should render colorized output if colorize: true', async () => {
+    showRoutes(app, { colorize: true })
+    expect(logs).toEqual([
+      '\x1b[32mGET\x1b[0m      /',
+      '\x1b[32mGET\x1b[0m      /named',
+      '\x1b[32mPOST\x1b[0m     /',
+      '\x1b[32mPUT\x1b[0m      /',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '\x1b[32mGET\x1b[0m      /static',
+    ])
+  })
+})
+
+describe('getRouterName()', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(getRouterName(app)).toBe('RegExpRouter')
   })
 })

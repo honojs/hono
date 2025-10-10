@@ -1,160 +1,231 @@
-import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
-import type { AlgorithmTypes } from './types'
-import { JwtTokenIssuedAt } from './types'
+/**
+ * @module
+ * JSON Web Token (JWT)
+ * https://datatracker.ietf.org/doc/html/rfc7519
+ */
+
+import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
+import { AlgorithmTypes } from './jwa'
+import type { SignatureAlgorithm } from './jwa'
+import { signing, verifying } from './jws'
+import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
-  JwtTokenInvalid,
-  JwtTokenNotBefore,
+  JwtHeaderInvalid,
+  JwtHeaderRequiresKid,
   JwtTokenExpired,
+  JwtTokenInvalid,
+  JwtTokenIssuedAt,
+  JwtTokenIssuer,
+  JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
-  JwtAlgorithmNotImplemented,
 } from './types'
-
-interface AlgorithmParams {
-  name: string
-  namedCurve?: string
-  hash?: {
-    name: string
-  }
-}
-
-enum CryptoKeyFormat {
-  RAW = 'raw',
-  PKCS8 = 'pkcs8',
-  SPKI = 'spki',
-  JWK = 'jwk',
-}
-
-enum CryptoKeyUsage {
-  Ecrypt = 'encrypt',
-  Decrypt = 'decrypt',
-  Sign = 'sign',
-  Verify = 'verify',
-  Deriverkey = 'deriveKey',
-  DeriveBits = 'deriveBits',
-  WrapKey = 'wrapKey',
-  UnwrapKey = 'unwrapKey',
-}
-
-type AlgorithmTypeName = keyof typeof AlgorithmTypes
-
-const utf8Encoder = new TextEncoder()
-const utf8Decoder = new TextDecoder()
+import type { JWTPayload } from './types'
+import { utf8Decoder, utf8Encoder } from './utf8'
 
 const encodeJwtPart = (part: unknown): string =>
-  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
 const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
 
-const decodeJwtPart = (part: string): unknown =>
+const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
-const param = (name: AlgorithmTypeName): AlgorithmParams => {
-  switch (name.toUpperCase()) {
-    case 'HS256':
-      return {
-        name: 'HMAC',
-        hash: {
-          name: 'SHA-256',
-        },
-      }
-    case 'HS384':
-      return {
-        name: 'HMAC',
-        hash: {
-          name: 'SHA-384',
-        },
-      }
-    case 'HS512':
-      return {
-        name: 'HMAC',
-        hash: {
-          name: 'SHA-512',
-        },
-      }
-    default:
-      throw new JwtAlgorithmNotImplemented(name)
-  }
+export interface TokenHeader {
+  alg: SignatureAlgorithm
+  typ?: 'JWT'
+  kid?: string
 }
 
-const signing = async (
-  data: string,
-  secret: string,
-  alg: AlgorithmTypeName = 'HS256'
-): Promise<ArrayBuffer> => {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+export function isTokenHeader(obj: unknown): obj is TokenHeader {
+  if (typeof obj === 'object' && obj !== null) {
+    const objWithAlg = obj as { [key: string]: unknown }
+    return (
+      'alg' in objWithAlg &&
+      Object.values(AlgorithmTypes).includes(objWithAlg.alg as AlgorithmTypes) &&
+      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT')
+    )
   }
-
-  const utf8Encoder = new TextEncoder()
-  const cryptoKey = await crypto.subtle.importKey(
-    CryptoKeyFormat.RAW,
-    utf8Encoder.encode(secret),
-    param(alg),
-    false,
-    [CryptoKeyUsage.Sign]
-  )
-  return await crypto.subtle.sign(param(alg), cryptoKey, utf8Encoder.encode(data))
+  return false
 }
 
 export const sign = async (
-  payload: unknown,
-  secret: string,
-  alg: AlgorithmTypeName = 'HS256'
+  payload: JWTPayload,
+  privateKey: SignatureKey,
+  alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
-  const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  let encodedHeader
+  if (typeof privateKey === 'object' && 'alg' in privateKey) {
+    alg = privateKey.alg as SignatureAlgorithm
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT', kid: privateKey.kid })
+  } else {
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  }
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
-  const signaturePart = await signing(partialToken, secret, alg)
+  const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken))
   const signature = encodeSignaturePart(signaturePart)
 
   return `${partialToken}.${signature}`
 }
 
+export type VerifyOptions = {
+  /** The expected issuer used for verifying the token */
+  iss?: string | RegExp
+  /** Verify the `nbf` claim (default: `true`) */
+  nbf?: boolean
+  /** Verify the `exp` claim (default: `true`) */
+  exp?: boolean
+  /** Verify the `iat` claim (default: `true`) */
+  iat?: boolean
+}
+
+export type VerifyOptionsWithAlg = {
+  /** The algorithm used for decoding the token */
+  alg?: SignatureAlgorithm
+} & VerifyOptions
+
+type StrictVerifyOptions = {
+  iss?: string | RegExp
+  nbf: boolean
+  exp: boolean
+  iat: boolean
+}
+
+type StrictVerifyOptionsWithAlg = {
+  alg: SignatureAlgorithm
+} & StrictVerifyOptions
+
 export const verify = async (
   token: string,
-  secret: string,
-  alg: AlgorithmTypeName = 'HS256'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> => {
+  publicKey: SignatureKey,
+  algOrOptions?: SignatureAlgorithm | VerifyOptionsWithAlg
+): Promise<JWTPayload> => {
+  const optsIn = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
+  const opts: StrictVerifyOptionsWithAlg = {
+    alg: optsIn.alg ?? 'HS256',
+    iss: optsIn.iss,
+    nbf: optsIn.nbf ?? true,
+    exp: optsIn.exp ?? true,
+    iat: optsIn.iat ?? true,
+  }
+
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
     throw new JwtTokenInvalid(token)
   }
 
-  const { payload } = decode(token)
-  const now = Math.floor(Date.now() / 1000)
-  if (payload.nbf && payload.nbf > now) {
+  const { header, payload } = decode(token)
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  const now = (Date.now() / 1000) | 0
+  if (opts.nbf && payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }
-  if (payload.exp && payload.exp <= now) {
+  if (opts.exp && payload.exp && payload.exp <= now) {
     throw new JwtTokenExpired(token)
   }
-  if (payload.iat && now < payload.iat) {
+  if (opts.iat && payload.iat && now < payload.iat) {
     throw new JwtTokenIssuedAt(now, payload.iat)
   }
+  if (opts.iss) {
+    if (!payload.iss) {
+      throw new JwtTokenIssuer(opts.iss, null)
+    }
+    if (typeof opts.iss === 'string' && payload.iss !== opts.iss) {
+      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
+    if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
+      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
+  }
 
-  const signaturePart = tokenParts.slice(0, 2).join('.')
-  const signature = await signing(signaturePart, secret, alg)
-  const encodedSignature = encodeSignaturePart(signature)
-  if (encodedSignature !== tokenParts[2]) {
+  const headerPayload = token.substring(0, token.lastIndexOf('.'))
+  const verified = await verifying(
+    publicKey,
+    opts.alg,
+    decodeBase64Url(tokenParts[2]),
+    utf8Encoder.encode(headerPayload)
+  )
+  if (!verified) {
     throw new JwtTokenSignatureMismatched(token)
   }
 
   return payload
 }
 
-// eslint-disable-next-line
-export const decode = (token: string): { header: any; payload: any } => {
+export const verifyWithJwks = async (
+  token: string,
+  options: {
+    keys?: HonoJsonWebKey[]
+    jwks_uri?: string
+    verification?: VerifyOptions
+  },
+  init?: RequestInit
+): Promise<JWTPayload> => {
+  const verifyOpts = options.verification || {}
+
+  const header = decodeHeader(token)
+
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  if (!header.kid) {
+    throw new JwtHeaderRequiresKid(header)
+  }
+
+  if (options.jwks_uri) {
+    const response = await fetch(options.jwks_uri, init)
+    if (!response.ok) {
+      throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
+    }
+    const data = (await response.json()) as { keys?: JsonWebKey[] }
+    if (!data.keys) {
+      throw new Error('invalid JWKS response. "keys" field is missing')
+    }
+    if (!Array.isArray(data.keys)) {
+      throw new Error('invalid JWKS response. "keys" field is not an array')
+    }
+    if (options.keys) {
+      options.keys.push(...data.keys)
+    } else {
+      options.keys = data.keys
+    }
+  } else if (!options.keys) {
+    throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
+  }
+
+  const matchingKey = options.keys.find((key) => key.kid === header.kid)
+  if (!matchingKey) {
+    throw new JwtTokenInvalid(token)
+  }
+
+  return await verify(token, matchingKey, {
+    alg: (matchingKey.alg as SignatureAlgorithm) || header.alg,
+    ...verifyOpts,
+  })
+}
+
+export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
   try {
     const [h, p] = token.split('.')
-    const header = decodeJwtPart(h)
-    const payload = decodeJwtPart(p)
+    const header = decodeJwtPart(h) as TokenHeader
+    const payload = decodeJwtPart(p) as JWTPayload
     return {
       header,
       payload,
     }
-  } catch (e) {
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+}
+
+export const decodeHeader = (token: string): TokenHeader => {
+  try {
+    const [h] = token.split('.')
+    return decodeJwtPart(h) as TokenHeader
+  } catch {
     throw new JwtTokenInvalid(token)
   }
 }

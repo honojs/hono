@@ -1,18 +1,20 @@
-import { run, bench, group } from 'mitata'
+import { run, bench, group, summary } from 'mitata'
 import { expressRouter } from './express.mts'
 import { findMyWayRouter } from './find-my-way.mts'
-import { regExpRouter, trieRouter } from './hono.mts'
+import { regExpRouter, trieRouter, patternRouter } from './hono.mts'
 import { koaRouter } from './koa-router.mts'
 import { koaTreeRouter } from './koa-tree-router.mts'
 import { medleyRouter } from './medley-router.mts'
 import { memoiristRouter } from './memoirist.mts'
 import { radix3Router } from './radix3.mts'
+import { rou3Router } from './rou3.mts'
 import type { Route, RouterInterface } from './tool.mts'
 import { trekRouter } from './trek-router.mts'
 
 const routers: RouterInterface[] = [
   regExpRouter,
   trieRouter,
+  patternRouter,
   medleyRouter,
   findMyWayRouter,
   koaTreeRouter,
@@ -21,6 +23,7 @@ const routers: RouterInterface[] = [
   koaRouter,
   radix3Router,
   memoiristRouter,
+  rou3Router,
 ]
 
 medleyRouter.match({ method: 'GET', path: '/user' })
@@ -64,23 +67,27 @@ const routes: (Route & { name: string })[] = [
 ]
 
 for (const route of routes) {
-  group(`${route.name} - ${route.method} ${route.path}`, () => {
-    for (const router of routers) {
-      bench(router.name, async () => {
-        router.match(route)
-      })
-    }
+  summary(() => {
+    group(`${route.name} - ${route.method} ${route.path}`, () => {
+      for (const router of routers) {
+        bench(router.name, async () => {
+          router.match(route)
+        })
+      }
+    })
   })
 }
 
 group('all together', () => {
-  for (const router of routers) {
-    bench(router.name, async () => {
-      for (const route of routes) {
-        router.match(route)
-      }
-    })
-  }
+  summary(() => {
+    for (const router of routers) {
+      bench(router.name, async () => {
+        for (const route of routes) {
+          router.match(route)
+        }
+      })
+    }
+  })
 })
 
 await run()

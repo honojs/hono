@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "lib": ["deno.ns", "dom", "dom.iterable"]
+  },
+  "unstable": ["sloppy-imports"],
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.3",
+    "@std/path": "jsr:@std/path@^1.0.3",
+    "@std/testing": "jsr:@std/testing@^1.0.1",
+    "hono/jsx/jsx-runtime": "../../src/jsx/jsx-runtime.ts"
+  }
+}

@@ -1,22 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "declaration": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "types": [
-      "jest",
-      "node"
+      "node",
+      "vitest/globals"
     ],
     "jsx": "react",
     "jsxFactory": "jsx",
-    "jsxFragmentFactory": "Fragment",
+    "jsxFragmentFactory": "Fragment"
   },
   "include": [
     "src/**/*.ts",
@@ -25,4 +25,7 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
   ],
+  "exclude": [
+    "node_modules/*"
+  ]
 }

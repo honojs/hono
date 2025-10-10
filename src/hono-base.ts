@@ -1,146 +1,205 @@
+/**
+ * @module
+ * This module is the base module for the Hono object.
+ */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HTTPException } from './http-exception'
-import { HonoRequest } from './request'
 import type { Router } from './router'
-import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
+import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
   Env,
   ErrorHandler,
+  FetchEventLike,
   H,
   HandlerInterface,
+  MergePath,
+  MergeSchemaPath,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
   Next,
   NotFoundHandler,
   OnHandlerInterface,
-  MergePath,
-  MergeSchemaPath,
-  FetchEventLike,
-  Schema,
   RouterRoute,
+  Schema,
 } from './types'
-import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
+import { COMPOSED_HANDLER } from './utils/constants'
+import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
-type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
-
-function defineDynamicClass(): {
-  new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
-    [M in Methods]: HandlerInterface<E, M, S, BasePath>
-  } & {
-    on: OnHandlerInterface<E, S, BasePath>
-  } & {
-    use: MiddlewareHandlerInterface<E, S, BasePath>
-  }
-} {
-  return class {} as never
-}
-
-const notFoundHandler = (c: Context) => {
+const notFoundHandler: NotFoundHandler = (c) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error, c: Context) => {
-  if (err instanceof HTTPException) {
-    return err.getResponse()
+const errorHandler: ErrorHandler = (err, c) => {
+  if ('getResponse' in err) {
+    const res = err.getResponse()
+    return c.newResponse(res.body, res)
   }
   console.error(err)
-  const message = 'Internal Server Error'
-  return c.text(message, 500)
+  return c.text('Internal Server Error', 500)
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
 
 export type HonoOptions<E extends Env> = {
+  /**
+   * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#strict-mode}
+   *
+   * @default true
+   */
   strict?: boolean
+  /**
+   * `router` option specifies which router to use.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#router-option}
+   *
+   * @example
+   * ```ts
+   * const app = new Hono({ router: new RegExpRouter() })
+   * ```
+   */
   router?: Router<[H, RouterRoute]>
+  /**
+   * `getPath` can handle the host header value.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#routing-with-host-header-value}
+   *
+   * @example
+   * ```ts
+   * const app = new Hono({
+   *  getPath: (req) =>
+   *   '/' + req.headers.get('host') + req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1'),
+   * })
+   *
+   * app.get('/www1.example.com/hello', () => c.text('hello www1'))
+   *
+   * // A following request will match the route:
+   * // new Request('http://www1.example.com/hello', {
+   * //  headers: { host: 'www1.example.com' },
+   * // })
+   * ```
+   */
   getPath?: GetPath<E>
 }
 
-class Hono<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> extends defineDynamicClass()<E, S, BasePath> {
+type MountOptionHandler = (c: Context) => unknown
+type MountReplaceRequest = (originalRequest: Request) => Request
+type MountOptions =
+  | MountOptionHandler
+  | {
+      optionHandler?: MountOptionHandler
+      replaceRequest?: MountReplaceRequest | false
+    }
+
+class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
+  get!: HandlerInterface<E, 'get', S, BasePath>
+  post!: HandlerInterface<E, 'post', S, BasePath>
+  put!: HandlerInterface<E, 'put', S, BasePath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath>
+  options!: HandlerInterface<E, 'options', S, BasePath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath>
+  all!: HandlerInterface<E, 'all', S, BasePath>
+  on: OnHandlerInterface<E, S, BasePath>
+  use: MiddlewareHandlerInterface<E, S, BasePath>
+
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<[H, RouterRoute]>
   readonly getPath: GetPath<E>
-  #basePath: string = '/'
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
+  private _basePath: string = '/'
   #path: string = '/'
 
   routes: RouterRoute[] = []
 
   constructor(options: HonoOptions<E> = {}) {
-    super()
-
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
-    allMethods.map((method) => {
+    allMethods.forEach((method) => {
       this[method] = (args1: string | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
           this.#path = args1
         } else {
-          this.addRoute(method, this.#path, args1)
+          this.#addRoute(method, this.#path, args1)
         }
-        args.map((handler) => {
-          if (typeof handler !== 'string') {
-            this.addRoute(method, this.#path, handler)
-          }
+        args.forEach((handler) => {
+          this.#addRoute(method, this.#path, handler)
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this as any
       }
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string | string[], path: string, ...handlers: H[]) => {
-      if (!method) return this
-      this.#path = path
-      for (const m of [method].flat()) {
-        handlers.map((handler) => {
-          this.addRoute(m.toUpperCase(), this.#path, handler)
-        })
+    this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
+      for (const p of [path].flat()) {
+        this.#path = p
+        for (const m of [method].flat()) {
+          handlers.map((handler) => {
+            this.#addRoute(m.toUpperCase(), this.#path, handler)
+          })
+        }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
     }
 
-    // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
         this.#path = arg1
       } else {
+        this.#path = '*'
         handlers.unshift(arg1)
       }
-      handlers.map((handler) => {
-        this.addRoute(METHOD_NAME_ALL, this.#path, handler)
+      handlers.forEach((handler) => {
+        this.#addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
-      return this
+      return this as any
     }
 
-    const strict = options.strict ?? true
-    delete options.strict
-    Object.assign(this, options)
-    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
+    const { strict, ...optionsWithoutStrict } = options
+    Object.assign(this, optionsWithoutStrict)
+    this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict
   }
 
-  private clone(): Hono<E, S, BasePath> {
+  #clone(): Hono<E, S, BasePath> {
     const clone = new Hono<E, S, BasePath>({
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
 
-  private notFoundHandler: NotFoundHandler = notFoundHandler
+  #notFoundHandler: NotFoundHandler = notFoundHandler
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
 
+  /**
+   * `.route()` allows grouping other Hono instance in routes.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#grouping}
+   *
+   * @param {string} path - base Path
+   * @param {Hono} app - other Hono instance
+   * @returns {Hono} routed Hono instance
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const app2 = new Hono()
+   *
+   * app2.get("/user", (c) => c.text("user"))
+   * app.route("/api", app2) // GET /api/user
+   * ```
+   */
   route<
     SubPath extends string,
     SubEnv extends Env,
@@ -148,128 +207,189 @@ class Hono<
     SubBasePath extends string
   >(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
+    app: Hono<SubEnv, SubSchema, SubBasePath>
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
     const subApp = this.basePath(path)
-
-    if (!app) {
-      return subApp
-    }
-
     app.routes.map((r) => {
-      const handler =
-        app.errorHandler === errorHandler
-          ? r.handler
-          : async (c: Context, next: Next) =>
-              (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
-      subApp.addRoute(r.method, r.path, handler)
+      let handler
+      if (app.errorHandler === errorHandler) {
+        handler = r.handler
+      } else {
+        handler = async (c: Context, next: Next) =>
+          (await compose([], app.errorHandler)(c, () => r.handler(c, next))).res
+        ;(handler as any)[COMPOSED_HANDLER] = r.handler
+      }
+
+      subApp.#addRoute(r.method, r.path, handler)
     })
     return this
   }
 
+  /**
+   * `.basePath()` allows base paths to be specified.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#base-path}
+   *
+   * @param {string} path - base Path
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * const api = new Hono().basePath('/api')
+   * ```
+   */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
-    const subApp = this.clone()
-    subApp.#basePath = mergePath(this.#basePath, path)
+    const subApp = this.#clone()
+    subApp._basePath = mergePath(this._basePath, path)
     return subApp
   }
 
-  onError(handler: ErrorHandler<E>) {
+  /**
+   * `.onError()` handles an error and returns a customized Response.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#error-handling}
+   *
+   * @param {ErrorHandler} handler - request Handler for error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.onError((err, c) => {
+   *   console.error(`${err}`)
+   *   return c.text('Custom Error Message', 500)
+   * })
+   * ```
+   */
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler<E>) {
-    this.notFoundHandler = handler
+  /**
+   * `.notFound()` allows you to customize a Not Found Response.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#not-found}
+   *
+   * @param {NotFoundHandler} handler - request handler for not-found
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.notFound((c) => {
+   *   return c.text('Custom 404 Message', 404)
+   * })
+   * ```
+   */
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
+    this.#notFoundHandler = handler
     return this
   }
 
   /**
-   * @deprecated
-   * Use `showRoutes()` utility methods provided by 'hono/dev' instead of `app.showRoutes()`.
-   * `app.showRoutes()` will be removed in v4.
+   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#mount}
+   *
+   * @param {string} path - base Path
+   * @param {Function} applicationHandler - other Request Handler
+   * @param {MountOptions} [options] - options of `.mount()`
+   * @returns {Hono} mounted Hono instance
+   *
    * @example
-   * You could rewrite `app.showRoutes()` as follows
-   * import { showRoutes } from 'hono/dev'
-   * showRoutes(app)
+   * ```ts
+   * import { Router as IttyRouter } from 'itty-router'
+   * import { Hono } from 'hono'
+   * // Create itty-router application
+   * const ittyRouter = IttyRouter()
+   * // GET /itty-router/hello
+   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
+   *
+   * const app = new Hono()
+   * app.mount('/itty-router', ittyRouter.handle)
+   * ```
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * // Send the request to another application without modification.
+   * app.mount('/app', anotherApp, {
+   *   replaceRequest: (req) => req,
+   * })
+   * ```
    */
-  showRoutes() {
-    const length = 8
-    this.routes.map((route) => {
-      console.log(
-        `\x1b[32m${route.method}\x1b[0m ${' '.repeat(length - route.method.length)} ${route.path}`
-      )
-    })
-  }
-
   mount(
     path: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
-    optionHandler?: (c: Context) => unknown
+    options?: MountOptions
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this.#basePath, path)
-    const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+    // handle options
+    let replaceRequest: MountReplaceRequest | undefined
+    let optionHandler: MountOptionHandler | undefined
+    if (options) {
+      if (typeof options === 'function') {
+        optionHandler = options
+      } else {
+        optionHandler = options.optionHandler
+        if (options.replaceRequest === false) {
+          replaceRequest = (request) => request
+        } else {
+          replaceRequest = options.replaceRequest
+        }
+      }
+    }
+
+    // prepare handlers for request
+    const getOptions: (c: Context) => unknown[] = optionHandler
+      ? (c) => {
+          const options = optionHandler!(c)
+          return Array.isArray(options) ? options : [options]
+        }
+      : (c) => {
+          let executionContext: ExecutionContext | undefined = undefined
+          try {
+            executionContext = c.executionCtx
+          } catch {} // Do nothing
+          return [c.env, executionContext]
+        }
+    replaceRequest ||= (() => {
+      const mergedPath = mergePath(this._basePath, path)
+      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+      return (request) => {
+        const url = new URL(request.url)
+        url.pathname = url.pathname.slice(pathPrefixLength) || '/'
+        return new Request(url, request)
+      }
+    })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      let executionContext: ExecutionContext | undefined = undefined
-      try {
-        executionContext = c.executionCtx
-      } catch {} // Do nothing
-      const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
-      const optionsArray = Array.isArray(options) ? options : [options]
+      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
 
-      const queryStrings = getQueryStrings(c.req.url)
-      const res = await applicationHandler(
-        new Request(
-          new URL((c.req.path.slice(pathPrefixLength) || '/') + queryStrings, c.req.url),
-          c.req.raw
-        ),
-        ...optionsArray
-      )
-
-      if (res) return res
+      if (res) {
+        return res
+      }
 
       await next()
     }
-    this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
+    this.#addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
     return this
   }
 
-  get routerName() {
-    this.matchRoute('GET', '/')
-    return this.router.name
-  }
-
-  /**
-   * @deprecated
-   * `app.head()` is no longer used.
-   * `app.get()` implicitly handles the HEAD method.
-   */
-  head = () => {
-    console.warn('`app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.')
-    return this
-  }
-
-  private addRoute(method: string, path: string, handler: H) {
+  #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    path = mergePath(this.#basePath, path)
-    const r: RouterRoute = { path: path, method: method, handler: handler }
+    path = mergePath(this._basePath, path)
+    const r: RouterRoute = { basePath: this._basePath, path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
 
-  private matchRoute(method: string, path: string) {
-    return this.router.match(method, path)
-  }
-
-  private handleError(err: unknown, c: Context<E>) {
+  #handleError(err: unknown, c: Context<E>) {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
     throw err
   }
 
-  private dispatch(
+  #dispatch(
     request: Request,
     executionCtx: ExecutionContext | FetchEventLike | undefined,
     env: E['Bindings'],
@@ -278,99 +398,132 @@ class Hono<
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
-        new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
+        new Response(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
     }
 
     const path = this.getPath(request, { env })
-    const matchResult = this.matchRoute(method, path)
+    const matchResult = this.router.match(method, path)
 
-    const c = new Context(new HonoRequest(request, path, matchResult), {
+    const c = new Context(request, {
+      path,
+      matchResult,
       env,
       executionCtx,
-      notFoundHandler: this.notFoundHandler,
+      notFoundHandler: this.#notFoundHandler,
     })
 
     // Do not `compose` if it has only one handler
     if (matchResult[0].length === 1) {
       let res: ReturnType<H>
       try {
-        res = matchResult[0][0][0][0](c, async () => {})
-        if (!res) {
-          return this.notFoundHandler(c)
-        }
+        res = matchResult[0][0][0][0](c, async () => {
+          c.res = await this.#notFoundHandler(c)
+        })
       } catch (err) {
-        return this.handleError(err, c)
+        return this.#handleError(err, c)
       }
 
-      if (res instanceof Response) return res
-
-      return (async () => {
-        let awaited: Response | void
-        try {
-          awaited = await res
-          if (!awaited) {
-            return this.notFoundHandler(c)
-          }
-        } catch (err) {
-          return this.handleError(err, c)
-        }
-        return awaited
-      })()
+      return res instanceof Promise
+        ? res
+            .then(
+              (resolved: Response | undefined) =>
+                resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
+            )
+            .catch((err: Error) => this.#handleError(err, c))
+        : res ?? this.#notFoundHandler(c)
     }
 
-    const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
+    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
 
     return (async () => {
       try {
         const context = await composed(c)
         if (!context.finalized) {
           throw new Error(
-            'Context is not finalized. You may forget returning Response object or `await next()`'
+            'Context is not finalized. Did you forget to return a Response object or `await next()`?'
           )
         }
+
         return context.res
       } catch (err) {
-        return this.handleError(err, c)
+        return this.#handleError(err, c)
       }
     })()
   }
 
   /**
-   * @deprecated
-   * `app.handleEvent()` will be removed in v4.
-   * Use `app.fetch()` instead of `app.handleEvent()`.
+   * `.fetch()` will be entry point of your app.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#fetch}
+   *
+   * @param {Request} request - request Object of request
+   * @param {Env} Env - env Object
+   * @param {ExecutionContext} - context of execution
+   * @returns {Response | Promise<Response>} response of request
+   *
    */
-  handleEvent = (event: FetchEventLike) => {
-    return this.dispatch(event.request, event, undefined, event.request.method)
+  fetch: (
+    request: Request,
+    Env?: E['Bindings'] | {},
+    executionCtx?: ExecutionContext
+  ) => Response | Promise<Response> = (request, ...rest) => {
+    return this.#dispatch(request, rest[1], rest[0], request.method)
   }
 
-  fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, executionCtx, Env, request.method)
-  }
-
+  /**
+   * `.request()` is a useful method for testing.
+   * You can pass a URL or pathname to send a GET request.
+   * app will return a Response object.
+   * ```ts
+   * test('GET /hello is ok', async () => {
+   *   const res = await app.request('/hello')
+   *   expect(res.status).toBe(200)
+   * })
+   * ```
+   * @see https://hono.dev/docs/api/hono#request
+   */
   request = (
     input: RequestInfo | URL,
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => {
+  ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      if (requestInit !== undefined) {
-        input = new Request(input, requestInit)
-      }
-      return this.fetch(input, Env, executionCtx)
+      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
     }
     input = input.toString()
-    const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
-    const req = new Request(path, requestInit)
-    return this.fetch(req, Env, executionCtx)
+    return this.fetch(
+      new Request(
+        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
+        requestInit
+      ),
+      Env,
+      executionCtx
+    )
   }
 
-  fire = () => {
+  /**
+   * `.fire()` automatically adds a global fetch event listener.
+   * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
+   * @deprecated
+   * Use `fire` from `hono/service-worker` instead.
+   * ```ts
+   * import { Hono } from 'hono'
+   * import { fire } from 'hono/service-worker'
+   *
+   * const app = new Hono()
+   * // ...
+   * fire(app)
+   * ```
+   * @see https://hono.dev/docs/api/hono#fire
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
+   */
+  fire = (): void => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     addEventListener('fetch', (event: FetchEventLike): void => {
-      event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
+      event.respondWith(this.#dispatch(event.request, event, undefined, event.request.method))
     })
   }
 }

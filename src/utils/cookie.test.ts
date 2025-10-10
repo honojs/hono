@@ -18,6 +18,12 @@ describe('Parse cookie', () => {
     expect(cookie['best_cookie']).toBe(' sugar ')
   })
 
+  it('Should not throw a URIError when parsing an invalid string', () => {
+    const cookieString = 'yummy_cookie="choco%2";'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco%2')
+  })
+
   it('Should parse empty cookies', () => {
     const cookie: Cookie = parse('')
     expect(Object.keys(cookie).length).toBe(0)
@@ -28,6 +34,14 @@ describe('Parse cookie', () => {
     const cookie: Cookie = parse(cookieString, 'yummy_cookie')
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBeUndefined()
+  })
+
+  it('Should parse one cookie specified by name even if it is not found', () => {
+    const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
+    const cookie: Cookie = parse(cookieString, 'no_such_cookie')
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBeUndefined()
+    expect(cookie['no_such_cookie']).toBeUndefined()
   })
 
   it('Should parse cookies with no value', () => {
@@ -154,7 +168,7 @@ describe('Set cookie', () => {
   })
 
   it('Should serialize cookie with all options', () => {
-    const serialized = serialize('great_cookie', 'banana', {
+    const serialized = serialize('__Secure-great_cookie', 'banana', {
       path: '/',
       secure: true,
       domain: 'example.com',
@@ -162,10 +176,27 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
+      priority: 'High',
       partitioned: true,
     })
     expect(serialized).toBe(
-      'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
+      '__Secure-great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
+    )
+  })
+
+  it('Should serialize __Host- cookie with all valid options', () => {
+    const serialized = serialize('__Host-great_cookie', 'banana', {
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      maxAge: 1000,
+      expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+      sameSite: 'Strict',
+      priority: 'High',
+      partitioned: true,
+    })
+    expect(serialized).toBe(
+      '__Host-great_cookie=banana; Max-Age=1000; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
     )
   })
 
@@ -187,10 +218,11 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
+      priority: 'High',
       partitioned: true,
     })
     expect(serialized).toBe(
-      'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
+      'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
     )
   })
 
@@ -206,5 +238,52 @@ describe('Set cookie', () => {
       maxAge: -1,
     })
     expect(serialized).toBe('great_cookie=banana')
+  })
+
+  it('Should throw Error cookie with maxAge grater than 400days', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        maxAge: 3600 * 24 * 401,
+      })
+    }).toThrowError(
+      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+    )
+  })
+
+  it('Should throw Error cookie with expires grater than 400days', () => {
+    const now = Date.now()
+    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        expires: day401,
+      })
+    }).toThrowError(
+      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+    )
+  })
+
+  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        partitioned: true,
+      })
+    }).toThrowError('Partitioned Cookie must have Secure attributes')
+  })
+
+  it('Should serialize cookie with lowercase priority values', () => {
+    const lowSerialized = serialize('test_cookie', 'value', {
+      priority: 'low',
+    })
+    expect(lowSerialized).toBe('test_cookie=value; Priority=Low')
+
+    const mediumSerialized = serialize('test_cookie', 'value', {
+      priority: 'medium',
+    })
+    expect(mediumSerialized).toBe('test_cookie=value; Priority=Medium')
+
+    const highSerialized = serialize('test_cookie', 'value', {
+      priority: 'high',
+    })
+    expect(highSerialized).toBe('test_cookie=value; Priority=High')
   })
 })
