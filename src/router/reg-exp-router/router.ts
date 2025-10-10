@@ -1,4 +1,4 @@
-import type { Router, ParamIndexMap } from '../../router'
+import type { ParamIndexMap, Router } from '../../router'
 import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
   METHOD_NAME_ALL,
@@ -205,8 +205,8 @@ export class RegExpRouter<T> implements Router<T> {
 
   match: typeof match<Router<T>, T> = match;
 
-  [buildAllMatchersKey](): Record<string, Matcher<T> | null> {
-    const matchers: Record<string, Matcher<T> | null> = Object.create(null)
+  [buildAllMatchersKey](): MatcherMap<T> {
+    const matchers: MatcherMap<T> = Object.create(null)
 
     Object.keys(this.#routes!)
       .concat(Object.keys(this.#middleware!))

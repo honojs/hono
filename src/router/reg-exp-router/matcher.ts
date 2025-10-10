@@ -1,9 +1,10 @@
-import type { Router, Result, ParamIndexMap } from '../../router'
+import type { ParamIndexMap, Router, Result } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
 
 export type HandlerData<T> = [T, ParamIndexMap][]
 export type StaticMap<T> = Record<string, Result<T>>
 export type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
-export type MatcherMap<T> = Record<string, Matcher<T>>
+export type MatcherMap<T> = Record<string, Matcher<T> | null>
 
 export const emptyParam: string[] = []
 export const buildAllMatchersKey = Symbol('buildAllMatchers')
@@ -12,7 +13,7 @@ export function match<R extends Router<T>, T>(this: R, method: string, path: str
   const matchers: MatcherMap<T> = (this as any)[buildAllMatchersKey]()
 
   this.match = (method, path) => {
-    const matcher = matchers[method]
+    const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
 
     const staticMatch = matcher[2][path]
     if (staticMatch) {
