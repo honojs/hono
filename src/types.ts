@@ -100,6 +100,11 @@ export type ErrorHandler<E extends Env = any> = (
   c: Context<E>
 ) => Response | Promise<Response>
 
+export type UnknownErrorHandler<E extends Env = any> = (
+  err: unknown,
+  c: Context<E>
+) => Response | Promise<Response>
+
 ////////////////////////////////////////
 //////                            //////
 //////     HandlerInterface       //////
