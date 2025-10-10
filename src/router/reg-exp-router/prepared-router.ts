@@ -21,7 +21,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     this.#matchers[method] ||= [
       all[0],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      all[1].map((list) => Array.isArray(list) ? list.slice() : 0) as any,
+      all[1].map((list) => (Array.isArray(list) ? list.slice() : 0)) as any,
       Object.keys(all[2]).reduce((obj, key) => {
         obj[key] = [all[2][key][0].slice(), emptyParam]
         return obj

@@ -151,7 +151,8 @@ describe('PreparedRegExpRouter', async () => {
   await writeFile(path, `const params = ${serialized}; export default params`)
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const params: ConstructorParameters<typeof PreparedRegExpRouter<string>> = (await import(path)).default
+  const params: ConstructorParameters<typeof PreparedRegExpRouter<string>> = (await import(path))
+    .default
   const router = new PreparedRegExpRouter<string>(...params)
 
   router.add('ALL', '*', 'wildcard')
