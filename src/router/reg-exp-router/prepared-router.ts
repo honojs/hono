@@ -103,7 +103,14 @@ export const buildInitParams: (params: {
     all[1].forEach((list, i) => {
       list.forEach(([p, map]) => {
         if (p === path) {
-          relocateMap[path] ||= [[[], map]]
+          if (relocateMap[path]) {
+            relocateMap[path][0][1] = {
+              ...relocateMap[path][0][1],
+              ...map,
+            }
+          } else {
+            relocateMap[path] = [[[], map]]
+          }
           if (relocateMap[path][0][0].findIndex((j) => j === i) === -1) {
             relocateMap[path][0][0].push(i)
           }
@@ -113,8 +120,14 @@ export const buildInitParams: (params: {
     for (const path2 of Object.keys(all[2])) {
       all[2][path2][0].forEach(([p, map]) => {
         if (p === path) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          relocateMap[path] ||= [[[], map as any]]
+          if (relocateMap[path]) {
+            relocateMap[path][0][1] = {
+              ...relocateMap[path][0][1],
+              ...map,
+            } as ParamIndexMap
+          } else {
+            relocateMap[path] = [[[], map as ParamIndexMap]]
+          }
           const value = path2 === path ? '' : path2
           if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
             relocateMap[path][0][0].push(value)
