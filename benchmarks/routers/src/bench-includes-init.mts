@@ -15,7 +15,7 @@ import type { Route } from './tool.mts'
 import { routes } from './tool.mts'
 
 const preparedParams = buildInitParams({
-  routes
+  paths: routes.map((r) => r.path),
 })
 
 const benchRoutes: (Route & { name: string })[] = [
