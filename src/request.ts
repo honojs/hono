@@ -27,6 +27,46 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
+/**
+ * Clones a HonoRequest's underlying raw Request object.
+ *
+ * This utility handles both consumed and unconsumed request bodies:
+ * - If the request body hasn't been consumed, it uses the native `clone()` method
+ * - If the request body has been consumed, it reconstructs a new Request using cached body data
+ *
+ * This is particularly useful when you need to:
+ * - Process the same request body multiple times
+ * - Pass requests to external services after validation
+ *
+ * @param req - The HonoRequest object to clone
+ * @returns A Promise that resolves to a new Request object with the same properties
+ *
+ * @example
+ * ```ts
+ * // Clone after consuming the body (e.g., after validation)
+ * app.post('/forward',
+ *   validator('json', (data) => data),
+ *   async (c) => {
+ *     const validated = c.req.valid('json')
+ *     // Body has been consumed, but cloneRawRequest still works
+ *     const clonedReq = await cloneRawRequest(c.req)
+ *     return fetch('http://backend-service.com', clonedReq)
+ *   }
+ * )
+ * ```
+ */
+export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
+  if (!req.raw.bodyUsed) {
+    return req.raw.clone()
+  }
+
+  return new Request(req.raw.url, {
+    method: req.raw.method,
+    headers: req.raw.headers,
+    body: await req.blob(),
+  })
+}
+
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.raw` can get the raw Request object.

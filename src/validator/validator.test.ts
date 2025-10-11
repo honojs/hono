@@ -3,6 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
+import { cloneRawRequest } from '../request'
 import type {
   ErrorHandler,
   ExtractSchema,
@@ -1205,5 +1206,71 @@ describe('Transform', () => {
 
     type Actual = ExtractSchema<typeof route>
     type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Raw Request cloning after validation', () => {
+  it('Should allow the `cloneRawRequest` util to clone the request object after validation', async () => {
+    const app = new Hono()
+
+    app.post(
+      '/json-validation',
+      validator('json', (data) => data),
+      async (c) => {
+        const clonedReq = await cloneRawRequest(c.req)
+        const clonedJSON = await clonedReq.json()
+
+        return c.json({
+          originalMethod: c.req.raw.method,
+          cloned: JSON.stringify(clonedJSON) === JSON.stringify(await c.req.json()),
+          payload: clonedJSON,
+        })
+      }
+    )
+
+    const testData = { message: 'test', userId: 123 }
+    const res = await app.request('/json-validation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testData),
+    })
+
+    expect(res.status).toBe(200)
+
+    const result = await res.json()
+
+    expect(result.originalMethod).toBe('POST')
+    expect(result.cloned).toBe(true)
+    expect(result.payload).toMatchObject(testData)
+  })
+
+  it('Should allow the `cloneRawRequest` util to clone the request object without validation', async () => {
+    const app = new Hono()
+
+    app.post('/no-validation', async (c) => {
+      const clonedReq = await cloneRawRequest(c.req)
+      const clonedJSON = await clonedReq.json()
+
+      return c.json({
+        originalMethod: c.req.raw.method,
+        cloned: JSON.stringify(clonedJSON) === JSON.stringify(await c.req.json()),
+        payload: clonedJSON,
+      })
+    })
+
+    const testData = { message: 'no validation', userId: 456 }
+    const res = await app.request('/no-validation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testData),
+    })
+
+    expect(res.status).toBe(200)
+
+    const result = await res.json()
+
+    expect(result.originalMethod).toBe('POST')
+    expect(result.cloned).toBe(true)
+    expect(result.payload).toMatchObject(testData)
   })
 })
