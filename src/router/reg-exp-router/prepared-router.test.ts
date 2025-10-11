@@ -51,7 +51,7 @@ describe('PreparedRegExpRouter', async () => {
   describe('add()', () => {
     it('should add a route', () => {
       const params = buildInitParams({
-        paths: ['/hello']
+        paths: ['/hello'],
       }) as ConstructorParameters<typeof PreparedRegExpRouter<string>>
       const router = new PreparedRegExpRouter<string>(...params)
       router.add('GET', '/hello', 'get hello')
@@ -60,7 +60,7 @@ describe('PreparedRegExpRouter', async () => {
 
     it('should throw an error if the path is not pre-registered', () => {
       const params = buildInitParams({
-        paths: ['/hello']
+        paths: ['/hello'],
       }) as ConstructorParameters<typeof PreparedRegExpRouter<string>>
       const router = new PreparedRegExpRouter<string>(...params)
       expect(() => router.add('GET', '/unknown', 'get hello')).toThrowError()
