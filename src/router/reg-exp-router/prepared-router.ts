@@ -125,17 +125,10 @@ export const buildInitParams: (params: {
 export const serializeInitParams: (
   params: ConstructorParameters<typeof PreparedRegExpRouter>
 ) => string = ([matchers, relocateMap]) => {
-  for (const method in matchers) {
-    const matcher = matchers[method] as Matcher<string>
-    // escape the regular expression to serialize it with `JSON.stringify`
-    ;(matcher[0] as RegExp & { toJSON: () => string }).toJSON = function () {
-      return `@${this.toString()}@`
-    }
-  }
-  // unescape the regular expression so that it can be deserialized with `eval`.
-  const matchersStr = JSON.stringify(matchers).replace(/"@(.+?)@"/g, (_, str) =>
-    str.replace(/\\\\/g, '\\')
-  )
+  // Embed the regular expression as a result of `toString()` so that it can be evaluated as JavaScript.
+  const matchersStr = JSON.stringify(matchers, (_, value) =>
+    value instanceof RegExp ? `##${value.toString()}##` : value
+  ).replace(/"##(.+?)##"/g, (_, str) => str.replace(/\\\\/g, '\\'))
   const relocateMapStr = JSON.stringify(relocateMap)
   return `[${matchersStr},${relocateMapStr}]`
 }
