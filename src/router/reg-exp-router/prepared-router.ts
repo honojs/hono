@@ -111,16 +111,9 @@ export const buildInitParams: (params: {
       })
     })
     for (const path2 in all[2]) {
-      all[2][path2][0].forEach(([p, map]) => {
+      all[2][path2][0].forEach(([p]) => {
         if (p === path) {
-          if (relocateMap[path]) {
-            relocateMap[path][0][1] = {
-              ...relocateMap[path][0][1],
-              ...map,
-            } as ParamIndexMap
-          } else {
-            relocateMap[path] = [[[], map as ParamIndexMap]]
-          }
+          relocateMap[path] ||= [[[], undefined]]
           const value = path2 === path ? '' : path2
           if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
             relocateMap[path][0][0].push(value)
