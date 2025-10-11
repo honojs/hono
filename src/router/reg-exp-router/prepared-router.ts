@@ -19,13 +19,14 @@ export class PreparedRegExpRouter<T> implements Router<T> {
   add(method: string, path: string, handler: T) {
     if (!this.#matchers[method]) {
       const all = this.#matchers[METHOD_NAME_ALL] as Matcher<T>
+      const staticMap = {} as StaticMap<T>
+      for (const key in all[2]) {
+        staticMap[key] = [all[2][key][0].slice(), emptyParam] as Result<T>
+      }
       this.#matchers[method] = [
         all[0],
         all[1].map((list) => (Array.isArray(list) ? list.slice() : 0)) as HandlerData<T>[],
-        Object.keys(all[2]).reduce((obj, key) => {
-          obj[key] = [all[2][key][0].slice(), emptyParam] as Result<T>
-          return obj
-        }, {} as StaticMap<T>),
+        staticMap,
       ]
     }
 
