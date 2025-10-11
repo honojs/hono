@@ -12,7 +12,7 @@ export function match<R extends Router<T>, T>(this: R, method: string, path: str
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const matchers: MatcherMap<T> = (this as any)[buildAllMatchersKey]()
 
-  this.match = (method, path) => {
+  const match = ((method, path) => {
     const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
 
     const staticMatch = matcher[2][path]
@@ -27,7 +27,8 @@ export function match<R extends Router<T>, T>(this: R, method: string, path: str
 
     const index = match.indexOf('', 1)
     return [matcher[1][index], match]
-  }
+  }) as Router<T>['match']
 
-  return this.match(method, path)
+  this.match = match
+  return match(method, path)
 }
