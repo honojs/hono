@@ -152,11 +152,14 @@ export const serializeInitParams: (
     if (!matchers[method]) {
       continue
     }
+
+    // escape the regular expression to serialize it with `JSON.stringify`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(matchers[method][0] as any).toJSON = function () {
       return `@${this.toString()}@`
     }
   }
+  // unescape the regular expression so that it can be deserialized with `eval`.
   const matchersStr = JSON.stringify(matchers).replace(/"@(.+?)@"/g, (_, str) =>
     str.replace(/\\\\/g, '\\')
   )
