@@ -16,6 +16,34 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     this.#relocateMap = relocateMap
   }
 
+  #addWildcard(method: string, handlerData: [T, ParamIndexMap]) {
+    const matcher = this.#matchers[method] as Matcher<T>
+    matcher[1].forEach((list) => list && list.push(handlerData))
+    Object.values(matcher[2]).forEach((list) => (list[0] as [T, ParamIndexMap][]).push(handlerData))
+  }
+
+  #addPath(
+    method: string,
+    path: string,
+    handler: T,
+    indexes: (number | string)[],
+    map: ParamIndexMap | undefined
+  ) {
+    const matcher = this.#matchers[method] as Matcher<T>
+    if (!map) {
+      // assumed to be a static route
+      matcher[2][path][0].push([handler, {}])
+    } else {
+      indexes.forEach((index) => {
+        if (typeof index === 'number') {
+          matcher[1][index].push([handler, map])
+        } else {
+          ;(matcher[2][index || path][0] as [T, ParamIndexMap][]).push([handler, map])
+        }
+      })
+    }
+  }
+
   add(method: string, path: string, handler: T) {
     if (!this.#matchers[method]) {
       const all = this.#matchers[METHOD_NAME_ALL] as Matcher<T>
@@ -31,14 +59,14 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     }
 
     if (path === '/*' || path === '*') {
-      const defaultHandlerData: [T, ParamIndexMap] = [handler, {}]
-      ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
-        const matcher = this.#matchers[m] as Matcher<T>
-        matcher[1].forEach((list) => list && list.push(defaultHandlerData))
-        Object.values(matcher[2]).forEach((list) =>
-          (list[0] as [T, ParamIndexMap][]).push(defaultHandlerData)
-        )
-      })
+      const handlerData: [T, ParamIndexMap] = [handler, {}]
+      if (method === METHOD_NAME_ALL) {
+        for (const m in this.#matchers) {
+          this.#addWildcard(m, handlerData)
+        }
+      } else {
+        this.#addWildcard(method, handlerData)
+      }
       return
     }
 
@@ -47,21 +75,13 @@ export class PreparedRegExpRouter<T> implements Router<T> {
       throw new Error(`Path ${path} is not registered`)
     }
     for (const [indexes, map] of data) {
-      ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
-        const matcher = this.#matchers[m] as Matcher<T>
-        if (!map) {
-          // assumed to be a static route
-          matcher[2][path][0].push([handler, {}])
-        } else {
-          indexes.forEach((index) => {
-            if (typeof index === 'number') {
-              matcher[1][index].push([handler, map])
-            } else {
-              ;(matcher[2][index || path][0] as [T, ParamIndexMap][]).push([handler, map])
-            }
-          })
+      if (method === METHOD_NAME_ALL) {
+        for (const m in this.#matchers) {
+          this.#addPath(m, path, handler, indexes, map)
         }
-      })
+      } else {
+        this.#addPath(method, path, handler, indexes, map)
+      }
     }
   }
 
