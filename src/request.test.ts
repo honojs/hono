@@ -1,4 +1,4 @@
-import { HonoRequest } from './request'
+import { cloneRawRequest, HonoRequest } from './request'
 import type { RouterRoute } from './types'
 
 type RecursiveRecord<K extends string, T> = {
@@ -376,5 +376,57 @@ describe('Body methods with caching', () => {
         ).toEqualTypeOf<{ key1: string; key2: string }>()
       })
     })
+  })
+})
+
+describe('cloneRawRequest', () => {
+  test('clones unconsumed request object', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: text,
+      })
+    )
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('POST')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(await clonedReq.text()).toBe(text)
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones consumed request object', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: text,
+      })
+    )
+    await req.json()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('POST')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(await clonedReq.json()).toEqual(json)
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones GET request without body', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'GET',
+      })
+    )
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('GET')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
   })
 })
