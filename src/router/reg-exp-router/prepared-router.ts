@@ -44,7 +44,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
 
     const data = this.#relocateMap[path]
     if (!data) {
-      return
+      throw new Error(`Path ${path} is not registered`)
     }
     for (const [indexes, map] of data) {
       ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
