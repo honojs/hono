@@ -4,10 +4,14 @@ import { MESSAGE_MATCHER_IS_ALREADY_BUILT, UnsupportedPathError } from '../../ro
 export class SmartRouter<T> implements Router<T> {
   name: string = 'SmartRouter'
   #routers: Router<T>[] = []
+  #routerConstructors: (new () => Router<T>)[] = []
   #routes?: [string, string, T][] = []
 
   constructor(init: { routers: Router<T>[] }) {
-    this.#routers = init.routers
+    this.#routers = [...init.routers]
+    this.#routerConstructors = init.routers.map(
+      (router) => router.constructor as new () => Router<T>
+    )
   }
 
   add(method: string, path: string, handler: T) {
@@ -25,6 +29,10 @@ export class SmartRouter<T> implements Router<T> {
 
     const routers = this.#routers
     const routes = this.#routes
+
+    if (routes.length === 0) {
+      return [[]]
+    }
 
     const len = routers.length
     let i = 0
@@ -58,6 +66,16 @@ export class SmartRouter<T> implements Router<T> {
     this.name = `SmartRouter + ${this.activeRouter.name}`
 
     return res as Result<T>
+  }
+
+  clear(): void {
+    this.#routers = this.#routerConstructors.map((RouterClass) => new RouterClass())
+
+    this.match = SmartRouter.prototype.match.bind(this)
+
+    this.name = 'SmartRouter'
+
+    this.#routes = []
   }
 
   get activeRouter(): Router<T> {

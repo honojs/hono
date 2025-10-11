@@ -25,4 +25,8 @@ export class TrieRouter<T> implements Router<T> {
   match(method: string, path: string): Result<T> {
     return this.#node.search(method, path)
   }
+
+  clear(): void {
+    this.#node = new Node()
+  }
 }
