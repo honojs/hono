@@ -1,6 +1,6 @@
-import type { ParamIndexMap, Router } from '../../router'
+import type { ParamIndexMap, Result, Router } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
-import type { Matcher, MatcherMap } from './matcher'
+import type { HandlerData, Matcher, MatcherMap, StaticMap } from './matcher'
 import { match, buildAllMatchersKey, emptyParam } from './matcher'
 import { RegExpRouter } from './router'
 
@@ -20,13 +20,11 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     const all = this.#matchers[METHOD_NAME_ALL] as Matcher<T>
     this.#matchers[method] ||= [
       all[0],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      all[1].map((list) => (Array.isArray(list) ? list.slice() : 0)) as any,
+      all[1].map((list) => (Array.isArray(list) ? list.slice() : 0)) as HandlerData<T>[],
       Object.keys(all[2]).reduce((obj, key) => {
-        obj[key] = [all[2][key][0].slice(), emptyParam]
+        obj[key] = [all[2][key][0].slice(), emptyParam] as Result<T>
         return obj
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }, {} as any),
+      }, {} as StaticMap<T>),
     ]
 
     if (path === '/*' || path === '*') {
@@ -38,8 +36,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
         }
         matcher[1].forEach((list) => list && list.push(defaultHandlerData))
         Object.values(matcher[2]).forEach((list) =>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          list[0].push(defaultHandlerData as any)
+          (list[0] as [T, ParamIndexMap][]).push(defaultHandlerData)
         )
       })
       return
@@ -63,8 +60,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
             if (typeof index === 'number') {
               matcher[1][index].push([handler, map])
             } else {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              matcher[2][index || path][0].push([handler, map as any])
+              ;(matcher[2][index || path][0] as [T, ParamIndexMap][]).push([handler, map])
             }
           })
         }
@@ -135,8 +131,7 @@ export const buildInitParams: (params: {
   }
 
   for (let i = 0, len = all[1].length; i < len; i++) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    all[1][i] = all[1][i] ? [] : (0 as any)
+    all[1][i] = all[1][i] ? [] : (0 as unknown as HandlerData<string>)
   }
   for (const path in all[2]) {
     all[2][path][0] = []
@@ -149,13 +144,9 @@ export const serializeInitParams: (
   params: ConstructorParameters<typeof PreparedRegExpRouter>
 ) => string = ([matchers, relocateMap]) => {
   for (const method in matchers) {
-    if (!matchers[method]) {
-      continue
-    }
-
+    const matcher = matchers[method] as Matcher<string>
     // escape the regular expression to serialize it with `JSON.stringify`
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(matchers[method][0] as any).toJSON = function () {
+    ;(matcher[0] as RegExp & { toJSON: () => string }).toJSON = function () {
       return `@${this.toString()}@`
     }
   }
