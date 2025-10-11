@@ -16,7 +16,9 @@ describe('compose', () => {
 
   const a = async (c: Context, next: Next) => {
     c.set('log', 'log')
+    c.set('routeIndex-before-next', c.req.routeIndex)
     await next()
+    c.set('routeIndex-after-next', c.req.routeIndex)
   }
 
   const b = async (c: Context, next: Next) => {
@@ -47,6 +49,8 @@ describe('compose', () => {
     expect(context.get('log')).not.toBeNull()
     expect(context.get('log')).toBe('log message')
     expect(context.get('xxx')).toBe('yyy')
+    expect(context.get('routeIndex-before-next')).toBe(0)
+    expect(context.get('routeIndex-after-next')).toBe(0)
   })
   it('Response', async () => {
     const composed = compose(middleware)
@@ -244,7 +248,9 @@ describe('compose with Context - 500 error', () => {
     }
 
     const mHandler = async (_c: Context, next: Next) => {
+      _c.set('routeIndex-before-next', _c.req.routeIndex)
       await next()
+      _c.set('routeIndex-after-next', _c.req.routeIndex)
     }
 
     middleware.push(buildMiddlewareTuple(mHandler))
@@ -259,6 +265,8 @@ describe('compose with Context - 500 error', () => {
     expect(context.res.status).toBe(500)
     expect(await context.res.text()).toBe('onError')
     expect(context.finalized).toBe(true)
+    expect(context.get('routeIndex-before-next')).toBe(0)
+    expect(context.get('routeIndex-after-next')).toBe(0)
   })
 
   it('Error on handler - async', async () => {
