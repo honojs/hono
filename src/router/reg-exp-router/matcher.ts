@@ -1,4 +1,4 @@
-import type { ParamIndexMap, Router, Result } from '../../router'
+import type { ParamIndexMap, Result, Router } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 
 export type HandlerData<T> = [T, ParamIndexMap][]
