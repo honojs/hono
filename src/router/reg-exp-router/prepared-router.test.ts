@@ -16,7 +16,8 @@ describe('PreparedRegExpRouter', async () => {
         ],
       },
       {
-        reason: 'This route can not be added with `:label` to RegExpRouter. This is ambiguous',
+        reason:
+          'This route can not be added with `:label` to PreparedRegExpRouter. This is ambiguous',
         tests: ['Including slashes > GET /js/main.js'],
       },
     ],
