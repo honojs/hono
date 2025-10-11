@@ -1,6 +1,7 @@
 import type { ParamStash } from '../../router'
 import { UnsupportedPathError } from '../../router'
 import { runTest } from '../common.case.test'
+import { buildInitParams, serializeInitParams, PreparedRegExpRouter } from './prepared-router'
 import { RegExpRouter } from './router'
 
 describe('RegExpRouter', () => {
@@ -141,37 +142,50 @@ describe('RegExpRouter', () => {
 })
 
 describe('PreparedRegExpRouter', async () => {
-  const serialized = serializeInitParams(
-    buildInitParams({
-      paths: ['*', '/static', '/posts/:id/*', '/posts/:id', '/posts/:id/comments', '/posts'],
-    })
-  )
+  runTest({
+    skip: [
+      {
+        reason: 'UnsupportedPath',
+        tests: [
+          'Duplicate param name > parent',
+          'Duplicate param name > child',
+          'Capture Group > Complex capturing group > GET request',
+          'Capture complex multiple directories > GET /part1/middle-b/latest',
+          'Capture complex multiple directories > GET /part1/middle-b/end-c/latest',
+          'Complex > Parameter with {.*} regexp',
+        ],
+      },
+      {
+        reason: 'This route can not be added with `:label` to RegExpRouter. This is ambiguous',
+        tests: ['Including slashes > GET /js/main.js'],
+      },
+    ],
+    newRouter: <T>() => {
+      let router: PreparedRegExpRouter<T>
+      const routes: [string, string, T][] = []
+      return {
+        name: 'PreparedRegExpRouterBuilder',
+        add: (method: string, path: string, handler: T) => {
+          routes.push([method, path, handler])
+        },
+        match: (method: string, path: string) => {
+          if (!router) {
+            const serialized = serializeInitParams(
+              buildInitParams({
+                paths: routes.map((r) => r[1]),
+              })
+            )
+            console.log(serialized)
+            const params = eval(serialized) as ConstructorParameters<typeof PreparedRegExpRouter<T>>
+            router = new PreparedRegExpRouter<T>(...params)
 
-  const path = `${tmpdir()}/params.ts`
-  await writeFile(path, `const params = ${serialized}; export default params`)
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const params: ConstructorParameters<typeof PreparedRegExpRouter<string>> = (await import(path))
-    .default
-  const router = new PreparedRegExpRouter<string>(...params)
-
-  router.add('ALL', '*', 'wildcard')
-  router.add('GET', '*', 'star1')
-  router.add('GET', '/static', 'static')
-  router.add('ALL', '/posts/:id/*', 'all star2')
-  router.add('GET', '/posts/:id/*', 'star2')
-  router.add('GET', '/posts/:id', 'post')
-  router.add('GET', '/posts/:id/comments', 'comments')
-  router.add('POST', '/posts', 'create')
-  router.add('PUT', '/posts/:id', 'update')
-
-  it('GET /posts/123/comments', async () => {
-    const [res] = router.match('GET', '/posts/123/comments')
-    expect(res.length).toBe(5)
-    expect(res[0][0]).toEqual('wildcard')
-    expect(res[1][0]).toEqual('star1')
-    expect(res[2][0]).toEqual('all star2')
-    expect(res[3][0]).toEqual('star2')
-    expect(res[4][0]).toEqual('comments')
+            for (const route of routes) {
+              router.add(...route)
+            }
+          }
+          return router.match(method, path)
+        },
+      }
+    },
   })
 })
