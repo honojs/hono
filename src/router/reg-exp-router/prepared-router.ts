@@ -30,10 +30,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     if (path === '/*' || path === '*') {
       const defaultHandlerData: [T, ParamIndexMap] = [handler, {}]
       ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
-        const matcher = this.#matchers[m]
-        if (!matcher) {
-          return
-        }
+        const matcher = this.#matchers[m] as Matcher<T>
         matcher[1].forEach((list) => list && list.push(defaultHandlerData))
         Object.values(matcher[2]).forEach((list) =>
           (list[0] as [T, ParamIndexMap][]).push(defaultHandlerData)
@@ -48,10 +45,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     }
     for (const [indexes, map] of data) {
       ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
-        const matcher = this.#matchers[m]
-        if (!matcher) {
-          return
-        }
+        const matcher = this.#matchers[m] as Matcher<T>
         if (!map) {
           // assumed to be a static route
           matcher[2][path][0].push([handler, {}])
@@ -85,11 +79,6 @@ export const buildInitParams: (params: {
 
   const matchers = router[buildAllMatchersKey]()
   const all = matchers[METHOD_NAME_ALL] as Matcher<string>
-  for (const method in matchers) {
-    if (method !== METHOD_NAME_ALL) {
-      delete matchers[method]
-    }
-  }
 
   const relocateMap: RelocateMap = {}
   for (const path of paths) {
