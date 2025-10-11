@@ -152,12 +152,12 @@ export const jwt = (options: {
   }
 }
 
-function unauthorizedResponse(opts: {
+const unauthorizedResponse = (opts: {
   ctx: Context
   error: string
   errDescription: string
   statusText?: string
-}) {
+}) => {
   return new Response('Unauthorized', {
     status: 401,
     statusText: opts.statusText,
