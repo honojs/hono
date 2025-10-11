@@ -35,7 +35,11 @@ export type {
 /**
  * Types for context, context variable map, context renderer, and execution context.
  */
-export type { Context, ContextVariableMap, ContextRenderer, ExecutionContext } from './context'
+export type { ContextVariableMap, ContextRenderer, ExecutionContext } from './context'
+/**
+ * Context class for request handling and response generation.
+ */
+export { Context } from './context'
 /**
  * Type for HonoRequest.
  */
