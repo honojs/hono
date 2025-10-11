@@ -105,6 +105,9 @@ export const buildInitParams: (params: {
 
   const relocateMap: RelocateMap = {}
   for (const path of paths) {
+    if (path === '/*' || path === '*') {
+      continue
+    }
     all[1].forEach((list, i) => {
       list.forEach(([p, map]) => {
         if (p === path) {
