@@ -84,9 +84,6 @@ export const buildInitParams: (params: {
 }) => ConstructorParameters<typeof PreparedRegExpRouter> = ({ paths }) => {
   const router = new RegExpRouter<string>()
   for (const path of paths) {
-    if (path === '/*' || path === '*') {
-      continue
-    }
     router.add(METHOD_NAME_ALL, path, path)
   }
 
