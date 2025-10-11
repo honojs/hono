@@ -5,10 +5,18 @@ import KoaRouter from 'koa-tree-router'
 import { run, bench, group } from 'mitata'
 import TrekRouter from 'trek-router'
 import { LinearRouter } from '../../../src/router/linear-router/index.ts'
-import { RegExpRouter } from '../../../src/router/reg-exp-router/index.ts'
+import {
+  RegExpRouter,
+  PreparedRegExpRouter,
+  buildInitParams,
+} from '../../../src/router/reg-exp-router/index.ts'
 import { TrieRouter } from '../../../src/router/trie-router/index.ts'
 import type { Route } from './tool.mts'
 import { routes } from './tool.mts'
+
+const preparedParams = buildInitParams({
+  paths: routes.map((r) => r.path),
+})
 
 const benchRoutes: (Route & { name: string })[] = [
   {
@@ -52,6 +60,13 @@ for (const benchRoute of benchRoutes) {
   group(`${benchRoute.method} ${benchRoute.path}`, () => {
     bench('RegExpRouter', () => {
       const router = new RegExpRouter()
+      for (const route of routes) {
+        router.add(route.method, route.path, () => {})
+      }
+      router.match(benchRoute.method, benchRoute.path)
+    })
+    bench('PreparedRegExpRouter', () => {
+      const router = new PreparedRegExpRouter(preparedParams[0], preparedParams[1])
       for (const route of routes) {
         router.add(route.method, route.path, () => {})
       }
