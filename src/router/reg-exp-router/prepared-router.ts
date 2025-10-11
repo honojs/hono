@@ -89,11 +89,11 @@ export const buildInitParams: (params: {
 
   const matchers = router[buildAllMatchersKey]()
   const all = matchers[METHOD_NAME_ALL] as Matcher<string>
-  Object.keys(matchers).forEach((method) => {
+  for (const method in matchers) {
     if (method !== METHOD_NAME_ALL) {
       delete matchers[method]
     }
-  })
+  }
 
   const relocateMap: RelocateMap = {}
   for (const path of paths) {
@@ -114,7 +114,7 @@ export const buildInitParams: (params: {
         }
       })
     })
-    for (const path2 of Object.keys(all[2])) {
+    for (const path2 in all[2]) {
       all[2][path2][0].forEach(([p, map]) => {
         if (p === path) {
           if (relocateMap[path]) {
@@ -138,9 +138,9 @@ export const buildInitParams: (params: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     all[1][i] = all[1][i] ? [] : (0 as any)
   }
-  Object.keys(all[2]).forEach((path) => {
+  for (const path in all[2]) {
     all[2][path][0] = []
-  })
+  }
 
   return [matchers, relocateMap]
 }
@@ -148,7 +148,7 @@ export const buildInitParams: (params: {
 export const serializeInitParams: (
   params: ConstructorParameters<typeof PreparedRegExpRouter>
 ) => string = ([matchers, relocateMap]) => {
-  for (const method of Object.keys(matchers)) {
+  for (const method in matchers) {
     if (!matchers[method]) {
       continue
     }
