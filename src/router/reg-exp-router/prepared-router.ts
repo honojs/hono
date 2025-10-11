@@ -4,7 +4,7 @@ import type { HandlerData, Matcher, MatcherMap, StaticMap } from './matcher'
 import { match, buildAllMatchersKey, emptyParam } from './matcher'
 import { RegExpRouter } from './router'
 
-type RelocateMap = Record<string, [(number | string)[], ParamIndexMap | undefined][]>
+type RelocateMap = Record<string, ([(number | string)[], ParamIndexMap] | [(number | string)[]])[]>
 
 export class PreparedRegExpRouter<T> implements Router<T> {
   name: string = 'PreparedRegExpRouter'
@@ -102,7 +102,7 @@ export const buildInitParams: (params: {
     for (const path2 in all[2]) {
       all[2][path2][0].forEach(([p]) => {
         if (p === path) {
-          relocateMap[path] ||= [[[], undefined]]
+          relocateMap[path] ||= [[[]]]
           const value = path2 === path ? '' : path2
           if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
             relocateMap[path][0][0].push(value)
