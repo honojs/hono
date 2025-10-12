@@ -6,7 +6,7 @@ import {
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
 import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
-import { match, emptyParam, buildAllMatchersKey } from './matcher'
+import { match, emptyParam } from './matcher'
 import { PATH_ERROR } from './node'
 import type { ParamAssocArray } from './node'
 import { Trie } from './trie'
@@ -203,9 +203,9 @@ export class RegExpRouter<T> implements Router<T> {
     }
   }
 
-  match: typeof match<Router<T>, T> = match;
+  match: typeof match<Router<T>, T> = match
 
-  [buildAllMatchersKey](): MatcherMap<T> {
+  protected buildAllMatchers(): MatcherMap<T> {
     const matchers: MatcherMap<T> = Object.create(null)
 
     Object.keys(this.#routes!)
