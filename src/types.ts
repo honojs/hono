@@ -68,20 +68,24 @@ export interface RouterRoute {
 //////                            //////
 ////////////////////////////////////////
 
-export type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
+export type HandlerResponse<O, H extends Handler = Handler> =
+  | Response
+  | TypedResponse<O>
+  | H
+  | Promise<Response | TypedResponse<O> | H>
 
 export type Handler<
   E extends Env = any,
   P extends string = any,
   I extends Input = BlankInput,
-  R extends HandlerResponse<any> = any
+  R extends HandlerResponse<any, Handler<E, P, I>> = any
 > = (c: Context<E, P, I>, next: Next) => R
 
 export type MiddlewareHandler<
   E extends Env = any,
   P extends string = string,
   I extends Input = {}
-> = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
+> = (c: Context<E, P, I>, next: Next) => Promise<Response | MiddlewareHandler<E, P, I> | void>
 
 export type H<
   E extends Env = any,

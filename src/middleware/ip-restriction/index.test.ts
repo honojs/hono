@@ -56,7 +56,7 @@ describe('ipRestriction middleware', () => {
       () => new Response('error')
     )(new Context(new Request('http://localhost/')), async () => void 0)
     expect(res).toBeTruthy()
-    if (res) {
+    if (res instanceof Response) {
       expect(await res.text()).toBe('error')
     }
   })

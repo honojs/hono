@@ -63,41 +63,48 @@ export function handleMiddleware<E extends Env = {}, P extends string = any, I e
       executionCtx,
     })
 
-    let response: Response | void = undefined
+    let response: Response | Function | void = undefined
 
-    try {
-      response = await middleware(context, async () => {
-        try {
-          context.res = await executionCtx.next()
-        } catch (error) {
-          if (error instanceof Error) {
-            context.error = error
-          } else {
-            throw error
+    for (;;) {
+      try {
+        response = await middleware(context, async () => {
+          try {
+            context.res = await executionCtx.next()
+          } catch (error) {
+            if (error instanceof Error) {
+              context.error = error
+            } else {
+              throw error
+            }
           }
+        })
+
+        if (typeof response === 'function') {
+          middleware = response as typeof middleware
+          continue
         }
-      })
-    } catch (error) {
-      if (error instanceof Error) {
-        context.error = error
-      } else {
-        throw error
+      } catch (error) {
+        if (error instanceof Error) {
+          context.error = error
+        } else {
+          throw error
+        }
       }
-    }
 
-    if (response) {
-      return response
-    }
+      if (response) {
+        return response as Response
+      }
 
-    if (context.error instanceof HTTPException) {
-      return context.error.getResponse()
-    }
+      if (context.error instanceof HTTPException) {
+        return context.error.getResponse()
+      }
 
-    if (context.error) {
-      throw context.error
-    }
+      if (context.error) {
+        throw context.error
+      }
 
-    return context.res
+      return context.res
+    }
   }
 }
 

@@ -415,22 +415,30 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // Do not `compose` if it has only one handler
     if (matchResult[0].length === 1) {
       let res: ReturnType<H>
-      try {
-        res = matchResult[0][0][0][0](c, async () => {
-          c.res = await this.#notFoundHandler(c)
-        })
-      } catch (err) {
-        return this.#handleError(err, c)
-      }
+      let handler = matchResult[0][0][0][0]
+      for (;;) {
+        try {
+          res = handler(c, async () => {
+            c.res = await this.#notFoundHandler(c)
+          })
+        } catch (err) {
+          return this.#handleError(err, c)
+        }
 
-      return res instanceof Promise
-        ? res
-            .then(
-              (resolved: Response | undefined) =>
-                resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
-            )
-            .catch((err: Error) => this.#handleError(err, c))
-        : res ?? this.#notFoundHandler(c)
+        if (typeof res === 'function') {
+          handler = res
+          continue
+        }
+
+        return res instanceof Promise
+          ? res
+              .then(
+                (resolved: Response | undefined) =>
+                  resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
+              )
+              .catch((err: Error) => this.#handleError(err, c))
+          : res ?? this.#notFoundHandler(c)
+      }
     }
 
     const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
