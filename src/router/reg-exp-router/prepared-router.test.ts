@@ -1,3 +1,4 @@
+import { METHOD_NAME_ALL } from '../../router'
 import { runTest } from '../common.case.test'
 import { buildInitParams, serializeInitParams, PreparedRegExpRouter } from './prepared-router'
 
@@ -66,5 +67,88 @@ describe('PreparedRegExpRouter', async () => {
       const router = new PreparedRegExpRouter(...params)
       expect(() => router.add('GET', '/unknown', 'get hello')).toThrowError()
     })
+  })
+})
+
+describe('buildInitParams() and serializeInitParams()', () => {
+  it('should build empty init params', () => {
+    const params = buildInitParams({
+      paths: [],
+    })
+    expect(params).toEqual([{ [METHOD_NAME_ALL]: [/^$/, [], {}] }, {}])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should build init params with one static path', () => {
+    const params = buildInitParams({
+      paths: ['/hello'],
+    })
+    expect(params).toEqual([
+      {
+        [METHOD_NAME_ALL]: [
+          /^$/,
+          [],
+          {
+            '/hello': [[], []],
+          },
+        ],
+      },
+      {
+        '/hello': [[['']]],
+      },
+    ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should build init params with paths with params', () => {
+    const params = buildInitParams({
+      paths: ['/hello/:name', '/hello/:name/posts/:postId'],
+    })
+    expect(params).toEqual([
+      {
+        [METHOD_NAME_ALL]: [/^\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())/, [0, 0, [], 0, []], {}],
+      },
+      {
+        '/hello/:name': [[[2], { name: 1 }]],
+        '/hello/:name/posts/:postId': [[[4], { name: 1, postId: 3 }]],
+      },
+    ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should build init params with wildcard', () => {
+    const params = buildInitParams({
+      paths: ['*'],
+    })
+    expect(params).toEqual([
+      {
+        [METHOD_NAME_ALL]: [/^.*$()/, [0, []], {}],
+      },
+      {},
+    ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should build init params with complex path', () => {
+    const params = buildInitParams({
+      paths: ['/hello', '/hello/:name', '/hello/:name/posts/:postId', '*'],
+    })
+    expect(params).toEqual([
+      {
+        [METHOD_NAME_ALL]: [
+          /^(?:\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())|.*$())/,
+          [0, 0, [], 0, [], []],
+          {
+            '/hello': [[], []],
+          },
+        ],
+      },
+      {
+        '/hello': [[['']]],
+        '/hello/:name': [[[2], { name: 1 }]],
+        '/hello/:name/posts/:postId': [[[4], { name: 1, postId: 3 }]],
+      },
+    ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
   })
 })
