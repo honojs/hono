@@ -7,10 +7,9 @@ export type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 export type MatcherMap<T> = Record<string, Matcher<T> | null>
 
 export const emptyParam: string[] = []
-export const buildAllMatchersKey = Symbol('buildAllMatchers')
 export function match<R extends Router<T>, T>(this: R, method: string, path: string): Result<T> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const matchers: MatcherMap<T> = (this as any)[buildAllMatchersKey]()
+  const matchers: MatcherMap<T> = (this as any).buildAllMatchers()
 
   const match = ((method, path) => {
     const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
