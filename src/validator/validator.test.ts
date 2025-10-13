@@ -115,17 +115,17 @@ describe('JSON', () => {
     expect(data).toEqual({ foo: 'bar' })
   })
 
-  it('Should not validate if Content-Type is not set', async () => {
+  it('Should return 415 response if Content-Type is not set', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(415)
     const data = await res.json()
     expect(data.foo).toBeUndefined()
   })
 
-  it('Should not validate if Content-Type is wrong', async () => {
+  it('Should return 415 response if Content-Type is wrong', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
@@ -133,7 +133,7 @@ describe('JSON', () => {
       },
       body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(415)
   })
 
   it('Should validate if Content-Type is a application/json with a charset', async () => {
@@ -231,6 +231,29 @@ describe('FormData', () => {
     expect(await res.json()).toEqual({ message: 'hi' })
   })
 
+  it('Should return 415 response if Content-Type is not set', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: formData,
+    })
+    expect(res.status).toBe(415)
+  })
+
+  it('Should return 415 response if Content-Type is wrong', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: formData,
+    })
+    expect(res.status).toBe(415)
+  })
+  
   it('Should validate a URL Encoded Data', async () => {
     const params = new URLSearchParams()
     params.append('foo', 'bar')
