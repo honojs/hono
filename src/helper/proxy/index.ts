@@ -12,8 +12,9 @@ const hopByHopHeaders = [
   'proxy-authenticate',
   'proxy-authorization',
   'te',
-  'trailers',
+  'trailer',
   'transfer-encoding',
+  'upgrade',
 ]
 
 interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
@@ -38,6 +39,17 @@ const buildRequestInitFromRequest = (
   }
 
   const headers = new Headers(request.headers)
+
+  // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+  // Parse Connection header and remove listed headers (MUST per RFC 9110)
+  const connectionValue = headers.get('connection')
+  if (connectionValue) {
+    connectionValue
+      .split(',')
+      .map((h) => h.trim().toLowerCase())
+      .forEach((h) => headers.delete(h))
+  }
+
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
   })

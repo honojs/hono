@@ -144,9 +144,10 @@ describe('Proxy Middleware', () => {
 
       const res = await app.request('/proxy/hop-by-hop', {
         headers: {
-          Connection: 'keep-alive',
+          Connection: 'keep-alive, custom-header',
           'Keep-Alive': 'timeout=5, max=1000',
           'Proxy-Authorization': 'Basic 123456',
+          'Custom-Header': 'test',
         },
       })
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
@@ -154,6 +155,7 @@ describe('Proxy Middleware', () => {
       expect(req.headers.get('Connection')).toBeNull()
       expect(req.headers.get('Keep-Alive')).toBeNull()
       expect(req.headers.get('Proxy-Authorization')).toBeNull()
+      expect(req.headers.get('Custom-Header')).toBeNull()
 
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
     })
