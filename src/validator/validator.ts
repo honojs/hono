@@ -27,6 +27,10 @@ const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))
 const multipartRegex = /^multipart\/form-data(;\s?boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/
 const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 
+const ERROR_MESSAGE_JSON = 'Missing Content-Type header "application/json"'
+const ERROR_MESSAGE_FORM =
+  'Missing Content-Type header "multipart/form-data" or "application/x-www-form-urlencoded"'
+
 export const validator = <
   InputType,
   P extends string,
@@ -72,7 +76,7 @@ export const validator = <
     switch (target) {
       case 'json':
         if (!contentType || !jsonRegex.test(contentType)) {
-          break
+          throw new HTTPException(415, { message: ERROR_MESSAGE_JSON })
         }
         try {
           value = await c.req.json()
@@ -86,7 +90,7 @@ export const validator = <
           !contentType ||
           !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
         ) {
-          break
+          throw new HTTPException(415, { message: ERROR_MESSAGE_FORM })
         }
 
         let formData: FormData
