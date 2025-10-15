@@ -195,6 +195,26 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
     })
 
+    it('invalid hop-by-hop headers with strictConnectionProcessing', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          strictConnectionProcessing: true,
+        })
+      )
+
+      const res = await app.request('/proxy/hop-by-hop', {
+        headers: {
+          Host: 'example.com',
+          Connection: 'keep-alive, invalid-header invalid-header',
+          'Keep-Alive': 'timeout=5, max=1000',
+        },
+      })
+
+      expect(res.status).toBe(400)
+    })
+
     it('specify hop-by-hop header by options', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>

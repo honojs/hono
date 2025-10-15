@@ -17,6 +17,9 @@ const hopByHopHeaders = [
   'upgrade',
 ]
 
+// https://datatracker.ietf.org/doc/html/rfc9110#section-5.6.2
+const ALLOWED_TOKEN_PATTERN = /^[!#$%&'*+\-.0-9A-Z^_`a-z|~]+$/
+
 interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
   raw?: Request
   headers?:
@@ -43,29 +46,69 @@ interface ProxyFetch {
   (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
 }
 
+type ConnectionHeaderResult =
+  | {
+      isSuccess: true
+      request: Request | undefined
+    }
+  | {
+      isSuccess: false
+      message: string
+    }
+
+/**
+ * Validate and process Connection header per RFC 9110 Section 7.6.1
+ *
+ * @param headers - Headers object to process
+ * @param strictConnectionProcessing - Whether to process Connection header per RFC 9110 Section 7.6.1
+ * @returns Result object indicating success or failure with message
+ */
+const processConnectionHeader = (
+  raw: Request | undefined,
+  strictConnectionProcessing: boolean
+): ConnectionHeaderResult => {
+  if (!raw) {
+    return { isSuccess: true, request: undefined }
+  }
+
+  if (!strictConnectionProcessing) {
+    return { isSuccess: true, request: raw }
+  }
+
+  const headers = new Headers(raw.headers)
+  const connectionValue = headers.get('connection')
+  if (!connectionValue) {
+    return { isSuccess: true, request: raw }
+  }
+
+  const headerNames = connectionValue.split(',').map((h) => h.trim())
+
+  // Validate header names per RFC 9110 Section 5.6.2 (token syntax)
+  const invalidHeaders = headerNames.filter((h) => !ALLOWED_TOKEN_PATTERN.test(h))
+
+  if (invalidHeaders.length > 0) {
+    return {
+      isSuccess: false,
+      message: `Invalid Connection header value: ${invalidHeaders.join(', ')}`,
+    }
+  }
+
+  // Remove headers listed in Connection header
+  headerNames.forEach((headerName) => {
+    headers.delete(headerName)
+  })
+
+  return { isSuccess: true, request: { ...raw, headers: headers } }
+}
+
 const buildRequestInitFromRequest = (
-  request: Request | undefined,
-  strictConnectionProcessing = false
+  request: Request | undefined
 ): RequestInit & { duplex?: 'half' } => {
   if (!request) {
     return {}
   }
 
   const headers = new Headers(request.headers)
-
-  // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
-  // Parse Connection header and remove listed headers (MUST per RFC 9110)
-  if (strictConnectionProcessing) {
-    const connectionValue = headers.get('connection')
-    if (connectionValue) {
-      connectionValue
-        .split(',')
-        .map((h) => h.trim())
-        .forEach((headerName) => {
-          headers.delete(headerName)
-        })
-    }
-  }
 
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
@@ -148,11 +191,20 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  * ```
  */
 export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, customFetch, strictConnectionProcessing, ...requestInit } =
-    proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
+  const {
+    raw,
+    customFetch,
+    strictConnectionProcessing = false,
+    ...requestInit
+  } = proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
+
+  const result = processConnectionHeader(raw, strictConnectionProcessing)
+  if (!result.isSuccess) {
+    return new Response(result.message, { status: 400 })
+  }
 
   const req = new Request(input, {
-    ...buildRequestInitFromRequest(raw, strictConnectionProcessing),
+    ...buildRequestInitFromRequest(result.request),
     ...preprocessRequestInit(requestInit as RequestInit),
   })
   req.headers.delete('accept-encoding')
