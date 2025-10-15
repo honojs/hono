@@ -166,10 +166,12 @@ describe('Proxy Middleware', () => {
 
     it('remove hop-by-hop headers with strictConnectionProcessing', async () => {
       const app = new Hono()
-      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`, {
-        ...c.req,
-        strictConnectionProcessing: true,
-      }))
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          strictConnectionProcessing: true,
+        })
+      )
 
       const res = await app.request('/proxy/hop-by-hop', {
         headers: {
