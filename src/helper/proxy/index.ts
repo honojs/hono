@@ -46,7 +46,7 @@ const buildRequestInitFromRequest = (
   if (connectionValue) {
     connectionValue
       .split(',')
-      .map((h) => h.trim().toLowerCase())
+      .map((h) => h.trim())
       .forEach((h) => headers.delete(h))
   }
 
