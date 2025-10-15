@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GET_MATCH_RESULT } from './request/constants'
 import type { Result } from './router'
 import type {
@@ -28,6 +27,7 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
+  private _raw: Request
   /**
    * `.raw` can get the raw Request object.
    *
@@ -42,8 +42,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
-  raw: Request
-
+  raw!: Request
   #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
   #matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
@@ -67,10 +66,30 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     path: string = '/',
     matchResult: Result<[unknown, RouterRoute]> = [[]]
   ) {
-    this.raw = request
+    this._raw = request
     this.path = path
     this.#matchResult = matchResult
     this.#validatedData = {}
+    /* eslint-disable @typescript-eslint/no-this-alias */
+    const self = this
+    Object.defineProperty(this, 'raw', {
+      get() {
+        if (self._raw.bodyUsed) {
+          const body = self.#getAnyCachedBody()
+          if (body) {
+            return new Request(self._raw, {
+              ...self._raw,
+              body,
+            })
+          }
+        }
+        return self._raw
+      },
+      set(req: Request) {
+        self._raw = req
+      },
+      enumerable: true,
+    })
   }
 
   /**
@@ -209,7 +228,18 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return (this.bodyCache.parsedBody ??= await parseBody(this, options))
   }
 
-  #cachedBody = (key: keyof Body) => {
+  #getAnyCachedBody = () => {
+    const anyCachedKey = Object.keys(this.bodyCache)[0]
+    if (anyCachedKey) {
+      let body = this.bodyCache[anyCachedKey as keyof Body]
+      if (anyCachedKey === 'json') {
+        body = JSON.stringify(body)
+      }
+      return body
+    }
+  }
+
+  #cachedBody = async (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
 
@@ -217,17 +247,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    const anyCachedKey = Object.keys(bodyCache)[0]
-    if (anyCachedKey) {
-      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
-        if (anyCachedKey === 'json') {
-          body = JSON.stringify(body)
-        }
-        return new Response(body)[key]()
-      })
-    }
-
-    return (bodyCache[key] = raw[key]())
+    const body = this.#getAnyCachedBody()
+    return body ? new Response(body)[key]() : (bodyCache[key] = await raw[key]())
   }
 
   /**
