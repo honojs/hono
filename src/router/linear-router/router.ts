@@ -137,4 +137,8 @@ export class LinearRouter<T> implements Router<T> {
 
     return [handlers]
   }
+
+  clear(): void {
+    this.#routes = []
+  }
 }
