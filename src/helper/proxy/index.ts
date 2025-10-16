@@ -3,6 +3,7 @@
  * Proxy Helper for Hono.
  */
 
+import { HTTPException } from '../../http-exception'
 import type { RequestHeader } from '../../utils/headers'
 
 // https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
@@ -46,69 +47,35 @@ interface ProxyFetch {
   (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
 }
 
-type ConnectionHeaderResult =
-  | {
-      isSuccess: true
-      request: Request | undefined
-    }
-  | {
-      isSuccess: false
-      message: string
-    }
-
-/**
- * Validate and process Connection header per RFC 9110 Section 7.6.1
- *
- * @param headers - Headers object to process
- * @param strictConnectionProcessing - Whether to process Connection header per RFC 9110 Section 7.6.1
- * @returns Result object indicating success or failure with message
- */
-const processConnectionHeader = (
-  raw: Request | undefined,
-  strictConnectionProcessing: boolean
-): ConnectionHeaderResult => {
-  if (!raw) {
-    return { isSuccess: true, request: undefined }
-  }
-
-  if (!strictConnectionProcessing) {
-    return { isSuccess: true, request: raw }
-  }
-
-  const headers = new Headers(raw.headers)
-  const connectionValue = headers.get('connection')
-  if (!connectionValue) {
-    return { isSuccess: true, request: raw }
-  }
-
-  const headerNames = connectionValue.split(',').map((h) => h.trim())
-
-  // Validate header names per RFC 9110 Section 5.6.2 (token syntax)
-  const invalidHeaders = headerNames.filter((h) => !ALLOWED_TOKEN_PATTERN.test(h))
-
-  if (invalidHeaders.length > 0) {
-    return {
-      isSuccess: false,
-      message: `Invalid Connection header value: ${invalidHeaders.join(', ')}`,
-    }
-  }
-
-  // Remove headers listed in Connection header
-  headerNames.forEach((headerName) => {
-    headers.delete(headerName)
-  })
-
-  return { isSuccess: true, request: { ...raw, headers: headers } }
-}
-
 const buildRequestInitFromRequest = (
-  request: Request | undefined
+  request: Request | undefined,
+  strictConnectionProcessing: boolean
 ): RequestInit & { duplex?: 'half' } => {
   if (!request) {
     return {}
   }
 
   const headers = new Headers(request.headers)
+
+  if (strictConnectionProcessing) {
+    // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+    // Parse Connection header and remove listed headers (MUST per RFC 9110)
+    const connectionValue = headers.get('connection')
+    if (connectionValue) {
+      const headerNames = connectionValue.split(',').map((h) => h.trim())
+      // Validate header names per RFC 9110 Section 5.6.2 (token syntax)
+      const invalidHeaders = headerNames.filter((h) => !ALLOWED_TOKEN_PATTERN.test(h))
+
+      if (invalidHeaders.length > 0) {
+        throw new HTTPException(400, {
+          message: `Invalid Connection header value: ${invalidHeaders.join(', ')}`,
+        })
+      }
+      headerNames.forEach((headerName) => {
+        headers.delete(headerName)
+      })
+    }
+  }
 
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
@@ -198,13 +165,8 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
     ...requestInit
   } = proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
 
-  const result = processConnectionHeader(raw, strictConnectionProcessing)
-  if (!result.isSuccess) {
-    return new Response(result.message, { status: 400 })
-  }
-
   const req = new Request(input, {
-    ...buildRequestInitFromRequest(result.request),
+    ...buildRequestInitFromRequest(raw, strictConnectionProcessing),
     ...preprocessRequestInit(requestInit as RequestInit),
   })
   req.headers.delete('accept-encoding')
