@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { HTTPException } from './http-exception'
 import { GET_MATCH_RESULT } from './request/constants'
 import type { Result } from './router'
 import type {
@@ -24,6 +25,11 @@ type Body = {
   formData: FormData
 }
 type BodyCache = Partial<Body & { parsedBody: BodyData }>
+
+type OptionalRequestInitProperties = 'window' | 'priority'
+type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
+  [Key in OptionalRequestInitProperties]?: RequestInit[Key]
+}
 
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
@@ -416,4 +422,66 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   get routePath(): string {
     return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
   }
+}
+
+/**
+ * Clones a HonoRequest's underlying raw Request object.
+ *
+ * This utility handles both consumed and unconsumed request bodies:
+ * - If the request body hasn't been consumed, it uses the native `clone()` method
+ * - If the request body has been consumed, it reconstructs a new Request using cached body data
+ *
+ * This is particularly useful when you need to:
+ * - Process the same request body multiple times
+ * - Pass requests to external services after validation
+ *
+ * @param req - The HonoRequest object to clone
+ * @returns A Promise that resolves to a new Request object with the same properties
+ * @throws {HTTPException} If the request body was consumed directly via `req.raw`
+ *   without using HonoRequest methods (e.g., `req.json()`, `req.text()`), making it
+ *   impossible to reconstruct the body from cache
+ *
+ * @example
+ * ```ts
+ * // Clone after consuming the body (e.g., after validation)
+ * app.post('/forward',
+ *   validator('json', (data) => data),
+ *   async (c) => {
+ *     const validated = c.req.valid('json')
+ *     // Body has been consumed, but cloneRawRequest still works
+ *     const clonedReq = await cloneRawRequest(c.req)
+ *     return fetch('http://backend-service.com', clonedReq)
+ *   }
+ * )
+ * ```
+ */
+export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
+  if (!req.raw.bodyUsed) {
+    return req.raw.clone()
+  }
+
+  const cacheKey = (Object.keys(req.bodyCache) as Array<keyof Body>)[0]
+  if (!cacheKey) {
+    throw new HTTPException(500, {
+      message:
+        'Cannot clone request: body was already consumed and not cached. Please use HonoRequest methods (e.g., req.json(), req.text()) instead of consuming req.raw directly.',
+    })
+  }
+
+  const requestInit: RequiredRequestInit = {
+    body: await req[cacheKey](),
+    cache: req.raw.cache,
+    credentials: req.raw.credentials,
+    headers: req.header(),
+    integrity: req.raw.integrity,
+    keepalive: req.raw.keepalive,
+    method: req.method,
+    mode: req.raw.mode,
+    redirect: req.raw.redirect,
+    referrer: req.raw.referrer,
+    referrerPolicy: req.raw.referrerPolicy,
+    signal: req.raw.signal,
+  }
+
+  return new Request(req.url, requestInit)
 }

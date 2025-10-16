@@ -349,6 +349,22 @@ export interface ToSSGAdaptorInterface<
 }
 
 /**
+ * The default plugin that defines the recommended behavior.
+ *
+ * @experimental
+ * `defaultPlugin` is an experimental feature.
+ * The API might be changed.
+ */
+export const defaultPlugin: SSGPlugin = {
+  afterResponseHook: (res) => {
+    if (res.status !== 200) {
+      return false
+    }
+    return res
+  },
+}
+
+/**
  * @experimental
  * `toSSG` is an experimental feature.
  * The API might be changed.
@@ -357,7 +373,7 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
-  const plugins = options?.plugins || []
+  const plugins = options?.plugins || [defaultPlugin]
   const beforeRequestHooks: BeforeRequestHook[] = []
   const afterResponseHooks: AfterResponseHook[] = []
   const afterGenerateHooks: AfterGenerateHook[] = []
