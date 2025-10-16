@@ -3,6 +3,7 @@
  * Proxy Helper for Hono.
  */
 
+import { HTTPException } from '../../http-exception'
 import type { RequestHeader } from '../../utils/headers'
 
 // https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
@@ -12,9 +13,13 @@ const hopByHopHeaders = [
   'proxy-authenticate',
   'proxy-authorization',
   'te',
-  'trailers',
+  'trailer',
   'transfer-encoding',
+  'upgrade',
 ]
+
+// https://datatracker.ietf.org/doc/html/rfc9110#section-5.6.2
+const ALLOWED_TOKEN_PATTERN = /^[!#$%&'*+\-.0-9A-Z^_`a-z|~]+$/
 
 interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
   raw?: Request
@@ -24,6 +29,18 @@ interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
     | Record<RequestHeader, string | undefined>
     | Record<string, string | undefined>
   customFetch?: (request: Request) => Promise<Response>
+  /**
+   * Enable strict RFC 9110 compliance for Connection header processing.
+   *
+   * - `false` (default): Ignores Connection header to prevent potential
+   *   Hop-by-Hop Header Injection attacks. Recommended for untrusted clients.
+   * - `true`: Processes Connection header per RFC 9110 and removes listed headers.
+   *   Only use in trusted environments.
+   *
+   * @default false
+   * @see https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+   */
+  strictConnectionProcessing?: boolean
 }
 
 interface ProxyFetch {
@@ -31,13 +48,35 @@ interface ProxyFetch {
 }
 
 const buildRequestInitFromRequest = (
-  request: Request | undefined
+  request: Request | undefined,
+  strictConnectionProcessing: boolean
 ): RequestInit & { duplex?: 'half' } => {
   if (!request) {
     return {}
   }
 
   const headers = new Headers(request.headers)
+
+  if (strictConnectionProcessing) {
+    // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+    // Parse Connection header and remove listed headers (MUST per RFC 9110)
+    const connectionValue = headers.get('connection')
+    if (connectionValue) {
+      const headerNames = connectionValue.split(',').map((h) => h.trim())
+      // Validate header names per RFC 9110 Section 5.6.2 (token syntax)
+      const invalidHeaders = headerNames.filter((h) => !ALLOWED_TOKEN_PATTERN.test(h))
+
+      if (invalidHeaders.length > 0) {
+        throw new HTTPException(400, {
+          message: `Invalid Connection header value: ${invalidHeaders.join(', ')}`,
+        })
+      }
+      headerNames.forEach((headerName) => {
+        headers.delete(headerName)
+      })
+    }
+  }
+
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
   })
@@ -108,14 +147,26 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  *     },
  *   })
  * })
+ *
+ * // Strict RFC compliance mode (use only in trusted environments)
+ * app.get('/internal-proxy/:path', (c) => {
+ *   return proxy(`http://${internalServer}/${c.req.param('path')}`, {
+ *     ...c.req,
+ *     strictConnectionProcessing: true,
+ *   })
+ * })
  * ```
  */
 export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, customFetch, ...requestInit } =
-    proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
+  const {
+    raw,
+    customFetch,
+    strictConnectionProcessing = false,
+    ...requestInit
+  } = proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
 
   const req = new Request(input, {
-    ...buildRequestInitFromRequest(raw),
+    ...buildRequestInitFromRequest(raw, strictConnectionProcessing),
     ...preprocessRequestInit(requestInit as RequestInit),
   })
   req.headers.delete('accept-encoding')
