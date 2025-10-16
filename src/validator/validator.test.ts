@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
+import { cloneRawRequest } from '../request'
 import type {
   ErrorHandler,
   ExtractSchema,
@@ -1296,5 +1297,74 @@ describe('Transform', () => {
 
     // Temporary: let's see what the actual type is
     type TestActual = Actual
+  })
+})
+
+describe('Raw Request cloning after validation', () => {
+  it('Should allow the `cloneRawRequest` util to clone the request object after validation', async () => {
+    const app = new Hono()
+
+    app.post(
+      '/json-validation',
+      validator('json', (data) => data),
+      async (c) => {
+        const clonedReq = await cloneRawRequest(c.req)
+        const clonedJSON = await clonedReq.json()
+
+        return c.json({
+          originalMethod: c.req.raw.method,
+          clonedMethod: clonedReq.method,
+          clonedUrl: clonedReq.url,
+          clonedHeaders: {
+            contentType: clonedReq.headers.get('Content-Type'),
+            customHeader: clonedReq.headers.get('X-Custom-Header'),
+          },
+          originalCache: c.req.raw.cache,
+          clonedCache: clonedReq.cache,
+          originalCredentials: c.req.raw.credentials,
+          clonedCredentials: clonedReq.credentials,
+          originalMode: c.req.raw.mode,
+          clonedMode: clonedReq.mode,
+          originalRedirect: c.req.raw.redirect,
+          clonedRedirect: clonedReq.redirect,
+          originalReferrerPolicy: c.req.raw.referrerPolicy,
+          clonedReferrerPolicy: clonedReq.referrerPolicy,
+          cloned: JSON.stringify(clonedJSON) === JSON.stringify(await c.req.json()),
+          payload: clonedJSON,
+        })
+      }
+    )
+
+    const testData = { message: 'test', userId: 123 }
+    const res = await app.request('/json-validation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Custom-Header': 'test-value',
+      },
+      body: JSON.stringify(testData),
+      cache: 'no-cache',
+      credentials: 'include',
+      mode: 'cors',
+      redirect: 'follow',
+      referrerPolicy: 'origin',
+    })
+
+    expect(res.status).toBe(200)
+
+    const result = await res.json()
+
+    expect(result.originalMethod).toBe('POST')
+    expect(result.clonedMethod).toBe('POST')
+    expect(result.clonedUrl).toBe('http://localhost/json-validation')
+    expect(result.clonedHeaders.contentType).toBe('application/json')
+    expect(result.clonedHeaders.customHeader).toBe('test-value')
+    expect(result.clonedCache).toBe(result.originalCache)
+    expect(result.clonedCredentials).toBe(result.originalCredentials)
+    expect(result.clonedMode).toBe(result.originalMode)
+    expect(result.clonedRedirect).toBe(result.originalRedirect)
+    expect(result.clonedReferrerPolicy).toBe(result.originalReferrerPolicy)
+    expect(result.cloned).toBe(true)
+    expect(result.payload).toMatchObject(testData)
   })
 })
