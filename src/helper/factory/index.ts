@@ -324,7 +324,7 @@ export const createMiddleware = <
   E extends Env = any,
   P extends string = string,
   I extends Input = {},
-  R extends HandlerResponse<any> = Response
+  R extends HandlerResponse<any> = any
 >(
   middleware: MiddlewareHandler<E, P, I, R>
 ): MiddlewareHandler<E, P, I, R> => middleware
