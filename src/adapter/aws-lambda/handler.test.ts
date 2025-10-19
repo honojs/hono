@@ -93,6 +93,11 @@ describe('isContentTypeBinary', () => {
     expect(defaultIsContentTypeBinary('application/json')).toBe(false)
     expect(defaultIsContentTypeBinary('application/ld+json')).toBe(false)
     expect(defaultIsContentTypeBinary('application/json')).toBe(false)
+    expect(
+      defaultIsContentTypeBinary(
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      )
+    ).toBe(true)
   })
 })
 
