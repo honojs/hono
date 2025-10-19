@@ -564,8 +564,7 @@ const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => 
  * @returns True if the content type is binary, false otherwise.
  */
 export const defaultIsContentTypeBinary = (contentType: string): boolean => {
-  if (contentType.startsWith('application/vnd.openxmlformats-officedocument.')) return true
-  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
+  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json$|.*json\.|.*xml$|.*xml\.).*|image\/svg\+xml.*)$/.test(
     contentType
   )
 }
