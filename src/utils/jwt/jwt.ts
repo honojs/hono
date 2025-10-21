@@ -12,6 +12,8 @@ import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
+  JwtPayloadRequiresAud,
+  JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
@@ -78,6 +80,8 @@ export type VerifyOptions = {
   exp?: boolean
   /** Verify the `iat` claim (default: `true`) */
   iat?: boolean
+  /** Acceptable audience(s) for the token */
+  aud?: string | string[] | RegExp
 }
 
 export type VerifyOptionsWithAlg = {
@@ -90,6 +94,7 @@ type StrictVerifyOptions = {
   nbf: boolean
   exp: boolean
   iat: boolean
+  aud?: string | string[] | RegExp
 }
 
 type StrictVerifyOptionsWithAlg = {
@@ -108,6 +113,7 @@ export const verify = async (
     nbf: optsIn.nbf ?? true,
     exp: optsIn.exp ?? true,
     iat: optsIn.iat ?? true,
+    aud: optsIn.aud,
   }
 
   const tokenParts = token.split('.')
@@ -138,6 +144,33 @@ export const verify = async (
     }
     if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
       throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
+  }
+
+  if (opts.aud) {
+    if (!payload.aud) {
+      throw new JwtPayloadRequiresAud(payload)
+    }
+  }
+
+  if (payload.aud) {
+    const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
+    const matched = audiences.some((aud): boolean => {
+      if (opts.aud instanceof RegExp && opts.aud.test(aud)) {
+        return true
+      } else if (typeof opts.aud === 'string') {
+        if (aud === opts.aud) {
+          return true
+        }
+      } else if (Array.isArray(opts.aud)) {
+        if (opts.aud.includes(aud)) {
+          return true
+        }
+      }
+      return false
+    })
+    if (opts.aud && !matched) {
+      throw new JwtTokenAudience(opts.aud, payload.aud)
     }
   }
 

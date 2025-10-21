@@ -68,6 +68,24 @@ export class JwtTokenSignatureMismatched extends Error {
   }
 }
 
+export class JwtPayloadRequiresAud extends Error {
+  constructor(payload: object) {
+    super(`required "aud" in jwt payload: ${JSON.stringify(payload)}`)
+    this.name = 'JwtPayloadRequiresAud'
+  }
+}
+
+export class JwtTokenAudience extends Error {
+  constructor(expected: string | string[] | RegExp, aud: string | string[]) {
+    super(
+      `expected audience "${
+        Array.isArray(expected) ? expected.join(', ') : expected
+      }", got "${aud}"`
+    )
+    this.name = 'JwtTokenAudience'
+  }
+}
+
 export enum CryptoKeyUsage {
   Encrypt = 'encrypt',
   Decrypt = 'decrypt',
@@ -100,6 +118,11 @@ export type JWTPayload = {
    * The token is checked to ensure it has been issued by a trusted issuer.
    */
   iss?: string
+
+  /**
+   * The token is checked to ensure it is intended for a specific audience.
+   */
+  aud?: string | string[]
 }
 
 export type { HonoJsonWebKey } from './jws'
