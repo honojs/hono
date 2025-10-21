@@ -248,10 +248,9 @@ describe('Register handlers without a path', () => {
       expect(await res.text()).toBe('Hello')
     })
 
-    it('GET http://localhost/anything is ok', async () => {
-      const res = await app.request('/')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('Hello')
+    it('GET http://localhost/anything is not found', async () => {
+      const res = await app.request('/anything')
+      expect(res.status).toBe(404)
     })
   })
 
