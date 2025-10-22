@@ -81,33 +81,25 @@ const baseV2Event: LambdaEvent = {
 }
 
 describe('isContentTypeBinary', () => {
-  it('Should determine whether it is binary', () => {
-    expect(defaultIsContentTypeBinary('image/png')).toBe(true)
-    expect(defaultIsContentTypeBinary('font/woff2')).toBe(true)
-    expect(defaultIsContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(defaultIsContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(defaultIsContentTypeBinary('text/plain')).toBe(false)
-    expect(defaultIsContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(defaultIsContentTypeBinary('text/css')).toBe(false)
-    expect(defaultIsContentTypeBinary('text/javascript')).toBe(false)
-    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
-    expect(defaultIsContentTypeBinary('application/ld+json')).toBe(false)
-    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
-    expect(
-      defaultIsContentTypeBinary(
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      )
-    ).toBe(true)
-    expect(
-      defaultIsContentTypeBinary(
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      )
-    ).toBe(true)
-    expect(
-      defaultIsContentTypeBinary(
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      )
-    ).toBe(true)
+  it.each([
+    ['image/png', true],
+    ['font/woff2', true],
+    ['image/svg+xml', false],
+    ['image/svg+xml; charset=UTF-8', false],
+    ['text/plain', false],
+    ['text/plain; charset=UTF-8', false],
+    ['text/css', false],
+    ['text/javascript', false],
+    ['application/json', false],
+    ['application/ld+json', false],
+    ['application/json', false],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', true],
+    ['application/msword', true],
+    ['application/epub+zip', true],
+    ['application/ld+json', false],
+    ['application/vnd.oasis.opendocument.text', true],
+  ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
+    expect(defaultIsContentTypeBinary(mimeType)).toBe(expected)
   })
 })
 
