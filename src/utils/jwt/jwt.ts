@@ -148,20 +148,13 @@ export const verify = async (
     }
 
     const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
-    const matched = audiences.some((payloadAud): boolean => {
-      if (aud instanceof RegExp && aud.test(payloadAud)) {
-        return true
-      } else if (typeof aud === 'string') {
-        if (payloadAud === aud) {
-          return true
-        }
-      } else if (Array.isArray(aud)) {
-        if (aud.includes(payloadAud)) {
-          return true
-        }
-      }
-      return false
-    })
+    const matched = audiences.some((payloadAud): boolean =>
+      aud instanceof RegExp
+        ? aud.test(payloadAud)
+        : typeof aud === 'string'
+        ? payloadAud === aud
+        : Array.isArray(aud) && aud.includes(payloadAud)
+    )
     if (!matched) {
       throw new JwtTokenAudience(aud, payload.aud)
     }
