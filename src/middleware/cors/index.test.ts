@@ -193,17 +193,16 @@ describe('CORS by Middleware', () => {
     ).toBeFalsy()
   })
 
-  it('Allow different Vary header value', async () => {
+  it('Should set Vary header with explicit origin', async () => {
     const res = await app.request('http://localhost/api3/abc', {
       headers: {
-        Vary: 'accept-encoding',
         Origin: 'http://example.com',
       },
     })
 
     expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
-    expect(res.headers.get('Vary')).toBe('accept-encoding')
+    expect(res.headers.get('Vary')).toBe('Origin')
   })
 
   it('Allow origins by function', async () => {
@@ -309,5 +308,30 @@ describe('CORS by Middleware', () => {
     const res2 = await app.request(req2)
     expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
+  })
+
+  it('Should preserve existing Vary header from response', async () => {
+    const app2 = new Hono()
+
+    app2.use('/api/*', cors({ origin: 'http://example.com' }))
+
+    app2.get('/api/test', (c) => {
+      // Controller sets Vary: Accept in response
+      c.header('Vary', 'Accept')
+      return c.json({ success: true })
+    })
+
+    const res = await app2.request('http://localhost/api/test', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    // Should preserve 'Accept' and add 'Origin'
+    const varyHeader = res.headers.get('Vary')
+    expect(varyHeader).toContain('Accept')
+    expect(varyHeader).toContain('Origin')
   })
 })
