@@ -151,9 +151,7 @@ export const verify = async (
     if (!payload.aud) {
       throw new JwtPayloadRequiresAud(payload)
     }
-  }
 
-  if (payload.aud) {
     const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
     const matched = audiences.some((aud): boolean => {
       if (opts.aud instanceof RegExp && opts.aud.test(aud)) {
@@ -169,7 +167,7 @@ export const verify = async (
       }
       return false
     })
-    if (opts.aud && !matched) {
+    if (!matched) {
       throw new JwtTokenAudience(opts.aud, payload.aud)
     }
   }
