@@ -46,7 +46,7 @@ export const requestId = ({
   return async function requestId(c, next) {
     // If `headerName` is empty string, req.header will return the object
     let reqId = headerName ? c.req.header(headerName) : undefined
-    if (!reqId || reqId.length > limitLength || /[^\w\-]/.test(reqId)) {
+    if (!reqId || reqId.length > limitLength || /[^\w\-=]/.test(reqId)) {
       reqId = generator(c)
     }
 

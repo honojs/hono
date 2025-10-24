@@ -29,6 +29,19 @@ describe('Request ID Middleware', () => {
     expect(await res.text()).toBe('hono-is-hot')
   })
 
+  it('Should return custom request id with all valid characters', async () => {
+    const validRequestId = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_='
+    const res = await app.request('http://localhost/requestId', {
+      headers: {
+        'X-Request-Id': validRequestId,
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Request-Id')).toBe(validRequestId)
+    expect(await res.text()).toBe(validRequestId)
+  })
+
   it('Should return random request id without using request header', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
