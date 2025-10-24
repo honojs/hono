@@ -88,12 +88,28 @@ describe('CORS by Middleware', () => {
     return c.json({ success: true })
   })
 
+  app.get('/api/vary-header', () => {
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        Vary: 'X-Custom-Vary-Value',
+      },
+    })
+  })
+
   app.get('/api2/abc', (c) => {
     return c.json({ success: true })
   })
 
   app.get('/api3/abc', (c) => {
     return c.json({ success: true })
+  })
+
+  app.get('/api3/vary-header', () => {
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        Vary: 'X-Custom-Vary-Value',
+      },
+    })
   })
 
   app.get('/api4/abc', (c) => {
@@ -193,17 +209,40 @@ describe('CORS by Middleware', () => {
     ).toBeFalsy()
   })
 
-  it('Allow different Vary header value', async () => {
+  it('Set "Origin" to Vary header', async () => {
     const res = await app.request('http://localhost/api3/abc', {
       headers: {
-        Vary: 'accept-encoding',
         Origin: 'http://example.com',
       },
     })
 
     expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
-    expect(res.headers.get('Vary')).toBe('accept-encoding')
+    expect(res.headers.get('Vary')).toBe('Origin')
+  })
+
+  it('Keep original Vary header', async () => {
+    const res = await app.request('http://localhost/api/vary-header', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res.headers.get('Vary')).toBe('X-Custom-Vary-Value')
+  })
+
+  it('Append "Origin" to Vary header, if response has some Vary header', async () => {
+    const res = await app.request('http://localhost/api3/vary-header', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')).toBe('X-Custom-Vary-Value, Origin')
   })
 
   it('Allow origins by function', async () => {
