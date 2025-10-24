@@ -97,24 +97,19 @@ type StrictVerifyOptions = {
   aud?: string | string[] | RegExp
 }
 
-type StrictVerifyOptionsWithAlg = {
-  alg: SignatureAlgorithm
-} & StrictVerifyOptions
-
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
   algOrOptions?: SignatureAlgorithm | VerifyOptionsWithAlg
 ): Promise<JWTPayload> => {
-  const optsIn = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
-  const opts: StrictVerifyOptionsWithAlg = {
-    alg: optsIn.alg ?? 'HS256',
-    iss: optsIn.iss,
-    nbf: optsIn.nbf ?? true,
-    exp: optsIn.exp ?? true,
-    iat: optsIn.iat ?? true,
-    aud: optsIn.aud,
-  }
+  const {
+    alg = 'HS256',
+    iss,
+    nbf = true,
+    exp = true,
+    iat = true,
+    aud,
+  } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
 
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
@@ -126,58 +121,49 @@ export const verify = async (
     throw new JwtHeaderInvalid(header)
   }
   const now = (Date.now() / 1000) | 0
-  if (opts.nbf && payload.nbf && payload.nbf > now) {
+  if (nbf && payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }
-  if (opts.exp && payload.exp && payload.exp <= now) {
+  if (exp && payload.exp && payload.exp <= now) {
     throw new JwtTokenExpired(token)
   }
-  if (opts.iat && payload.iat && now < payload.iat) {
+  if (iat && payload.iat && now < payload.iat) {
     throw new JwtTokenIssuedAt(now, payload.iat)
   }
-  if (opts.iss) {
+  if (iss) {
     if (!payload.iss) {
-      throw new JwtTokenIssuer(opts.iss, null)
+      throw new JwtTokenIssuer(iss, null)
     }
-    if (typeof opts.iss === 'string' && payload.iss !== opts.iss) {
-      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    if (typeof iss === 'string' && payload.iss !== iss) {
+      throw new JwtTokenIssuer(iss, payload.iss)
     }
-    if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
-      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    if (iss instanceof RegExp && !iss.test(payload.iss)) {
+      throw new JwtTokenIssuer(iss, payload.iss)
     }
   }
 
-  if (opts.aud) {
+  if (aud) {
     if (!payload.aud) {
       throw new JwtPayloadRequiresAud(payload)
     }
-  }
 
-  if (payload.aud) {
     const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
-    const matched = audiences.some((aud): boolean => {
-      if (opts.aud instanceof RegExp && opts.aud.test(aud)) {
-        return true
-      } else if (typeof opts.aud === 'string') {
-        if (aud === opts.aud) {
-          return true
-        }
-      } else if (Array.isArray(opts.aud)) {
-        if (opts.aud.includes(aud)) {
-          return true
-        }
-      }
-      return false
-    })
-    if (opts.aud && !matched) {
-      throw new JwtTokenAudience(opts.aud, payload.aud)
+    const matched = audiences.some((payloadAud): boolean =>
+      aud instanceof RegExp
+        ? aud.test(payloadAud)
+        : typeof aud === 'string'
+        ? payloadAud === aud
+        : Array.isArray(aud) && aud.includes(payloadAud)
+    )
+    if (!matched) {
+      throw new JwtTokenAudience(aud, payload.aud)
     }
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
   const verified = await verifying(
     publicKey,
-    opts.alg,
+    alg,
     decodeBase64Url(tokenParts[2]),
     utf8Encoder.encode(headerPayload)
   )
