@@ -106,18 +106,6 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       set('Access-Control-Allow-Origin', allowOrigin)
     }
 
-    // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    if (opts.origin !== '*') {
-      const existingVary = c.req.header('Vary')
-
-      if (existingVary) {
-        set('Vary', existingVary)
-      } else {
-        set('Vary', 'Origin')
-      }
-    }
-
     if (opts.credentials) {
       set('Access-Control-Allow-Credentials', 'true')
     }
@@ -127,6 +115,10 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
 
     if (c.req.method === 'OPTIONS') {
+      if (opts.origin !== '*') {
+        set('Vary', 'Origin')
+      }
+
       if (opts.maxAge != null) {
         set('Access-Control-Max-Age', opts.maxAge.toString())
       }
@@ -158,5 +150,11 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       })
     }
     await next()
+
+    // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+    if (opts.origin !== '*') {
+      c.header('Vary', 'Origin', { append: true })
+    }
   }
 }
