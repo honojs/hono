@@ -99,8 +99,9 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-no-authentication-header-message-function-string/*',
       bearerAuth({
         token,
-        noAuthenticationHeader: { message: () =>
-          'Custom no authentication header message as function string' },
+        noAuthenticationHeader: {
+          message: () => 'Custom no authentication header message as function string',
+        },
       })
     )
     app.get('/auth-custom-no-authentication-header-message-function-string/*', (c) => {
@@ -112,9 +113,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-no-authentication-header-message-function-object/*',
       bearerAuth({
         token,
-        noAuthenticationHeader: { message: () => ({
-          message: 'Custom no authentication header message as function object',
-        }) },
+        noAuthenticationHeader: {
+          message: () => ({
+            message: 'Custom no authentication header message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-no-authentication-header-message-function-object/*', (c) => {
@@ -126,8 +129,9 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeader: { message:
-          'Custom invalid authentication header message as string' },
+        invalidAuthenticationHeader: {
+          message: 'Custom invalid authentication header message as string',
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-string/*', (c) => {
@@ -139,9 +143,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeader: { message: {
-          message: 'Custom invalid authentication header message as object',
-        } },
+        invalidAuthenticationHeader: {
+          message: {
+            message: 'Custom invalid authentication header message as object',
+          },
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-object/*', (c) => {
@@ -153,8 +159,9 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeader: { message: () =>
-          'Custom invalid authentication header message as function string' },
+        invalidAuthenticationHeader: {
+          message: () => 'Custom invalid authentication header message as function string',
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-function-string/*', (c) => {
@@ -166,9 +173,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeader: { message: () => ({
-          message: 'Custom invalid authentication header message as function object',
-        }) },
+        invalidAuthenticationHeader: {
+          message: () => ({
+            message: 'Custom invalid authentication header message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-function-object/*', (c) => {
@@ -192,7 +201,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-token-message-object/*',
       bearerAuth({
         token,
-        invalidToken: {message: { message: 'Custom invalid token message as object' }},
+        invalidToken: { message: { message: 'Custom invalid token message as object' } },
       })
     )
     app.get('/auth-custom-invalid-token-message-object/*', (c) => {
@@ -216,9 +225,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-token-message-function-object/*',
       bearerAuth({
         token,
-        invalidToken: { message: () => ({
-          message: 'Custom invalid token message as function object',
-        }) },
+        invalidToken: {
+          message: () => ({
+            message: 'Custom invalid token message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-invalid-token-message-function-object/*', (c) => {

@@ -111,7 +111,10 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
     const headers = {
-      'WWW-Authenticate': typeof wwwAuthenticateHeader === 'function' ? await wwwAuthenticateHeader(c) : wwwAuthenticateHeader,
+      'WWW-Authenticate':
+        typeof wwwAuthenticateHeader === 'function'
+          ? await wwwAuthenticateHeader(c)
+          : wwwAuthenticateHeader,
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
