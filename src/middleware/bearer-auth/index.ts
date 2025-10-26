@@ -14,7 +14,6 @@ const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
-type HeaderFunction = (c: Context) => string | Promise<string>
 
 type BearerAuthOptions =
   | {
@@ -24,15 +23,15 @@ type BearerAuthOptions =
       headerName?: string
       hashFunction?: Function
       noAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
       invalidAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
       invalidToken?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
     }
@@ -43,15 +42,15 @@ type BearerAuthOptions =
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
       noAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
       invalidAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
       invalidToken?: {
-        wwwAuthenticateHeader?: string | HeaderFunction
+        wwwAuthenticateHeader?: string | object | MessageFunction
         message?: string | object | MessageFunction
       }
     }
@@ -107,14 +106,18 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   const throwHTTPException = async (
     c: Context,
     status: ContentfulStatusCode,
-    wwwAuthenticateHeader: string | HeaderFunction,
+    wwwAuthenticateHeader: string | object | MessageFunction,
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
     const headers = {
       'WWW-Authenticate':
         typeof wwwAuthenticateHeader === 'function'
           ? await wwwAuthenticateHeader(c)
-          : wwwAuthenticateHeader,
+          : typeof wwwAuthenticateHeader === 'string'
+          ? wwwAuthenticateHeader
+          : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeader)
+              .map(([key, value]) => `${key}="${value}"`)
+              .join(',')}`,
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
