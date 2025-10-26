@@ -21,22 +21,37 @@ type CustomizedErrorResponseOptions = {
   message?: string | object | MessageFunction
 }
 
-type JwkOptions = {
-  keys?: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
-  jwks_uri?: string | ((ctx: Context) => Promise<string> | string)
-  allow_anon?: boolean
-  cookie?:
-    | string
-    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+type JwkOptions =
+  | {
+      keys: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
+      allow_anon?: boolean
+      cookie?:
+        | string
+        | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
 
-  headerName?: string
+      headerName?: string
 
-  verification?: VerifyOptions
+      verification?: VerifyOptions
 
-  invalidCredentials?: CustomizedErrorResponseOptions
-  noAuthorization?: CustomizedErrorResponseOptions
-  invalidToken?: CustomizedErrorResponseOptions
-}
+      invalidCredentials?: CustomizedErrorResponseOptions
+      noAuthorization?: CustomizedErrorResponseOptions
+      invalidToken?: CustomizedErrorResponseOptions
+    }
+  | {
+      jwks_uri: string | ((ctx: Context) => Promise<string> | string)
+      allow_anon?: boolean
+      cookie?:
+        | string
+        | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+
+      headerName?: string
+
+      verification?: VerifyOptions
+
+      invalidCredentials?: CustomizedErrorResponseOptions
+      noAuthorization?: CustomizedErrorResponseOptions
+      invalidToken?: CustomizedErrorResponseOptions
+    }
 
 /**
  * JWK Auth Middleware for Hono.
@@ -67,11 +82,10 @@ type JwkOptions = {
  * })
  * ```
  */
-
 export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler => {
   const verifyOpts = options.verification || {}
 
-  if (!options || !(options.keys || options.jwks_uri)) {
+  if (!('keys' in options || 'jwks_uri' in options)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
 
@@ -94,7 +108,7 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
             error: 'invalid_request',
             error_description,
           },
-          options.invalidCredentials?.message || error_description,
+          options.invalidCredentials?.message || error_description
         )
       } else {
         token = parts[1]
@@ -134,16 +148,25 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
           error: 'invalid_request',
           error_description,
         },
-        options.noAuthorization?.message || error_description,
+        options.noAuthorization?.message || error_description
       )
     }
 
     let payload
     let cause
     try {
-      const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
+      const keys =
+        'keys' in options
+          ? typeof options.keys === 'function'
+            ? await options.keys(ctx)
+            : options.keys
+          : undefined
       const jwks_uri =
-        typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
+        'jwks_uri' in options
+          ? typeof options.jwks_uri === 'function'
+            ? await options.jwks_uri(ctx)
+            : options.jwks_uri
+          : undefined
       payload = await Jwt.verifyWithJwks(token, { keys, jwks_uri, verification: verifyOpts }, init)
     } catch (e) {
       cause = e
@@ -160,8 +183,8 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
           error: 'invalid_token',
           error_description: 'token verification failure',
         },
-        options.invalidToken?.message || "Unauthorized",
-        cause,
+        options.invalidToken?.message || 'Unauthorized',
+        cause
       )
     }
 
