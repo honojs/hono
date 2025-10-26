@@ -14,6 +14,10 @@ const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
+type CustomizedErrorResponseOptions = {
+  wwwAuthenticateHeader?: string | object | MessageFunction
+  message?: string | object | MessageFunction
+}
 
 type BearerAuthOptions =
   | {
@@ -22,18 +26,9 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
-      noAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
-      invalidAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
-      invalidToken?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
+      noAuthenticationHeader?: CustomizedErrorResponseOptions
+      invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      invalidToken?: CustomizedErrorResponseOptions
     }
   | {
       realm?: string
@@ -41,18 +36,9 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
-      noAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
-      invalidAuthenticationHeader?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
-      invalidToken?: {
-        wwwAuthenticateHeader?: string | object | MessageFunction
-        message?: string | object | MessageFunction
-      }
+      noAuthenticationHeader?: CustomizedErrorResponseOptions
+      invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      invalidToken?: CustomizedErrorResponseOptions
     }
 
 /**
