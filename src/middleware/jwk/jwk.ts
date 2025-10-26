@@ -167,7 +167,11 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
             ? await options.jwks_uri(ctx)
             : options.jwks_uri
           : undefined
-      payload = await Jwt.verifyWithJwks(token as string, { keys, jwks_uri, verification: verifyOpts }, init)
+      payload = await Jwt.verifyWithJwks(
+        token as string,
+        { keys, jwks_uri, verification: verifyOpts },
+        init
+      )
     } catch (e) {
       cause = e
     }
