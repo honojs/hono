@@ -134,7 +134,7 @@ export const jwt = (options: JwtOptions): MiddlewareHandler => {
           error: 'invalid_request',
           error_description,
         },
-        options.noAuthorization?.message || error_description
+        options.noAuthorization?.message || "Unauthorized"
       )
     }
 
