@@ -101,7 +101,7 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
         const error_description = 'invalid credentials structure'
-        throwHTTPException(
+        await throwHTTPException(
           ctx,
           options.invalidCredentials?.wwwAuthenticateHeader || {
             realm,
@@ -141,7 +141,7 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
         return next()
       }
       const error_description = 'no authorization included in request'
-      throwHTTPException(
+      await throwHTTPException(
         ctx,
         options.noAuthorization?.wwwAuthenticateHeader || {
           realm,
@@ -176,7 +176,7 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
       if (cause instanceof Error && cause.constructor === Error) {
         throw cause
       }
-      throwHTTPException(
+      await throwHTTPException(
         ctx,
         options.invalidToken?.wwwAuthenticateHeader || {
           realm,

@@ -19,6 +19,28 @@ export type JwtVariables<T = any> = {
   jwtPayload: T
 }
 
+const HEADER = 'Authorization'
+
+type MessageFunction = (c: Context) => string | object | Promise<string | object>
+type CustomizedErrorResponseOptions = {
+  wwwAuthenticateHeader?: string | object | MessageFunction
+  message?: string | object | MessageFunction
+}
+
+type JwtOptions = {
+  secret: SignatureKey
+  cookie?:
+    | string
+    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+  alg?: SignatureAlgorithm
+  headerName?: string
+  verification?: VerifyOptions
+
+  invalidCredentials?: CustomizedErrorResponseOptions
+  noAuthorization?: CustomizedErrorResponseOptions
+  invalidToken?: CustomizedErrorResponseOptions
+}
+
 /**
  * JWT Auth Middleware for Hono.
  *
@@ -49,15 +71,7 @@ export type JwtVariables<T = any> = {
  * })
  * ```
  */
-export const jwt = (options: {
-  secret: SignatureKey
-  cookie?:
-    | string
-    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
-  alg?: SignatureAlgorithm
-  headerName?: string
-  verification?: VerifyOptions
-}): MiddlewareHandler => {
+export const jwt = (options: JwtOptions): MiddlewareHandler => {
   const verifyOpts = options.verification || {}
 
   if (!options || !options.secret) {
@@ -69,22 +83,22 @@ export const jwt = (options: {
   }
 
   return async function jwt(ctx, next) {
-    const headerName = options.headerName || 'Authorization'
-
-    const credentials = ctx.req.raw.headers.get(headerName)
+    const realm = ctx.req.url
+    const credentials = ctx.req.header(options.headerName || HEADER)
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
-        const errDescription = 'invalid credentials structure'
-        throw new HTTPException(401, {
-          message: errDescription,
-          res: unauthorizedResponse({
-            ctx,
+        const error_description = 'invalid credentials structure'
+        await throwHTTPException(
+          ctx,
+          options.invalidCredentials?.wwwAuthenticateHeader || {
+            realm,
             error: 'invalid_request',
-            errDescription,
-          }),
-        })
+            error_description,
+          },
+          options.invalidCredentials?.message || error_description
+        )
       } else {
         token = parts[1]
       }
@@ -112,15 +126,16 @@ export const jwt = (options: {
     }
 
     if (!token) {
-      const errDescription = 'no authorization included in request'
-      throw new HTTPException(401, {
-        message: errDescription,
-        res: unauthorizedResponse({
-          ctx,
+      const error_description = 'no authorization included in request'
+      await throwHTTPException(
+        ctx,
+        options.noAuthorization?.wwwAuthenticateHeader || {
+          realm,
           error: 'invalid_request',
-          errDescription,
-        }),
-      })
+          error_description,
+        },
+        options.noAuthorization?.message || error_description
+      )
     }
 
     let payload
@@ -134,16 +149,16 @@ export const jwt = (options: {
       cause = e
     }
     if (!payload) {
-      throw new HTTPException(401, {
-        message: 'Unauthorized',
-        res: unauthorizedResponse({
-          ctx,
+      await throwHTTPException(
+        ctx,
+        options.invalidToken?.wwwAuthenticateHeader || {
+          realm,
           error: 'invalid_token',
-          statusText: 'Unauthorized',
-          errDescription: 'token verification failure',
-        }),
-        cause,
-      })
+          error_description: 'token verification failure',
+        },
+        options.invalidToken?.message || 'Unauthorized',
+        cause
+      )
     }
 
     ctx.set('jwtPayload', payload)
@@ -152,19 +167,36 @@ export const jwt = (options: {
   }
 }
 
-function unauthorizedResponse(opts: {
-  ctx: Context
-  error: string
-  errDescription: string
-  statusText?: string
-}) {
-  return new Response('Unauthorized', {
-    status: 401,
-    statusText: opts.statusText,
-    headers: {
-      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
-    },
-  })
+async function throwHTTPException(
+  c: Context,
+  wwwAuthenticateHeader: string | object | MessageFunction,
+  messageOption: string | object | MessageFunction,
+  cause?: unknown
+): Promise<Response> {
+  const status = 401
+  const headers = {
+    'WWW-Authenticate':
+      typeof wwwAuthenticateHeader === 'function'
+        ? await wwwAuthenticateHeader(c)
+        : typeof wwwAuthenticateHeader === 'string'
+        ? wwwAuthenticateHeader
+        : `Bearer ${Object.entries(wwwAuthenticateHeader)
+            .map(([key, value]) => `${key}="${value}"`)
+            .join(',')}`,
+  }
+  const responseMessage =
+    typeof messageOption === 'function' ? await messageOption(c) : messageOption
+  const res =
+    typeof responseMessage === 'string'
+      ? new Response(responseMessage, { status, headers })
+      : new Response(JSON.stringify(responseMessage), {
+          status,
+          headers: {
+            ...headers,
+            'content-type': 'application/json',
+          },
+        })
+  throw new HTTPException(status, { res, cause })
 }
 
 export const verifyWithJwks = Jwt.verifyWithJwks
