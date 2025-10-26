@@ -22,9 +22,18 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidTokenMessage?: string | object | MessageFunction
+      noAuthenticationHeader?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
+      invalidAuthenticationHeader?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
+      invalidToken?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
     }
   | {
       realm?: string
@@ -32,9 +41,18 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidTokenMessage?: string | object | MessageFunction
+      noAuthenticationHeader?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
+      invalidAuthenticationHeader?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
+      invalidToken?: {
+        wwwAuthenticateHeader?: string
+        message?: string | object | MessageFunction
+      }
     }
 
 /**
@@ -116,8 +134,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
       await throwHTTPException(
         c,
         401,
-        `${wwwAuthenticatePrefix}realm="${realm}"`,
-        options.noAuthenticationHeaderMessage || 'Unauthorized'
+        options.noAuthenticationHeader?.wwwAuthenticateHeader ||
+          `${wwwAuthenticatePrefix}realm="${realm}"`,
+        options.noAuthenticationHeader?.message || 'Unauthorized'
       )
     } else {
       const match = regexp.exec(headerToken)
@@ -126,8 +145,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
         await throwHTTPException(
           c,
           400,
-          `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeaderMessage || 'Bad Request'
+          options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
+            `${wwwAuthenticatePrefix}error="invalid_request"`,
+          options.invalidAuthenticationHeader?.message || 'Bad Request'
         )
       } else {
         let equal = false
@@ -148,8 +168,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           await throwHTTPException(
             c,
             401,
-            `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidTokenMessage || 'Unauthorized'
+            options.invalidToken?.wwwAuthenticateHeader ||
+              `${wwwAuthenticatePrefix}error="invalid_token"`,
+            options.invalidToken?.message || 'Unauthorized'
           )
         }
       }
