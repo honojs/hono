@@ -24,7 +24,7 @@ type CustomizedErrorResponseOptions = {
 type JwkOptions =
   | {
       keys: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
-      allow_anon?: boolean
+      allowAnonymous?: boolean
       cookie?:
         | string
         | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
@@ -39,7 +39,7 @@ type JwkOptions =
     }
   | {
       jwks_uri: string | ((ctx: Context) => Promise<string> | string)
-      allow_anon?: boolean
+      allowAnonymous?: boolean
       cookie?:
         | string
         | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
@@ -61,7 +61,7 @@ type JwkOptions =
  * @param {object} options - The options for the JWK middleware.
  * @param {HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])} [options.keys] - The public keys used for JWK verification, or a function that returns them.
  * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set to a URI string or a function that returns a URI string, attempt to fetch JWKs from it. The response must be a JSON object containing a `keys` array, which will be merged with the `keys` option.
- * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
+ * @param {boolean} [options.allowAnonymous] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
@@ -137,7 +137,7 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
     }
 
     if (!token) {
-      if (options.allow_anon) {
+      if (options.allowAnonymous) {
         return next()
       }
       const error_description = 'no authorization included in request'
