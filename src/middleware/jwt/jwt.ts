@@ -141,7 +141,7 @@ export const jwt = (options: JwtOptions): MiddlewareHandler => {
     let payload
     let cause
     try {
-      payload = await Jwt.verify(token, options.secret, {
+      payload = await Jwt.verify(token as string, options.secret, {
         alg: options.alg,
         ...verifyOpts,
       })
