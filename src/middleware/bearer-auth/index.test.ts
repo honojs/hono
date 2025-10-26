@@ -86,7 +86,7 @@ describe('Bearer Auth by Middleware', () => {
       bearerAuth({
         token,
         noAuthenticationHeader: {
-          message: 'Custom no authentication header message as object',
+          message: { message: 'Custom no authentication header message as object' },
         },
       })
     )

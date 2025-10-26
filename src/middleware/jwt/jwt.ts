@@ -126,13 +126,12 @@ export const jwt = (options: JwtOptions): MiddlewareHandler => {
     }
 
     if (!token) {
-      const error_description = 'no authorization included in request'
       await throwHTTPException(
         ctx,
         options.noAuthorization?.wwwAuthenticateHeader || {
           realm,
           error: 'invalid_request',
-          error_description,
+          error_description: 'no authorization included in request',
         },
         options.noAuthorization?.message || 'Unauthorized'
       )

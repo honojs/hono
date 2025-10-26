@@ -140,15 +140,14 @@ export const jwk = (options: JwkOptions, init?: RequestInit): MiddlewareHandler 
       if (options.allowAnonymous) {
         return next()
       }
-      const error_description = 'no authorization included in request'
       await throwHTTPException(
         ctx,
         options.noAuthorization?.wwwAuthenticateHeader || {
           realm,
           error: 'invalid_request',
-          error_description,
+          error_description: 'no authorization included in request',
         },
-        options.noAuthorization?.message || error_description
+        options.noAuthorization?.message || 'Unauthorized'
       )
     }
 
