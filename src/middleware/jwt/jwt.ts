@@ -173,16 +173,17 @@ async function throwHTTPException(
   cause?: unknown
 ): Promise<Response> {
   const status = 401
-  const headers = {
-    'WWW-Authenticate':
-      typeof wwwAuthenticateHeader === 'function'
-        ? await wwwAuthenticateHeader(c)
-        : typeof wwwAuthenticateHeader === 'string'
-        ? wwwAuthenticateHeader
-        : `Bearer ${Object.entries(wwwAuthenticateHeader)
-            .map(([key, value]) => `${key}="${value}"`)
-            .join(',')}`,
-  }
+  const wwwAuthenticateHeaderValue: string | object = typeof wwwAuthenticateHeader === 'function'
+      ? await wwwAuthenticateHeader(c)
+      : wwwAuthenticateHeader;
+
+    const headers = {
+      'WWW-Authenticate': typeof wwwAuthenticateHeaderValue === 'string'
+          ? wwwAuthenticateHeaderValue
+          : `Bearer ${Object.entries(wwwAuthenticateHeaderValue)
+              .map(([key, value]) => `${key}="${value}"`)
+              .join(',')}`,
+    }
   const responseMessage =
     typeof messageOption === 'function' ? await messageOption(c) : messageOption
   const res =
