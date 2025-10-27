@@ -53,9 +53,12 @@ type BearerAuthOptions =
  * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
- * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMessage="Bad Request"] - The invalid authentication header message.
- * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeader.message="Unauthorized"] - The no authentication header message.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeader.wwwAuthenticateHeader="Bearer realm=\"{ctx.req.url}\""] - The no authentication header's response header value for the WWW-Authenticate header.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.message="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The no authentication header's response header value for the WWW-Authenticate header.
+ * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The no authentication header's response header value for the WWW-Authenticate header.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.

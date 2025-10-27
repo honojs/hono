@@ -52,6 +52,12 @@ type JwtOptions = {
  * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
  * @param {VerifyOptions} [options.verification] - Additional options for JWT payload verification.
+ * @param {string | object | MessageFunction} [options.invalidCredentials.message="invalid credentials structure"] - The invalid credentials message.
+ * @param {string | object | MessageFunction} [options.invalidCredentials.wwwAuthenticateHeader="Bearer realm=\"{ctx.req.url}\",error=\"invalid_request\",error_description=\"invalid credentials structure\""] - The no authentication header's response header value for the WWW-Authenticate header.
+ * @param {string | object | MessageFunction} [options.noAuthorization.message="Unauthorized"] - The no authorization header message.
+ * @param {string | object | MessageFunction} [options.noAuthorization.wwwAuthenticateHeader="Bearer realm=\"{ctx.req.url}\",error=\"invalid_request\",error_description=\"no authorization included in request\""] - The no authentication header's response header value for the WWW-Authenticate header.
+ * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer realm=\"{ctx.req.url}\",error=\"invalid_token\",error_description=\"token verification failure\""] - The no authentication header's response header value for the WWW-Authenticate header.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
