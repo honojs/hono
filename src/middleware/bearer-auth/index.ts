@@ -95,12 +95,14 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
     wwwAuthenticateHeader: string | object | MessageFunction,
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
-    const wwwAuthenticateHeaderValue: string | object = typeof wwwAuthenticateHeader === 'function'
-      ? await wwwAuthenticateHeader(c)
-      : wwwAuthenticateHeader;
+    const wwwAuthenticateHeaderValue: string | object =
+      typeof wwwAuthenticateHeader === 'function'
+        ? await wwwAuthenticateHeader(c)
+        : wwwAuthenticateHeader
 
     const headers = {
-      'WWW-Authenticate': typeof wwwAuthenticateHeaderValue === 'string'
+      'WWW-Authenticate':
+        typeof wwwAuthenticateHeaderValue === 'string'
           ? wwwAuthenticateHeaderValue
           : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeaderValue)
               .map(([key, value]) => `${key}="${value}"`)
