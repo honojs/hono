@@ -62,7 +62,7 @@ type StandardizedFeatures =
 type ProposedFeatures =
   | 'clipboardRead'
   | 'clipboardWrite'
-  | 'gemepad'
+  | 'gamepad'
   | 'sharedAutofill'
   | 'speakerSelection'
 
