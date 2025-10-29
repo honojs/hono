@@ -3,7 +3,7 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { Env, ExtractSchema, MiddlewareHandler, ToSchema, TypedResponse } from '../../types'
+import type { Env, ExtractSchema, H, MiddlewareHandler, ToSchema, TypedResponse } from '../../types'
 import type { ContentfulStatusCode } from '../../utils/http-status'
 import type { Equal, Expect } from '../../utils/types'
 import { validator } from '../../validator'
@@ -332,6 +332,25 @@ describe('createHandler', () => {
           foo9: c.get('foo9'),
         })
       })
+    })
+  })
+
+  describe('Types - Multiple Handlers', () => {
+    const factory = createFactory()
+
+    const [handler1, handler2] = factory.createHandlers(
+      (c) => c.json({ first: 1 }),
+      (c) => c.json({ second: 'second' as const })
+    )
+
+    type ExtractOutput<R> = R extends H<any, any, any, TypedResponse<infer Inner>> ? Inner : never
+
+    type Handler1Output = ExtractOutput<typeof handler1>
+    type Handler2Output = ExtractOutput<typeof handler2>
+
+    it('Should allow multiple handlers with independent return types', () => {
+      expectTypeOf<Handler1Output>().toEqualTypeOf<{ first: number }>()
+      expectTypeOf<Handler2Output>().toEqualTypeOf<{ second: 'second' }>()
     })
   })
 })
