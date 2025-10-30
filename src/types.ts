@@ -2278,6 +2278,26 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
   cookie: Record<string, string>
 }
 
+////////////////////////////////////////////////
+//////                                     /////
+//////      ResponseValidationTargets      /////
+//////                                     /////
+////////////////////////////////////////////////
+
+export type ResponseValidationTargets = {
+  body: ReadableStream<any> | null
+  text: string
+  json: any
+  html: string
+  header: Record<RequestHeader | CustomHeader, string>
+  cookie: Record<string, string>
+  status: {
+    ok: boolean
+    status: StatusCode
+    statusText: string
+  }
+}
+
 ////////////////////////////////////////
 //////                            //////
 //////      Path parameters       //////
