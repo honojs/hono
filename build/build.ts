@@ -9,7 +9,7 @@
 
 import arg from 'arg'
 import { $, stdout } from 'bun'
-import { build } from 'esbuild'
+import { build, context } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
 import fs from 'fs'
@@ -67,7 +67,6 @@ const addExtension = (extension: string = '.js', fileExtension: string = '.ts'):
 })
 
 const commonOptions: BuildOptions = {
-  watch: isWatch,
   entryPoints,
   logLevel: 'info',
   platform: 'node',
@@ -81,6 +80,16 @@ const cjsBuild = () =>
     format: 'cjs',
   })
 
+const cjsWatch = async () =>
+  (
+    await context({
+      ...commonOptions,
+      outbase: './src',
+      outdir: './dist/cjs',
+      format: 'cjs',
+    })
+  ).watch()
+
 const esmBuild = () =>
   build({
     ...commonOptions,
@@ -91,7 +100,19 @@ const esmBuild = () =>
     plugins: [addExtension('.js')],
   })
 
-Promise.all([esmBuild(), cjsBuild()])
+const esmWatch = async () =>
+  (
+    await context({
+      ...commonOptions,
+      bundle: true,
+      outbase: './src',
+      outdir: './dist',
+      format: 'esm',
+      plugins: [addExtension('.js')],
+    })
+  ).watch()
+
+Promise.all(isWatch ? [esmWatch(), cjsWatch()] : [esmBuild(), cjsBuild()])
 
 await $`tsc ${
   isWatch ? '-w' : ''
