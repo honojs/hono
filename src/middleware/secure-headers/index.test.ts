@@ -246,7 +246,7 @@ describe('Secure Headers Middleware', () => {
             scriptSrcAttr: ["'none'"],
             styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
             requireTrustedTypesFor: ["'script'"],
-            trustedTypes: ["'none'"]
+            trustedTypes: ["'none'"],
           },
         })
       )
