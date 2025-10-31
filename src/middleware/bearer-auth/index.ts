@@ -197,9 +197,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
             401,
             options.invalidToken?.wwwAuthenticateHeader ||
               `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidToken?.message ||
-              options.invalidTokenMessage ||
-              'Unauthorized'
+            options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
           )
         }
       }
