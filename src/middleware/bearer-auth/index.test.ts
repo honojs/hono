@@ -70,10 +70,79 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-string/*',
+      bearerAuth({
+        token: tokens,
+        noAuthenticationHeader: {
+          wwwAuthenticateHeader: 'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-wwwAuthenticateHeader-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-object/*',
+      bearerAuth({
+        token: tokens,
+        noAuthenticationHeader: {
+          wwwAuthenticateHeader: {
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          },
+        },
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-wwwAuthenticateHeader-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-string/*',
+      bearerAuth({
+        token: tokens,
+        noAuthenticationHeader: {
+          wwwAuthenticateHeader: () =>
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-string/*',
+      (c) => {
+        handlerExecuted = true
+        return c.text('auth')
+      }
+    )
+
+    app.use(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-object/*',
+      bearerAuth({
+        token: tokens,
+        noAuthenticationHeader: {
+          wwwAuthenticateHeader: () => ({
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          }),
+        },
+      })
+    )
+    app.get(
+      '/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-object/*',
+      (c) => {
+        handlerExecuted = true
+        return c.text('auth')
+      }
+    )
+
+    app.use(
       '/auth-custom-no-authentication-header-message-string/*',
       bearerAuth({
         token,
-        noAuthenticationHeaderMessage: 'Custom no authentication header message as string',
+        noAuthenticationHeader: { message: 'Custom no authentication header message as string' },
       })
     )
     app.get('/auth-custom-no-authentication-header-message-string/*', (c) => {
@@ -85,8 +154,8 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-no-authentication-header-message-object/*',
       bearerAuth({
         token,
-        noAuthenticationHeaderMessage: {
-          message: 'Custom no authentication header message as object',
+        noAuthenticationHeader: {
+          message: { message: 'Custom no authentication header message as object' },
         },
       })
     )
@@ -99,8 +168,9 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-no-authentication-header-message-function-string/*',
       bearerAuth({
         token,
-        noAuthenticationHeaderMessage: () =>
-          'Custom no authentication header message as function string',
+        noAuthenticationHeader: {
+          message: () => 'Custom no authentication header message as function string',
+        },
       })
     )
     app.get('/auth-custom-no-authentication-header-message-function-string/*', (c) => {
@@ -112,9 +182,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-no-authentication-header-message-function-object/*',
       bearerAuth({
         token,
-        noAuthenticationHeaderMessage: () => ({
-          message: 'Custom no authentication header message as function object',
-        }),
+        noAuthenticationHeader: {
+          message: () => ({
+            message: 'Custom no authentication header message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-no-authentication-header-message-function-object/*', (c) => {
@@ -123,11 +195,81 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string/*',
+      bearerAuth({
+        token: tokens,
+        invalidAuthenticationHeader: {
+          wwwAuthenticateHeader: 'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-object/*',
+      bearerAuth({
+        token: tokens,
+        invalidAuthenticationHeader: {
+          wwwAuthenticateHeader: {
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          },
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-string/*',
+      bearerAuth({
+        token: tokens,
+        invalidAuthenticationHeader: {
+          wwwAuthenticateHeader: () =>
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-string/*',
+      (c) => {
+        handlerExecuted = true
+        return c.text('auth')
+      }
+    )
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-object/*',
+      bearerAuth({
+        token: tokens,
+        invalidAuthenticationHeader: {
+          wwwAuthenticateHeader: () => ({
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          }),
+        },
+      })
+    )
+    app.get(
+      '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-object/*',
+      (c) => {
+        handlerExecuted = true
+        return c.text('auth')
+      }
+    )
+
+    app.use(
       '/auth-custom-invalid-authentication-header-message-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMessage:
-          'Custom invalid authentication header message as string',
+        invalidAuthenticationHeader: {
+          message: 'Custom invalid authentication header message as string',
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-string/*', (c) => {
@@ -139,8 +281,10 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMessage: {
-          message: 'Custom invalid authentication header message as object',
+        invalidAuthenticationHeader: {
+          message: {
+            message: 'Custom invalid authentication header message as object',
+          },
         },
       })
     )
@@ -153,8 +297,9 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMessage: () =>
-          'Custom invalid authentication header message as function string',
+        invalidAuthenticationHeader: {
+          message: () => 'Custom invalid authentication header message as function string',
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-function-string/*', (c) => {
@@ -166,9 +311,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMessage: () => ({
-          message: 'Custom invalid authentication header message as function object',
-        }),
+        invalidAuthenticationHeader: {
+          message: () => ({
+            message: 'Custom invalid authentication header message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-invalid-authentication-header-message-function-object/*', (c) => {
@@ -177,10 +324,73 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-invalid-token-wwwAuthenticateHeader-string/*',
+      bearerAuth({
+        token: tokens,
+        invalidToken: {
+          wwwAuthenticateHeader: 'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-wwwAuthenticateHeader-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-wwwAuthenticateHeader-object/*',
+      bearerAuth({
+        token: tokens,
+        invalidToken: {
+          wwwAuthenticateHeader: {
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          },
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-wwwAuthenticateHeader-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-wwwAuthenticateHeader-function-string/*',
+      bearerAuth({
+        token: tokens,
+        invalidToken: {
+          wwwAuthenticateHeader: () =>
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-wwwAuthenticateHeader-function-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-wwwAuthenticateHeader-function-object/*',
+      bearerAuth({
+        token: tokens,
+        invalidToken: {
+          wwwAuthenticateHeader: () => ({
+            error: 'Unauthorized',
+            error_description: 'Unauthorized',
+          }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-wwwAuthenticateHeader-function-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
       '/auth-custom-invalid-token-message-string/*',
       bearerAuth({
         token,
-        invalidTokenMessage: 'Custom invalid token message as string',
+        invalidToken: { message: 'Custom invalid token message as string' },
       })
     )
     app.get('/auth-custom-invalid-token-message-string/*', (c) => {
@@ -192,7 +402,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-token-message-object/*',
       bearerAuth({
         token,
-        invalidTokenMessage: { message: 'Custom invalid token message as object' },
+        invalidToken: { message: { message: 'Custom invalid token message as object' } },
       })
     )
     app.get('/auth-custom-invalid-token-message-object/*', (c) => {
@@ -204,7 +414,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-token-message-function-string/*',
       bearerAuth({
         token,
-        invalidTokenMessage: () => 'Custom invalid token message as function string',
+        invalidToken: { message: () => 'Custom invalid token message as function string' },
       })
     )
     app.get('/auth-custom-invalid-token-message-function-string/*', (c) => {
@@ -216,9 +426,11 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-token-message-function-object/*',
       bearerAuth({
         token,
-        invalidTokenMessage: () => ({
-          message: 'Custom invalid token message as function object',
-        }),
+        invalidToken: {
+          message: () => ({
+            message: 'Custom invalid token message as function object',
+          }),
+        },
       })
     )
     app.get('/auth-custom-invalid-token-message-function-object/*', (c) => {
@@ -386,6 +598,58 @@ describe('Bearer Auth by Middleware', () => {
     expect(await res.text()).toBe('Unauthorized')
   })
 
+  it('Should not authorize - custom no authorization header wwwAuthenticateHeader as string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-wwwAuthenticateHeader-string'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom no authorization header wwwAuthenticateHeader as object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-wwwAuthenticateHeader-object'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom no authorization header wwwAuthenticateHeader as function string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-string'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom no authorization header wwwAuthenticateHeader as function object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-wwwAuthenticateHeader-function-object'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
   it('Should not authorize - custom no authorization header message as string', async () => {
     const req = new Request('http://localhost/auth-custom-no-authentication-header-message-string')
     const res = await app.request(req)
@@ -427,6 +691,62 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe(
       '{"message":"Custom no authentication header message as function object"}'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header wwwAuthenticateHeader as string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header wwwAuthenticateHeader as object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-object'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header wwwAuthenticateHeader as function string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-string'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header wwwAuthenticateHeader as function object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-function-object'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -481,6 +801,62 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe(
       '{"message":"Custom invalid authentication header message as function object"}'
+    )
+  })
+
+  it('Should not authorize - custom invalid token wwwAuthenticateHeader as string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-token-wwwAuthenticateHeader-string'
+    )
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid token wwwAuthenticateHeader as object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-token-wwwAuthenticateHeader-object'
+    )
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid token wwwAuthenticateHeader as function string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-token-wwwAuthenticateHeader-function-string'
+    )
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
+    )
+  })
+
+  it('Should not authorize - custom invalid token wwwAuthenticateHeader as function object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-token-wwwAuthenticateHeader-function-object'
+    )
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.headers.get('WWW-Authenticate')).toBe(
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
