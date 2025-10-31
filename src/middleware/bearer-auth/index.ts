@@ -26,8 +26,20 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
+      /**
+       * @deprecated Use noAuthenticationHeader.message instead
+       */
+      noAuthenticationHeaderMessage?: string | object | MessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidAuthenticationHeader.message instead
+       */
+      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidToken.message instead
+       */
+      invalidTokenMessage?: string | object | MessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
   | {
@@ -36,8 +48,20 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
+      /**
+       * @deprecated Use noAuthenticationHeader.message instead
+       */
+      noAuthenticationHeaderMessage?: string | object | MessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidAuthenticationHeader.message instead
+       */
+      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidToken.message instead
+       */
+      invalidTokenMessage?: string | object | MessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
 
@@ -135,7 +159,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
         401,
         options.noAuthenticationHeader?.wwwAuthenticateHeader ||
           `${wwwAuthenticatePrefix}realm="${realm}"`,
-        options.noAuthenticationHeader?.message || 'Unauthorized'
+        options.noAuthenticationHeader?.message ||
+          options.noAuthenticationHeaderMessage ||
+          'Unauthorized'
       )
     } else {
       const match = regexp.exec(headerToken)
@@ -146,7 +172,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           400,
           options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
             `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeader?.message || 'Bad Request'
+          options.invalidAuthenticationHeader?.message ||
+            options.invalidAuthenticationHeaderMessage ||
+            'Bad Request'
         )
       } else {
         let equal = false
@@ -169,7 +197,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
             401,
             options.invalidToken?.wwwAuthenticateHeader ||
               `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidToken?.message || 'Unauthorized'
+            options.invalidToken?.message ||
+              options.invalidTokenMessage ||
+              'Unauthorized'
           )
         }
       }
