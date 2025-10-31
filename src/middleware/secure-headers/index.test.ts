@@ -245,6 +245,8 @@ describe('Secure Headers Middleware', () => {
             scriptSrc: ["'self'"],
             scriptSrcAttr: ["'none'"],
             styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+            requireTrustedTypesFor: ["'script'"],
+            trustedTypes: ["'none'"]
           },
         })
       )
@@ -256,7 +258,7 @@ describe('Secure Headers Middleware', () => {
 
       const res = await app.request('/test')
       expect(res.headers.get(cspHeaderName)).toEqual(
-        "default-src 'self'; base-uri 'self'; font-src 'self' https: data:; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self' https: 'unsafe-inline'"
+        "default-src 'self'; base-uri 'self'; font-src 'self' https: data:; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self' https: 'unsafe-inline'; require-trusted-types-for 'script'; trusted-types 'none'"
       )
     })
 

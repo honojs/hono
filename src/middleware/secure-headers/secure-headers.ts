@@ -38,6 +38,8 @@ interface ContentSecurityPolicyOptions {
   styleSrcElem?: ContentSecurityPolicyOptionValue
   upgradeInsecureRequests?: ContentSecurityPolicyOptionValue
   workerSrc?: ContentSecurityPolicyOptionValue
+  requireTrustedTypesFor?: ContentSecurityPolicyOptionValue
+  trustedTypes?: ContentSecurityPolicyOptionValue
 }
 
 interface ReportToOptions {
