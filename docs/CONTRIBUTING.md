@@ -50,7 +50,7 @@ If you want to do it, create the issue about your middleware.
 ## Local Development
 
 ```bash
-git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install --frozen-lockfile
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && bun install --frozen-lockfile
 docker compose up -d --build
 docker compose exec hono bash
 ```
