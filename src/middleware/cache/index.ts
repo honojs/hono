@@ -12,6 +12,8 @@ import type { StatusCode } from '../../utils/http-status'
  */
 const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
 
+const varyWildcardRegExp = /(?:^|,)\s*\*\s*(?:,|$)/
+
 /**
  * Cache Middleware for Hono.
  *
@@ -110,6 +112,13 @@ export const cache = (options: {
     }
   }
 
+  const shouldSkipCache = (res: Response) => {
+    const vary = res.headers.get('Vary')
+    // Don't cache for Vary: *
+    // https://www.rfc-editor.org/rfc/rfc9111#section-4.1
+    return vary && varyWildcardRegExp.test(vary)
+  }
+
   return async function cache(c, next) {
     let key = c.req.url
     if (options.keyGenerator) {
@@ -129,6 +138,11 @@ export const cache = (options: {
       return
     }
     addHeader(c)
+
+    if (shouldSkipCache(c.res)) {
+      return
+    }
+
     const res = c.res.clone()
     if (options.wait) {
       await cache.put(key, res)
