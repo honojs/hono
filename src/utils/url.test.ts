@@ -247,6 +247,7 @@ describe('url', () => {
       })
       expect(getQueryParam('http://example.com/?pretty', 'pretty')).toBe('')
       expect(getQueryParam('http://example.com/?pretty', 'prtt')).toBe(undefined)
+      expect(getQueryParam('http://example.com/&name=sam?name=tom', 'name')).toBe('tom')
       expect(getQueryParam('http://example.com/?name=sam&name=tom', 'name')).toBe('sam')
       expect(getQueryParam('http://example.com/?name=sam&name=tom')).toEqual({
         name: 'sam',

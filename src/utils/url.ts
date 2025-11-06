@@ -217,9 +217,12 @@ const _getQueryParam = (
   if (!multiple && key && !/[%+]/.test(key)) {
     // optimized for unencoded key
 
-    let keyIndex = url.indexOf(`?${key}`, 8)
+    let keyIndex = url.indexOf('?', 8)
     if (keyIndex === -1) {
-      keyIndex = url.indexOf(`&${key}`, 8)
+      return undefined
+    }
+    if (url.slice(keyIndex + 1, keyIndex + key.length + 1) !== key) {
+      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
     }
     while (keyIndex !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
