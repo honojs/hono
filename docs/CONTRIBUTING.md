@@ -35,7 +35,7 @@ Please ensure your PR passes tests with `bun run test`.
 ## Third-party middleware
 
 Third-party middleware is not in the core.
-It is allowed to depend on other libraries or work only in specific environments, such as only Cloudflare Workers. For examples:
+It is allowed to depend on other libraries or work only in specific environments, such as Cloudflare Workers. For example:
 
 - GraphQL Server middleware
 - Firebase Auth middleware
@@ -45,7 +45,7 @@ You can make a third-party middleware by yourself.
 It may be under the "honojs organization" and distributed in the `@honojs` namespace.
 
 The monorepo "[honojs/middleware](https://github.com/honojs/middleware)" manages these middleware.
-If you want to do it, create the issue about your middleware.
+If you want to do it, create an issue about your middleware.
 
 ## Local Development
 
