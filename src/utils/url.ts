@@ -221,7 +221,7 @@ const _getQueryParam = (
     if (keyIndex === -1) {
       return undefined
     }
-    if (url.slice(keyIndex + 1, keyIndex + key.length + 1) !== key) {
+    if (!url.startsWith(key, keyIndex + 1)) {
       keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
     }
     while (keyIndex !== -1) {
