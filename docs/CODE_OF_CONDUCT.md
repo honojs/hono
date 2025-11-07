@@ -14,8 +14,8 @@ diverse, inclusive, and healthy community.
 
 ## Our Standards
 
-Examples of behavior that contributes to a positive environment for our
-community include:
+Examples of behavior that contribute to a positive environment for our
+community includes:
 
 - Demonstrating empathy and kindness toward other people
 - Being respectful of differing opinions, viewpoints, and experiences
@@ -40,7 +40,7 @@ Examples of unacceptable behavior include:
 
 Community leaders are responsible for clarifying and enforcing our standards of
 acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
+response to any behavior that they deem inappropriate, threatening, or offensive,
 or harmful.
 
 Community leaders have the right and responsibility to remove, edit, or reject
@@ -82,7 +82,7 @@ behavior was inappropriate. A public apology may be requested.
 
 ### 2. Warning
 
-**Community Impact**: A violation through a single incident or series
+**Community Impact**: A violation through a single incident or a series
 of actions.
 
 **Consequence**: A warning with consequences for continued behavior. No
@@ -105,7 +105,7 @@ Violating these terms may lead to a permanent ban.
 
 ### 4. Permanent Ban
 
-**Community Impact**: Demonstrating a pattern of violation of community
+**Community Impact**: Demonstrating a pattern of violation of the community
 standards, including sustained inappropriate behavior, harassment of an
 individual, or aggression toward or disparagement of classes of individuals.
 
