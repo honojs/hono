@@ -27,4 +27,10 @@ describe('cloneElement', () => {
     expect(element.toString()).toBe('<div>Hello</div>')
     expect(clonedElement.toString()).toBe('<div>World</div>')
   })
+
+  it('should self-close a wrapped empty tag', () => {
+    const Hr = ({ ...props }) => <hr {...props} />
+    const element = <Hr />
+    expect(element.toString()).toBe('<hr/>')
+  })
 })

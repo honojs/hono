@@ -245,10 +245,12 @@ class JSXFunctionNode extends JSXNode {
   override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const { children } = this
 
-    const res = (this.tag as Function).call(null, {
-      ...this.props,
-      children: children.length <= 1 ? children[0] : children,
-    })
+    const props = { ...this.props }
+    if (children.length) {
+      props.children = children.length === 1 ? children[0] : children
+    }
+
+    const res = (this.tag as Function).call(null, props)
 
     if (typeof res === 'boolean' || res == null) {
       // boolean or null or undefined
