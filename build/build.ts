@@ -97,6 +97,6 @@ await $`tsc ${
   isWatch ? '-w' : ''
 } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
 
-// // Remove #private fields
+// Remove #private fields
 const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
 await removePrivateFields(dtsEntries)
