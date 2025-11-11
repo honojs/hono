@@ -170,6 +170,47 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
+  let varyWildcardOnlyCount = 0
+  app.use('/vary-wildcard/*', cache({ cacheName: 'vary-wildcard-test', wait: true }))
+  app.get('/vary-wildcard/only', (c) => {
+    varyWildcardOnlyCount++
+    c.header('X-Count', `${varyWildcardOnlyCount}`)
+    c.header('Vary', '*')
+    return c.text('response')
+  })
+
+  let varyWildcardFirstCount = 0
+  app.get('/vary-wildcard/first', (c) => {
+    varyWildcardFirstCount++
+    c.header('X-Count', `${varyWildcardFirstCount}`)
+    c.header('Vary', '*, Accept')
+    return c.text('response')
+  })
+
+  let varyWildcardMiddleCount = 0
+  app.get('/vary-wildcard/middle', (c) => {
+    varyWildcardMiddleCount++
+    c.header('X-Count', `${varyWildcardMiddleCount}`)
+    c.header('Vary', 'Accept, *')
+    return c.text('response')
+  })
+
+  let varyWildcardComplexCount = 0
+  app.get('/vary-wildcard/complex', (c) => {
+    varyWildcardComplexCount++
+    c.header('X-Count', `${varyWildcardComplexCount}`)
+    c.header('Vary', 'Accept, *, Accept-Encoding')
+    return c.text('response')
+  })
+
+  let varyWildcardSpacesCount = 0
+  app.get('/vary-wildcard/spaces', (c) => {
+    varyWildcardSpacesCount++
+    c.header('X-Count', `${varyWildcardSpacesCount}`)
+    c.header('Vary', ' * ')
+    return c.text('response')
+  })
+
   app.use('/default/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
   app.all('/default/:code/', (c) => {
     const code = parseInt(c.req.param('code'))
@@ -290,6 +331,36 @@ describe('Cache Middleware', () => {
   it('Should not allow "*" as a Vary header in middleware configuration due to its impact on caching effectiveness', async () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: ['*'] })).toThrow()
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
+  })
+
+  it('Should not cache response when Vary: * is set', async () => {
+    await app.request('http://localhost/vary-wildcard/only')
+    const res = await app.request('http://localhost/vary-wildcard/only')
+    expect(res.headers.get('x-count')).toBe('2')
+  })
+
+  it('Should not cache response when Vary: *, Accept is set', async () => {
+    await app.request('http://localhost/vary-wildcard/first')
+    const res = await app.request('http://localhost/vary-wildcard/first')
+    expect(res.headers.get('x-count')).toBe('2')
+  })
+
+  it('Should not cache response when Vary: Accept, * is set', async () => {
+    await app.request('http://localhost/vary-wildcard/middle')
+    const res = await app.request('http://localhost/vary-wildcard/middle')
+    expect(res.headers.get('x-count')).toBe('2')
+  })
+
+  it('Should not cache response when Vary: Accept, *, Accept-Encoding is set', async () => {
+    await app.request('http://localhost/vary-wildcard/complex')
+    const res = await app.request('http://localhost/vary-wildcard/complex')
+    expect(res.headers.get('x-count')).toBe('2')
+  })
+
+  it('Should not cache response when Vary contains * with extra spaces', async () => {
+    await app.request('http://localhost/vary-wildcard/spaces')
+    const res = await app.request('http://localhost/vary-wildcard/spaces')
+    expect(res.headers.get('x-count')).toBe('2')
   })
 
   it.each([200])('Should cache %i in default cacheable status codes', async (code) => {
