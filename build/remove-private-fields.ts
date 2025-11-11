@@ -15,7 +15,9 @@ export async function removePrivateFields(files: string[]) {
   await Promise.all(
     parsed.map(async ({ file, sourceCode, ast }) => {
       const sourceCodeWithoutPrivateFields = removePrivateFieldFromSourceCode(ast, sourceCode)
-      if (sourceCodeWithoutPrivateFields) await writeFile(file, sourceCodeWithoutPrivateFields)
+      if (sourceCodeWithoutPrivateFields) {
+        await writeFile(file, sourceCodeWithoutPrivateFields)
+      }
     })
   )
   const end = performance.now()
@@ -34,7 +36,9 @@ export function removePrivateFieldFromSourceCode(ast: ParseResult, sourceCode: s
     },
   }).visit(ast.program)
 
-  if (removals.length === 0) return
+  if (removals.length === 0) {
+    return
+  }
 
   let sourceCodeWithoutPrivateFields = sourceCode
   for (const elem of removals) {
