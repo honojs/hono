@@ -1,40 +1,51 @@
-import { cpus } from 'node:os'
-import type { WorkerInput, WorkerOutput } from './remove-private-fields-worker'
+import type { PropertyDefinition } from 'oxc-parser'
+import { parseSync, Visitor } from 'oxc-parser'
+import { readFile, writeFile } from 'fs/promises'
 
-const workers = Array.from({ length: Math.ceil(cpus().length / 2) }).map(
-  () => new Worker(`${import.meta.dirname}/remove-private-fields-worker.ts`, { type: 'module' })
-)
-let workerIndex = 0
-let taskId = 0
+export const removePrivateFields = async (files: string[]) => {
+  const start = performance.now()
+  const parsed = await Promise.all(
+    files.map(async (file) => {
+      const sourceCode = await readFile(file, 'utf-8')
+      const ast = parseSync(file, sourceCode)
+      return { file, sourceCode, ast }
+    })
+  )
 
-export async function removePrivateFields(file: string): Promise<string> {
-  const currentTaskId = taskId++
-  const worker = workers[workerIndex]
-  workerIndex = (workerIndex + 1) % workers.length
+  await Promise.all(
+    parsed.map(async ({ file, sourceCode, ast }) => {
+      const removals: PropertyDefinition[] = []
 
-  return new Promise<string>((resolve, reject) => {
-    const abortController = new AbortController()
-    worker.addEventListener(
-      'message',
-      ({ data: { type, value, taskId } }: { data: WorkerOutput }) => {
-        if (taskId === currentTaskId) {
-          if (type === 'success') {
-            resolve(value)
-          } else {
-            reject(value)
-          }
+      new Visitor({
+        ClassDeclaration: (node) => {
+          node.body.body.forEach((elem) => {
+            if (elem.type === 'PropertyDefinition' && elem.key.type === 'PrivateIdentifier') {
+              removals.push(elem)
+            }
+          })
+        },
+      }).visit(ast.program)
 
-          abortController.abort()
-        }
-      },
-      { signal: abortController.signal }
-    )
-    worker.postMessage({ file, taskId: currentTaskId } satisfies WorkerInput)
-  })
+      if (removals.length === 0) return
+
+      // Normally for string manipulation, we would use a library like MagicString.
+      // but its fine to implement it manually for only one use case.
+      let sourceCodeWithoutPrivateFields = sourceCode
+      for (const elem of removals) {
+        sourceCodeWithoutPrivateFields = removeRange(
+          sourceCodeWithoutPrivateFields,
+          elem.start,
+          elem.end
+        )
+      }
+
+      await writeFile(file, sourceCodeWithoutPrivateFields)
+    })
+  )
+  const end = performance.now()
+  console.log(`Done removing private fields in ${(end - start).toFixed(2)}ms`)
 }
 
-export function cleanupWorkers() {
-  for (const worker of workers) {
-    worker.terminate()
-  }
+function removeRange(str: string, start: number, end: number) {
+  return str.slice(0, start) + ' '.repeat(end - start) + str.slice(end)
 }

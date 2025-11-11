@@ -8,13 +8,13 @@
 /// <reference types="bun-types/bun" />
 
 import arg from 'arg'
-import { $, stdout } from 'bun'
+import { $ } from 'bun'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
 import fs from 'fs'
 import path from 'path'
-import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
+import { removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 
 const args = arg({
@@ -97,23 +97,6 @@ await $`tsc ${
   isWatch ? '-w' : ''
 } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
 
-// Remove #private fields
+// // Remove #private fields
 const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
-const writer = stdout.writer()
-writer.write('\n')
-let lastOutputLength = 0
-let removedCount = 0
-
-await Promise.all(
-  dtsEntries.map(async (e) => {
-    await fs.promises.writeFile(e, await removePrivateFields(e))
-
-    const message = `Private fields removed(${++removedCount}/${dtsEntries.length}): ${e}`
-    writer.write(`\r${' '.repeat(lastOutputLength)}`)
-    lastOutputLength = message.length
-    writer.write(`\r${message}`)
-  })
-)
-
-writer.write('\n')
-cleanupWorkers()
+await removePrivateFields(dtsEntries)
