@@ -7,7 +7,7 @@ import type {
   ApiGatewayRequestContextV2,
   Handler,
   LambdaContext,
-  LatticeRequestContext,
+  LatticeRequestContextV2,
 } from './types'
 
 function sanitizeHeaderValue(value: string): string {
@@ -34,7 +34,7 @@ export interface LatticeProxyEventV2 {
   queryStringParameters: Record<string, string[] | undefined>
   body: string | null
   isBase64Encoded: boolean
-  requestContext: LatticeRequestContext
+  requestContext: LatticeRequestContextV2
 }
 
 // When calling HTTP API or Lambda directly through function urls
@@ -119,7 +119,7 @@ const getRequestContext = (
   | ApiGatewayRequestContext
   | ApiGatewayRequestContextV2
   | ALBRequestContext
-  | LatticeRequestContext => {
+  | LatticeRequestContextV2 => {
   return event.requestContext
 }
 

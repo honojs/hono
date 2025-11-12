@@ -16,7 +16,7 @@ import type {
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
-  LatticeRequestContext,
+  LatticeRequestContextV2,
   LambdaContext,
 } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
@@ -63,7 +63,7 @@ const testApiGatewayRequestContextV2 = {
   customProperty: 'customValue',
 }
 
-const testLatticeRequestContext: LatticeRequestContext = {
+const testLatticeRequestContext: LatticeRequestContextV2 = {
   serviceNetworkArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:servicenetwork/sn-a1b2c3',
   serviceArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:service/svc-a1b2c3',
   targetGroupArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:targetgroup/tg-a1b2c3',

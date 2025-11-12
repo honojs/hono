@@ -143,7 +143,7 @@ export interface ALBRequestContext {
   }
 }
 
-export interface LatticeRequestContext {
+export interface LatticeRequestContextV2 {
   serviceNetworkArn: string
   serviceArn: string
   targetGroupArn: string
