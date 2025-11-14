@@ -91,7 +91,21 @@ export type H<
   R extends HandlerResponse<any> = any
 > = Handler<E, P, I, R> | MiddlewareHandler<E, P, I, R>
 
-export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
+/**
+ * You can extend this interface to define a custom `c.notFound()` Response type.
+ *
+ * @example
+ * declare module 'hono' {
+ *   interface NotFoundResponse extends Response & TypedResponse<string, 'text' 404> {}
+ * }
+ */
+export interface NotFoundResponse {}
+
+export type NotFoundHandler<E extends Env = any> = (
+  c: Context<E>
+) => NotFoundResponse extends Response
+  ? NotFoundResponse | Promise<NotFoundResponse>
+  : Response | Promise<Response>
 
 export interface HTTPResponseError extends Error {
   getResponse: () => Response
