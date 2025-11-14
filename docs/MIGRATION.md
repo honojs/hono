@@ -50,7 +50,7 @@ app.use('/static/*', serveStatic({ root: './assets', manifest }))
 
 ### Others
 
-- The default value of `docType` option in JSX Renderer Middleware is now `true`.
+- The default value of the `docType` option in JSX Renderer Middleware is now `true`.
 - `FC` in `hono/jsx` does not pass `children`. Use `PropsWithChildren`.
 - Some Mime Types are removed https://github.com/honojs/hono/pull/2119.
 - Types for chaining routes with middleware matter: https://github.com/honojs/hono/pull/2046.
@@ -64,7 +64,7 @@ In addition to the following, type mismatches may occur.
 ### `c.req` is now `HonoRequest`
 
 `c.req` becomes `HonoRequest`, not `Request`.
-Although APIs are almost same, but if you want to access `Request`, use `c.req.raw`.
+Although APIs are almost the same, if you want to access `Request`, use `c.req.raw`.
 
 ```ts
 app.post('/', async (c) => {
@@ -77,13 +77,13 @@ app.post('/', async (c) => {
 
 You can't use `StaticRouter`.
 
-### Validator is changed
+### Validator has been changed
 
 Previous Validator Middleware is obsolete.
 You can still use `hono/validator`, but the API has been changed.
 See [the document](https://hono.dev).
 
-### `serveStatic` is provided from Adapter
+### `serveStatic` is provided from the Adapter
 
 Serve Static Middleware is obsolete. Use Adapters instead.
 
@@ -149,7 +149,7 @@ app.post('/posts', async (c) => {
 
 ## v2.2.5 to v2.3.0
 
-There is a breaking change associated to the security update.
+There is a breaking change associated with the security update.
 
 ### Basic Auth Middleware and Bearer Auth Middleware
 
@@ -212,7 +212,7 @@ app.get('/foo', (c) => {
 
 ## v1.6.4 to v2.0.0
 
-There are many BREAKING CHANGES. Please follow instructions below.
+There are many BREAKING CHANGES. Please follow the instructions below.
 
 ### The way to import Middleware on Deno has been changed
 
@@ -264,7 +264,7 @@ app.get('/', (c) => {
 import { bodyParse } from 'hono/body-parse' // <--- Obsolete!
 ```
 
-You do not have to use Body parse middleware to parse request body. Use `c.req.parseBody()` method instead.
+You do not have to use Body parse middleware to parse the request body. Use `c.req.parseBody()` method instead.
 
 ```ts
 // Parse Request body
