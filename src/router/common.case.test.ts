@@ -871,5 +871,79 @@ export const runTest = ({
         expect(res[0].handler).toBe('all')
       })
     })
+
+    describe('Clear method', () => {
+      it('should clear all routes', () => {
+        router.add('GET', '/hello', 'handler1')
+        router.add('POST', '/world', 'handler2')
+
+        let res = match('GET', '/hello')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('handler1')
+
+        res = match('POST', '/world')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('handler2')
+
+        if ('clear' in router && typeof router.clear === 'function') {
+          router.clear()
+
+          res = match('GET', '/hello')
+          expect(res.length).toBe(0)
+
+          res = match('POST', '/world')
+          expect(res.length).toBe(0)
+        }
+      })
+
+      it('should allow adding new routes after clear', () => {
+        router.add('GET', '/old', 'oldHandler')
+        let res = match('GET', '/old')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('oldHandler')
+
+        if ('clear' in router && typeof router.clear === 'function') {
+          router.clear()
+          router.add('GET', '/new', 'newHandler')
+
+          res = match('GET', '/old')
+          expect(res.length).toBe(0)
+
+          res = match('GET', '/new')
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toBe('newHandler')
+        }
+      })
+
+      it('should handle complex routes after clear', () => {
+        router.add('GET', '/users/:id', 'user')
+        router.add('POST', '/api/*', 'apiMiddleware')
+        router.add('ALL', '*', 'globalMiddleware')
+
+        let res = match('GET', '/users/123')
+        expect(res.length).toBeGreaterThan(0)
+
+        res = match('POST', '/api/posts')
+        expect(res.length).toBeGreaterThan(0)
+
+        if ('clear' in router && typeof router.clear === 'function') {
+          router.clear()
+
+          res = match('GET', '/users/123')
+          expect(res.length).toBe(0)
+
+          res = match('POST', '/api/posts')
+          expect(res.length).toBe(0)
+
+          res = match('DELETE', '/anything')
+          expect(res.length).toBe(0)
+
+          router.add('GET', '/fresh', 'freshHandler')
+          res = match('GET', '/fresh')
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toBe('freshHandler')
+        }
+      })
+    })
   })
 }
