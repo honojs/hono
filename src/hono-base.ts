@@ -525,7 +525,38 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.#dispatch(event.request, event, undefined, event.request.method))
     })
-  }
+  };
+
+  /**
+   * `['~env']` is meant to be a type-only property to expose the generic type parameter `E`.
+   * You can use it to re-use the `Env` generics content of your `Hono` instance elsewhere.
+   *
+   * @example
+   * ```ts
+   * // == logger-middleware.ts
+   * // Adds a variable `logger` to `c.var` in the middleware
+   * export const loggerMiddleware = createMiddleware<{ Variables: { logger: Logger } }>(...);
+   *
+   * // == index.ts
+   * // Initialize an OpenAPIHono instance (zod-openapi middleware)
+   * export const _baseApp = new OpenAPIHono();
+   * export const baseAppWithMiddlewares = baseApp
+   *   .use(loggerMiddleware())
+   *   // Because we called .use(), the return type is now
+   *   // `Hono<{ Variables: { logger: Logger } }>` instead of `OpenAPIHono`
+   *   .openapi(someRoute, someHandler) // <- ❌ Error, Hono instance doesn't have .openapi()!
+   *
+   * // Export the original `_baseApp` OpenAPIHono instance, but still retain the correct inferred Env types from `baseAppWithMiddlewares`
+   * export const baseApp = _baseApp as OpenAPIHono<(typeof baseAppWithMiddlewares)["~env"]>;
+   *
+   * // == auth.ts
+   * const authRoutes = getBaseApp()
+   *   .openapi(openApiRoute, (c) => {
+   *     // Here, c.var.logger is available ✅
+   *     c.var.logger("log message");
+   *   })
+   */
+  ['~env']: E = undefined as unknown as E
 }
 
 export { Hono as HonoBase }
