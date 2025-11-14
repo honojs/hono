@@ -110,14 +110,18 @@ describe('createHandler', () => {
     it('Should return correct path types - /a', () => {
       const client = hc<typeof routesA>('/')
       expectTypeOf(client).toEqualTypeOf<{
-        a: ClientRequest<{
-          $get: {
-            input: {}
-            output: 'A'
-            outputFormat: 'text'
-            status: ContentfulStatusCode
+        a: ClientRequest<
+          string,
+          '/a',
+          {
+            $get: {
+              input: {}
+              output: 'A'
+              outputFormat: 'text'
+              status: ContentfulStatusCode
+            }
           }
-        }>
+        >
       }>()
     })
   })
