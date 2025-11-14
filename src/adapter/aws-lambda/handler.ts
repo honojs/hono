@@ -279,11 +279,11 @@ export abstract class EventProcessor<E extends LambdaEvent> {
   protected abstract setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void
 
   protected getHeaderValue(headers: E['headers'], key: string): string | undefined {
-    let value = headers?.[key]
-
-    if (Array.isArray(value)) {
-      value = value[0]
-    }
+    const value = headers
+      ? Array.isArray(headers[key])
+        ? headers[key][0]
+        : headers[key]
+      : undefined
 
     return value
   }
@@ -589,8 +589,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     return event.method
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected getQueryString(event: LatticeProxyEventV2): string {
+  protected getQueryString(): string {
     return ''
   }
 
@@ -615,12 +614,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     return headers
   }
 
-  protected getCookies(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    event: LatticeProxyEventV2,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    headers: Headers
-  ): void {
+  protected getCookies(): void {
     // nop
   }
 
