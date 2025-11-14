@@ -106,7 +106,7 @@ describe('Bearer Auth by Middleware', () => {
         token: tokens,
         noAuthenticationHeader: {
           wwwAuthenticateHeader: () =>
-            'Bearer error="Unauthorized", error_description="Unauthorized"',
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
         },
       })
     )
@@ -231,7 +231,7 @@ describe('Bearer Auth by Middleware', () => {
         token: tokens,
         invalidAuthenticationHeader: {
           wwwAuthenticateHeader: () =>
-            'Bearer error="Unauthorized", error_description="Unauthorized"',
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
         },
       })
     )
@@ -360,7 +360,7 @@ describe('Bearer Auth by Middleware', () => {
         token: tokens,
         invalidToken: {
           wwwAuthenticateHeader: () =>
-            'Bearer error="Unauthorized", error_description="Unauthorized"',
+            'Bearer error="Unauthorized",error_description="Unauthorized"',
         },
       })
     )
@@ -620,7 +620,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -633,7 +633,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -646,7 +646,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -718,7 +718,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(400)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -732,7 +732,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(400)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -746,7 +746,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(400)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -828,7 +828,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -842,7 +842,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 
@@ -856,7 +856,7 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
     expect(res.headers.get('WWW-Authenticate')).toBe(
-      'Bearer error="Unauthorized", error_description="Unauthorized"'
+      'Bearer error="Unauthorized",error_description="Unauthorized"'
     )
   })
 

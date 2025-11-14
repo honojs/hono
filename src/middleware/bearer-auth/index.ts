@@ -78,11 +78,11 @@ type BearerAuthOptions =
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
  * @param {string | object | MessageFunction} [options.noAuthenticationHeader.message="Unauthorized"] - The no authentication header message.
- * @param {string | object | MessageFunction} [options.noAuthenticationHeader.wwwAuthenticateHeader="Bearer realm=\"\""] - The response header value for the WWW-Authenticate header when no authentication header is provided.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeader.wwwAuthenticateHeader="Bearer realm=\"{ctx.req.url}\""] - The no authentication header's response header value for the WWW-Authenticate header.
  * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.message="Bad Request"] - The invalid authentication header message.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The response header value for the WWW-Authenticate header when authentication header is invalid.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The no authentication header's response header value for the WWW-Authenticate header.
  * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
- * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The response header value for the WWW-Authenticate header when token is invalid.
+ * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The no authentication header's response header value for the WWW-Authenticate header.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
@@ -133,7 +133,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           ? wwwAuthenticateHeaderValue
           : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeaderValue)
               .map(([key, value]) => `${key}="${value}"`)
-              .join(', ')}`,
+              .join(',')}`,
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
