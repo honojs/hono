@@ -221,3 +221,40 @@ export const endTime = (c: Context, name: string, precision?: number) => {
   setMetric(c, name, duration, description, precision)
   metrics.timers.delete(name)
 }
+
+/**
+ * Wrap a Promise to capture its duration.
+ * @param {Context} c - The context of the request.
+ * @param {string} name - The name of the timer.
+ * @param {Promise<T>} callable - The Promise to time.
+ * @param {string} [description] - The description of the timer.
+ * @param {number} [precision] - The precision of the timer value.
+ *
+ * @example
+ * ```ts
+ *   // Instead of this:
+ *   const data = await db.findMany(...);
+ *
+ *   // do this:
+ *   const data = await wrapTime(c, 'query', db.findMany(...));
+ * ```
+ * */
+export async function wrapTime<T>(
+  c: Context,
+  name: string,
+  callable: Promise<T>,
+  description?: string,
+  precision?: number
+): Promise<T> {
+  startTime(c, name, description)
+  let result
+  try {
+    result = await callable
+    return result
+    // eslint-disable-next-line no-useless-catch
+  } catch (e) {
+    throw e
+  } finally {
+    endTime(c, name, precision)
+  }
+}
