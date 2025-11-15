@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { endTime, setMetric, startTime, timing } from '.'
+import { endTime, setMetric, startTime, timing, wrapTime } from '.'
 
 describe('Server-Timing API', () => {
   const app = new Hono()
@@ -20,6 +20,20 @@ describe('Server-Timing API', () => {
     startTime(c, name)
     await new Promise((r) => setTimeout(r, 30))
     endTime(c, name)
+
+    return c.text('api!')
+  })
+  app.get('/api-wrap', async (c) => {
+    await wrapTime(c, name, new Promise((r) => setTimeout(r, 30)))
+
+    return c.text('api!')
+  })
+  app.get('/api-wrap-throw', async (c) => {
+    try {
+      await wrapTime(c, name, new Promise((_, r) => setTimeout(r, 30)))
+    } catch (e) {
+      return c.text(`error :( ${e}`, 500)
+    }
 
     return c.text('api!')
   })
@@ -47,6 +61,23 @@ describe('Server-Timing API', () => {
     const res = await app.request('http://localhost/api')
     expect(res).not.toBeNull()
     expect(res.headers.has('server-timing')).toBeTruthy()
+    expect(res.headers.get('server-timing')?.includes(`${name};dur=`)).toBeTruthy()
+    expect(res.headers.get('server-timing')?.includes(name)).toBeTruthy()
+  })
+
+  it('Should contain value metrics, wrapped', async () => {
+    const res = await app.request('http://localhost/api-wrap')
+    expect(res).not.toBeNull()
+    expect(res.headers.has('server-timing')).toBeTruthy()
+    expect(res.headers.get('server-timing')?.includes(`${name};dur=`)).toBeTruthy()
+    expect(res.headers.get('server-timing')?.includes(name)).toBeTruthy()
+  })
+
+  it('Should contain value metrics, wrapped throw', async () => {
+    const res = await app.request('http://localhost/api-wrap-throw')
+    expect(res).not.toBeNull()
+    expect(res.headers.has('server-timing')).toBeTruthy()
+    expect(res.status).toBeGreaterThanOrEqual(500)
     expect(res.headers.get('server-timing')?.includes(`${name};dur=`)).toBeTruthy()
     expect(res.headers.get('server-timing')?.includes(name)).toBeTruthy()
   })
