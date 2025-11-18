@@ -1,7 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets, FormValue } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -66,7 +66,7 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   } = {
@@ -75,7 +75,7 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   },
