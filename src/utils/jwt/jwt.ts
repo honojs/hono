@@ -89,14 +89,6 @@ export type VerifyOptionsWithAlg = {
   alg?: SignatureAlgorithm
 } & VerifyOptions
 
-type StrictVerifyOptions = {
-  iss?: string | RegExp
-  nbf: boolean
-  exp: boolean
-  iat: boolean
-  aud?: string | string[] | RegExp
-}
-
 export const verify = async (
   token: string,
   publicKey: SignatureKey,

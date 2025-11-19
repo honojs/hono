@@ -2348,9 +2348,6 @@ export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise
     : never
   : never
 
-// Special type to indicate "not specified"
-type NotSpecified = { readonly __notSpecified: unique symbol }
-
 type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
 export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
   ? ProcessHead<Head> & IntersectNonAnyTypes<Rest>
