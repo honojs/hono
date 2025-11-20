@@ -29,6 +29,7 @@ interface ContentSecurityPolicyOptions {
   mediaSrc?: ContentSecurityPolicyOptionValue
   objectSrc?: ContentSecurityPolicyOptionValue
   reportTo?: string
+  reportUri?: string | string[]
   sandbox?: ContentSecurityPolicyOptionValue
   scriptSrc?: ContentSecurityPolicyOptionValue
   scriptSrcAttr?: ContentSecurityPolicyOptionValue
@@ -243,6 +244,8 @@ function getCSPDirectives(
   const resultValues: string[] = []
 
   for (const [directive, value] of Object.entries(contentSecurityPolicy)) {
+    if (directive === 'reportUri') continue
+
     const valueArray = Array.isArray(value) ? value : [value]
 
     valueArray.forEach((value, i) => {
@@ -262,6 +265,14 @@ function getCSPDirectives(
       '; '
     )
   }
+
+  if (contentSecurityPolicy.reportUri) {
+    const uris = Array.isArray(contentSecurityPolicy.reportUri)
+      ? contentSecurityPolicy.reportUri
+      : [contentSecurityPolicy.reportUri]
+    resultValues.push('report-uri', ' ', uris.join(' '), '; ')
+  }
+
   resultValues.pop()
 
   return callbacks.length === 0
