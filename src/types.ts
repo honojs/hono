@@ -96,7 +96,7 @@ export type H<
  *
  * @example
  * declare module 'hono' {
- *   interface NotFoundResponse extends Response & TypedResponse<string, 'text' 404> {}
+ *   interface NotFoundResponse extends Response, TypedResponse<string, 404, 'text'> {}
  * }
  */
 export interface NotFoundResponse {}
