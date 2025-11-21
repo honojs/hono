@@ -68,7 +68,11 @@ export interface RouterRoute {
 //////                            //////
 ////////////////////////////////////////
 
-export type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
+export type HandlerResponse<O> =
+  | Response
+  | TypedResponse<O>
+  | Promise<Response | TypedResponse<O>>
+  | Promise<void>
 
 export type Handler<
   E extends Env = any,
@@ -2100,35 +2104,45 @@ export type ToSchema<
   P extends string,
   I extends Input | Input['in'],
   RorO // Response or Output
-> = Simplify<{
-  [K in P]: {
-    [K2 in M as AddDollar<K2>]: Simplify<
-      {
-        input: AddParam<ExtractInput<I>, P>
-      } & (IsAny<RorO> extends true
-        ? {
+> = IsAny<RorO> extends true
+  ? Simplify<{
+      [K in P]: {
+        [K2 in M as AddDollar<K2>]: Simplify<
+          {
+            input: AddParam<ExtractInput<I>, P>
+          } & {
             output: {}
             outputFormat: ResponseFormat
             status: StatusCode
           }
-        : RorO extends TypedResponse<infer T, infer U, infer F>
-        ? {
-            output: unknown extends T ? {} : T
-            outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
-            status: U
-          }
-        : {
-            output: unknown extends RorO ? {} : RorO
-            outputFormat: unknown extends RorO
-              ? 'json'
-              : I extends { outputFormat: string }
-              ? I['outputFormat']
-              : 'json'
-            status: StatusCode
-          })
-    >
-  }
-}>
+        >
+      }
+    }>
+  : [RorO] extends [Promise<void>]
+  ? {}
+  : Simplify<{
+      [K in P]: {
+        [K2 in M as AddDollar<K2>]: Simplify<
+          {
+            input: AddParam<ExtractInput<I>, P>
+          } & (RorO extends TypedResponse<infer T, infer U, infer F>
+            ? {
+                output: unknown extends T ? {} : T
+                outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
+                status: U
+              }
+            : {
+                output: unknown extends RorO ? {} : RorO
+                outputFormat: unknown extends RorO
+                  ? 'json'
+                  : I extends { outputFormat: string }
+                  ? I['outputFormat']
+                  : 'json'
+                status: StatusCode
+              })
+        >
+      }
+    }>
 
 export type Schema = {
   [Path: string]: {
@@ -2243,7 +2257,9 @@ export type TypedResponse<
 }
 
 type MergeTypedResponse<T> = T extends Promise<infer T2>
-  ? T2 extends TypedResponse
+  ? T2 extends void
+    ? Promise<void>
+    : T2 extends TypedResponse
     ? T2
     : TypedResponse
   : T extends TypedResponse
