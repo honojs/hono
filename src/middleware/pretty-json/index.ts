@@ -17,6 +17,12 @@ interface PrettyOptions {
    * @default 'pretty'
    */
   query?: string
+
+  /**
+   * Force prettification of JSON responses regardless of query parameters.
+   * @default false
+   */
+  force?: boolean
 }
 
 /**
@@ -40,7 +46,7 @@ interface PrettyOptions {
 export const prettyJSON = (options?: PrettyOptions): MiddlewareHandler => {
   const targetQuery = options?.query ?? 'pretty'
   return async function prettyJSON(c, next) {
-    const pretty = c.req.query(targetQuery) || c.req.query(targetQuery) === ''
+    const pretty = options?.force || c.req.query(targetQuery) || c.req.query(targetQuery) === ''
     await next()
     if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
       const obj = await c.res.json()
