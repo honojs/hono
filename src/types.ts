@@ -2288,12 +2288,10 @@ export type TypedResponse<
   _format: F
 }
 
-type MergeTypedResponse<T> = IsAny<T> extends true
-  ? any
+type MergeTypedResponse<T> = T extends Promise<void>
+  ? T
   : T extends Promise<infer T2>
-  ? T2 extends void
-    ? Promise<void>
-    : T2 extends TypedResponse
+  ? T2 extends TypedResponse
     ? T2
     : TypedResponse
   : T extends TypedResponse
