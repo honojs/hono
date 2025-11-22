@@ -1523,3 +1523,81 @@ describe('WebSocket Provider Integration', () => {
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
   })
 })
+
+describe('Custom buildSearchParams', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/search',
+    validator('query', () => {
+      return {} as { q: string; tags: string[] }
+    }),
+    (c) => {
+      return c.json({
+        message: 'success',
+        queryString: '',
+      })
+    }
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    http.get('http://localhost/search', ({ request }) => {
+      const url = new URL(request.url)
+      return HttpResponse.json({
+        message: 'success',
+        queryString: url.search,
+      })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  // Custom buildSearchParams that uses bracket notation for arrays (key[]=value)
+  const customBuildSearchParams = (query: Record<string, string | string[]>) => {
+    const searchParams = new URLSearchParams()
+    for (const [k, v] of Object.entries(query)) {
+      if (v === undefined) continue
+      if (Array.isArray(v)) {
+        v.forEach((item) => searchParams.append(`${k}[]`, item))
+      } else {
+        searchParams.set(k, v)
+      }
+    }
+    return searchParams
+  }
+
+  it('Should use custom buildSearchParams for query serialization', async () => {
+    const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
+    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2', 'tag3'] } })
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.queryString).toBe('?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2&tags%5B%5D=tag3')
+  })
+
+  it('Should use default buildSearchParams when custom one is not provided', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.queryString).toBe('?q=test&tags=tag1&tags=tag2')
+  })
+
+  it('Should use custom buildSearchParams in $url() method', () => {
+    const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
+    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(url.href).toBe('http://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2')
+  })
+
+  it('Should use default buildSearchParams in $url() when custom one is not provided', () => {
+    const client = hc<AppType>('http://localhost')
+    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
+  })
+})
