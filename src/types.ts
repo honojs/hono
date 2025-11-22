@@ -154,11 +154,7 @@ export interface HandlerInterface<
   >(
     path: P,
     handler: H<E2, MergedPath, I, R>
-  ): [MergeTypedResponse<R>] extends [Promise<void>]
-    ? HonoBase<E, ChangePathOfSchema<S, MergedPath>, BasePath>
-    : [MergeTypedResponse<R>] extends [never]
-    ? HonoBase<E, ChangePathOfSchema<S, MergedPath>, BasePath>
-    : HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
+  ): HonoBase<E, AddSchemaOrPath<MergeTypedResponse<R>, S, M, P, I, BasePath>, BasePath>
 
   // app.get(handler x 3)
   <
@@ -203,8 +199,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
   ): HonoBase<
     E,
-    S &
-      ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R> | MergeMiddlewareResponse<M1>>,
+    AddSchemaOrPath<MergeTypedResponse<R> | MergeMiddlewareResponse<M1>, S, M, P, I2, BasePath>,
     BasePath
   >
 
@@ -260,13 +255,14 @@ export interface HandlerInterface<
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2> & M2, H<E4, MergedPath, I3, R>]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I3,
-        MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>
-      >,
+    AddSchemaOrPath<
+      MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>,
+      S,
+      M,
+      P,
+      I3,
+      BasePath
+    >,
     BasePath
   >
 
@@ -340,16 +336,17 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I4,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>,
+      S,
+      M,
+      P,
+      I4,
+      BasePath
+    >,
     BasePath
   >
 
@@ -432,17 +429,18 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I5,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>,
+      S,
+      M,
+      P,
+      I5,
+      BasePath
+    >,
     BasePath
   >
 
@@ -534,18 +532,19 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I6,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-        | MergeMiddlewareResponse<M5>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>
+      | MergeMiddlewareResponse<M5>,
+      S,
+      M,
+      P,
+      I6,
+      BasePath
+    >,
     BasePath
   >
 
@@ -646,19 +645,20 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I7,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-        | MergeMiddlewareResponse<M5>
-        | MergeMiddlewareResponse<M6>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>
+      | MergeMiddlewareResponse<M5>
+      | MergeMiddlewareResponse<M6>,
+      S,
+      M,
+      P,
+      I7,
+      BasePath
+    >,
     BasePath
   >
 
@@ -768,20 +768,21 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I8,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-        | MergeMiddlewareResponse<M5>
-        | MergeMiddlewareResponse<M6>
-        | MergeMiddlewareResponse<M7>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>
+      | MergeMiddlewareResponse<M5>
+      | MergeMiddlewareResponse<M6>
+      | MergeMiddlewareResponse<M7>,
+      S,
+      M,
+      P,
+      I8,
+      BasePath
+    >,
     BasePath
   >
 
@@ -900,21 +901,22 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I9,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-        | MergeMiddlewareResponse<M5>
-        | MergeMiddlewareResponse<M6>
-        | MergeMiddlewareResponse<M7>
-        | MergeMiddlewareResponse<M8>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>
+      | MergeMiddlewareResponse<M5>
+      | MergeMiddlewareResponse<M6>
+      | MergeMiddlewareResponse<M7>
+      | MergeMiddlewareResponse<M8>,
+      S,
+      M,
+      P,
+      I9,
+      BasePath
+    >,
     BasePath
   >
 
@@ -969,22 +971,23 @@ export interface HandlerInterface<
     ]
   ): HonoBase<
     E,
-    S &
-      ToSchema<
-        M,
-        MergePath<BasePath, P>,
-        I10,
-        | MergeTypedResponse<R>
-        | MergeMiddlewareResponse<M1>
-        | MergeMiddlewareResponse<M2>
-        | MergeMiddlewareResponse<M3>
-        | MergeMiddlewareResponse<M4>
-        | MergeMiddlewareResponse<M5>
-        | MergeMiddlewareResponse<M6>
-        | MergeMiddlewareResponse<M7>
-        | MergeMiddlewareResponse<M8>
-        | MergeMiddlewareResponse<M9>
-      >,
+    AddSchemaOrPath<
+      | MergeTypedResponse<R>
+      | MergeMiddlewareResponse<M1>
+      | MergeMiddlewareResponse<M2>
+      | MergeMiddlewareResponse<M3>
+      | MergeMiddlewareResponse<M4>
+      | MergeMiddlewareResponse<M5>
+      | MergeMiddlewareResponse<M6>
+      | MergeMiddlewareResponse<M7>
+      | MergeMiddlewareResponse<M8>
+      | MergeMiddlewareResponse<M9>,
+      S,
+      M,
+      P,
+      I10,
+      BasePath
+    >,
     BasePath
   >
 
@@ -2169,6 +2172,19 @@ export type Schema = {
 }
 
 type ChangePathOfSchema<S extends Schema, Path extends string> = S & { [K in Path]: {} }
+
+type AddSchemaOrPath<
+  Merged,
+  S extends Schema,
+  M extends string,
+  P extends string,
+  I extends Input | Input['in'],
+  BasePath extends string
+> = [Merged] extends [Promise<void>]
+  ? ChangePathOfSchema<S, MergePath<BasePath, P>>
+  : [Merged] extends [never]
+  ? ChangePathOfSchema<S, MergePath<BasePath, P>>
+  : S & ToSchema<M, MergePath<BasePath, P>, I, Merged>
 
 export type Endpoint = {
   input: any

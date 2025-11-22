@@ -3432,6 +3432,53 @@ describe('Handlers returning Promise<void>', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
+  it('should work with .get() that returns Promise<void> instead of .use() - multiple middleware', () => {
+    const app = new Hono()
+      .get((c) => c.text('before'))
+      .get(
+        '/:id',
+        async (c, next) => {
+          await next()
+        },
+        async (c, next) => {
+          await next()
+        }
+      )
+      .post((c) => {
+        c.req.param('id')
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'before'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      // This is not necessary for real-world use-cases
+      '/:id': {}
+    } & {
+      '/:id': {
+        $post: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
   it('should merge types when chaining handlers on the same path', () => {
     const app = new Hono().get('/foo', (c) => c.text('foo')).get((c) => c.text('before'))
 
