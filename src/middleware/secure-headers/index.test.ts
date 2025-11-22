@@ -480,4 +480,114 @@ describe('Secure Headers Middleware', () => {
       expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
     })
   })
+
+// OUR NEW REPORT-URI TESTS
+describe('CSP report-uri directive', () => {
+  it('should set report-uri with single endpoint', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportUri: '/csp-report',
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual(
+      "default-src 'self'; report-uri /csp-report"
+    )
+  })
+
+  it('should set report-uri with multiple endpoints', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportUri: ['/endpoint1', '/endpoint2'],
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual(
+      "default-src 'self'; report-uri /endpoint1 /endpoint2"
+    )
+  })
+
+  it('should work with report-to and report-uri together', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportTo: 'endpoint-1',
+          reportUri: '/legacy-report',
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual(
+      "default-src 'self'; report-to endpoint-1; report-uri /legacy-report"
+    )
+  })
+
+  it('should work with Content-Security-Policy-Report-Only', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicyReportOnly: {
+          defaultSrc: ["'self'"],
+          reportUri: '/csp-report-only',
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy-Report-Only')).toEqual(
+      "default-src 'self'; report-uri /csp-report-only"
+    )
+  })
+
+  // ADDED MISSING TEST CASE for Report-Only:
+
+  it('should not output report-uri when reportUri is not set', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    const header = res.headers.get('Content-Security-Policy') || ''
+    expect(header.includes('report-uri')).toBe(false)
+  })
+
+  it('should not output report-uri in Report-Only when reportUri is not set', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicyReportOnly: {
+          defaultSrc: ["'self'"],
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    const header = res.headers.get('Content-Security-Policy-Report-Only') || ''
+    expect(header.includes('report-uri')).toBe(false)
+  })
+})
 })

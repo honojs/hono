@@ -4,7 +4,6 @@
  */
 
 import type { JSXNode, Props } from '../base'
-export type { JSX } from '../base'
 import * as intrinsicElementTags from './intrinsic-element/components'
 
 export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXNode => {
