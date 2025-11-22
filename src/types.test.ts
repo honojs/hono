@@ -3331,6 +3331,9 @@ describe('Handlers returning Promise<void>', () => {
 
     type Actual = ExtractSchema<typeof app>
     type Expected = {
+      // This is not necessary for real-world use-cases
+      '/:id': {}
+    } & {
       '/:id': {
         $post: {
           input: {
@@ -3369,6 +3372,9 @@ describe('Handlers returning Promise<void>', () => {
         }
       }
     } & {
+      // This is not necessary for real-world use-cases
+      '/:id': {}
+    } & {
       '/:id': {
         $post: {
           input: {
@@ -3406,6 +3412,9 @@ describe('Handlers returning Promise<void>', () => {
           status: ContentfulStatusCode
         }
       }
+    } & {
+      // This is not necessary for real-world use-cases
+      '/:id': {}
     } & {
       '/:id': {
         $post: {

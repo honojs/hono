@@ -154,7 +154,11 @@ export interface HandlerInterface<
   >(
     path: P,
     handler: H<E2, MergedPath, I, R>
-  ): HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
+  ): [MergeTypedResponse<R>] extends [Promise<void>]
+    ? HonoBase<E, ChangePathOfSchema<S, MergedPath>, BasePath>
+    : [MergeTypedResponse<R>] extends [never]
+    ? HonoBase<E, ChangePathOfSchema<S, MergedPath>, BasePath>
+    : HonoBase<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 3)
   <
@@ -2091,7 +2095,19 @@ export interface OnHandlerInterface<
   ): HonoBase<E, S & ToSchema<string, string, I, MergeTypedResponse<R>>, BasePath>
 }
 
-type ExtractStringKey<S> = keyof S & string
+type ExtractStringKey<S> = Extract<
+  {
+    [K in keyof S]: keyof S[K] extends never ? K : never
+  }[keyof S],
+  string
+> extends never
+  ? keyof S & string
+  : Extract<
+      {
+        [K in keyof S]: keyof S[K] extends never ? K : never
+      }[keyof S],
+      string
+    >
 
 ////////////////////////////////////////
 //////                            //////
@@ -2118,6 +2134,8 @@ export type ToSchema<
         >
       }
     }>
+  : [RorO] extends [never]
+  ? {}
   : [RorO] extends [Promise<void>]
   ? {}
   : Simplify<{
@@ -2150,9 +2168,7 @@ export type Schema = {
   }
 }
 
-type ChangePathOfSchema<S extends Schema, Path extends string> = keyof S extends never
-  ? { [K in Path]: {} }
-  : { [K in keyof S as Path]: S[K] }
+type ChangePathOfSchema<S extends Schema, Path extends string> = S & { [K in Path]: {} }
 
 export type Endpoint = {
   input: any
@@ -2256,7 +2272,9 @@ export type TypedResponse<
   _format: F
 }
 
-type MergeTypedResponse<T> = T extends Promise<infer T2>
+type MergeTypedResponse<T> = IsAny<T> extends true
+  ? any
+  : T extends Promise<infer T2>
   ? T2 extends void
     ? Promise<void>
     : T2 extends TypedResponse
