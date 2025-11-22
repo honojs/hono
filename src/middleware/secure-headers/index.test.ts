@@ -490,13 +490,15 @@ describe('Secure Headers Middleware', () => {
         secureHeaders({
           contentSecurityPolicy: {
             defaultSrc: ["'self'"],
-            reportUri: '/csp-report'
+            reportUri: '/csp-report',
           },
         })
       )
 
       const res = await app.request('/test')
-      expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-uri /csp-report")
+      expect(res.headers.get('Content-Security-Policy')).toEqual(
+        "default-src 'self'; report-uri /csp-report"
+      )
     })
 
     it('should set report-uri with multiple endpoints', async () => {
@@ -506,13 +508,15 @@ describe('Secure Headers Middleware', () => {
         secureHeaders({
           contentSecurityPolicy: {
             defaultSrc: ["'self'"],
-            reportUri: ['/endpoint1', '/endpoint2']
+            reportUri: ['/endpoint1', '/endpoint2'],
           },
         })
       )
 
       const res = await app.request('/test')
-      expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-uri /endpoint1 /endpoint2")
+      expect(res.headers.get('Content-Security-Policy')).toEqual(
+        "default-src 'self'; report-uri /endpoint1 /endpoint2"
+      )
     })
 
     it('should work with report-to and report-uri together', async () => {
@@ -523,13 +527,15 @@ describe('Secure Headers Middleware', () => {
           contentSecurityPolicy: {
             defaultSrc: ["'self'"],
             reportTo: 'endpoint-1',
-            reportUri: '/legacy-report'
+            reportUri: '/legacy-report',
           },
         })
       )
 
       const res = await app.request('/test')
-      expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-to endpoint-1; report-uri /legacy-report")
+      expect(res.headers.get('Content-Security-Policy')).toEqual(
+        "default-src 'self'; report-to endpoint-1; report-uri /legacy-report"
+      )
     })
 
     it('should work with Content-Security-Policy-Report-Only', async () => {
@@ -539,13 +545,15 @@ describe('Secure Headers Middleware', () => {
         secureHeaders({
           contentSecurityPolicyReportOnly: {
             defaultSrc: ["'self'"],
-            reportUri: '/csp-report-only'
+            reportUri: '/csp-report-only',
           },
         })
       )
 
       const res = await app.request('/test')
-      expect(res.headers.get('Content-Security-Policy-Report-Only')).toEqual("default-src 'self'; report-uri /csp-report-only")
+      expect(res.headers.get('Content-Security-Policy-Report-Only')).toEqual(
+        "default-src 'self'; report-uri /csp-report-only"
+      )
     })
   })
 })
