@@ -18,6 +18,12 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
   }
   const info = server.requestIP(c.req.raw)
 
+  if (!info) {
+    return {
+      remote: {},
+    }
+  }
+
   return {
     remote: {
       address: info.address,
