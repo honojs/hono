@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { contextStorage, getContext } from '.'
+import { contextStorage, getContext, getContextIfAny } from '.'
 
 describe('Context Storage Middleware', () => {
   type Env = {
@@ -18,6 +18,10 @@ describe('Context Storage Middleware', () => {
   app.get('/', (c) => {
     return c.text(getMessage())
   })
+  app.get('/optional', (c) => {
+    const optionalContext = getContextIfAny<Env>()
+    return c.text(optionalContext?.var.message ?? 'no context')
+  })
 
   const getMessage = () => {
     return getContext<Env>().var.message
@@ -25,6 +29,15 @@ describe('Context Storage Middleware', () => {
 
   it('Should get context', async () => {
     const res = await app.request('/')
+    expect(await res.text()).toBe('Hono is hot!!')
+  })
+
+  it('Should return undefined when context is missing', () => {
+    expect(getContextIfAny<Env>()).toBeUndefined()
+  })
+
+  it('Should get context when available via getContextIfAny', async () => {
+    const res = await app.request('/optional')
     expect(await res.text()).toBe('Hono is hot!!')
   })
 })
