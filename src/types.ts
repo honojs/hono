@@ -2222,8 +2222,6 @@ export type Schema = {
   }
 }
 
-type ChangePathOfSchema<S extends Schema, Path extends string> = S & { [K in Path]: {} }
-
 type AddSchemaOrPath<
   Merged,
   S extends Schema,
