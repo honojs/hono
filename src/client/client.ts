@@ -119,8 +119,8 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>>(
-  baseUrl: string,
+export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
+  baseUrl: Prefix,
   options?: ClientRequestOptions
 ) =>
   createProxy(function proxyCallback(opts) {
@@ -203,4 +203,4 @@ export const hc = <T extends Hono<any, any, any>>(
       return req.fetch(opts.args[0], args)
     }
     return req
-  }, []) as UnionToIntersection<Client<T>>
+  }, []) as UnionToIntersection<Client<T, Prefix>>
