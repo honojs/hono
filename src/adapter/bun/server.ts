@@ -12,7 +12,7 @@ export interface BunServer {
     address: string
     family: string
     port: number
-  }
+  } | null
   upgrade<T>(
     req: Request,
     options?: {
