@@ -247,13 +247,8 @@ export async function wrapTime<T>(
   precision?: number
 ): Promise<T> {
   startTime(c, name, description)
-  let result
   try {
-    result = await callable
-    return result
-    // eslint-disable-next-line no-useless-catch
-  } catch (e) {
-    throw e
+    return await callable
   } finally {
     endTime(c, name, precision)
   }
