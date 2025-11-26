@@ -760,4 +760,11 @@ export class Context<
     this.#notFoundHandler ??= () => new Response()
     return this.#notFoundHandler(this)
   }
+
+  validateData: unknown
+
+  validate = <T>(data: T): T => {
+    this.validateData = data
+    return data
+  }
 }
