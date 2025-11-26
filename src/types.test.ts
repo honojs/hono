@@ -2295,12 +2295,10 @@ describe('Returning type from `app.use(path, mw)`', () => {
   const mw = createMiddleware(async (c, next) => {
     await next()
   })
-  it('Should not mark `*` as never', () => {
+  it('Should ignore the `*` wildcard when building the schema', () => {
     const app = new Hono().use('*', mw)
     type Actual = ExtractSchema<typeof app>
-    type Expected = {
-      '*': {}
-    }
+    type Expected = {}
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -3331,9 +3329,6 @@ describe('Handlers returning Promise<void>', () => {
 
     type Actual = ExtractSchema<typeof app>
     type Expected = {
-      // This is not necessary for real-world use-cases
-      '/:id': {}
-    } & {
       '/:id': {
         $post: {
           input: {
@@ -3372,9 +3367,6 @@ describe('Handlers returning Promise<void>', () => {
         }
       }
     } & {
-      // This is not necessary for real-world use-cases
-      '/:id': {}
-    } & {
       '/:id': {
         $post: {
           input: {
@@ -3412,9 +3404,6 @@ describe('Handlers returning Promise<void>', () => {
           status: ContentfulStatusCode
         }
       }
-    } & {
-      // This is not necessary for real-world use-cases
-      '/:id': {}
     } & {
       '/:id': {
         $post: {
@@ -3459,9 +3448,6 @@ describe('Handlers returning Promise<void>', () => {
           status: ContentfulStatusCode
         }
       }
-    } & {
-      // This is not necessary for real-world use-cases
-      '/:id': {}
     } & {
       '/:id': {
         $post: {

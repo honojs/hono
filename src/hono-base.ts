@@ -95,16 +95,21 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
-class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
-  get!: HandlerInterface<E, 'get', S, BasePath>
-  post!: HandlerInterface<E, 'post', S, BasePath>
-  put!: HandlerInterface<E, 'put', S, BasePath>
-  delete!: HandlerInterface<E, 'delete', S, BasePath>
-  options!: HandlerInterface<E, 'options', S, BasePath>
-  patch!: HandlerInterface<E, 'patch', S, BasePath>
-  all!: HandlerInterface<E, 'all', S, BasePath>
-  on: OnHandlerInterface<E, S, BasePath>
-  use: MiddlewareHandlerInterface<E, S, BasePath>
+class Hono<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/',
+  CurrentPath extends string = BasePath
+> {
+  get!: HandlerInterface<E, 'get', S, BasePath, CurrentPath>
+  post!: HandlerInterface<E, 'post', S, BasePath, CurrentPath>
+  put!: HandlerInterface<E, 'put', S, BasePath, CurrentPath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
+  options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
+  on: OnHandlerInterface<E, S, BasePath, CurrentPath>
+  use: MiddlewareHandlerInterface<E, S, BasePath, CurrentPath>
 
   /*
     This class is like an abstract class and does not have a router.
@@ -167,8 +172,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict
   }
 
-  #clone(): Hono<E, S, BasePath> {
-    const clone = new Hono<E, S, BasePath>({
+  #clone(): Hono<E, S, BasePath, CurrentPath> {
+    const clone = new Hono<E, S, BasePath, CurrentPath>({
       router: this.router,
       getPath: this.getPath,
     })
@@ -204,11 +209,12 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubPath extends string,
     SubEnv extends Env,
     SubSchema extends Schema,
-    SubBasePath extends string
+    SubBasePath extends string,
+    SubCurrentPath extends string
   >(
     path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
+    app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
@@ -238,7 +244,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * const api = new Hono().basePath('/api')
    * ```
    */
-  basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
+  basePath<SubPath extends string>(
+    path: SubPath
+  ): Hono<E, S, MergePath<BasePath, SubPath>, MergePath<BasePath, SubPath>> {
     const subApp = this.#clone()
     subApp._basePath = mergePath(this._basePath, path)
     return subApp
@@ -260,7 +268,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * })
    * ```
    */
-  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.errorHandler = handler
     return this
   }
@@ -280,7 +288,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * })
    * ```
    */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.#notFoundHandler = handler
     return this
   }
@@ -321,7 +329,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     options?: MountOptions
-  ): Hono<E, S, BasePath> {
+  ): Hono<E, S, BasePath, CurrentPath> {
     // handle options
     let replaceRequest: MountReplaceRequest | undefined
     let optionHandler: MountOptionHandler | undefined
