@@ -777,7 +777,7 @@ describe('compose - middleware redirect after error', () => {
 
     const composed = compose(middleware, onError)
     const context = await composed(c)
-    
+
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(302)
     expect(context.res.headers.get('Location')).toBe('/error-page')
@@ -808,7 +808,7 @@ describe('compose - middleware redirect after error', () => {
 
     const composed = compose(middleware, onError)
     const context = await composed(c)
-    
+
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
     expect(await context.res.text()).toBe('Error handled')
