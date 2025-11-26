@@ -749,3 +749,69 @@ describe('Compose', function () {
     expect(ctx.get('next')).toEqual(1)
   })
 })
+
+describe('compose - middleware redirect after error', () => {
+  it('should allow middleware to redirect after catching an error', async () => {
+    const middleware: MiddlewareTuple[] = []
+
+    const req = new Request('http://localhost/')
+    const c: Context = new Context(req)
+
+    // Middleware that catches errors and redirects
+    const errorHandlerMiddleware = async (c: Context, next: Next) => {
+      await next()
+      if (c.error) {
+        return c.redirect('/error-page')
+      }
+    }
+
+    // Handler that throws an error
+    const handler = () => {
+      throw new Error('Something went wrong')
+    }
+
+    middleware.push(buildMiddlewareTuple(errorHandlerMiddleware))
+    middleware.push(buildMiddlewareTuple(handler))
+
+    const onError = (_error: Error, c: Context) => c.text('Internal Server Error', 500)
+
+    const composed = compose(middleware, onError)
+    const context = await composed(c)
+    
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(302)
+    expect(context.res.headers.get('Location')).toBe('/error-page')
+    expect(context.finalized).toBe(true)
+  })
+
+  it('should allow middleware to handle errors without redirect', async () => {
+    const middleware: MiddlewareTuple[] = []
+
+    const req = new Request('http://localhost/')
+    const c: Context = new Context(req)
+
+    // Middleware that just checks for errors but does nothing
+    const checkMiddleware = async (c: Context, next: Next) => {
+      await next()
+      // Check error but don't return anything, let error response pass through
+    }
+
+    // Handler that throws an error
+    const handler = () => {
+      throw new Error('Something went wrong')
+    }
+
+    middleware.push(buildMiddlewareTuple(checkMiddleware))
+    middleware.push(buildMiddlewareTuple(handler))
+
+    const onError = (_error: Error, c: Context) => c.text('Error handled', 500)
+
+    const composed = compose(middleware, onError)
+    const context = await composed(c)
+    
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('Error handled')
+    expect(context.finalized).toBe(true)
+  })
+})
