@@ -1,0 +1,20 @@
+{
+    "name": "aws-lambda-websocket-example",
+    "version": "0.0.1",
+    "description": "Example for Hono with AWS Lambda and WebSockets",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "esbuild src/handler.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js"
+    },
+    "dependencies": {
+        "hono": "^4.6.10"
+    },
+    "devDependencies": {
+        "@hono/node-server": "^1.13.5",
+        "@hono/node-ws": "^1.0.5",
+        "@types/aws-lambda": "^8.10.145",
+        "@types/node": "^20.11.17",
+        "esbuild": "^0.20.1",
+        "tsx": "^4.7.1"
+    }
+}
