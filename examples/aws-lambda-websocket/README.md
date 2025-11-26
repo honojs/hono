@@ -35,3 +35,24 @@ AWS Lambda + API Gateway WebSockets work differently than standard HTTP upgrades
 The `upgradeWebSocket` helper used in `src/index.ts` is for runtimes where the application handles the WebSocket upgrade directly. For AWS Lambda, you would typically handle the specific route keys configured in API Gateway.
 
 This example shows how to keep the code structure compatible, but for full WebSocket functionality on Lambda, you would add routes to handle the API Gateway events in `src/app.ts` or a separate handler, potentially checking for the execution environment.
+
+## CDK Deployment
+
+A minimal CDK stack is provided in the `cdk` directory to deploy the example to AWS.
+
+1. Navigate to the `cdk` directory:
+   ```bash
+   cd cdk
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Deploy the stack:
+   ```bash
+   npx cdk deploy
+   ```
+
+This will create an API Gateway WebSocket API and a Lambda function. The WebSocket URL will be outputted after deployment.
