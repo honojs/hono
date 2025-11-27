@@ -99,17 +99,17 @@ class Hono<
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/',
-  CurrentPath extends string = BasePath
+  VoidMiddlewarePath extends string = never
 > {
-  get!: HandlerInterface<E, 'get', S, BasePath, CurrentPath>
-  post!: HandlerInterface<E, 'post', S, BasePath, CurrentPath>
-  put!: HandlerInterface<E, 'put', S, BasePath, CurrentPath>
-  delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
-  options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
-  patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
-  all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
-  on: OnHandlerInterface<E, S, BasePath, CurrentPath>
-  use: MiddlewareHandlerInterface<E, S, BasePath, CurrentPath>
+  get!: HandlerInterface<E, 'get', S, BasePath, VoidMiddlewarePath>
+  post!: HandlerInterface<E, 'post', S, BasePath, VoidMiddlewarePath>
+  put!: HandlerInterface<E, 'put', S, BasePath, VoidMiddlewarePath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath, VoidMiddlewarePath>
+  options!: HandlerInterface<E, 'options', S, BasePath, VoidMiddlewarePath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath, VoidMiddlewarePath>
+  all!: HandlerInterface<E, 'all', S, BasePath, VoidMiddlewarePath>
+  on: OnHandlerInterface<E, S, BasePath, VoidMiddlewarePath>
+  use: MiddlewareHandlerInterface<E, S, BasePath, VoidMiddlewarePath>
 
   /*
     This class is like an abstract class and does not have a router.
@@ -172,8 +172,8 @@ class Hono<
     this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict
   }
 
-  #clone(): Hono<E, S, BasePath, CurrentPath> {
-    const clone = new Hono<E, S, BasePath, CurrentPath>({
+  #clone(): Hono<E, S, BasePath, VoidMiddlewarePath> {
+    const clone = new Hono<E, S, BasePath, VoidMiddlewarePath>({
       router: this.router,
       getPath: this.getPath,
     })
@@ -210,11 +210,16 @@ class Hono<
     SubEnv extends Env,
     SubSchema extends Schema,
     SubBasePath extends string,
-    SubCurrentPath extends string
+    SubVoidMiddlewarePath extends string
   >(
     path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
+    app: Hono<SubEnv, SubSchema, SubBasePath, SubVoidMiddlewarePath>
+  ): Hono<
+    E,
+    MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S,
+    BasePath,
+    VoidMiddlewarePath
+  > {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
@@ -246,7 +251,7 @@ class Hono<
    */
   basePath<SubPath extends string>(
     path: SubPath
-  ): Hono<E, S, MergePath<BasePath, SubPath>, MergePath<BasePath, SubPath>> {
+  ): Hono<E, S, MergePath<BasePath, SubPath>, VoidMiddlewarePath> {
     const subApp = this.#clone()
     subApp._basePath = mergePath(this._basePath, path)
     return subApp
@@ -268,7 +273,7 @@ class Hono<
    * })
    * ```
    */
-  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, VoidMiddlewarePath> => {
     this.errorHandler = handler
     return this
   }
@@ -288,7 +293,7 @@ class Hono<
    * })
    * ```
    */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, VoidMiddlewarePath> => {
     this.#notFoundHandler = handler
     return this
   }
@@ -329,7 +334,7 @@ class Hono<
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     options?: MountOptions
-  ): Hono<E, S, BasePath, CurrentPath> {
+  ): Hono<E, S, BasePath, VoidMiddlewarePath> {
     // handle options
     let replaceRequest: MountReplaceRequest | undefined
     let optionHandler: MountOptionHandler | undefined
