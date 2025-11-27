@@ -1368,3 +1368,34 @@ describe('Raw Request cloning after validation', () => {
     expect(result.payload).toMatchObject(testData)
   })
 })
+
+describe('Type inference in a validation function', () => {
+  type ExtractEnvFromContext<C extends Context> = C extends Context<infer E> ? E : never
+  type ExtractPathFromContext<C extends Context> = C extends Context<infer E, infer P> ? P : never
+
+  const app = new Hono<{
+    Variables: {
+      foo: string
+    }
+  }>()
+
+  it('Should not throw type errors for the context', () => {
+    app.post(
+      '/user/:name',
+      validator('json', (_data, c) => {
+        type P = ExtractPathFromContext<typeof c>
+        type verify = Expect<Equal<'/user/:name', P>>
+        type E = ExtractEnvFromContext<typeof c>
+        type verify2 = Expect<Equal<{ Variables: { foo: string } }, E>>
+        return {}
+      }),
+      (c) => {
+        type P = ExtractPathFromContext<typeof c>
+        type verify = Expect<Equal<'/user/:name', P>>
+        type E = ExtractEnvFromContext<typeof c>
+        type verify2 = Expect<Equal<{ Variables: { foo: string } }, E>>
+        return c.json({})
+      }
+    )
+  })
+})
