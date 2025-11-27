@@ -242,6 +242,52 @@ describe('HandlerInterface', () => {
       }
       type verify = Expect<Equal<Expected, Actual>>
     })
+
+    it('should generate schema of a pathless handler for all existing paths in the chain', () => {
+      const app = new Hono()
+        .get('/foo', (c) => c.text('foo'))
+        .get('/bar', (c) => c.text('bar'))
+        .get((c) => c.text('baz'))
+
+      type Actual = ExtractSchema<typeof app>
+      type Expected = {
+        '/foo': {
+          $get: {
+            input: {}
+            output: 'foo'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      } & {
+        '/bar': {
+          $get: {
+            input: {}
+            output: 'bar'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      } & {
+        '/foo': {
+          $get: {
+            input: {}
+            output: 'baz'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+        '/bar': {
+          $get: {
+            input: {}
+            output: 'baz'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 
@@ -3465,24 +3511,61 @@ describe('Handlers returning Promise<void>', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
-  it('should merge types when chaining handlers on the same path', () => {
-    const app = new Hono().get('/foo', (c) => c.text('foo')).get((c) => c.text('before'))
+  it('should use multiple void middleware paths for a subsequent pathless handler', () => {
+    const app = new Hono()
+      .get('/foo', async (_c, next) => {
+        await next()
+      })
+      .get('/bar', async (_c, next) => {
+        await next()
+      })
+      .get((c) => c.text('after'))
 
     type Actual = ExtractSchema<typeof app>
     type Expected = {
       '/foo': {
         $get: {
           input: {}
-          output: 'foo'
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+      '/bar': {
+        $get: {
+          input: {}
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should prefer the void middleware path over a later pathful handler for a pathless handler', () => {
+    const app = new Hono()
+      .get('/void', async (_c, next) => {
+        await next()
+      })
+      .get('/handler', (c) => c.text('handler'))
+      .get((c) => c.text('after'))
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/handler': {
+        $get: {
+          input: {}
+          output: 'handler'
           outputFormat: 'text'
           status: ContentfulStatusCode
         }
       }
     } & {
-      '/foo': {
+      '/void': {
         $get: {
           input: {}
-          output: 'before'
+          output: 'after'
           outputFormat: 'text'
           status: ContentfulStatusCode
         }
