@@ -247,7 +247,7 @@ describe('HandlerInterface', () => {
       const app = new Hono()
         .get('/foo', (c) => c.text('foo'))
         .get('/bar', (c) => c.text('bar'))
-        .get((c) => c.text('baz'))
+        .post((c) => c.text('baz'))
 
       type Actual = ExtractSchema<typeof app>
       type Expected = {
@@ -270,7 +270,7 @@ describe('HandlerInterface', () => {
         }
       } & {
         '/foo': {
-          $get: {
+          $post: {
             input: {}
             output: 'baz'
             outputFormat: 'text'
@@ -278,7 +278,7 @@ describe('HandlerInterface', () => {
           }
         }
         '/bar': {
-          $get: {
+          $post: {
             input: {}
             output: 'baz'
             outputFormat: 'text'
