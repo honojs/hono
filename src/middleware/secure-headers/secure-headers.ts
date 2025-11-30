@@ -29,6 +29,7 @@ interface ContentSecurityPolicyOptions {
   mediaSrc?: ContentSecurityPolicyOptionValue
   objectSrc?: ContentSecurityPolicyOptionValue
   reportTo?: string
+  reportUri?: string | string[]
   sandbox?: ContentSecurityPolicyOptionValue
   scriptSrc?: ContentSecurityPolicyOptionValue
   scriptSrcAttr?: ContentSecurityPolicyOptionValue
