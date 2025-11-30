@@ -182,3 +182,22 @@ interface CallbackOptions {
 export type ObjectType<T = unknown> = {
   [key: string]: T
 }
+
+// Helper: Merges the new response shape into a route
+type Mod<R, O, S, F> = R extends { output: unknown }
+  ? R | (Omit<R, 'output' | 'status' | 'outputFormat'> & { output: O; status: S; outputFormat: F })
+  : never
+
+// Merges the new response shape into the Hono instance
+export type ApplyGlobalResponse<
+  A,
+  O,
+  S extends StatusCode,
+  F extends ResponseFormat
+> = A extends Hono<infer E, infer D, infer B>
+  ? Hono<
+      E,
+      D extends unknown ? { [K in keyof D]: { [M in keyof D[K]]: Mod<D[K][M], O, S, F> } } : never,
+      B
+    >
+  : never
