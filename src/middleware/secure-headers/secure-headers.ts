@@ -244,8 +244,8 @@ function getCSPDirectives(
   const resultValues: string[] = []
 
   for (const [directive, value] of Object.entries(contentSecurityPolicy)) {
-      if (directive === 'reportUri') {
-        continue
+    if (directive === 'reportUri') {
+      continue
     }
     const valueArray = Array.isArray(value) ? value : [value]
 
