@@ -142,14 +142,12 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   let cookie = `${name}=${value}`
 
   if (name.startsWith('__Secure-') && !opt.secure) {
-    // FIXME: replace link to RFC
-    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.1
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
   }
 
   if (name.startsWith('__Host-')) {
-    // FIXME: replace link to RFC
-    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.2
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.2
     if (!opt.secure) {
       throw new Error('__Host- Cookie must have Secure attributes')
     }
@@ -165,8 +163,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     if (opt.maxAge > 34560000) {
-      // FIXME: replace link to RFC
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.2
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
       throw new Error(
         'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
       )
@@ -184,8 +181,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt.expires) {
     if (opt.expires.getTime() - Date.now() > 34560000_000) {
-      // FIXME: replace link to RFC
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.1
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
       throw new Error(
         'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
       )
@@ -210,8 +206,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.partitioned) {
-    // FIXME: replace link to RFC
-    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.3
+    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
     if (!opt.secure) {
       throw new Error('Partitioned Cookie must have Secure attributes')
     }
