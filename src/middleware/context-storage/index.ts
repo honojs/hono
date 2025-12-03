@@ -46,8 +46,12 @@ export const contextStorage = (): MiddlewareHandler => {
   }
 }
 
+export const tryGetContext = <E extends Env = Env>(): Context<E> | undefined => {
+  return asyncLocalStorage.getStore() as Context<E> | undefined
+}
+
 export const getContext = <E extends Env = Env>(): Context<E> => {
-  const context = asyncLocalStorage.getStore()
+  const context = tryGetContext<E>()
   if (!context) {
     throw new Error('Context is not available')
   }
