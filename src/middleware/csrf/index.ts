@@ -15,7 +15,10 @@ type SecFetchSite = (typeof secFetchSiteValues)[number]
 const isSecFetchSite = (value: string): value is SecFetchSite =>
   (secFetchSiteValues as readonly string[]).includes(value)
 
-type IsAllowedSecFetchSiteHandler = (secFetchSite: SecFetchSite, context: Context) => boolean
+type IsAllowedSecFetchSiteHandler = (
+  secFetchSite: SecFetchSite,
+  context: Context
+) => boolean | Promise<boolean>
 
 interface CSRFOptions {
   origin?: string | string[] | IsAllowedOriginHandler
@@ -120,7 +123,10 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       return (secFetchSite) => optsSecFetchSite.includes(secFetchSite)
     }
   })(options?.secFetchSite)
-  const isAllowedSecFetchSite = (secFetchSite: string | undefined, c: Context) => {
+  const isAllowedSecFetchSite = async (
+    secFetchSite: string | undefined,
+    c: Context
+  ): Promise<boolean> => {
     if (secFetchSite === undefined) {
       // denied always when sec-fetch-site header is not present
       return false
@@ -129,14 +135,14 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
     if (!isSecFetchSite(secFetchSite)) {
       return false
     }
-    return secFetchSiteHandler(secFetchSite, c)
+    return await secFetchSiteHandler(secFetchSite, c)
   }
 
   return async function csrf(c, next) {
     if (
       !isSafeMethodRe.test(c.req.method) &&
       isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
-      !isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c) &&
+      !(await isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c)) &&
       !isAllowedOrigin(c.req.header('origin'), c)
     ) {
       const res = new Response('Forbidden', { status: 403 })
