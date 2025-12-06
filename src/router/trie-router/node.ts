@@ -96,7 +96,7 @@ export class Node<T> {
             const key = handlerSet.possibleKeys[i]
             const processed = processedSet[handlerSet.score]
             handlerSet.params[key] =
-              params?.[key] && !processed ? params[key] : nodeParams[key] ?? params?.[key]
+              params?.[key] && !processed ? params[key] : (nodeParams[key] ?? params?.[key])
             processedSet[handlerSet.score] = true
           }
         }

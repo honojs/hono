@@ -25,12 +25,12 @@ export const styleObjectForEach = (
       v == null
         ? null
         : typeof v === 'number'
-        ? !key.match(
-            /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
-          )
-          ? `${v}px`
-          : `${v}`
-        : v
+          ? !key.match(
+              /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
+            )
+            ? `${v}px`
+            : `${v}`
+          : v
     )
   }
 }

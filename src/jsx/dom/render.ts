@@ -58,7 +58,7 @@ export type NodeObject = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         any[][], // stash for hooks
         LocalJSXContexts, // context
-        [Context, Function, NodeObject] // [context, error handler, node] for closest error boundary or suspense
+        [Context, Function, NodeObject], // [context, error handler, node] for closest error boundary or suspense
       ]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | [number, any[][]]
@@ -95,7 +95,7 @@ export type Context =
       UpdateHook, // update hook
       boolean, // is in view transition
       boolean, // is in top level render
-      [Context, Function, NodeObject][] //  [context, error handler, node] stack for this context
+      [Context, Function, NodeObject][], //  [context, error handler, node] stack for this context
     ]
   | [PendingType, boolean, UpdateHook, boolean]
   | [PendingType, boolean, UpdateHook]
@@ -484,8 +484,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
     const oldVChildren: Node[] | undefined = buildWithPreviousChildren
       ? [...(node.pC as Node[])]
       : node.vC
-      ? [...node.vC]
-      : undefined
+        ? [...node.vC]
+        : undefined
     const vChildren: Node[] = []
     let prevNode: Node | undefined
     for (let i = 0; i < children.length; i++) {
@@ -513,8 +513,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
             isNodeString(child)
               ? (c) => isNodeString(c)
               : child.key !== undefined
-              ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
-              : (c) => c.tag === (child as Node).tag
+                ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+                : (c) => c.tag === (child as Node).tag
           )
 
           if (i !== -1) {
@@ -791,4 +791,4 @@ export const createPortal = (children: Child, container: HTMLElement, key?: stri
     e: container,
     p: 1,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any)
+  }) as any

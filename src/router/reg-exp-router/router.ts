@@ -237,7 +237,7 @@ export class RegExpRouter<T> implements Router<T> {
         routes.push(
           ...(Object.keys(r[METHOD_NAME_ALL]).map((path) => [path, r[METHOD_NAME_ALL][path]]) as [
             string,
-            HandlerWithMetadata<T>[]
+            HandlerWithMetadata<T>[],
           ][])
         )
       }

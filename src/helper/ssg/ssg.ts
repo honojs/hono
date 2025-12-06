@@ -193,7 +193,7 @@ export interface ToSSGOptions {
 export const fetchRoutesContent = function* <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 >(
   app: Hono<E, S, BasePath>,
   beforeRequestHook?: BeforeRequestHook,
@@ -343,7 +343,7 @@ export interface ToSSGInterface {
 export interface ToSSGAdaptorInterface<
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 > {
   (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
 }

@@ -26,7 +26,7 @@ type CssClassName = HtmlEscapedString & CssClassNameCommon
 
 type usedClassNameData = [
   Record<string, string>, // class name to add
-  Record<string, true> // class name already added
+  Record<string, true>, // class name already added
 ]
 
 interface CssType {
