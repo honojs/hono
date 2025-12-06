@@ -42,8 +42,8 @@ export type ClientRequest<S extends Schema> = {
           ? { param: P; query: Q }
           : { param: P }
         : R extends { query: infer Q }
-        ? { query: Q }
-        : {}
+          ? { query: Q }
+          : {}
       : {}
   ) => URL
 } & (S['$get'] extends { outputFormat: 'ws' }
@@ -65,15 +65,16 @@ type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
 export interface ClientResponse<
   T,
   U extends number = StatusCode,
-  F extends ResponseFormat = ResponseFormat
-> extends globalThis.Response {
+  F extends ResponseFormat = ResponseFormat,
+>
+  extends globalThis.Response {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
   ok: U extends SuccessStatusCode
     ? true
     : U extends Exclude<StatusCode, SuccessStatusCode>
-    ? false
-    : boolean
+      ? false
+      : boolean
   status: U
   statusText: string
   headers: Headers
@@ -141,35 +142,37 @@ export type InferRequestOptionsType<T> = T extends (
  */
 export type FilterClientResponseByStatusCode<
   T extends ClientResponse<any, any, any>,
-  U extends number = StatusCode
-> = T extends ClientResponse<infer RT, infer RC, infer RF>
-  ? RC extends U
-    ? ClientResponse<RT, RC, RF>
+  U extends number = StatusCode,
+> =
+  T extends ClientResponse<infer RT, infer RC, infer RF>
+    ? RC extends U
+      ? ClientResponse<RT, RC, RF>
+      : never
     : never
-  : never
 
 type PathToChain<
   Path extends string,
   E extends Schema,
-  Original extends string = Path
+  Original extends string = Path,
 > = Path extends `/${infer P}`
   ? PathToChain<P, E, Path>
   : Path extends `${infer P}/${infer R}`
-  ? { [K in P]: PathToChain<R, E, Original> }
-  : {
-      [K in Path extends '' ? 'index' : Path]: ClientRequest<
-        E extends Record<string, unknown> ? E[Original] : never
-      >
-    }
+    ? { [K in P]: PathToChain<R, E, Original> }
+    : {
+        [K in Path extends '' ? 'index' : Path]: ClientRequest<
+          E extends Record<string, unknown> ? E[Original] : never
+        >
+      }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Client<T> = T extends HonoBase<any, infer S, any>
-  ? S extends Record<infer K, Schema>
-    ? K extends string
-      ? PathToChain<K, S>
+export type Client<T> =
+  T extends HonoBase<any, infer S, any>
+    ? S extends Record<infer K, Schema>
+      ? K extends string
+        ? PathToChain<K, S>
+        : never
       : never
     : never
-  : never
 
 export type Callback = (opts: CallbackOptions) => unknown
 

@@ -674,7 +674,7 @@
     "np": "10.2.0",
     "oxc-parser": "^0.96.0",
     "pkg-pr-new": "^0.0.53",
-    "prettier": "^2.6.2",
+    "prettier": "3.7.4",
     "publint": "^0.1.16",
     "typescript": "^5.9.2",
     "undici": "^6.21.3",
