@@ -20,8 +20,8 @@ jobs:
       - bun
       - deno
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
         with:
           pattern: coverage-*
           merge-multiple: true
@@ -35,8 +35,8 @@ jobs:
     name: 'Main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.tool-versions'
       - uses: oven-sh/setup-bun@v2
@@ -48,7 +48,7 @@ jobs:
       - run: bun run editorconfig-checker -format github-actions
       - run: bun run build
       - run: bun run test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-main
           path: coverage/
@@ -57,7 +57,7 @@ jobs:
     name: "Checking if it's valid for JSR"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
           deno-version-file: '.tool-versions'
@@ -70,7 +70,7 @@ jobs:
     name: 'Deno'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
           deno-version-file: '.tool-versions'
@@ -79,7 +79,7 @@ jobs:
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
       - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
       - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-deno
           path: coverage/
@@ -88,13 +88,13 @@ jobs:
     name: 'Bun'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
       - run: bun install --frozen-lockfile
       - run: bun run test:bun
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-bun
           path: coverage/
@@ -103,7 +103,7 @@ jobs:
     name: 'Bun - Windows'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
@@ -113,7 +113,7 @@ jobs:
     name: 'Fastly Compute'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
@@ -128,8 +128,8 @@ jobs:
       matrix:
         node: ['18.18.2', '20.x', '22.x']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
       - uses: oven-sh/setup-bun@v2
@@ -143,8 +143,8 @@ jobs:
     name: 'workerd'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.tool-versions'
       - uses: oven-sh/setup-bun@v2
@@ -158,7 +158,7 @@ jobs:
     name: 'AWS Lambda'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
@@ -170,7 +170,7 @@ jobs:
     name: 'Lambda@Edge'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/perf-measures
         with:
           target-ref: 'auto'
@@ -193,7 +193,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
@@ -255,7 +255,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/perf-measures
         with:
           target-ref: 'main'
