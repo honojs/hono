@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     name: 'Publish: pkg.pr.new'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
