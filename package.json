@@ -632,7 +632,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/hono.git"
+    "url": "git+https://github.com/honojs/hono.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -675,7 +675,7 @@
     "oxc-parser": "^0.96.0",
     "pkg-pr-new": "^0.0.53",
     "prettier": "3.7.4",
-    "publint": "^0.1.16",
+    "publint": "0.3.15",
     "typescript": "^5.9.2",
     "undici": "^6.21.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
