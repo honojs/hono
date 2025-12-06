@@ -48,7 +48,7 @@ jobs:
       - run: bun run editorconfig-checker -format github-actions
       - run: bun run build
       - run: bun run test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-main
           path: coverage/
@@ -79,7 +79,7 @@ jobs:
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
       - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
       - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-deno
           path: coverage/
@@ -94,7 +94,7 @@ jobs:
           bun-version-file: '.tool-versions'
       - run: bun install --frozen-lockfile
       - run: bun run test:bun
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-bun
           path: coverage/
