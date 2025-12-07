@@ -99,16 +99,16 @@ export async function parseResponse<T extends ClientResponse<any>>(
     ? // Filtered responses does not include any contentful responses, exit with undefined
       undefined
     : // Filtered responses includes contentful responses, proceed to infer the type
-    FilterClientResponseByStatusCode<
-        T,
-        Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode>
-      > extends ClientResponse<infer RT, infer _, infer RF>
-    ? RF extends 'json'
-      ? RT
-      : RT extends string
-      ? RT
-      : string
-    : undefined
+      FilterClientResponseByStatusCode<
+          T,
+          Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode>
+        > extends ClientResponse<infer RT, infer _, infer RF>
+      ? RF extends 'json'
+        ? RT
+        : RT extends string
+          ? RT
+          : string
+      : undefined
 > {
   return fetchRP(fetchRes)
 }

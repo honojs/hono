@@ -31,8 +31,8 @@ export type CookiePrefixOptions = 'host' | 'secure'
 export type CookieConstraint<Name> = Name extends `__Secure-${string}`
   ? CookieOptions & SecureCookieConstraint
   : Name extends `__Host-${string}`
-  ? CookieOptions & HostCookieConstraint
-  : CookieOptions
+    ? CookieOptions & HostCookieConstraint
+    : CookieOptions
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
 
