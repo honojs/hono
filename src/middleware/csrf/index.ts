@@ -100,7 +100,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       return (origin) => optsOrigin.includes(origin)
     }
   })(options?.origin)
-  const isAllowedOrigin = async (origin: string | undefined, c: Context): Promise<boolean> => {
+  const isAllowedOrigin = async (origin: string | undefined, c: Context) => {
     if (origin === undefined) {
       // denied always when origin header is not present
       return false
