@@ -70,7 +70,6 @@ export class LinearRouter<T> implements Router<T> {
         } else if (hasLabel && !hasStar) {
           const params: Record<string, string> = Object.create(null)
           const parts = routePath.match(splitPathRe) as string[]
-          const pathParts = path.match(splitPathRe) || []
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -80,6 +79,10 @@ export class LinearRouter<T> implements Router<T> {
 
             const part = parts[j]
             if (part.charCodeAt(1) === 58) {
+              if (path.charCodeAt(pos) !== 47) {
+                continue ROUTES_LOOP
+              }
+
               // /:label
               let name = part.slice(2)
               let value
@@ -113,7 +116,7 @@ export class LinearRouter<T> implements Router<T> {
               params[name] ||= value as string
             } else {
               const index = path.indexOf(part, pos)
-              if (pathParts.length < parts.length || index !== pos) {
+              if (index !== pos) {
                 continue ROUTES_LOOP
               }
               pos += part.length
