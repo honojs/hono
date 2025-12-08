@@ -126,7 +126,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
   const isAllowedSecFetchSite = async (
     secFetchSite: string | undefined,
     c: Context
-  ): Promise<boolean> => {
+  ) => {
     if (secFetchSite === undefined) {
       // denied always when sec-fetch-site header is not present
       return false
