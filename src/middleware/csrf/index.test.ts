@@ -471,5 +471,46 @@ describe('CSRF by Middleware', () => {
         expect(res.status).toBe(403)
       })
     })
+
+    describe('async IsAllowedSecFetchSiteHandler', () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        csrf({
+          secFetchSite: async (secFetchSite, c) => {
+            await new Promise((r) => setTimeout(r, 10))
+            if (secFetchSite === 'same-origin') return true
+            if (c.req.path.startsWith('/webhook/')) return true
+            return false
+          },
+        })
+      )
+      app.post('/form', simplePostHandler)
+      app.post('/webhook/test', simplePostHandler)
+
+      it('should use async custom logic for allowed values', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'same-origin' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should use async custom logic for path-based bypass', async () => {
+        const res = await app.request(
+          'http://localhost/webhook/test',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should block when async custom logic returns false', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(403)
+      })
+    })
   })
 })
