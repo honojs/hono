@@ -324,6 +324,51 @@ describe('CSRF by Middleware', () => {
         expect(simplePostHandler).not.toHaveBeenCalled()
       })
     })
+
+    describe('async IsAllowedOriginHandler', () => {
+      const app = new Hono()
+
+      app.use(
+        '*',
+        csrf({
+          origin: async (origin) => {
+            await new Promise((r) => setTimeout(r, 10))
+            return /https:\/\/(\w+\.)?example\.com$/.test(origin)
+          },
+        })
+      )
+      app.post('/form', simplePostHandler)
+
+      it('should be 200 for allowed origin with async handler', async () => {
+        let res = await app.request(
+          'https://hono.example.com/form',
+          buildSimplePostRequestData({ origin: 'https://hono.example.com' })
+        )
+        expect(res.status).toBe(200)
+
+        res = await app.request(
+          'https://example.com/form',
+          buildSimplePostRequestData({ origin: 'https://example.com' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should be 403 for not allowed origin with async handler', async () => {
+        let res = await app.request(
+          'http://honojs.hono.example.jp/form',
+          buildSimplePostRequestData({ origin: 'http://example.jp' })
+        )
+        expect(res.status).toBe(403)
+        expect(simplePostHandler).not.toHaveBeenCalled()
+
+        res = await app.request(
+          'http://example.jp/form',
+          buildSimplePostRequestData({ origin: 'http://example.jp' })
+        )
+        expect(res.status).toBe(403)
+        expect(simplePostHandler).not.toHaveBeenCalled()
+      })
+    })
   })
 
   describe('with secFetchSite option', () => {
