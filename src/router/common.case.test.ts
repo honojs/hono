@@ -109,10 +109,14 @@ export const runTest = ({
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
-        const res = match('GET', '/entry/123')
+        let res = match('GET', '/entry/123')
+
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('get entry')
         expect(res[0].params['id']).toBe('123')
+
+        res = match('GET', '/entry-123')
+        expect(res.length).toBe(0)
       })
 
       it('Wildcard', async () => {
