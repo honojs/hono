@@ -109,7 +109,7 @@ class Hono<
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
   on: OnHandlerInterface<E, S, BasePath>
-  use: MiddlewareHandlerInterface<E, S, BasePath, CurrentPath>
+  use: MiddlewareHandlerInterface<E, S, BasePath>
 
   /*
     This class is like an abstract class and does not have a router.

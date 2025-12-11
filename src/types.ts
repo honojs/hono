@@ -1068,7 +1068,6 @@ export interface MiddlewareHandlerInterface<
   E extends Env = Env,
   S extends Schema = BlankSchema,
   BasePath extends string = '/',
-  CurrentPath extends string = BasePath,
 > {
   //// app.use(...handlers[])
   <E2 extends Env = E>(
