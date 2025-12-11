@@ -29,15 +29,16 @@ describe('JSX middleware', () => {
   })
 
   it('Should be able to be used with html middleware', async () => {
-    const Layout = (props: SiteData) => html`<!DOCTYPE html>
-      <html>
-        <head>
-          <title>${props.title}</title>
-        </head>
-        <body>
-          ${props.children}
-        </body>
-      </html>`
+    const Layout = (props: SiteData) =>
+      html`<!DOCTYPE html>
+        <html>
+          <head>
+            <title>${props.title}</title>
+          </head>
+          <body>
+            ${props.children}
+          </body>
+        </html>`
 
     const Content = (props: { siteData: SiteData; name: string }) => (
       <Layout {...props.siteData}>
@@ -58,14 +59,14 @@ describe('JSX middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe(`<!DOCTYPE html>
-      <html>
-        <head>
-          <title>with html middleware</title>
-        </head>
-        <body>
-          <h1>JSX</h1>
-        </body>
-      </html>`)
+        <html>
+          <head>
+            <title>with html middleware</title>
+          </head>
+          <body>
+            <h1>JSX</h1>
+          </body>
+        </html>`)
   })
 
   it('Should render async component', async () => {

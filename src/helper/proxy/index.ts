@@ -163,7 +163,7 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
     customFetch,
     strictConnectionProcessing = false,
     ...requestInit
-  } = proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
+  } = proxyInit instanceof Request ? { raw: proxyInit } : (proxyInit ?? {})
 
   const req = new Request(input, {
     ...buildRequestInitFromRequest(raw, strictConnectionProcessing),

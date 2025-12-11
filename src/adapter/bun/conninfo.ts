@@ -16,7 +16,16 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
   if (typeof server.requestIP !== 'function') {
     throw new TypeError('server.requestIP is not a function.')
   }
+
+  // https://bun.sh/docs/runtime/http/server#server-requestip-request
+  // Returns null for closed requests or Unix domain sockets.
   const info = server.requestIP(c.req.raw)
+
+  if (!info) {
+    return {
+      remote: {},
+    }
+  }
 
   return {
     remote: {

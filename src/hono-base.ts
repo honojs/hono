@@ -99,7 +99,7 @@ class Hono<
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/',
-  VoidMiddlewarePath extends string = never
+  VoidMiddlewarePath extends string = never,
 > {
   get!: HandlerInterface<E, 'get', S, BasePath, VoidMiddlewarePath>
   post!: HandlerInterface<E, 'post', S, BasePath, VoidMiddlewarePath>
@@ -169,7 +169,7 @@ class Hono<
 
     const { strict, ...optionsWithoutStrict } = options
     Object.assign(this, optionsWithoutStrict)
-    this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict
+    this.getPath = (strict ?? true) ? (options.getPath ?? getPath) : getPathNoStrict
   }
 
   #clone(): Hono<E, S, BasePath, VoidMiddlewarePath> {
@@ -210,7 +210,7 @@ class Hono<
     SubEnv extends Env,
     SubSchema extends Schema,
     SubBasePath extends string,
-    SubVoidMiddlewarePath extends string
+    SubVoidMiddlewarePath extends string,
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath, SubVoidMiddlewarePath>
@@ -443,7 +443,7 @@ class Hono<
                 resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
             .catch((err: Error) => this.#handleError(err, c))
-        : res ?? this.#notFoundHandler(c)
+        : (res ?? this.#notFoundHandler(c))
     }
 
     const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)

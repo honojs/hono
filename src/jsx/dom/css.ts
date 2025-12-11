@@ -65,7 +65,7 @@ interface CreateCssJsxDomObjectsType {
     {
       toString(this: CssClassName): string
     },
-    FC<PropsWithChildren<void>>
+    FC<PropsWithChildren<void>>,
   ]
 }
 
@@ -132,7 +132,7 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
           ),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    }) as any
 
   return [cssObject, Style] as const
 }
