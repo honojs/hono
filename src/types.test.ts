@@ -3557,4 +3557,30 @@ describe('Handlers returning Promise<void>', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  it('should set path as `*` when .use() is called without path argument', () => {
+    const app = new Hono()
+      .get('/foo', async (_c, next) => {
+        await next()
+      })
+      .use(async (c, next) => {
+        await next()
+      })
+      .post((c) => {
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '*': {
+        $post: {
+          input: {}
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
