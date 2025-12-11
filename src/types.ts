@@ -2150,11 +2150,21 @@ export interface OnHandlerInterface<
   >
 
   // app.on(method | method[], path[], ...handlers[])
-  <I extends Input = BlankInput, R extends HandlerResponse<any> = any, E2 extends Env = E>(
+  <
+    const Ps extends string[],
+    I extends Input = BlankInput,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+  >(
     methods: string | string[],
-    paths: string[],
-    ...handlers: H<E2, any, I, R>[]
-  ): HonoBase<E, S & ToSchema<string, string, I, MergeTypedResponse<R>>, BasePath, CurrentPath>
+    paths: Ps,
+    ...handlers: H<E2, MergePath<BasePath, Ps[number]>, I, R>[]
+  ): HonoBase<
+    E,
+    S & ToSchema<string, MergePath<BasePath, Ps[number]>, I, MergeTypedResponse<R>>,
+    BasePath,
+    Ps extends [...string[], infer LastPath extends string] ? MergePath<BasePath, LastPath> : never
+  >
 }
 
 ////////////////////////////////////////

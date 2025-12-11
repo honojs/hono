@@ -327,6 +327,51 @@ describe('OnHandlerInterface', () => {
       return c.json({})
     })
   })
+
+  test('app.on(method, path[], handler).get(pathless handler) - pathless handler should use last path', () => {
+    const route = app
+      .on('GET', ['/a', '/b'], (c) => {
+        return c.json({ first: true })
+      })
+      .get((c) => {
+        return c.json({ second: true })
+      })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/a': {
+        [x: `$${Lowercase<string>}`]: {
+          input: {}
+          output: {
+            first: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+      '/b': {
+        [x: `$${Lowercase<string>}`]: {
+          input: {}
+          output: {
+            first: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/b': {
+        $get: {
+          input: {}
+          output: {
+            second: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
 
 describe('TypedResponse', () => {
