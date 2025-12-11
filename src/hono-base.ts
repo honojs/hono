@@ -108,7 +108,7 @@ class Hono<
   options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
-  on: OnHandlerInterface<E, S, BasePath, CurrentPath>
+  on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath, CurrentPath>
 
   /*

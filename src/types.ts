@@ -1446,7 +1446,6 @@ export interface OnHandlerInterface<
   E extends Env = Env,
   S extends Schema = BlankSchema,
   BasePath extends string = '/',
-  CurrentPath extends string = BasePath,
 > {
   // app.on(method, path, handler)
   <
