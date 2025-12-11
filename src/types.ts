@@ -1089,7 +1089,7 @@ export interface MiddlewareHandlerInterface<
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler)
+  // app.use(path, handler)
   <P extends string, MergedPath extends MergePath<BasePath, P>, E2 extends Env = E>(
     path: P,
     handler: MiddlewareHandler<E2, MergedPath, any, any>
@@ -1109,7 +1109,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x2)
+  // app.use(path, handler x2)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1136,7 +1136,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x3)
+  // app.use(path, handler x3)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1166,7 +1166,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x4)
+  // app.use(path, handler x4)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1204,7 +1204,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x5)
+  // app.use(path, handler x5)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1246,7 +1246,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x6)
+  // app.use(path, handler x6)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1292,7 +1292,7 @@ export interface MiddlewareHandlerInterface<
     ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>, S, BasePath, CurrentPath>
 
-  // app.get(path, handler x7)
+  // app.use(path, handler x7)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1347,7 +1347,7 @@ export interface MiddlewareHandlerInterface<
     CurrentPath
   >
 
-  // app.get(path, handler x8)
+  // app.use(path, handler x8)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1406,7 +1406,7 @@ export interface MiddlewareHandlerInterface<
     CurrentPath
   >
 
-  // app.get(path, handler x9)
+  // app.use(path, handler x9)
   <
     P extends string,
     MergedPath extends MergePath<BasePath, P>,
@@ -1794,7 +1794,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method, path, ...handler)
+  // app.on(method, path, ...handler)
   <
     M extends string,
     P extends string,
@@ -1811,7 +1811,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler)
+  // app.on(method[], path, handler)
   <
     Ms extends string[],
     P extends string,
@@ -1830,7 +1830,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x2)
+  // app.on(method[], path, handler x2)
   <
     Ms extends string[],
     P extends string,
@@ -1851,7 +1851,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x3)
+  // app.on(method[], path, handler x3)
   <
     Ms extends string[],
     P extends string,
@@ -1874,7 +1874,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x4)
+  // app.on(method[], path, handler x4)
   <
     Ms extends string[],
     P extends string,
@@ -1904,7 +1904,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x5)
+  // app.on(method[], path, handler x5)
   <
     Ms extends string[],
     P extends string,
@@ -1937,7 +1937,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x6)
+  // app.on(method[], path, handler x6)
   <
     Ms extends string[],
     P extends string,
@@ -1973,7 +1973,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x7)
+  // app.on(method[], path, handler x7)
   <
     Ms extends string[],
     P extends string,
@@ -2012,7 +2012,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x8)
+  // app.on(method[], path, handler x8)
   <
     Ms extends string[],
     P extends string,
@@ -2054,7 +2054,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x9)
+  // app.on(method[], path, handler x9)
   <
     Ms extends string[],
     P extends string,
@@ -2099,7 +2099,7 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
-  // app.get(method[], path, handler x10)
+  // app.on(method[], path, handler x10)
   <
     Ms extends string[],
     P extends string,
