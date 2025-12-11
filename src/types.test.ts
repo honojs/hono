@@ -243,7 +243,7 @@ describe('HandlerInterface', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
 
-    it('should generate schema of a pathless handler for all existing paths in the chain', () => {
+    it('should use the last registered path for a pathless handler', () => {
       const app = new Hono()
         .get('/foo', (c) => c.text('foo'))
         .get('/bar', (c) => c.text('bar'))
@@ -269,14 +269,6 @@ describe('HandlerInterface', () => {
           }
         }
       } & {
-        '/foo': {
-          $post: {
-            input: {}
-            output: 'baz'
-            outputFormat: 'text'
-            status: ContentfulStatusCode
-          }
-        }
         '/bar': {
           $post: {
             input: {}
@@ -3511,7 +3503,7 @@ describe('Handlers returning Promise<void>', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
-  it('should use multiple void middleware paths for a subsequent pathless handler', () => {
+  it('should use the last registered path for a pathless handler with multiple middlewares', () => {
     const app = new Hono()
       .get('/foo', async (_c, next) => {
         await next()
@@ -3523,14 +3515,6 @@ describe('Handlers returning Promise<void>', () => {
 
     type Actual = ExtractSchema<typeof app>
     type Expected = {
-      '/foo': {
-        $get: {
-          input: {}
-          output: 'after'
-          outputFormat: 'text'
-          status: ContentfulStatusCode
-        }
-      }
       '/bar': {
         $get: {
           input: {}
@@ -3543,7 +3527,7 @@ describe('Handlers returning Promise<void>', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
-  it('should prefer the void middleware path over a later pathful handler for a pathless handler', () => {
+  it('should use the last registered path for a pathless handler with mixed handlers and middlewares', () => {
     const app = new Hono()
       .get('/void', async (_c, next) => {
         await next()
@@ -3562,7 +3546,7 @@ describe('Handlers returning Promise<void>', () => {
         }
       }
     } & {
-      '/void': {
+      '/handler': {
         $get: {
           input: {}
           output: 'after'
