@@ -2234,11 +2234,7 @@ type AddSchemaIfHasResponse<
   P extends string,
   I extends Input | Input['in'],
   BasePath extends string,
-> = [Merged] extends [Promise<void>]
-  ? S
-  : [Merged] extends [never]
-    ? S
-    : S & ToSchema<M, MergePath<BasePath, P>, I, Merged>
+> = [Merged] extends [Promise<void>] ? S : S & ToSchema<M, MergePath<BasePath, P>, I, Merged>
 
 export type Endpoint = {
   input: any
