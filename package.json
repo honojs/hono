@@ -666,7 +666,7 @@
     "arg": "^5.0.2",
     "bun-types": "^1.2.20",
     "editorconfig-checker": "6.1.1",
-    "esbuild": "^0.15.18",
+    "esbuild": "^0.27.1",
     "eslint": "9.39.1",
     "glob": "^11.0.0",
     "jsdom": "22.1.0",
