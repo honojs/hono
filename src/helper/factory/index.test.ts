@@ -383,7 +383,7 @@ describe('createFactory', () => {
   })
 
   describe('createMiddleware', () => {
-    it('Should set the correct type', () => {
+    it('Should omit the `*` wildcard from the generated schema', () => {
       const factory = createFactory()
 
       const middleware = factory.createMiddleware(async (_, next) => {
@@ -392,9 +392,7 @@ describe('createFactory', () => {
 
       const routes = new Hono().use('*', middleware)
       type Actual = ExtractSchema<typeof routes>
-      type Expected = {
-        '*': {}
-      }
+      type Expected = {}
       type verify = Expect<Equal<Expected, Actual>>
     })
 
