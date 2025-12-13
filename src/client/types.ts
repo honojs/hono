@@ -27,7 +27,7 @@ export type ClientRequestOptions<T = unknown> = {
    * ```ts
    * const client = hc('http://localhost', {
    *   buildSearchParams: (query) => {
-   *     return new URLSearchParams(qs.stringify(params))
+   *     return new URLSearchParams(qs.stringify(query))
    *   }
    * })
    * ```
