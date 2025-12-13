@@ -10,7 +10,12 @@ import { parse } from '../utils/cookie'
 import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { ClientResponse, InferRequestType, InferResponseType } from './types'
+import type {
+  ClientResponse,
+  InferRequestType,
+  InferResponseType,
+  ApplyGlobalResponse,
+} from './types'
 
 class SafeBigInt {
   unsafe = BigInt(42)
@@ -1521,5 +1526,106 @@ describe('WebSocket Provider Integration', () => {
     })
     client.index.$ws({ query })
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+})
+
+describe('ApplyGlobalResponse Type Helper', () => {
+  const server = setupServer(
+    http.get('http://localhost/api/users', () => {
+      return HttpResponse.json({ users: ['alice', 'bob'] })
+    }),
+    http.get('http://localhost/api/error', () => {
+      return HttpResponse.json(
+        { error: 'Internal Server Error', message: 'Something went wrong' },
+        { status: 500 }
+      )
+    }),
+    http.get('http://localhost/api/unauthorized', () => {
+      return HttpResponse.json({ error: 'Unauthorized', message: 'Please login' }, { status: 401 })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  it('Should add global error response type to all routes', () => {
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+
+    // Apply global 500 error response
+    type AppWithGlobalError = ApplyGlobalResponse<
+      typeof app,
+      { error: string; message: string },
+      500,
+      'json'
+    >
+
+    const client = hc<AppWithGlobalError>('http://localhost')
+    const req = client.api.users.$get
+
+    // Type should be a union of normal response and global error
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string; message: string }
+
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+
+  it('Should support multiple global error status codes', async () => {
+    const app = new Hono()
+      .get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+      .get('/api/unauthorized', (c) =>
+        c.json({ error: 'Unauthorized', message: 'Please login' }, 401)
+      )
+      .get('/api/error', (c) =>
+        c.json({ error: 'Internal Server Error', message: 'Something went wrong' }, 500)
+      )
+
+    // Apply multiple global error types
+    type AppWith500 = ApplyGlobalResponse<
+      typeof app,
+      { error: string; message: string },
+      500,
+      'json'
+    >
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      AppWith500,
+      { error: string; message: string },
+      401,
+      'json'
+    >
+
+    const client = hc<AppWithGlobalErrors>('http://localhost')
+
+    // Verify runtime behavior for different status codes
+    const usersRes = await client.api.users.$get()
+    expect(usersRes.status).toBe(200)
+
+    const unauthorizedRes = await client.api.unauthorized.$get()
+    expect(unauthorizedRes.status).toBe(401)
+    expect(await unauthorizedRes.json()).toEqual({ error: 'Unauthorized', message: 'Please login' })
+
+    const errorRes = await client.api.error.$get()
+    expect(errorRes.status).toBe(500)
+    expect(await errorRes.json()).toEqual({
+      error: 'Internal Server Error',
+      message: 'Something went wrong',
+    })
+  })
+
+  it('Should work with onError handler pattern', () => {
+    // Simulating typical Hono app with onError handler
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+
+    // In real app: app.onError((err, c) => c.json({ error: err.message }, 500))
+    type AppWithOnError = ApplyGlobalResponse<typeof app, { error: string }, 500, 'json'>
+
+    const client = hc<AppWithOnError>('http://localhost')
+    const req = client.api.users.$get
+
+    // RPC client should know about the error format
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string }
+
+    type verify = Expect<Equal<ResponseType, Expected>>
   })
 })
