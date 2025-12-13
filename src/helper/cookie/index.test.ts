@@ -371,11 +371,72 @@ describe('Cookie Middleware', () => {
       return c.text('Give cookie')
     })
 
-    it('Multiple values', async () => {
+    it('Multiple values with same name should be deduped (RFC 6265)', async () => {
       const res = await app.request('http://localhost/set-cookie-multiple')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha; Path=/, delicious_cookie=choco; Path=/')
+      // Only the last cookie should be present
+      expect(header).toBe('delicious_cookie=choco; Path=/')
+    })
+
+    app.get('/set-cookie-different-domains', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', { domain: 'example.com' })
+      setCookie(c, 'delicious_cookie', 'choco', { domain: 'other.com' })
+      return c.text('Give cookie')
+    })
+
+    it('Cookies with same name but different domains should not be deduped', async () => {
+      const res = await app.request('http://localhost/set-cookie-different-domains')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      // Both cookies should be present since domains are different
+      expect(header).toBe(
+        'delicious_cookie=macha; Domain=example.com; Path=/, delicious_cookie=choco; Domain=other.com; Path=/'
+      )
+    })
+
+    app.get('/set-cookie-different-paths', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', { path: '/a' })
+      setCookie(c, 'delicious_cookie', 'choco', { path: '/b' })
+      return c.text('Give cookie')
+    })
+
+    it('Cookies with same name but different paths should not be deduped', async () => {
+      const res = await app.request('http://localhost/set-cookie-different-paths')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      // Both cookies should be present since paths are different
+      expect(header).toBe('delicious_cookie=macha; Path=/a, delicious_cookie=choco; Path=/b')
+    })
+
+    app.get('/set-cookie-same-identity', (c) => {
+      setCookie(c, 'delicious_cookie', 'first', { domain: 'example.com', path: '/api' })
+      setCookie(c, 'delicious_cookie', 'second', { domain: 'example.com', path: '/api' })
+      setCookie(c, 'delicious_cookie', 'third', { domain: 'example.com', path: '/api' })
+      return c.text('Give cookie')
+    })
+
+    it('Cookies with same identity (name+domain+path) should be deduped to last value', async () => {
+      const res = await app.request('http://localhost/set-cookie-same-identity')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      // Only the last cookie should be present
+      expect(header).toBe('delicious_cookie=third; Domain=example.com; Path=/api')
+    })
+
+    app.get('/set-cookie-mixed', (c) => {
+      setCookie(c, 'cookie_a', 'value1')
+      setCookie(c, 'cookie_b', 'value2')
+      setCookie(c, 'cookie_a', 'value3') // should replace first cookie_a
+      return c.text('Give cookie')
+    })
+
+    it('Mixed cookies should dedupe correctly', async () => {
+      const res = await app.request('http://localhost/set-cookie-mixed')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      // cookie_a should be deduped, cookie_b should remain
+      expect(header).toBe('cookie_b=value2; Path=/, cookie_a=value3; Path=/')
     })
   })
 
