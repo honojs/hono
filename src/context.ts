@@ -763,7 +763,7 @@ export class Context<
    * })
    * ```
    */
-  notFound = (): Response | Promise<Response> => {
+  notFound = (): ReturnType<NotFoundHandler> => {
     this.#notFoundHandler ??= () => new Response()
     return this.#notFoundHandler(this)
   }
