@@ -6,6 +6,8 @@ import type { HasRequiredKeys } from '../utils/types'
 
 type HonoRequest = (typeof Hono.prototype)['request']
 
+export type BuildSearchParamsFn = (query: Record<string, string | string[]>) => URLSearchParams
+
 export type ClientRequestOptions<T = unknown> = {
   fetch?: typeof fetch | HonoRequest
   webSocket?: (...args: ConstructorParameters<typeof WebSocket>) => WebSocket
@@ -16,6 +18,21 @@ export type ClientRequestOptions<T = unknown> = {
    * If you want to add some headers, use in `headers` instead of `init`
    */
   init?: RequestInit
+  /**
+   * Custom function to serialize query parameters into URLSearchParams.
+   * By default, arrays are serialized as multiple parameters with the same key (e.g., `key=a&key=b`).
+   * You can provide a custom function to change this behavior, for example to use bracket notation (e.g., `key[]=a&key[]=b`).
+   *
+   * @example
+   * ```ts
+   * const client = hc('http://localhost', {
+   *   buildSearchParams: (query) => {
+   *     return new URLSearchParams(qs.stringify(query))
+   *   }
+   * })
+   * ```
+   */
+  buildSearchParams?: BuildSearchParamsFn
 } & (keyof T extends never
   ? {
       headers?:
