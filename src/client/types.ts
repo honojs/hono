@@ -277,7 +277,7 @@ type PathToChain<
         >
       }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type Client<T, Prefix extends string> =
   T extends HonoBase<any, infer S, any>
     ? S extends Record<infer K, Schema>
