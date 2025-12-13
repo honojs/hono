@@ -2,7 +2,7 @@ import type { Hono } from '../hono'
 import type { FormValue, ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
-import type { Callback, Client, ClientRequestOptions } from './types'
+import type { BuildSearchParamsFn, Callback, Client, ClientRequestOptions } from './types'
 import {
   buildSearchParams,
   deepMerge,
@@ -33,14 +33,22 @@ const createProxy = (callback: Callback, path: string[]) => {
 class ClientRequestImpl {
   private url: string
   private method: string
+  private buildSearchParams: BuildSearchParamsFn
   private queryParams: URLSearchParams | undefined = undefined
   private pathParams: Record<string, string> = {}
   private rBody: BodyInit | undefined
   private cType: string | undefined = undefined
 
-  constructor(url: string, method: string) {
+  constructor(
+    url: string,
+    method: string,
+    options: {
+      buildSearchParams: BuildSearchParamsFn
+    }
+  ) {
     this.url = url
     this.method = method
+    this.buildSearchParams = options.buildSearchParams
   }
   fetch = async (
     args?: ValidationTargets<FormValue> & {
@@ -50,7 +58,7 @@ class ClientRequestImpl {
   ) => {
     if (args) {
       if (args.query) {
-        this.queryParams = buildSearchParams(args.query)
+        this.queryParams = this.buildSearchParams(args.query)
       }
 
       if (args.form) {
@@ -119,11 +127,12 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>>(
-  baseUrl: string,
+export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
+  baseUrl: Prefix,
   options?: ClientRequestOptions
 ) =>
   createProxy(function proxyCallback(opts) {
+    const buildSearchParamsOption = options?.buildSearchParams ?? buildSearchParams
     const parts = [...opts.path]
     const lastParts = parts.slice(-3).reverse()
 
@@ -163,7 +172,7 @@ export const hc = <T extends Hono<any, any, any>>(
           result = replaceUrlParam(url, opts.args[0].param)
         }
         if (opts.args[0].query) {
-          result = result + '?' + buildSearchParams(opts.args[0].query).toString()
+          result = result + '?' + buildSearchParamsOption(opts.args[0].query).toString()
         }
       }
       result = removeIndexString(result)
@@ -196,11 +205,13 @@ export const hc = <T extends Hono<any, any, any>>(
       return establishWebSocket(targetUrl.toString())
     }
 
-    const req = new ClientRequestImpl(url, method)
+    const req = new ClientRequestImpl(url, method, {
+      buildSearchParams: buildSearchParamsOption,
+    })
     if (method) {
       options ??= {}
       const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
       return req.fetch(opts.args[0], args)
     }
     return req
-  }, []) as UnionToIntersection<Client<T>>
+  }, []) as UnionToIntersection<Client<T, Prefix>>

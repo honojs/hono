@@ -110,14 +110,18 @@ describe('createHandler', () => {
     it('Should return correct path types - /a', () => {
       const client = hc<typeof routesA>('/')
       expectTypeOf(client).toEqualTypeOf<{
-        a: ClientRequest<{
-          $get: {
-            input: {}
-            output: 'A'
-            outputFormat: 'text'
-            status: ContentfulStatusCode
+        a: ClientRequest<
+          string,
+          '/a',
+          {
+            $get: {
+              input: {}
+              output: 'A'
+              outputFormat: 'text'
+              status: ContentfulStatusCode
+            }
           }
-        }>
+        >
       }>()
     })
   })
@@ -379,7 +383,7 @@ describe('createFactory', () => {
   })
 
   describe('createMiddleware', () => {
-    it('Should set the correct type', () => {
+    it('Should omit the `*` wildcard from the generated schema', () => {
       const factory = createFactory()
 
       const middleware = factory.createMiddleware(async (_, next) => {
@@ -388,9 +392,7 @@ describe('createFactory', () => {
 
       const routes = new Hono().use('*', middleware)
       type Actual = ExtractSchema<typeof routes>
-      type Expected = {
-        '*': {}
-      }
+      type Expected = {}
       type verify = Expect<Equal<Expected, Actual>>
     })
 
