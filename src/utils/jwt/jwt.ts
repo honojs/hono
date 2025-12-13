@@ -89,14 +89,6 @@ export type VerifyOptionsWithAlg = {
   alg?: SignatureAlgorithm
 } & VerifyOptions
 
-type StrictVerifyOptions = {
-  iss?: string | RegExp
-  nbf: boolean
-  exp: boolean
-  iat: boolean
-  aud?: string | string[] | RegExp
-}
-
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
@@ -152,8 +144,8 @@ export const verify = async (
       aud instanceof RegExp
         ? aud.test(payloadAud)
         : typeof aud === 'string'
-        ? payloadAud === aud
-        : Array.isArray(aud) && aud.includes(payloadAud)
+          ? payloadAud === aud
+          : Array.isArray(aud) && aud.includes(payloadAud)
     )
     if (!matched) {
       throw new JwtTokenAudience(aud, payload.aud)

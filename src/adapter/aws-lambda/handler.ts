@@ -7,6 +7,7 @@ import type {
   ApiGatewayRequestContextV2,
   Handler,
   LambdaContext,
+  LatticeRequestContextV2,
 } from './types'
 
 function sanitizeHeaderValue(value: string): string {
@@ -19,7 +20,22 @@ function sanitizeHeaderValue(value: string): string {
   return encodeURIComponent(value)
 }
 
-export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
+export type LambdaEvent =
+  | APIGatewayProxyEvent
+  | APIGatewayProxyEventV2
+  | ALBProxyEvent
+  | LatticeProxyEventV2
+
+export interface LatticeProxyEventV2 {
+  version: string
+  path: string
+  method: string
+  headers: Record<string, string[] | undefined>
+  queryStringParameters: Record<string, string[] | undefined>
+  body: string | null
+  isBase64Encoded: boolean
+  requestContext: LatticeRequestContextV2
+}
 
 // When calling HTTP API or Lambda directly through function urls
 export interface APIGatewayProxyEventV2 {
@@ -99,7 +115,11 @@ export type APIGatewayProxyResult = {
 
 const getRequestContext = (
   event: LambdaEvent
-): ApiGatewayRequestContext | ApiGatewayRequestContextV2 | ALBRequestContext => {
+):
+  | ApiGatewayRequestContext
+  | ApiGatewayRequestContextV2
+  | ALBRequestContext
+  | LatticeRequestContextV2 => {
   return event.requestContext
 }
 
@@ -118,7 +138,7 @@ const streamToNodeStream = async (
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 >(
   app: Hono<E, S, BasePath>
 ): Handler => {
@@ -258,12 +278,36 @@ export abstract class EventProcessor<E extends LambdaEvent> {
 
   protected abstract setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void
 
+  protected getHeaderValue(headers: E['headers'], key: string): string | undefined {
+    const value = headers
+      ? Array.isArray(headers[key])
+        ? headers[key][0]
+        : headers[key]
+      : undefined
+
+    return value
+  }
+
+  protected getDomainName(event: E): string | undefined {
+    if (event.requestContext && 'domainName' in event.requestContext) {
+      return event.requestContext.domainName
+    }
+
+    const hostFromHeaders = this.getHeaderValue(event.headers, 'host')
+
+    if (hostFromHeaders) {
+      return hostFromHeaders
+    }
+
+    const multiValueHeaders = 'multiValueHeaders' in event ? event.multiValueHeaders : {}
+    const hostFromMultiValueHeaders = this.getHeaderValue(multiValueHeaders, 'host')
+
+    return hostFromMultiValueHeaders
+  }
+
   createRequest(event: E): Request {
     const queryString = this.getQueryString(event)
-    const domainName =
-      event.requestContext && 'domainName' in event.requestContext
-        ? event.requestContext.domainName
-        : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
+    const domainName = this.getDomainName(event)
     const path = this.getPath(event)
     const urlPath = `https://${domainName}${path}`
     const url = queryString ? `${urlPath}?${queryString}` : urlPath
@@ -304,7 +348,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
       body: body,
       statusCode: res.status,
       isBase64Encoded,
-      ...(event.multiValueHeaders
+      ...('multiValueHeaders' in event && event.multiValueHeaders
         ? {
             multiValueHeaders: {},
           }
@@ -382,16 +426,16 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
 
 const v2Processor: EventV2Processor = new EventV2Processor()
 
-export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
-  protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
+  protected getPath(event: APIGatewayProxyEvent): string {
     return event.path
   }
 
-  protected getMethod(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+  protected getMethod(event: APIGatewayProxyEvent): string {
     return event.httpMethod
   }
 
-  protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+  protected getQueryString(event: APIGatewayProxyEvent): string {
     // In the case of gateway Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
     // API Gateway passes decoded values, so we need to re-encode them to preserve the original URL
     if (event.multiValueQueryStringParameters) {
@@ -411,7 +455,7 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
 
   protected getCookies(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    event: Exclude<LambdaEvent, APIGatewayProxyEventV2>,
+    event: APIGatewayProxyEvent,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     headers: Headers
   ): void {
@@ -536,6 +580,54 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
 
 const albProcessor: ALBProcessor = new ALBProcessor()
 
+export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
+  protected getPath(event: LatticeProxyEventV2): string {
+    return event.path
+  }
+
+  protected getMethod(event: LatticeProxyEventV2): string {
+    return event.method
+  }
+
+  protected getQueryString(): string {
+    return ''
+  }
+
+  protected getHeaders(event: LatticeProxyEventV2): Headers {
+    const headers = new Headers()
+
+    if (event.headers) {
+      for (const [k, values] of Object.entries(event.headers)) {
+        if (values) {
+          // avoid duplicating already set headers
+          const foundK = headers.get(k)
+          values.forEach((v) => {
+            const sanitizedValue = sanitizeHeaderValue(v)
+            return (
+              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
+            )
+          })
+        }
+      }
+    }
+
+    return headers
+  }
+
+  protected getCookies(): void {
+    // nop
+  }
+
+  protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
+    result.headers = {
+      ...result.headers,
+      'set-cookie': cookies.join(', '),
+    }
+  }
+}
+
+const latticeV2Processor: LatticeV2Processor = new LatticeV2Processor()
+
 export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
   if (isProxyEventALB(event)) {
     return albProcessor
@@ -543,6 +635,10 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
   if (isProxyEventV2(event)) {
     return v2Processor
   }
+  if (isLatticeEventV2(event)) {
+    return latticeV2Processor
+  }
+
   return v1Processor
 }
 
@@ -555,6 +651,13 @@ const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
   return Object.hasOwn(event, 'rawPath')
+}
+
+const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
+  if (event.requestContext) {
+    return Object.hasOwn(event.requestContext, 'serviceArn')
+  }
+  return false
 }
 
 /**

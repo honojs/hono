@@ -68,4 +68,17 @@ describe('getConnInfo', () => {
     })
     expect(() => getConnInfo(c)).toThrowError(TypeError)
   })
+  it('Should return empty remote when requestIP returns null', () => {
+    const c = new Context(new Request('http://localhost/'), {
+      env: {
+        requestIP() {
+          return null
+        },
+      },
+    })
+
+    const info = getConnInfo(c)
+
+    expect(info.remote).toEqual({})
+  })
 })

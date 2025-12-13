@@ -72,51 +72,38 @@ const commonOptions: BuildOptions = {
   platform: 'node',
 }
 
-const cjsBuild = () =>
-  build({
-    ...commonOptions,
-    outbase: './src',
-    outdir: './dist/cjs',
-    format: 'cjs',
-  })
+const cjsConfig: BuildOptions = {
+  ...commonOptions,
+  outbase: './src',
+  outdir: './dist/cjs',
+  format: 'cjs',
+}
 
-const cjsWatch = async () =>
-  (
-    await context({
-      ...commonOptions,
-      outbase: './src',
-      outdir: './dist/cjs',
-      format: 'cjs',
-    })
-  ).watch()
+const esmConfig: BuildOptions = {
+  ...commonOptions,
+  bundle: true,
+  outbase: './src',
+  outdir: './dist',
+  format: 'esm',
+  plugins: [addExtension('.js')],
+}
 
-const esmBuild = () =>
-  build({
-    ...commonOptions,
-    bundle: true,
-    outbase: './src',
-    outdir: './dist',
-    format: 'esm',
-    plugins: [addExtension('.js')],
-  })
+const runBuild = async (config: BuildOptions) => {
+  if (isWatch) {
+    const ctx = await context(config)
+    await ctx.watch()
+  } else {
+    await build(config)
+  }
+}
 
-const esmWatch = async () =>
-  (
-    await context({
-      ...commonOptions,
-      bundle: true,
-      outbase: './src',
-      outdir: './dist',
-      format: 'esm',
-      plugins: [addExtension('.js')],
-    })
-  ).watch()
-
-Promise.all(isWatch ? [esmWatch(), cjsWatch()] : [esmBuild(), cjsBuild()])
-
-await $`tsc ${
-  isWatch ? '-w' : ''
-} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+await Promise.all([
+  runBuild(esmConfig),
+  runBuild(cjsConfig),
+  $`tsc ${
+    isWatch ? '-w' : ''
+  } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow(),
+])
 
 // Remove #private fields
 const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')

@@ -1,7 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets, FormValue } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -14,7 +14,7 @@ export type ValidationFunction<
   InputType,
   OutputType,
   E extends Env = {},
-  P extends string = string
+  P extends string = string,
 > = (
   value: InputType,
   c: Context<E, P>
@@ -29,17 +29,17 @@ export type ExtractValidationResponse<VF> = VF extends (value: any, c: any) => i
     ? PR extends TypedResponse<infer T, infer S, infer F>
       ? TypedResponse<T, S, F>
       : PR extends Response
-      ? PR
-      : PR extends undefined
-      ? never // undefined → never
-      : never // anything else → never
+        ? PR
+        : PR extends undefined
+          ? never // undefined → never
+          : never // anything else → never
     : R extends TypedResponse<infer T, infer S, infer F>
-    ? TypedResponse<T, S, F>
-    : R extends Response
-    ? R
-    : R extends undefined
-    ? never // undefined → never
-    : never // anything else → never
+      ? TypedResponse<T, S, F>
+      : R extends Response
+        ? R
+        : R extends undefined
+          ? never // undefined → never
+          : never // anything else → never
   : never // Can't extract → never
 
 export const validator = <
@@ -66,7 +66,7 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   } = {
@@ -75,12 +75,12 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  E extends Env = any
+  E extends Env = any,
 >(
   target: U,
   validationFunc: VF
@@ -178,7 +178,7 @@ export type ExtractValidatorOutput<VF> = VF extends (value: any, c: any) => infe
       ? never
       : PR
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    R extends Response | TypedResponse<any, any, any>
-    ? never
-    : R
+      R extends Response | TypedResponse<any, any, any>
+      ? never
+      : R
   : never

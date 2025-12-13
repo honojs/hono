@@ -142,3 +142,23 @@ export interface ALBRequestContext {
     targetGroupArn: string
   }
 }
+
+export interface LatticeRequestContextV2 {
+  serviceNetworkArn: string
+  serviceArn: string
+  targetGroupArn: string
+  region: string
+  timeEpoch: string
+  identity: {
+    sourceVpcArn?: string
+    type?: string
+    principal?: string
+    principalOrgID?: string
+    sessionName?: string
+    x509IssuerOu?: string
+    x509SanDns?: string
+    x509SanNameCn?: string
+    x509SanUri?: string
+    x509SubjectCn?: string
+  }
+}
