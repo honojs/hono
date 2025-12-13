@@ -3,6 +3,7 @@ import type { HonoBase } from '../hono-base'
 import type { Endpoint, ResponseFormat, Schema } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
+import { EventSource, EventSourceInit } from './eventsource'
 
 type HonoRequest = (typeof Hono.prototype)['request']
 
@@ -46,12 +47,14 @@ export type ClientRequest<S extends Schema> = {
           : {}
       : {}
   ) => URL
-} & (S['$get'] extends { outputFormat: 'ws' }
-    ? S['$get'] extends { input: infer I }
-      ? {
-          $ws: (args?: I) => WebSocket
-        }
-      : {}
+} & (S['$get'] extends { outputFormat: 'ws'; input: infer I }
+    ? {
+        $ws: (args?: I) => WebSocket
+      }
+    : S['$get'] extends { outputFormat: 'sse' }
+    ? {
+        $sse: (args?: EventSourceInit) => EventSource
+      }
     : {})
 
 type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {

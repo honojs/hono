@@ -11,6 +11,8 @@ import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types
 import { validator } from '../validator'
 import { hc } from './client'
 import type { ClientResponse, InferRequestType, InferResponseType } from './types'
+import { streamSSE } from '../helper/streaming'
+import { EventSource, EventSourceInit } from './eventsource'
 
 class SafeBigInt {
   unsafe = BigInt(42)
@@ -1521,5 +1523,38 @@ describe('WebSocket Provider Integration', () => {
     })
     client.index.$ws({ query })
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+})
+
+describe('SSE Provider Integration', () => {
+  it('should initialize the SSE provider correctly', async () => {
+    const app = new Hono()
+
+    const route = app.get('/sse-endpoint', (c) =>
+      streamSSE(c, async (stream) => {
+        await stream.writeSSE({
+          data: 'Hello from server!',
+          event: 'message',
+        })
+      })
+    )
+
+    type AppType = typeof route
+
+    const client = hc<AppType>('http://localhost')
+    assertType<(args: EventSourceInit) => EventSource>(client['sse-endpoint'].$sse)
+    const es = client['sse-endpoint'].$sse()
+
+    expect(es.url).toBe('http://localhost/sse-endpoint')
+
+    const eventData = await new Promise<MessageEvent>((resolve) => {
+      es.onmessage = (data) => {
+        expect(data).toBeInstanceOf(MessageEvent)
+        resolve(data)
+      }
+    })
+
+    expect(eventData.data).toBe('Hello from server!')
+    expect(eventData.type).toBe('message')
   })
 })
