@@ -320,6 +320,35 @@ describe('OnHandlerInterface', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
+  test('app.on(method[], path, middleware, handler)', () => {
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    const route = app.on(['GET', 'POST'], '/multi-method', middleware, (c) => {
+      return c.json({ success: true })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/multi-method': {
+        $get: {
+          input: {}
+          output: {
+            success: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+        $post: {
+          input: {}
+          output: {
+            success: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
   test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
     const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
     app.on('GET', ['/a', '/b'], middleware, (c) => {
@@ -339,7 +368,7 @@ describe('OnHandlerInterface', () => {
     type Actual = ExtractSchema<typeof route>
     type Expected = {
       '/a': {
-        [x: `$${Lowercase<string>}`]: {
+        $get: {
           input: {}
           output: {
             first: true
@@ -349,7 +378,7 @@ describe('OnHandlerInterface', () => {
         }
       }
       '/b': {
-        [x: `$${Lowercase<string>}`]: {
+        $get: {
           input: {}
           output: {
             first: true
