@@ -97,7 +97,10 @@ const isSameCookie = (
 /**
  * Removes existing Set-Cookie headers that match the given cookie identity.
  */
-const replaceSetCookieHeaders = (headers: Headers, newCookieInfo: { name: string; domain: string; path: string }): void => {
+const replaceSetCookieHeaders = (
+  headers: Headers,
+  newCookieInfo: { name: string; domain: string; path: string }
+): void => {
   const existingCookies = getSetCookies(headers)
 
   // Filter out cookies with matching identity
