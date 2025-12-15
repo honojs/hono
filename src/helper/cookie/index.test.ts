@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import type { Context } from '../../context'
 import {
   deleteCookie,
   getCookie,
@@ -8,6 +9,75 @@ import {
   generateCookie,
   generateSignedCookie,
 } from '.'
+
+type HeadersWithSetCookie = Headers & {
+  getSetCookie?: () => string[]
+}
+
+const readSetCookies = (headers: HeadersWithSetCookie): string[] => {
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie()
+  }
+
+  const setCookieHeader = headers.get('Set-Cookie')
+  if (!setCookieHeader) {
+    return []
+  }
+
+  const cookies: string[] = []
+  let current = ''
+  for (const chunk of setCookieHeader.split(',')) {
+    const trimmed = chunk.trim()
+    if (current && /^[\w!#$%&'*.^`|~+-]+=/.test(trimmed)) {
+      cookies.push(current.trim())
+      current = trimmed
+    } else {
+      current += (current ? ',' : '') + chunk
+    }
+  }
+  if (current) {
+    cookies.push(current.trim())
+  }
+  return cookies
+}
+
+const cookieNameValue = (cookie?: string): string => {
+  if (!cookie) {
+    return ''
+  }
+  const [nameValue] = cookie.split(';')
+  return nameValue
+}
+
+const expectCookieSetEqual = (actual: string[], expected: string[]): void => {
+  expect(actual.length).toBe(expected.length)
+  expect(new Set(actual)).toEqual(new Set(expected))
+}
+
+const responseCookies = (res: Response): string[] =>
+  readSetCookies(res.headers as HeadersWithSetCookie)
+
+const createStubContext = (): { context: Context; headers: HeadersWithSetCookie } => {
+  const response = new Response()
+  const headers = response.headers as HeadersWithSetCookie
+  const context = {
+    req: {
+      raw: new Request('http://localhost/'),
+    },
+    res: response,
+    header: (name: string, value?: string, options?: { append?: boolean }) => {
+      if (value === undefined) {
+        response.headers.delete(name)
+      } else if (options?.append) {
+        response.headers.append(name, value)
+      } else {
+        response.headers.set(name, value)
+      }
+    },
+  } as unknown as Context
+
+  return { context, headers }
+}
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -169,11 +239,11 @@ describe('Cookie Middleware', () => {
 
       // Get the signed cookie value
       const setRes = await testApp.request('http://localhost/set-signed-secure')
-      const setCookieHeader = setRes.headers.get('Set-Cookie')
+      const signedSetCookies = readSetCookies(setRes.headers as HeadersWithSetCookie)
 
       // Now use that cookie to get the signed value
       const req = new Request('http://localhost/get-signed-secure')
-      req.headers.set('Cookie', setCookieHeader || '')
+      req.headers.set('Cookie', cookieNameValue(signedSetCookies[0]))
       const res = await testApp.request(req)
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('test-value')
@@ -197,11 +267,11 @@ describe('Cookie Middleware', () => {
 
       // Get the signed cookie value
       const setRes = await testApp.request('http://localhost/set-signed-host')
-      const setCookieHeader = setRes.headers.get('Set-Cookie')
+      const signedSetCookies = readSetCookies(setRes.headers as HeadersWithSetCookie)
 
       // Now use that cookie to get the signed value
       const req = new Request('http://localhost/get-signed-host')
-      req.headers.set('Cookie', setCookieHeader || '')
+      req.headers.set('Cookie', cookieNameValue(signedSetCookies[0]))
       const res = await testApp.request(req)
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('test-value')
@@ -240,8 +310,8 @@ describe('Cookie Middleware', () => {
     it('Set cookie with setCookie()', async () => {
       const res = await app.request('http://localhost/set-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha; Path=/')
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual(['delicious_cookie=macha; Path=/'])
     })
 
     app.get('/a/set-cookie-path', (c) => {
@@ -252,8 +322,8 @@ describe('Cookie Middleware', () => {
     it('Set cookie with setCookie() and path option', async () => {
       const res = await app.request('http://localhost/a/set-cookie-path')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha; Path=/a')
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual(['delicious_cookie=macha; Path=/a'])
     })
 
     app.get('/set-signed-cookie', async (c) => {
@@ -265,10 +335,10 @@ describe('Cookie Middleware', () => {
     it('Set signed cookie with setSignedCookie()', async () => {
       const res = await app.request('http://localhost/set-signed-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/',
+      ])
     })
 
     app.get('/a/set-signed-cookie-path', async (c) => {
@@ -280,10 +350,10 @@ describe('Cookie Middleware', () => {
     it('Set signed cookie with setSignedCookie() and path option', async () => {
       const res = await app.request('http://localhost/a/set-signed-cookie-path')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/a'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/a',
+      ])
     })
 
     app.get('/get-secure-prefix-cookie', async (c) => {
@@ -315,19 +385,16 @@ describe('Cookie Middleware', () => {
     it('Set cookie with secure prefix', async () => {
       const res = await app.request('http://localhost/set-secure-prefix-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('__Secure-delicious_cookie=macha; Path=/; Secure')
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual(['__Secure-delicious_cookie=macha; Path=/; Secure'])
     })
 
     it('Get cookie with secure prefix', async () => {
       const setCookie = await app.request('http://localhost/set-secure-prefix-cookie')
-      const header = setCookie.headers.get('Set-Cookie')
-      if (!header) {
-        assert.fail('invalid header')
-      }
+      const cookieValue = cookieNameValue(responseCookies(setCookie)[0])
       const res = await app.request('http://localhost/get-secure-prefix-cookie', {
         headers: {
-          Cookie: header,
+          Cookie: cookieValue,
         },
       })
       const response = await res.text()
@@ -348,19 +415,16 @@ describe('Cookie Middleware', () => {
     it('Set cookie with host prefix', async () => {
       const res = await app.request('http://localhost/set-host-prefix-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('__Host-delicious_cookie=macha; Path=/; Secure')
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual(['__Host-delicious_cookie=macha; Path=/; Secure'])
     })
 
     it('Get cookie with host prefix', async () => {
       const setCookie = await app.request('http://localhost/set-host-prefix-cookie')
-      const header = setCookie.headers.get('Set-Cookie')
-      if (!header) {
-        assert.fail('invalid header')
-      }
+      const cookieValue = cookieNameValue(responseCookies(setCookie)[0])
       const res = await app.request('http://localhost/get-host-prefix-cookie', {
         headers: {
-          Cookie: header,
+          Cookie: cookieValue,
         },
       })
       const response = await res.text()
@@ -378,10 +442,10 @@ describe('Cookie Middleware', () => {
     it('Set signed cookie with secure prefix', async () => {
       const res = await app.request('http://localhost/set-signed-secure-prefix-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        '__Secure-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        '__Secure-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure',
+      ])
     })
 
     app.get('/set-signed-host-prefix-cookie', async (c) => {
@@ -397,10 +461,10 @@ describe('Cookie Middleware', () => {
     it('Set signed cookie with host prefix', async () => {
       const res = await app.request('http://localhost/set-signed-host-prefix-cookie')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        '__Host-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        '__Host-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure',
+      ])
     })
 
     app.get('/set-cookie-complex', (c) => {
@@ -419,10 +483,10 @@ describe('Cookie Middleware', () => {
     it('Complex pattern', async () => {
       const res = await app.request('http://localhost/set-cookie-complex')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict',
+      ])
     })
 
     app.get('/set-signed-cookie-complex', async (c) => {
@@ -442,10 +506,10 @@ describe('Cookie Middleware', () => {
     it('Complex pattern (signed)', async () => {
       const res = await app.request('http://localhost/set-signed-cookie-complex')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
-      )
+      const cookies = responseCookies(res)
+      expect(cookies).toEqual([
+        'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict',
+      ])
     })
 
     app.get('/set-cookie-multiple', (c) => {
@@ -457,9 +521,9 @@ describe('Cookie Middleware', () => {
     it('Multiple values with same name should be deduped (RFC 6265)', async () => {
       const res = await app.request('http://localhost/set-cookie-multiple')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
+      const cookies = responseCookies(res)
       // Only the last cookie should be present
-      expect(header).toBe('delicious_cookie=choco; Path=/')
+      expect(cookies).toEqual(['delicious_cookie=choco; Path=/'])
     })
 
     app.get('/set-cookie-different-domains', (c) => {
@@ -471,11 +535,12 @@ describe('Cookie Middleware', () => {
     it('Cookies with same name but different domains should not be deduped', async () => {
       const res = await app.request('http://localhost/set-cookie-different-domains')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
+      const cookies = responseCookies(res)
       // Both cookies should be present since domains are different
-      expect(header).toBe(
-        'delicious_cookie=macha; Domain=example.com; Path=/, delicious_cookie=choco; Domain=other.com; Path=/'
-      )
+      expectCookieSetEqual(cookies, [
+        'delicious_cookie=macha; Domain=example.com; Path=/',
+        'delicious_cookie=choco; Domain=other.com; Path=/',
+      ])
     })
 
     app.get('/set-cookie-different-paths', (c) => {
@@ -487,9 +552,12 @@ describe('Cookie Middleware', () => {
     it('Cookies with same name but different paths should not be deduped', async () => {
       const res = await app.request('http://localhost/set-cookie-different-paths')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
+      const cookies = responseCookies(res)
       // Both cookies should be present since paths are different
-      expect(header).toBe('delicious_cookie=macha; Path=/a, delicious_cookie=choco; Path=/b')
+      expectCookieSetEqual(cookies, [
+        'delicious_cookie=macha; Path=/a',
+        'delicious_cookie=choco; Path=/b',
+      ])
     })
 
     app.get('/set-cookie-same-identity', (c) => {
@@ -502,9 +570,9 @@ describe('Cookie Middleware', () => {
     it('Cookies with same identity (name+domain+path) should be deduped to last value', async () => {
       const res = await app.request('http://localhost/set-cookie-same-identity')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
+      const cookies = responseCookies(res)
       // Only the last cookie should be present
-      expect(header).toBe('delicious_cookie=third; Domain=example.com; Path=/api')
+      expect(cookies).toEqual(['delicious_cookie=third; Domain=example.com; Path=/api'])
     })
 
     app.get('/set-cookie-mixed', (c) => {
@@ -517,9 +585,9 @@ describe('Cookie Middleware', () => {
     it('Mixed cookies should dedupe correctly', async () => {
       const res = await app.request('http://localhost/set-cookie-mixed')
       expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
+      const cookies = responseCookies(res)
       // cookie_a should be deduped, cookie_b should remain
-      expect(header).toBe('cookie_b=value2; Path=/, cookie_a=value3; Path=/')
+      expectCookieSetEqual(cookies, ['cookie_b=value2; Path=/', 'cookie_a=value3; Path=/'])
     })
   })
 
@@ -534,8 +602,8 @@ describe('Cookie Middleware', () => {
     it('Delete cookie', async () => {
       const res2 = await app.request('http://localhost/delete-cookie')
       expect(res2.status).toBe(200)
-      const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0; Path=/')
+      const cookies = responseCookies(res2)
+      expect(cookies).toEqual(['delicious_cookie=; Max-Age=0; Path=/'])
     })
 
     app.get('/delete-cookie-multiple', (c) => {
@@ -547,10 +615,11 @@ describe('Cookie Middleware', () => {
     it('Delete multiple cookies', async () => {
       const res2 = await app.request('http://localhost/delete-cookie-multiple')
       expect(res2.status).toBe(200)
-      const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe(
-        'delicious_cookie=; Max-Age=0; Path=/, delicious_cookie2=; Max-Age=0; Path=/'
-      )
+      const cookies = responseCookies(res2)
+      expectCookieSetEqual(cookies, [
+        'delicious_cookie=; Max-Age=0; Path=/',
+        'delicious_cookie2=; Max-Age=0; Path=/',
+      ])
     })
 
     app.get('/delete-cookie-with-options', (c) => {
@@ -565,8 +634,8 @@ describe('Cookie Middleware', () => {
     it('Delete cookie with options', async () => {
       const res2 = await app.request('http://localhost/delete-cookie-with-options')
       expect(res2.status).toBe(200)
-      const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+      const cookies = responseCookies(res2)
+      expect(cookies).toEqual(['delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure'])
     })
 
     app.get('/delete-cookie-with-deleted-value', (c) => {
@@ -598,9 +667,38 @@ describe('Cookie Middleware', () => {
     })
   })
 
-  // Note: getSetCookies fallback tests removed due to potential race conditions
-  // when modifying Headers.prototype in parallel test environments.
-  // The fallback logic is tested indirectly through integration tests.
+  describe('Set-Cookie helper utilities', () => {
+    it('dedup works when getSetCookie is not available on Headers', () => {
+      const { context, headers } = createStubContext()
+      headers.getSetCookie = undefined
+
+      setCookie(context, 'session', 'one')
+      setCookie(context, 'session', 'two')
+
+      const cookies = readSetCookies(headers)
+      expect(cookies).toEqual(['session=two; Path=/'])
+    })
+
+    it('fallback parser keeps cookies with commas or expires attributes intact', () => {
+      const { context, headers } = createStubContext()
+      headers.getSetCookie = undefined
+
+      context.header(
+        'Set-Cookie',
+        'legacy=value,with,commas; Path=/; Expires=Wed, 21 Oct 2015 07:28:00 GMT',
+        { append: true }
+      )
+      context.header('Set-Cookie', 'other=stay; Path=/; HttpOnly', { append: true })
+
+      setCookie(context, 'legacy', 'updated')
+
+      const cookies = readSetCookies(headers)
+      expect(cookies.some((cookie) => cookie.includes('legacy=updated'))).toBe(true)
+      expect(cookies.some((cookie) => cookie.includes('other=stay'))).toBe(true)
+      expect(cookies.some((cookie) => cookie.includes('value,with,commas'))).toBe(false)
+      expect(cookies.some((cookie) => cookie.includes('Wed, 21 Oct 2015'))).toBe(false)
+    })
+  })
 
   describe('Cookie deduplication (RFC 6265)', () => {
     describe('setSignedCookie deduplication', () => {
@@ -616,10 +714,11 @@ describe('Cookie Middleware', () => {
       it('Signed cookies with same identity should be deduped', async () => {
         const res = await app.request('http://localhost/set-signed-cookie-multiple')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Should only have the second cookie
-        expect(headers).toContain('session=second')
-        expect(headers).not.toContain('session=first')
+        expect(names.some((name) => name.startsWith('session=second'))).toBe(true)
+        expect(names.some((name) => name.startsWith('session=first'))).toBe(false)
       })
 
       app.get('/set-signed-cookie-secure-prefix-dedupe', async (c) => {
@@ -631,10 +730,11 @@ describe('Cookie Middleware', () => {
       it('Signed cookies with secure prefix should be deduped', async () => {
         const res = await app.request('http://localhost/set-signed-cookie-secure-prefix-dedupe')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Should only have the second cookie with __Secure- prefix
-        expect(headers).toContain('__Secure-session=second')
-        expect(headers).not.toContain('__Secure-session=first')
+        expect(names.some((name) => name.startsWith('__Secure-session=second'))).toBe(true)
+        expect(names.some((name) => name.startsWith('__Secure-session=first'))).toBe(false)
       })
 
       app.get('/set-signed-cookie-host-prefix-dedupe', async (c) => {
@@ -646,10 +746,11 @@ describe('Cookie Middleware', () => {
       it('Signed cookies with host prefix should be deduped', async () => {
         const res = await app.request('http://localhost/set-signed-cookie-host-prefix-dedupe')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Should only have the second cookie with __Host- prefix
-        expect(headers).toContain('__Host-session=second')
-        expect(headers).not.toContain('__Host-session=first')
+        expect(names.some((name) => name.startsWith('__Host-session=second'))).toBe(true)
+        expect(names.some((name) => name.startsWith('__Host-session=first'))).toBe(false)
       })
 
       app.get('/set-signed-cookie-different-domains', async (c) => {
@@ -661,10 +762,10 @@ describe('Cookie Middleware', () => {
       it('Signed cookies with different domains should not be deduped', async () => {
         const res = await app.request('http://localhost/set-signed-cookie-different-domains')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Both cookies should be present
-        expect(headers).toContain('Domain=example.com')
-        expect(headers).toContain('Domain=other.com')
+        expect(cookies.some((cookie) => cookie.includes('Domain=example.com'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('Domain=other.com'))).toBe(true)
       })
 
       app.get('/set-signed-cookie-different-paths', async (c) => {
@@ -676,10 +777,10 @@ describe('Cookie Middleware', () => {
       it('Signed cookies with different paths should not be deduped', async () => {
         const res = await app.request('http://localhost/set-signed-cookie-different-paths')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Both cookies should be present
-        expect(headers).toContain('Path=/a')
-        expect(headers).toContain('Path=/b')
+        expect(cookies.some((cookie) => cookie.includes('Path=/a'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('Path=/b'))).toBe(true)
       })
     })
 
@@ -695,9 +796,9 @@ describe('Cookie Middleware', () => {
       it('Domain comparison should be case-insensitive', async () => {
         const res = await app.request('http://localhost/set-cookie-domain-case')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should be deduped because domains are same (case-insensitive)
-        expect(headers).toBe('session=second; Domain=example.com; Path=/')
+        expect(cookies).toEqual(['session=second; Domain=example.com; Path=/'])
       })
 
       app.get('/set-cookie-domain-mixed-case', (c) => {
@@ -710,9 +811,9 @@ describe('Cookie Middleware', () => {
       it('Multiple domain case variations should all be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-domain-mixed-case')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should only have the last cookie
-        expect(headers).toBe('session=third; Domain=example.com; Path=/')
+        expect(cookies).toEqual(['session=third; Domain=example.com; Path=/'])
       })
     })
 
@@ -728,8 +829,8 @@ describe('Cookie Middleware', () => {
       it('Cookies with secure prefix should be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-secure-prefix-multiple')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
-        expect(headers).toBe('__Secure-session=second; Path=/; Secure')
+        const cookies = responseCookies(res)
+        expect(cookies).toEqual(['__Secure-session=second; Path=/; Secure'])
       })
 
       app.get('/set-cookie-host-prefix-multiple', (c) => {
@@ -741,8 +842,8 @@ describe('Cookie Middleware', () => {
       it('Cookies with host prefix should be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-host-prefix-multiple')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
-        expect(headers).toBe('__Host-session=second; Path=/; Secure')
+        const cookies = responseCookies(res)
+        expect(cookies).toEqual(['__Host-session=second; Path=/; Secure'])
       })
     })
 
@@ -758,10 +859,11 @@ describe('Cookie Middleware', () => {
       it('Cookie with no domain and cookie with domain should not be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-no-domain-vs-domain')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Both should be present - different identities
-        expect(headers).toContain('session=first')
-        expect(headers).toContain('session=second')
+        expect(names).toContain('session=first')
+        expect(names).toContain('session=second')
       })
 
       app.get('/set-cookie-default-path-vs-custom', (c) => {
@@ -773,10 +875,10 @@ describe('Cookie Middleware', () => {
       it('Cookie with default path and custom path should not be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-default-path-vs-custom')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Both should be present - different paths
-        expect(headers).toContain('Path=/')
-        expect(headers).toContain('Path=/api')
+        expect(cookies.some((cookie) => cookie.includes('Path=/'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('Path=/api'))).toBe(true)
       })
 
       app.get('/set-cookie-with-expires', (c) => {
@@ -792,11 +894,11 @@ describe('Cookie Middleware', () => {
       it('Cookies with same identity but different expires should be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-with-expires')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should be deduped - expires doesn't affect identity
-        expect(headers).toContain('session=second')
-        expect(headers).toContain('2025')
-        expect(headers).not.toContain('2024')
+        expect(cookies.some((cookie) => cookie.includes('session=second'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('2025'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('2024'))).toBe(false)
       })
 
       // Test: Cookie name is case-sensitive
@@ -810,11 +912,12 @@ describe('Cookie Middleware', () => {
       it('Cookie names should be case-sensitive (not deduped)', async () => {
         const res = await app.request('http://localhost/set-cookie-name-case-sensitive')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // All three should be present - different names (case-sensitive)
-        expect(headers).toContain('Session=first')
-        expect(headers).toContain('session=second')
-        expect(headers).toContain('SESSION=third')
+        expect(names).toContain('Session=first')
+        expect(names).toContain('session=second')
+        expect(names).toContain('SESSION=third')
       })
 
       // Test: HttpOnly/Secure/SameSite flags should not affect identity
@@ -827,12 +930,12 @@ describe('Cookie Middleware', () => {
       it('Flags (HttpOnly/Secure/SameSite) should not affect cookie identity', async () => {
         const res = await app.request('http://localhost/set-cookie-flags-no-affect-identity')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should be deduped - flags don't affect identity
-        expect(headers).toContain('session=second')
-        expect(headers).not.toContain('session=first')
-        expect(headers).toContain('Secure')
-        expect(headers).toContain('SameSite=Strict')
+        expect(cookies.some((cookie) => cookie.includes('session=second'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('session=first'))).toBe(false)
+        expect(cookies.some((cookie) => cookie.includes('Secure'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('SameSite=Strict'))).toBe(true)
       })
 
       // Test: MaxAge should not affect identity
@@ -845,11 +948,11 @@ describe('Cookie Middleware', () => {
       it('MaxAge should not affect cookie identity', async () => {
         const res = await app.request('http://localhost/set-cookie-maxage-no-affect-identity')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should be deduped - maxAge doesn't affect identity
-        expect(headers).toContain('session=second')
-        expect(headers).toContain('Max-Age=7200')
-        expect(headers).not.toContain('Max-Age=3600')
+        expect(cookies.some((cookie) => cookie.includes('session=second'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('Max-Age=7200'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('Max-Age=3600'))).toBe(false)
       })
 
       // Test: Different prefix (__Secure- vs no prefix) should not be deduped
@@ -862,10 +965,11 @@ describe('Cookie Middleware', () => {
       it('Cookie with prefix and without prefix should not be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-prefix-vs-no-prefix')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Both should be present - different names (session vs __Secure-session)
-        expect(headers).toContain('session=without-prefix')
-        expect(headers).toContain('__Secure-session=with-secure-prefix')
+        expect(names).toContain('session=without-prefix')
+        expect(names).toContain('__Secure-session=with-secure-prefix')
       })
 
       // Test: __Secure- vs __Host- prefix should not be deduped
@@ -878,10 +982,11 @@ describe('Cookie Middleware', () => {
       it('Cookie with __Secure- and __Host- prefix should not be deduped', async () => {
         const res = await app.request('http://localhost/set-cookie-secure-vs-host-prefix')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
+        const names = cookies.map((cookie) => cookieNameValue(cookie))
         // Both should be present - different names
-        expect(headers).toContain('__Secure-session=secure-prefix')
-        expect(headers).toContain('__Host-session=host-prefix')
+        expect(names).toContain('__Secure-session=secure-prefix')
+        expect(names).toContain('__Host-session=host-prefix')
       })
 
       // Test: Multiple cookies with various combinations
@@ -899,12 +1004,12 @@ describe('Cookie Middleware', () => {
       it('Complex combinations should dedupe correctly', async () => {
         const res = await app.request('http://localhost/set-cookie-complex-combinations')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should have: b (www.example.com), c (api.example.com/v1), a-updated (api.example.com/)
-        expect(headers).toContain('token=b')
-        expect(headers).toContain('token=c')
-        expect(headers).toContain('token=a-updated')
-        expect(headers).not.toContain('token=a;') // 'token=a;' not 'token=a-updated'
+        expect(cookies.some((cookie) => cookie.includes('token=b'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('token=c'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('token=a-updated'))).toBe(true)
+        expect(cookies.some((cookie) => cookie.includes('token=a;'))).toBe(false) // 'token=a;' not 'token=a-updated'
       })
 
       // Test: Cookie with special characters in value
@@ -917,9 +1022,9 @@ describe('Cookie Middleware', () => {
       it('Cookies with special characters should be deduped correctly', async () => {
         const res = await app.request('http://localhost/set-cookie-special-chars')
         expect(res.status).toBe(200)
-        const headers = res.headers.get('Set-Cookie')
+        const cookies = responseCookies(res)
         // Should only have the second value
-        expect(headers).not.toContain('value=with=equals')
+        expect(cookies.some((cookie) => cookie.includes('value=with=equals'))).toBe(false)
       })
     })
   })
