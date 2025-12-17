@@ -6,8 +6,8 @@ import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 import type { UnionToIntersection } from '../utils/types'
 
-type IsLiteralUnion<T, Base> = [T] extends [Base]
-  ? [T] extends [UnionToIntersection<T>]
+type IsLiteralUnion<T, Base> = [Exclude<T, undefined>] extends [Base]
+  ? [Exclude<T, undefined>] extends [UnionToIntersection<Exclude<T, undefined>>]
     ? false
     : true
   : false
