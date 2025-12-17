@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 
-type IsAllowedOriginHandler = (origin: string, context: Context) => boolean
+type IsAllowedOriginHandler = (origin: string, context: Context) => boolean | Promise<boolean>
 
 const secFetchSiteValues = ['same-origin', 'same-site', 'none', 'cross-site'] as const
 type SecFetchSite = (typeof secFetchSiteValues)[number]
@@ -15,7 +15,10 @@ type SecFetchSite = (typeof secFetchSiteValues)[number]
 const isSecFetchSite = (value: string): value is SecFetchSite =>
   (secFetchSiteValues as readonly string[]).includes(value)
 
-type IsAllowedSecFetchSiteHandler = (secFetchSite: SecFetchSite, context: Context) => boolean
+type IsAllowedSecFetchSiteHandler = (
+  secFetchSite: SecFetchSite,
+  context: Context
+) => boolean | Promise<boolean>
 
 interface CSRFOptions {
   origin?: string | string[] | IsAllowedOriginHandler
@@ -100,12 +103,12 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       return (origin) => optsOrigin.includes(origin)
     }
   })(options?.origin)
-  const isAllowedOrigin = (origin: string | undefined, c: Context) => {
+  const isAllowedOrigin = async (origin: string | undefined, c: Context) => {
     if (origin === undefined) {
       // denied always when origin header is not present
       return false
     }
-    return originHandler(origin, c)
+    return await originHandler(origin, c)
   }
 
   const secFetchSiteHandler: IsAllowedSecFetchSiteHandler = ((optsSecFetchSite) => {
@@ -120,7 +123,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       return (secFetchSite) => optsSecFetchSite.includes(secFetchSite)
     }
   })(options?.secFetchSite)
-  const isAllowedSecFetchSite = (secFetchSite: string | undefined, c: Context) => {
+  const isAllowedSecFetchSite = async (secFetchSite: string | undefined, c: Context) => {
     if (secFetchSite === undefined) {
       // denied always when sec-fetch-site header is not present
       return false
@@ -129,15 +132,15 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
     if (!isSecFetchSite(secFetchSite)) {
       return false
     }
-    return secFetchSiteHandler(secFetchSite, c)
+    return await secFetchSiteHandler(secFetchSite, c)
   }
 
   return async function csrf(c, next) {
     if (
       !isSafeMethodRe.test(c.req.method) &&
       isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
-      !isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c) &&
-      !isAllowedOrigin(c.req.header('origin'), c)
+      !(await isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c)) &&
+      !(await isAllowedOrigin(c.req.header('origin'), c))
     ) {
       const res = new Response('Forbidden', { status: 403 })
       throw new HTTPException(403, { res })

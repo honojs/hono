@@ -25,6 +25,7 @@ export type {
   Handler,
   MiddlewareHandler,
   Next,
+  NotFoundResponse,
   NotFoundHandler,
   ValidationTargets,
   Input,

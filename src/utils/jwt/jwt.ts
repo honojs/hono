@@ -144,8 +144,8 @@ export const verify = async (
       aud instanceof RegExp
         ? aud.test(payloadAud)
         : typeof aud === 'string'
-        ? payloadAud === aud
-        : Array.isArray(aud) && aud.includes(payloadAud)
+          ? payloadAud === aud
+          : Array.isArray(aud) && aud.includes(payloadAud)
     )
     if (!matched) {
       throw new JwtTokenAudience(aud, payload.aud)

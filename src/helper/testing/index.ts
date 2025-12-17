@@ -18,10 +18,10 @@ export const testClient = <T extends Hono<any, Schema, string>>(
   Env?: ExtractEnv<T>['Bindings'] | {},
   executionCtx?: ExecutionContext,
   options?: Omit<ClientRequestOptions, 'fetch'>
-): UnionToIntersection<Client<T>> => {
+): UnionToIntersection<Client<T, 'http://localhost'>> => {
   const customFetch = (input: RequestInfo | URL, init?: RequestInit) => {
     return app.request(input, init, Env, executionCtx)
   }
 
-  return hc<typeof app>('http://localhost', { ...options, fetch: customFetch })
+  return hc<typeof app, 'http://localhost'>('http://localhost', { ...options, fetch: customFetch })
 }

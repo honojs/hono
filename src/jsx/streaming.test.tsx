@@ -193,6 +193,42 @@ d.replaceWith(c.content)
     suspenseCounter -= 1 // fallback is not rendered
   })
 
+  it('without children', async () => {
+    const stream = renderToReadableStream(
+      <div>
+        <Suspense fallback={<p>Loading...</p>}></Suspense>
+      </div>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual(['<div></div>'])
+
+    suspenseCounter -= 1 // fallback is not rendered
+  })
+
+  it('only a "false" child', async () => {
+    const stream = renderToReadableStream(
+      <div>
+        <Suspense fallback={<p>Loading...</p>}>{false}</Suspense>
+      </div>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual(['<div></div>'])
+
+    suspenseCounter -= 1 // fallback is not rendered
+  })
+
   it('async nullish children', async () => {
     let resolved = false
     const Content = () => {

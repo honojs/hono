@@ -3,6 +3,7 @@ import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import { Context } from './context'
 import { createMiddleware } from './helper/factory'
+import { testClient } from './helper/testing'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
@@ -241,6 +242,44 @@ describe('HandlerInterface', () => {
       }
       type verify = Expect<Equal<Expected, Actual>>
     })
+
+    it('should use the last registered path for a pathless handler', () => {
+      const app = new Hono()
+        .get('/foo', (c) => c.text('foo'))
+        .get('/bar', (c) => c.text('bar'))
+        .post((c) => c.text('baz'))
+
+      type Actual = ExtractSchema<typeof app>
+      type Expected = {
+        '/foo': {
+          $get: {
+            input: {}
+            output: 'foo'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      } & {
+        '/bar': {
+          $get: {
+            input: {}
+            output: 'bar'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      } & {
+        '/bar': {
+          $post: {
+            input: {}
+            output: 'baz'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 
@@ -281,12 +320,86 @@ describe('OnHandlerInterface', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
+  test('app.on(method[], path, middleware, handler)', () => {
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    const route = app.on(['GET', 'POST'], '/multi-method', middleware, (c) => {
+      return c.json({ success: true })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/multi-method': {
+        $get: {
+          input: {}
+          output: {
+            success: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+        $post: {
+          input: {}
+          output: {
+            success: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
   test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
     const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
     app.on('GET', ['/a', '/b'], middleware, (c) => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       return c.json({})
     })
+  })
+
+  test('app.on(method, path[], handler).get(pathless handler) - pathless handler should use last path', () => {
+    const route = app
+      .on('GET', ['/a', '/b'], (c) => {
+        return c.json({ first: true })
+      })
+      .get((c) => {
+        return c.json({ second: true })
+      })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/a': {
+        $get: {
+          input: {}
+          output: {
+            first: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+      '/b': {
+        $get: {
+          input: {}
+          output: {
+            first: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/b': {
+        $get: {
+          input: {}
+          output: {
+            second: true
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
 
@@ -2294,12 +2407,10 @@ describe('Returning type from `app.use(path, mw)`', () => {
   const mw = createMiddleware(async (c, next) => {
     await next()
   })
-  it('Should not mark `*` as never', () => {
+  it('Should ignore the `*` wildcard when building the schema', () => {
     const app = new Hono().use('*', mw)
     type Actual = ExtractSchema<typeof app>
-    type Expected = {
-      '*': {}
-    }
+    type Expected = {}
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -3290,5 +3401,260 @@ describe('RPC supports Middleware responses', () => {
       }
       type verify = Expect<Equal<Expected, Actual>>
     })
+  })
+})
+
+describe('Handlers returning Promise<void>', () => {
+  it('should not be added to schema when calling await next() with another route', async () => {
+    const app = new Hono()
+      .get('/', async (c, next) => {
+        await next()
+      })
+      .get('/foo', async (c) => c.text('foo'))
+
+    const client = testClient(app)
+
+    // @ts-expect-error '/' route returns Promise<void>, so it should not be in schema
+    const res = await client.index.$get()
+  })
+
+  it('should not be added to schema when only Promise<void> handler exists', async () => {
+    const app = new Hono().get('/', async (c, next) => {
+      await next()
+    })
+
+    const client = testClient(app)
+
+    // @ts-expect-error '/' route returns Promise<void>, so it should not be in schema
+    const res = await client.index.$get()
+  })
+
+  it('should set path from .use() for subsequent handlers without path', () => {
+    const app = new Hono()
+      .use('/:id', async (c, next) => {
+        await next()
+      })
+      .post((c) => {
+        c.req.param('id')
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/:id': {
+        $post: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should preserve existing routes when .use() sets a new path', () => {
+    const app = new Hono()
+      .get((c) => c.text('before'))
+      .use('/:id', async (c, next) => {
+        await next()
+      })
+      .post((c) => {
+        c.req.param('id')
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'before'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/:id': {
+        $post: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should work with .get() that returns Promise<void> instead of .use()', () => {
+    const app = new Hono()
+      .get((c) => c.text('before'))
+      .get('/:id', async (c, next) => {
+        await next()
+      })
+      .post((c) => {
+        c.req.param('id')
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'before'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/:id': {
+        $post: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should work with .get() that returns Promise<void> instead of .use() - multiple middleware', () => {
+    const app = new Hono()
+      .get((c) => c.text('before'))
+      .get(
+        '/:id',
+        async (c, next) => {
+          await next()
+        },
+        async (c, next) => {
+          await next()
+        }
+      )
+      .post((c) => {
+        c.req.param('id')
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'before'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/:id': {
+        $post: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should use the last registered path for a pathless handler with multiple middlewares', () => {
+    const app = new Hono()
+      .get('/foo', async (_c, next) => {
+        await next()
+      })
+      .get('/bar', async (_c, next) => {
+        await next()
+      })
+      .get((c) => c.text('after'))
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/bar': {
+        $get: {
+          input: {}
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should use the last registered path for a pathless handler with mixed handlers and middlewares', () => {
+    const app = new Hono()
+      .get('/void', async (_c, next) => {
+        await next()
+      })
+      .get('/handler', (c) => c.text('handler'))
+      .get((c) => c.text('after'))
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/handler': {
+        $get: {
+          input: {}
+          output: 'handler'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/handler': {
+        $get: {
+          input: {}
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should set path as `*` when .use() is called without path argument', () => {
+    const app = new Hono()
+      .get('/foo', async (_c, next) => {
+        await next()
+      })
+      .use(async (c, next) => {
+        await next()
+      })
+      .post((c) => {
+        return c.text('after')
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '*': {
+        $post: {
+          input: {}
+          output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
