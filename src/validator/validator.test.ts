@@ -1298,6 +1298,53 @@ describe('Transform', () => {
     // Temporary: let's see what the actual type is
     type TestActual = Actual
   })
+
+  it('Should be number and union when the type is transformed', () => {
+    const app = new Hono()
+    const route = app.get(
+      '/',
+      validator('query', () => {
+        return {
+          page: 1,
+          orderBy: 'asc',
+        } as {
+          page: number
+          orderBy: 'asc' | 'desc'
+        }
+      }),
+      (c) => {
+        const { page, orderBy } = c.req.valid('query')
+        expectTypeOf(page).toEqualTypeOf<number>()
+        expectTypeOf(orderBy).toEqualTypeOf<'asc' | 'desc'>()
+        return c.json({ page, orderBy })
+      }
+    )
+
+    type Expected = {
+      '/': {
+        $get: {
+          input: {
+            query: {
+              page: string | string[]
+              orderBy: 'asc' | 'desc'
+            }
+          }
+          output: {
+            page: number
+            orderBy: 'asc' | 'desc'
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+
+    type Actual = ExtractSchema<typeof route>
+    type verify = Expect<Equal<Expected, Actual>>
+
+    // Temporary: let's see what the actual type is
+    type TestActual = Actual
+  })
 })
 
 describe('Raw Request cloning after validation', () => {

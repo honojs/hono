@@ -4,6 +4,13 @@ import { HTTPException } from '../http-exception'
 import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets, FormValue } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
+import type { UnionToIntersection } from '../utils/types'
+
+type IsLiteralUnion<T, Base> = [T] extends [Base]
+  ? [T] extends [UnionToIntersection<T>]
+    ? false
+    : true
+  : false
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -66,7 +73,14 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
+        : {
+            [K2 in keyof ExtractValidatorOutput<VF>]: IsLiteralUnion<
+              ExtractValidatorOutput<VF>[K2],
+              string
+            > extends true
+              ? ExtractValidatorOutput<VF>[K2]
+              : ValidationTargets<FormValue>[K][K2]
+          }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   } = {
@@ -75,7 +89,14 @@ export const validator = <
         ? unknown extends InputType
           ? ExtractValidatorOutput<VF>
           : InputType
-        : { [K2 in keyof ExtractValidatorOutput<VF>]: ValidationTargets<FormValue>[K][K2] }
+        : {
+            [K2 in keyof ExtractValidatorOutput<VF>]: IsLiteralUnion<
+              ExtractValidatorOutput<VF>[K2],
+              string
+            > extends true
+              ? ExtractValidatorOutput<VF>[K2]
+              : ValidationTargets<FormValue>[K][K2]
+          }
     }
     out: { [K in U]: ExtractValidatorOutput<VF> }
   },
