@@ -4,4 +4,5 @@
  */
 
 export { validator } from './validator'
-export type { ValidationFunction, InferInput } from './validator'
+export type { ValidationFunction } from './validator'
+export type { InferInput } from './utils'
