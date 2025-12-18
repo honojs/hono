@@ -1,5 +1,5 @@
-import { FormValue, ParsedFormValue, ValidationTargets } from '../types'
-import { UnionToIntersection } from '../utils/types'
+import type { FormValue, ParsedFormValue, ValidationTargets } from '../types'
+import type { UnionToIntersection } from '../utils/types'
 
 /**
  * Checks if T is a literal union type (e.g., 'asc' | 'desc')

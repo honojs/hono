@@ -4,7 +4,7 @@ import { HTTPException } from '../http-exception'
 import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets, FormValue } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
-import { InferInput } from './utils'
+import type { InferInput } from './utils'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
