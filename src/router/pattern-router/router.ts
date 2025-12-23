@@ -57,4 +57,8 @@ export class PatternRouter<T> implements Router<T> {
 
     return [handlers]
   }
+
+  clear(): void {
+    this.#routes = []
+  }
 }

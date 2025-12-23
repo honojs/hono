@@ -382,12 +382,46 @@ class Hono<
     return this
   }
 
+  /**
+   * Add a route to the router.
+   *
+   * Replaces an existing route if the method and path are the same.
+   * Rebuilds the router if a route is replaced.
+   *
+   * Otherwise, adds the route to the router and the routes array.
+   * @param method - HTTP method
+   * @param path - Path for the route
+   * @param handler - Handler for the route
+   */
   #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = { basePath: this._basePath, path, method, handler }
-    this.router.add(method, path, [handler, r])
-    this.routes.push(r)
+
+    const existingIndex = this.routes.findIndex(
+      (route) => route.method === method && route.path === path
+    )
+
+    if (existingIndex !== -1) {
+      this.routes[existingIndex] = r
+      this.#rebuildRouter()
+    } else {
+      this.router.add(method, path, [handler, r])
+      this.routes.push(r)
+    }
+  }
+
+  #rebuildRouter() {
+    if ('clear' in this.router && typeof this.router.clear === 'function') {
+      this.router.clear()
+    } else {
+      const RouterClass = this.router.constructor as new () => Router<[H, RouterRoute]>
+      this.router = new RouterClass()
+    }
+
+    this.routes.forEach((route) => {
+      this.router.add(route.method, route.path, [route.handler, route])
+    })
   }
 
   #handleError(err: unknown, c: Context<E>) {
