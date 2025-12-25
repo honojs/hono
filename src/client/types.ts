@@ -253,15 +253,18 @@ type PathToChain<
   Path extends string,
   E extends Schema,
   Original extends string = Path,
-> = StripLeadingSlash<Path> extends `${infer P}/${infer R}`
-  ? { [K in P]: PathToChain<Prefix, R, E, Original> }
-  : {
-      [K in StripLeadingSlash<Path> extends '' ? 'index' : StripLeadingSlash<Path>]: ClientRequest<
-        Prefix,
-        Original,
-        E extends Record<string, unknown> ? E[Original] : never
-      >
-    }
+> =
+  StripLeadingSlash<Path> extends `${infer P}/${infer R}`
+    ? { [K in P]: PathToChain<Prefix, R, E, Original> }
+    : {
+        [K in StripLeadingSlash<Path> extends ''
+          ? 'index'
+          : StripLeadingSlash<Path>]: ClientRequest<
+          Prefix,
+          Original,
+          E extends Record<string, unknown> ? E[Original] : never
+        >
+      }
 
 export type Client<T, Prefix extends string> =
   T extends HonoBase<any, infer S, any>
