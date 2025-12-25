@@ -280,6 +280,8 @@ describe('toSSG function', () => {
     expect(content).toContain('<meta name="robots" content="noindex" />')
     // Should contain link anchor
     expect(content).toContain('<a href="/new">Redirecting from')
+    // Should contain a body element that includes the anchor
+    expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
   })
 
   it('should skip generating a redirect HTML when 301/302 has no Location header', async () => {
