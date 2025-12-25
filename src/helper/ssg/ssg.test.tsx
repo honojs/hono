@@ -276,6 +276,8 @@ describe('toSSG function', () => {
     expect(content).toContain('meta http-equiv="refresh" content="0;url=/new"')
     // Should contain canonical
     expect(content).toContain('rel="canonical" href="/new"')
+    // Should contain robots noindex
+    expect(content).toContain('<meta name="robots" content="noindex" />')
     // Should contain link anchor
     expect(content).toContain('<a href="/new">Redirecting from')
   })
