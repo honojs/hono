@@ -2368,16 +2368,17 @@ type MergeTypedResponse<T> =
         ? T
         : TypedResponse
 
-type MergeTypedResponseStrict<T> =
-  T extends Promise<infer T2>
-    ? T2 extends TypedResponse
-      ? T2
+type MergeMiddlewareResponse<T> = T extends (c: any, next: any) => Promise<infer R>
+  ? Exclude<R, void> extends never
+    ? never
+    : Exclude<R, void> extends TypedResponse
+      ? Exclude<R, void>
       : never
-    : T extends TypedResponse
-      ? T
+  : T extends (c: any, next: any) => infer R
+    ? R extends TypedResponse
+      ? R
       : never
-
-type MergeMiddlewareResponse<T> = MergeTypedResponseStrict<ExtractHandlerResponse<T>>
+    : never
 
 ////////////////////////////////////////
 //////                             /////
