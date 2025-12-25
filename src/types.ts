@@ -2191,6 +2191,26 @@ export interface OnHandlerInterface<
 //////                            //////
 ////////////////////////////////////////
 
+type ToSchemaOutput<RorO, I extends Input | Input['in']> = RorO extends TypedResponse<
+  infer T,
+  infer U,
+  infer F
+>
+  ? {
+      output: unknown extends T ? {} : T
+      outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
+      status: U
+    }
+  : {
+      output: unknown extends RorO ? {} : RorO
+      outputFormat: unknown extends RorO
+        ? 'json'
+        : I extends { outputFormat: string }
+          ? I['outputFormat']
+          : 'json'
+      status: StatusCode
+    }
+
 export type ToSchema<
   M extends string,
   P extends string,
@@ -2198,46 +2218,29 @@ export type ToSchema<
   RorO, // Response or Output
 > =
   IsAny<RorO> extends true
-    ? Simplify<{
+    ? {
         [K in P]: {
-          [K2 in M as AddDollar<K2>]: Simplify<
-            {
-              input: AddParam<ExtractInput<I>, P>
-            } & {
-              output: {}
-              outputFormat: ResponseFormat
-              status: StatusCode
-            }
-          >
+          [K2 in M as AddDollar<K2>]: {
+            input: AddParam<ExtractInput<I>, P>
+            output: {}
+            outputFormat: ResponseFormat
+            status: StatusCode
+          }
         }
-      }>
+      }
     : [RorO] extends [never]
       ? {}
       : [RorO] extends [Promise<void>]
         ? {}
-        : Simplify<{
+        : {
             [K in P]: {
               [K2 in M as AddDollar<K2>]: Simplify<
                 {
                   input: AddParam<ExtractInput<I>, P>
-                } & (RorO extends TypedResponse<infer T, infer U, infer F>
-                  ? {
-                      output: unknown extends T ? {} : T
-                      outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
-                      status: U
-                    }
-                  : {
-                      output: unknown extends RorO ? {} : RorO
-                      outputFormat: unknown extends RorO
-                        ? 'json'
-                        : I extends { outputFormat: string }
-                          ? I['outputFormat']
-                          : 'json'
-                      status: StatusCode
-                    })
+                } & ToSchemaOutput<RorO, I>
               >
             }
-          }>
+          }
 
 export type Schema = {
   [Path: string]: {
