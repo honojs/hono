@@ -382,7 +382,7 @@ class Hono<
     return this
   }
 
-  #addRoute(method: string, path: string, handler: H) {
+  #addRoute(method: string, path: string, handler: H): void {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = { basePath: this._basePath, path, method, handler }
@@ -390,7 +390,7 @@ class Hono<
     this.routes.push(r)
   }
 
-  #handleError(err: unknown, c: Context<E>) {
+  #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
