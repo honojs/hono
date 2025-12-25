@@ -2318,17 +2318,21 @@ export type AddParam<I, P extends string> =
 
 type AddDollar<T extends string> = `$${Lowercase<T>}`
 
-// Helper types for MergePath optimization
-type TrimTrailingSlash<T extends string> = T extends `${infer P}/` ? P : T
-type TrimLeadingSlash<T extends string> = T extends `/${infer P}` ? P : T
-
 export type MergePath<A extends string, B extends string> = B extends ''
   ? MergePath<A, '/'>
-  : A extends '' | '/'
+  : A extends ''
     ? B
-    : TrimLeadingSlash<B> extends ''
-      ? A
-      : `${TrimTrailingSlash<A>}/${TrimLeadingSlash<B>}`
+    : A extends '/'
+      ? B
+      : A extends `${infer P}/`
+        ? B extends `/${infer Q}`
+          ? `${P}/${Q}`
+          : `${P}/${B}`
+        : B extends `/${infer Q}`
+          ? Q extends ''
+            ? A
+            : `${A}/${Q}`
+          : `${A}/${B}`
 
 ////////////////////////////////////////
 //////                            //////
