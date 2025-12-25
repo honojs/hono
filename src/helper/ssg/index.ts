@@ -11,3 +11,4 @@ export {
   disableSSG,
   onlySSG,
 } from './middleware'
+export { redirectPlugin } from './plugins'

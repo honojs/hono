@@ -9,6 +9,7 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
+import { redirectPlugin } from './plugins'
 import {
   defaultExtensionMap,
   fetchRoutesContent,
@@ -252,6 +253,49 @@ describe('toSSG function', () => {
       expect.anything(), // fsModule
       expect.anything() // options
     )
+  })
+
+  it('should generate redirect HTML for 301/302 route responses using plugin', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMock: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const app = new Hono()
+    app.get('/old', (c) => c.redirect('/new'))
+    app.get('/new', (c) => c.html('New Page'))
+
+    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
+
+    expect(writtenFiles['static/old.html']).toBeDefined()
+    const content = writtenFiles['static/old.html']
+    // Should contain meta refresh
+    expect(content).toContain('meta http-equiv="refresh" content="0;url=/new"')
+    // Should contain canonical
+    expect(content).toContain('rel="canonical" href="/new"')
+    // Should contain link anchor
+    expect(content).toContain('<a href="/new">Redirecting from')
+  })
+
+  it('should skip generating a redirect HTML when 301/302 has no Location header', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMock: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const app = new Hono()
+    // Return a 301 without Location header
+    app.get('/bad', (c) => new Response(null, { status: 301 }))
+
+    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
+
+    expect(writtenFiles['static/bad.html']).toBeUndefined()
   })
 
   it('should handle asynchronous beforeRequestHook correctly', async () => {
