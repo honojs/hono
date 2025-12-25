@@ -2191,25 +2191,22 @@ export interface OnHandlerInterface<
 //////                            //////
 ////////////////////////////////////////
 
-type ToSchemaOutput<RorO, I extends Input | Input['in']> = RorO extends TypedResponse<
-  infer T,
-  infer U,
-  infer F
->
-  ? {
-      output: unknown extends T ? {} : T
-      outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
-      status: U
-    }
-  : {
-      output: unknown extends RorO ? {} : RorO
-      outputFormat: unknown extends RorO
-        ? 'json'
-        : I extends { outputFormat: string }
-          ? I['outputFormat']
-          : 'json'
-      status: StatusCode
-    }
+type ToSchemaOutput<RorO, I extends Input | Input['in']> =
+  RorO extends TypedResponse<infer T, infer U, infer F>
+    ? {
+        output: unknown extends T ? {} : T
+        outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
+        status: U
+      }
+    : {
+        output: unknown extends RorO ? {} : RorO
+        outputFormat: unknown extends RorO
+          ? 'json'
+          : I extends { outputFormat: string }
+            ? I['outputFormat']
+            : 'json'
+        status: StatusCode
+      }
 
 export type ToSchema<
   M extends string,
