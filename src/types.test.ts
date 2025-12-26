@@ -2859,7 +2859,9 @@ describe('RPC supports Middleware responses', () => {
       })
 
       const app = new Hono().get('/test', middleware, (c) => c.json({ message: 'Hello' }, 200))
-      const client = hc<typeof app>('http://localhost')
+      const client = hc<typeof app>('http://localhost', {
+        fetch: app.request,
+      })
       const res = await client.test.$get()
 
       if (res.status === 200) {
