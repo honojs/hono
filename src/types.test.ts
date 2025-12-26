@@ -2849,6 +2849,30 @@ describe('RPC supports Middleware responses', () => {
     })
   })
 
+  describe('Middleware returning union type (undefined | TypedResponse)', () => {
+    test('middleware that conditionally returns response should merge types', async () => {
+      const middleware = createMiddleware(async (c, next) => {
+        if (Math.random() > 0.5) {
+          return c.json({ cause: 'Unauthorized' }, 401)
+        }
+        await next()
+      })
+
+      const app = new Hono().get('/test', middleware, (c) => c.json({ message: 'Hello' }, 200))
+      const client = hc<typeof app>('http://localhost', {
+        fetch: app.request,
+      })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ message: string }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ cause: string }>()
+      }
+    })
+  })
+
   describe('Merge responses from multiple handlers, no path pattern', () => {
     test('merge responses from 1 middleware', async () => {
       const middleware = createMiddleware(async (c) => c.json({ '400': true }, 400))
