@@ -44,7 +44,7 @@ export type ClientRequestOptions<T = unknown> = {
     })
 
 export type ClientRequest<Prefix extends string, Path extends string, S extends Schema> = {
-  [M in keyof S]: S[M] extends Endpoint & { input: infer R }
+  [M in keyof S as Exclude<M, '$all'>]: S[M] extends Endpoint & { input: infer R }
     ? R extends object
       ? HasRequiredKeys<R> extends true
         ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>

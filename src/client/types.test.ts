@@ -77,3 +77,20 @@ describe('with the leading slash', () => {
     expectTypeOf(client.foo[':id'].baz).toHaveProperty('$get')
   })
 })
+
+describe('app.all()', () => {
+  const app = new Hono()
+    .all('/all-route', (c) => c.json({ msg: 'all methods' }))
+    .get('/get-route', (c) => c.json({ msg: 'get only' }))
+  const client = hc<typeof app>('http://localhost')
+
+  it('should NOT expose $all on the client', () => {
+    expectTypeOf<
+      typeof client['all-route'] extends { $all: unknown } ? true : false
+    >().toEqualTypeOf<false>()
+  })
+
+  it('should still expose valid HTTP methods like $get', () => {
+    expectTypeOf(client['get-route']).toHaveProperty('$get')
+  })
+})
