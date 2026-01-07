@@ -323,7 +323,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
   it('Should get 200 response - query', async () => {
     const res = await client.search.$get({
       query: {
-        q: 'foobar',
+        q: ['foobar'],
         tag: ['a', 'b'],
         // @ts-expect-error
         filter: undefined,
@@ -413,8 +413,8 @@ describe('Basic - $url()', () => {
     expect(
       client.content.search.$url({
         query: {
-          page: '123',
-          limit: '20',
+          page: ['123'],
+          limit: ['20'],
         },
       }).href
     ).toBe('http://fake/content/search?page=123&limit=20')
@@ -1061,7 +1061,7 @@ describe('$url() with a query option', () => {
   it('Should return the correct path - /posts?filter=test', async () => {
     const url = client.posts.$url({
       query: {
-        filter: 'test',
+        filter: ['test'],
       },
     })
     expect(url.search).toBe('?filter=test')
@@ -1571,7 +1571,7 @@ describe('Custom buildSearchParams', () => {
 
   it('Should use custom buildSearchParams for query serialization', async () => {
     const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
-    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2', 'tag3'] } })
+    const res = await client.search.$get({ query: { q: ['test'], tags: ['tag1', 'tag2', 'tag3'] } })
     const data = await res.json()
 
     expect(res.status).toBe(200)
@@ -1580,7 +1580,7 @@ describe('Custom buildSearchParams', () => {
 
   it('Should use default buildSearchParams when custom one is not provided', async () => {
     const client = hc<AppType>('http://localhost')
-    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+    const res = await client.search.$get({ query: { q: ['test'], tags: ['tag1', 'tag2'] } })
     const data = await res.json()
 
     expect(res.status).toBe(200)
@@ -1589,14 +1589,14 @@ describe('Custom buildSearchParams', () => {
 
   it('Should use custom buildSearchParams in $url() method', () => {
     const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
-    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+    const url = client.search.$url({ query: { q: ['test'], tags: ['tag1', 'tag2'] } })
 
     expect(url.href).toBe('http://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2')
   })
 
   it('Should use default buildSearchParams in $url() when custom one is not provided', () => {
     const client = hc<AppType>('http://localhost')
-    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+    const url = client.search.$url({ query: { q: ['test'], tags: ['tag1', 'tag2'] } })
 
     expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
   })
