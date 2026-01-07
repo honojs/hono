@@ -229,7 +229,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
     .get(
       '/search',
       validator('query', () => {
-        return {} as { q: string; tag: string[]; filter: string }
+        return {} as { q: string[]; tag: string[]; filter: string[] }
       }),
       (c) => {
         return c.json({
@@ -382,7 +382,7 @@ describe('Basic - $url()', () => {
   const content = new Hono().get(
     '/search',
     validator('query', () => {
-      return { page: '1', limit: '10' }
+      return { page: ['1'], limit: ['10'] }
     }),
     (c) => c.text('Search')
   )
@@ -494,8 +494,8 @@ describe('Infer the response/request type', () => {
 
     type Actual = InferRequestType<typeof req>
     type Expected = {
-      age: string | string[]
-      name: string | string[]
+      age: string[]
+      name: string[]
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
   })
@@ -913,11 +913,11 @@ describe('Infer the response types from middlewares', () => {
     .get(
       '/',
       validator('query', (input, c) => {
-        if (!input.page || typeof input.page !== 'string') {
+        if (!input.page || input.page.length === 0 || typeof input.page[0] !== 'string') {
           return c.json({ error: 'Bad request' as const }, 400)
         }
 
-        return input as { page: string }
+        return { page: input.page[0] }
       }),
       async (c) => {
         const query = c.req.valid('query')
@@ -1529,7 +1529,7 @@ describe('Custom buildSearchParams', () => {
   const route = app.get(
     '/search',
     validator('query', () => {
-      return {} as { q: string; tags: string[] }
+      return {} as { q: string[]; tags: string[] }
     }),
     (c) => {
       return c.json({
