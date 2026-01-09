@@ -438,8 +438,12 @@ describe('CSRF by Middleware', () => {
         '*',
         csrf({
           secFetchSite: (secFetchSite, c) => {
-            if (secFetchSite === 'same-origin') return true
-            if (c.req.path.startsWith('/webhook/')) return true
+            if (secFetchSite === 'same-origin') {
+              return true
+            }
+            if (c.req.path.startsWith('/webhook/')) {
+              return true
+            }
             return false
           },
         })
@@ -479,8 +483,12 @@ describe('CSRF by Middleware', () => {
         csrf({
           secFetchSite: async (secFetchSite, c) => {
             await new Promise((r) => setTimeout(r, 10))
-            if (secFetchSite === 'same-origin') return true
-            if (c.req.path.startsWith('/webhook/')) return true
+            if (secFetchSite === 'same-origin') {
+              return true
+            }
+            if (c.req.path.startsWith('/webhook/')) {
+              return true
+            }
             return false
           },
         })

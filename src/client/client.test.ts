@@ -1559,7 +1559,9 @@ describe('Custom buildSearchParams', () => {
   const customBuildSearchParams = (query: Record<string, string | string[]>) => {
     const searchParams = new URLSearchParams()
     for (const [k, v] of Object.entries(query)) {
-      if (v === undefined) continue
+      if (v === undefined) {
+        continue
+      }
       if (Array.isArray(v)) {
         v.forEach((item) => searchParams.append(`${k}[]`, item))
       } else {
