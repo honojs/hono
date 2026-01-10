@@ -119,9 +119,9 @@ describe('upgradeWebSocket()', () => {
 })
 
 describe('createBunWebSocket()', () => {
-  it('Should create a BunWebSocket', () => {
-    const { upgradeWebSocket, websocket } = createBunWebSocket()
-    expect(upgradeWebSocket).toBe(upgradeWebSocket)
-    expect(websocket).toBe(websocket)
+  it('Should return upgradeWebSocket and websocket', () => {
+    const result = createBunWebSocket()
+    expect(result.upgradeWebSocket).toBe(upgradeWebSocket)
+    expect(result.websocket).toBe(websocket)
   })
 })
