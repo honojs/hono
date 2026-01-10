@@ -2394,7 +2394,7 @@ export type ParsedFormValue = string | File
 export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends string = string> = {
   json: any
   form: Record<string, T | T[]>
-  query: Record<string, string | string[]>
+  query: Record<string, string[]>
   param: Record<P, P extends `${infer _}?` ? string | undefined : string>
   header: Record<RequestHeader | CustomHeader, string>
   cookie: Record<string, string>
