@@ -28,7 +28,9 @@ export const redirectPlugin = (): SSGPlugin => {
     afterResponseHook: (res) => {
       if (res.status === 301 || res.status === 302) {
         const location = res.headers.get('Location')
-        if (!location) return false
+        if (!location) {
+          return false
+        }
         const html = generateRedirectHtml('', location)
         return new Response(html, {
           status: 200,
