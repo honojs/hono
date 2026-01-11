@@ -52,7 +52,7 @@ describe('JWK', () => {
 
     const app = new Hono()
 
-    app.use('/backend-auth-or-anon/*', jwk({ keys: verify_keys, allow_anon: true }))
+    app.use('/backend-auth-or-anon/*', jwk({ keys: verify_keys, allowAnonymous: true }))
 
     app.get('/backend-auth-or-anon/*', (c) => {
       handlerExecuted = true
@@ -200,9 +200,13 @@ describe('JWK', () => {
     })
 
     it('Should throw an error if the middleware is missing both keys and jwks_uri (empty)', async () => {
-      expect(() => app.use('/auth-with-empty-middleware/*', jwk({}))).toThrow(
-        'JWK auth middleware requires options for either "keys" or "jwks_uri"'
-      )
+      expect(() =>
+        app.use(
+          '/auth-with-empty-middleware/*',
+          // @ts-expect-error - test error
+          jwk({})
+        )
+      ).toThrow('JWK auth middleware requires options for either "keys" or "jwks_uri"')
     })
 
     it('Should throw an error when crypto.subtle is missing', async () => {
