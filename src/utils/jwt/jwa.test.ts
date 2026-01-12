@@ -8,6 +8,13 @@ describe('Types', () => {
     expect('RS256' as AlgorithmTypes).toBe(AlgorithmTypes.RS256)
     expect('RS384' as AlgorithmTypes).toBe(AlgorithmTypes.RS384)
     expect('RS512' as AlgorithmTypes).toBe(AlgorithmTypes.RS512)
+    expect('PS256' as AlgorithmTypes).toBe(AlgorithmTypes.PS256)
+    expect('PS384' as AlgorithmTypes).toBe(AlgorithmTypes.PS384)
+    expect('PS512' as AlgorithmTypes).toBe(AlgorithmTypes.PS512)
+    expect('ES256' as AlgorithmTypes).toBe(AlgorithmTypes.ES256)
+    expect('ES384' as AlgorithmTypes).toBe(AlgorithmTypes.ES384)
+    expect('ES512' as AlgorithmTypes).toBe(AlgorithmTypes.ES512)
+    expect('EdDSA' as AlgorithmTypes).toBe(AlgorithmTypes.EdDSA)
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.11.1",
+  "version": "4.11.3",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -656,12 +656,12 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^2.0.3",
+    "@hono/eslint-config": "^2.0.5",
     "@hono/node-server": "^1.13.5",
     "@types/glob": "^9.0.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.3.0",
-    "@typescript/native-preview": "7.0.0-dev.20250523.1",
+    "@typescript/native-preview": "7.0.0-dev.20251220.1",
     "@vitest/coverage-v8": "^3.2.4",
     "arg": "^5.0.2",
     "bun-types": "^1.2.20",

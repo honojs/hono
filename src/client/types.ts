@@ -109,65 +109,33 @@ export interface ClientResponse<
   arrayBuffer(): Promise<ArrayBuffer>
 }
 
+type BuildSearch<Arg, Key extends 'query'> = Arg extends { [K in Key]: infer Query }
+  ? IsEmptyObject<Query> extends true
+    ? ''
+    : `?${string}`
+  : ''
+
+type BuildPathname<P extends string, Arg> = Arg extends { param: infer Param }
+  ? `${ApplyParam<TrimStartSlash<P>, Param>}`
+  : `/${TrimStartSlash<P>}`
+
+type BuildTypedURL<
+  Protocol extends string,
+  Host extends string,
+  Port extends string,
+  P extends string,
+  Arg,
+> = TypedURL<`${Protocol}:`, Host, Port, BuildPathname<P, Arg>, BuildSearch<Arg, 'query'>>
+
 type HonoURL<Prefix extends string, Path extends string, Arg> =
   IsLiteral<Prefix> extends true
     ? TrimEndSlash<Prefix> extends `${infer Protocol}://${infer Rest}`
       ? Rest extends `${infer Hostname}/${infer P}`
         ? ParseHostName<Hostname> extends [infer Host extends string, infer Port extends string]
-          ? Arg extends { param: infer Param }
-            ? Arg extends { query: infer Query }
-              ? IsEmptyObject<Query> extends true
-                ? TypedURL<
-                    `${Protocol}:`,
-                    Host,
-                    Port,
-                    `${ApplyParam<TrimStartSlash<P>, Param>}`,
-                    ''
-                  >
-                : TypedURL<
-                    `${Protocol}:`,
-                    Host,
-                    Port,
-                    `${ApplyParam<TrimStartSlash<P>, Param>}`,
-                    `?${string}`
-                  >
-              : TypedURL<`${Protocol}:`, Host, Port, `${ApplyParam<TrimStartSlash<P>, Param>}`, ''>
-            : Arg extends { query: infer Query }
-              ? IsEmptyObject<Query> extends true
-                ? TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<P>}`, ''>
-                : TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<P>}`, `?${string}`>
-              : TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<P>}`, ''>
+          ? BuildTypedURL<Protocol, Host, Port, P, Arg>
           : never
         : ParseHostName<Rest> extends [infer Host extends string, infer Port extends string]
-          ? Arg extends { param: infer Param }
-            ? Arg extends { query: infer Query }
-              ? IsEmptyObject<Query> extends true
-                ? TypedURL<
-                    `${Protocol}:`,
-                    Host,
-                    Port,
-                    `${ApplyParam<TrimStartSlash<Path>, Param>}`,
-                    ''
-                  >
-                : TypedURL<
-                    `${Protocol}:`,
-                    Host,
-                    Port,
-                    `${ApplyParam<TrimStartSlash<Path>, Param>}`,
-                    `?${string}`
-                  >
-              : TypedURL<
-                  `${Protocol}:`,
-                  Host,
-                  Port,
-                  `${ApplyParam<TrimStartSlash<Path>, Param>}`,
-                  ''
-                >
-            : Arg extends { query: infer Query }
-              ? IsEmptyObject<Query> extends true
-                ? TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<Path>}`, ''>
-                : TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<Path>}`, `?${string}`>
-              : TypedURL<`${Protocol}:`, Host, Port, `/${TrimStartSlash<Path>}`, ''>
+          ? BuildTypedURL<Protocol, Host, Port, Path, Arg>
           : never
       : URL
     : URL
