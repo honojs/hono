@@ -6,7 +6,9 @@ import { signing } from './jws'
 import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
 import {
+  JwtAlgorithmMismatch,
   JwtAlgorithmNotImplemented,
+  JwtAlgorithmRequired,
   JwtPayloadRequiresAud,
   JwtTokenAudience,
   JwtTokenExpired,
@@ -563,7 +565,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS512)
     } catch (e) {
       err = e
     }
@@ -582,7 +584,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS384)
     } catch (e) {
       err = e
     }
@@ -610,7 +612,7 @@ describe('JWT', () => {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.qunGhchNXH_unqWXN6hB0Elhzr5SykSXVhklLti1aFI'
     expect(tok).toEqual(expected)
 
-    const verifiedPayload = await JWT.verify(tok, secret)
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
     expect(verifiedPayload).not.toBeUndefined()
     expect(verifiedPayload).toEqual(payload)
 
@@ -624,7 +626,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, invalidSecret)
+      authorized = await JWT.verify(tok, invalidSecret, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
@@ -931,3 +933,118 @@ async function generateEd25519Key(): Promise<CryptoKeyPair> {
     ['sign', 'verify']
   )
 }
+
+describe('Security: Algorithm Confusion Attack Prevention', () => {
+  it('Should throw JwtAlgorithmRequired error when alg is not specified in verify()', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err: JwtAlgorithmRequired | undefined
+    let authorized
+    try {
+      // @ts-expect-error - intentionally testing without alg parameter
+      authorized = await JWT.verify(tok, secret)
+    } catch (e) {
+      err = e as JwtAlgorithmRequired
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+    expect(err?.message).toBe('JWT verification requires "alg" option to be specified')
+    expect(authorized).toBeUndefined()
+  })
+
+  it('Should throw JwtAlgorithmRequired error when alg is undefined in options object', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err: JwtAlgorithmRequired | undefined
+    let authorized
+    try {
+      // @ts-expect-error - intentionally testing with undefined alg
+      authorized = await JWT.verify(tok, secret, { alg: undefined })
+    } catch (e) {
+      err = e as JwtAlgorithmRequired
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+    expect(authorized).toBeUndefined()
+  })
+
+  it('Should prevent algorithm confusion attack (RS256 token verified with HS256 using public key)', async () => {
+    // Generate RSA key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    const payload = { message: 'hello world' }
+
+    // Sign token with RS256 using private key
+    const tok = await JWT.sign(payload, keyPair.privateKey, AlgorithmTypes.RS256)
+
+    // Verify should succeed with RS256 and public key
+    const verified = await JWT.verify(tok, keyPair.publicKey, AlgorithmTypes.RS256)
+    expect(verified).toEqual(payload)
+
+    // Attempting to verify with HS256 using the public key should fail with algorithm mismatch
+    // This simulates the algorithm confusion attack scenario
+    let err: Error | undefined
+    let maliciousResult
+    try {
+      maliciousResult = await JWT.verify(tok, keyPair.publicKey, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as Error
+    }
+    // The verification should fail because the header.alg (RS256) doesn't match options.alg (HS256)
+    expect(maliciousResult).toBeUndefined()
+    expect(err).toBeInstanceOf(JwtAlgorithmMismatch)
+  })
+
+  it('Should throw JwtAlgorithmMismatch when header.alg does not match options.alg', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+
+    // Sign with HS512
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS512)
+
+    // Try to verify with HS256 (wrong algorithm)
+    let err: Error | undefined
+    let result
+    try {
+      result = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as Error
+    }
+
+    expect(result).toBeUndefined()
+    expect(err).toBeInstanceOf(JwtAlgorithmMismatch)
+  })
+
+  it('Should require explicit alg specification to prevent default fallback attack', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+
+    // Create a token with HS256
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    // Verify with explicit HS256 should work
+    const verified = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    expect(verified).toEqual(payload)
+
+    // Verify without alg should throw error (no default fallback)
+    let err: Error | undefined
+    try {
+      // @ts-expect-error - intentionally testing without alg parameter
+      await JWT.verify(tok, secret)
+    } catch (e) {
+      err = e as Error
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+  })
+})

@@ -10,6 +10,20 @@ export class JwtAlgorithmNotImplemented extends Error {
   }
 }
 
+export class JwtAlgorithmRequired extends Error {
+  constructor() {
+    super('JWT verification requires "alg" option to be specified')
+    this.name = 'JwtAlgorithmRequired'
+  }
+}
+
+export class JwtAlgorithmMismatch extends Error {
+  constructor(expected: string, actual: string) {
+    super(`JWT algorithm mismatch: expected "${expected}", got "${actual}"`)
+    this.name = 'JwtAlgorithmMismatch'
+  }
+}
+
 export class JwtTokenInvalid extends Error {
   constructor(token: string) {
     super(`invalid JWT token: ${token}`)

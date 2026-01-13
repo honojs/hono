@@ -10,6 +10,8 @@ import type { SignatureAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
 import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
+  JwtAlgorithmMismatch,
+  JwtAlgorithmRequired,
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
   JwtPayloadRequiresAud,
@@ -86,22 +88,30 @@ export type VerifyOptions = {
 
 export type VerifyOptionsWithAlg = {
   /** The algorithm used for decoding the token */
-  alg?: SignatureAlgorithm
+  alg: SignatureAlgorithm
 } & VerifyOptions
 
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
-  algOrOptions?: SignatureAlgorithm | VerifyOptionsWithAlg
+  algOrOptions: SignatureAlgorithm | VerifyOptionsWithAlg
 ): Promise<JWTPayload> => {
+  if (!algOrOptions) {
+    throw new JwtAlgorithmRequired()
+  }
+
   const {
-    alg = 'HS256',
+    alg,
     iss,
     nbf = true,
     exp = true,
     iat = true,
     aud,
-  } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
+  } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions
+
+  if (!alg) {
+    throw new JwtAlgorithmRequired()
+  }
 
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
@@ -111,6 +121,9 @@ export const verify = async (
   const { header, payload } = decode(token)
   if (!isTokenHeader(header)) {
     throw new JwtHeaderInvalid(header)
+  }
+  if (header.alg !== alg) {
+    throw new JwtAlgorithmMismatch(alg, header.alg)
   }
   const now = (Date.now() / 1000) | 0
   if (nbf && payload.nbf && payload.nbf > now) {
