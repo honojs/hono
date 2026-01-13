@@ -175,7 +175,7 @@ describe('Serve Static Middleware', () => {
 // So, JWT middleware works well.
 describe('JWT Auth Middleware', () => {
   const app = new Hono()
-  app.use('/jwt/*', jwt({ secret: 'a-secret' }))
+  app.use('/jwt/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
   app.get('/jwt/a', (c) => c.text('auth'))
 
   it('Should not authorize, return 401 Response', async () => {
