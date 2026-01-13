@@ -125,6 +125,31 @@ describe('url', () => {
     ])('getPath - %s', (url) => {
       expect(getPath(new Request(url))).toBe(new URL(url).pathname)
     })
+
+    it('getPath - with fragment', () => {
+      let path = getPath(new Request('https://example.com/users/#user-list'))
+      expect(path).toBe('/users/')
+      path = getPath(new Request('https://example.com/users/1#profile-section'))
+      expect(path).toBe('/users/1')
+      path = getPath(new Request('https://example.com/hello#section'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/#top'))
+      expect(path).toBe('/')
+    })
+
+    it('getPath - with query and fragment', () => {
+      let path = getPath(new Request('https://example.com/hello?name=foo#section'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/search?q=test#results'))
+      expect(path).toBe('/search')
+    })
+
+    it('getPath - with percent encoding and fragment', () => {
+      let path = getPath(new Request('https://example.com/hello%20world#section'))
+      expect(path).toBe('/hello world')
+      path = getPath(new Request('https://example.com/%E7%82%8E#top'))
+      expect(path).toBe('/炎')
+    })
   })
 
   describe('getQueryStrings', () => {

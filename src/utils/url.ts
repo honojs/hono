@@ -111,13 +111,16 @@ export const getPath = (request: Request): string => {
     const charCode = url.charCodeAt(i)
     if (charCode === 37) {
       // '%'
-      // If the path contains percent encoding, use `indexOf()` to find '?' and return the result immediately.
+      // If the path contains percent encoding, use `indexOf()` to find '?' or '#' and return the result immediately.
       // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
-      const queryIndex = url.indexOf('?', i)
-      const path = url.slice(start, queryIndex === -1 ? undefined : queryIndex)
+      let separator = url.indexOf('?', i)
+      if (separator === -1) {
+        separator = url.indexOf('#', i)
+      }
+      const path = url.slice(start, separator === -1 ? undefined : separator)
       return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
-    } else if (charCode === 63) {
-      // '?'
+    } else if (charCode === 63 || charCode === 35) {
+      // '?' or '#'
       break
     }
   }
