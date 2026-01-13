@@ -155,6 +155,17 @@ describe('url', () => {
       const path = getPath(new Request('https://example.com/hello%20world#section?foo=bar'))
       expect(path).toBe('/hello world')
     })
+
+    it('getPath - with encoded hash (%23) in path and real fragment', () => {
+      // %23 is encoded '#' - decodeURI preserves reserved characters, so %23 stays as %23
+      let path = getPath(new Request('https://example.com/path%23test#real-fragment'))
+      expect(path).toBe('/path%23test')
+      path = getPath(new Request('https://example.com/foo%23bar%23baz#section'))
+      expect(path).toBe('/foo%23bar%23baz')
+      // Only encoded hash, no real fragment
+      path = getPath(new Request('https://example.com/issue%23123'))
+      expect(path).toBe('/issue%23123')
+    })
   })
 
   describe('getQueryStrings', () => {
