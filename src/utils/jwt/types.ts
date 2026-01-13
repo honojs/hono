@@ -75,6 +75,20 @@ export class JwtHeaderRequiresKid extends Error {
   }
 }
 
+export class JwtSymmetricAlgorithmNotAllowed extends Error {
+  constructor(alg: string) {
+    super(`symmetric algorithm "${alg}" is not allowed for JWK verification`)
+    this.name = 'JwtSymmetricAlgorithmNotAllowed'
+  }
+}
+
+export class JwtAlgorithmNotAllowed extends Error {
+  constructor(alg: string, allowedAlgorithms: string[]) {
+    super(`algorithm "${alg}" is not in the allowed list: [${allowedAlgorithms.join(', ')}]`)
+    this.name = 'JwtAlgorithmNotAllowed'
+  }
+}
+
 export class JwtTokenSignatureMismatched extends Error {
   constructor(token: string) {
     super(`token(${token}) signature mismatched`)

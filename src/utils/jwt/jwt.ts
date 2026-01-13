@@ -6,15 +6,17 @@
 
 import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
-import type { SignatureAlgorithm } from './jwa'
+import type { AsymmetricAlgorithm, SignatureAlgorithm, SymmetricAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
 import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
   JwtAlgorithmMismatch,
+  JwtAlgorithmNotAllowed,
   JwtAlgorithmRequired,
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
   JwtPayloadRequiresAud,
+  JwtSymmetricAlgorithmNotAllowed,
   JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
@@ -179,12 +181,20 @@ export const verify = async (
   return payload
 }
 
+// Symmetric algorithms that are not allowed for JWK verification
+const symmetricAlgorithms: SymmetricAlgorithm[] = [
+  AlgorithmTypes.HS256,
+  AlgorithmTypes.HS384,
+  AlgorithmTypes.HS512,
+]
+
 export const verifyWithJwks = async (
   token: string,
   options: {
     keys?: HonoJsonWebKey[]
     jwks_uri?: string
     verification?: VerifyOptions
+    allowedAlgorithms: AsymmetricAlgorithm[]
   },
   init?: RequestInit
 ): Promise<JWTPayload> => {
@@ -197,6 +207,16 @@ export const verifyWithJwks = async (
   }
   if (!header.kid) {
     throw new JwtHeaderRequiresKid(header)
+  }
+
+  // Reject symmetric algorithms (HS256, HS384, HS512) to prevent algorithm confusion attacks
+  if (symmetricAlgorithms.includes(header.alg as SymmetricAlgorithm)) {
+    throw new JwtSymmetricAlgorithmNotAllowed(header.alg)
+  }
+
+  // Validate against allowed algorithms
+  if (!options.allowedAlgorithms.includes(header.alg as AsymmetricAlgorithm)) {
+    throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms)
   }
 
   if (options.jwks_uri) {
@@ -225,8 +245,13 @@ export const verifyWithJwks = async (
     throw new JwtTokenInvalid(token)
   }
 
+  // Verify that JWK's alg matches JWT header's alg when JWK has alg field
+  if (matchingKey.alg && matchingKey.alg !== header.alg) {
+    throw new JwtAlgorithmMismatch(matchingKey.alg, header.alg)
+  }
+
   return await verify(token, matchingKey, {
-    alg: (matchingKey.alg as SignatureAlgorithm) || header.alg,
+    alg: header.alg,
     ...verifyOpts,
   })
 }
