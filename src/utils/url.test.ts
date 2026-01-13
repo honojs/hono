@@ -150,6 +150,11 @@ describe('url', () => {
       path = getPath(new Request('https://example.com/%E7%82%8E#top'))
       expect(path).toBe('/炎')
     })
+
+    it('getPath - with percent encoding and fragment containing query-like chars', () => {
+      const path = getPath(new Request('https://example.com/hello%20world#section?foo=bar'))
+      expect(path).toBe('/hello world')
+    })
   })
 
   describe('getQueryStrings', () => {
