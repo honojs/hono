@@ -144,6 +144,11 @@ describe('url', () => {
       expect(path).toBe('/search')
     })
 
+    it('getPath - with percent encoding only (no query or fragment)', () => {
+      const path = getPath(new Request('https://example.com/hello%20world'))
+      expect(path).toBe('/hello world')
+    })
+
     it('getPath - with percent encoding and fragment', () => {
       let path = getPath(new Request('https://example.com/hello%20world#section'))
       expect(path).toBe('/hello world')
