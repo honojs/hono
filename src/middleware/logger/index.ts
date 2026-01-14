@@ -12,7 +12,7 @@ enum LogPrefix {
   Error = 'xxx',
 }
 
-const humanize = (times: string[]) => {
+const humanize = (times: string[]): string => {
   const [delimiter, separator] = [',', '.']
 
   const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
@@ -20,12 +20,12 @@ const humanize = (times: string[]) => {
   return orderTimes.join(separator)
 }
 
-const time = (start: number) => {
+const time = (start: number): string => {
   const delta = Date.now() - start
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
-const colorStatus = async (status: number) => {
+const colorStatus = async (status: number): Promise<string> => {
   const colorEnabled = await getColorEnabledAsync()
   if (colorEnabled) {
     switch ((status / 100) | 0) {
@@ -54,7 +54,7 @@ async function log(
   path: string,
   status: number = 0,
   elapsed?: string
-) {
+): Promise<void> {
   const out =
     prefix === LogPrefix.Incoming
       ? `${prefix} ${method} ${path}`
