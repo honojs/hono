@@ -115,13 +115,15 @@ export const getPath = (request: Request): string => {
       // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
       const queryIndex = url.indexOf('?', i)
       const hashIndex = url.indexOf('#', i)
-      const separator =
+      const end =
         queryIndex === -1
-          ? hashIndex
+          ? hashIndex === -1
+            ? undefined
+            : hashIndex
           : hashIndex === -1
             ? queryIndex
             : Math.min(queryIndex, hashIndex)
-      const path = url.slice(start, separator === -1 ? undefined : separator)
+      const path = url.slice(start, end)
       return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
     } else if (charCode === 63 || charCode === 35) {
       // '?' or '#'
