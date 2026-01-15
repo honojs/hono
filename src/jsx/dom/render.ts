@@ -778,8 +778,11 @@ export const render = (jsxNode: Child, container: Container | string = 'app'): v
     targetContainer = container
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, targetContainer)
+   
+  renderNode(
+    buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject,
+    targetContainer
+  )
 }
 
 export const flushSync = (callback: () => void): void => {
