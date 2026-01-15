@@ -762,9 +762,24 @@ export const renderNode = (node: NodeObject, container: Container): void => {
   container.replaceChildren(fragment)
 }
 
-export const render = (jsxNode: Child, container: Container): void => {
+export const render = (jsxNode: Child, container: Container | string = 'app'): void => {
+  let targetContainer: Container
+  if (typeof container === 'string') {
+    const elements = document.querySelectorAll(`#${container}`)
+    if (elements.length === 0) {
+      throw new Error(`Element with id "${container}" not found`)
+    }
+    if (elements.length > 1) {
+      throw new Error(`Multiple elements with id "${container}" found. IDs must be unique.`)
+    }
+
+    targetContainer = elements[0] as HTMLElement
+  } else {
+    targetContainer = container
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
+  renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, targetContainer)
 }
 
 export const flushSync = (callback: () => void): void => {
