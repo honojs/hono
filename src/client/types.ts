@@ -94,6 +94,21 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
   >(
     arg?: Arg
   ) => HonoURL<Prefix, Path, Arg>
+  $path: <
+    const Arg extends
+      | (S[keyof S] extends { input: infer R }
+          ? R extends { param: infer P }
+            ? R extends { query: infer Q }
+              ? { param: P; query: Q }
+              : { param: P }
+            : R extends { query: infer Q }
+              ? { query: Q }
+              : {}
+          : {})
+      | undefined = undefined,
+  >(
+    arg?: Arg
+  ) => BuildPathname<Path, Arg>
 } & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
