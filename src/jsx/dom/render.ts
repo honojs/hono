@@ -778,7 +778,6 @@ export const render = (jsxNode: Child, container: Container | string = 'app'): v
     targetContainer = container
   }
 
-   
   renderNode(
     buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject,
     targetContainer
