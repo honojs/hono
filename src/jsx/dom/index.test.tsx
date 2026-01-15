@@ -119,6 +119,56 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('Hello')
   })
 
+  describe('render with string container', () => {
+    it('should render to element with default id "app"', () => {
+      dom.window.document.body.innerHTML = '<div id="app"></div>'
+      const App = <h1>Hello</h1>
+      render(App)
+      const appElement = document.getElementById('app') as HTMLElement
+      expect(appElement.innerHTML).toBe('<h1>Hello</h1>')
+    })
+
+    it('should render to element with specified id', () => {
+      dom.window.document.body.innerHTML = '<div id="custom"></div>'
+      const App = <h1>Hello</h1>
+      render(App, 'custom')
+      const customElement = document.getElementById('custom') as HTMLElement
+      expect(customElement.innerHTML).toBe('<h1>Hello</h1>')
+    })
+
+    it('should throw error when element with id not found', () => {
+      dom.window.document.body.innerHTML = '<div id="root"></div>'
+      const App = <h1>Hello</h1>
+      expect(() => render(App, 'nonexistent')).toThrow('Element with id "nonexistent" not found')
+    })
+
+    it('should throw error when multiple elements with same id exist', () => {
+      dom.window.document.body.innerHTML = '<div id="duplicate"></div><div id="duplicate"></div>'
+      const App = <h1>Hello</h1>
+      expect(() => render(App, 'duplicate')).toThrow(
+        'Multiple elements with id "duplicate" found. IDs must be unique.'
+      )
+    })
+
+    it('should still work with HTMLElement (backward compatibility)', () => {
+      dom.window.document.body.innerHTML = '<div id="root"></div>'
+      const rootElement = document.getElementById('root') as HTMLElement
+      const App = <h1>Hello</h1>
+      render(App, rootElement)
+      expect(rootElement.innerHTML).toBe('<h1>Hello</h1>')
+    })
+
+    it('should still work with DocumentFragment (backward compatibility)', () => {
+      const fragment = document.createDocumentFragment()
+      const div = document.createElement('div')
+      fragment.appendChild(div)
+      const App = <h1>Hello</h1>
+      render(App, fragment)
+      expect(div.parentNode).toBe(null)
+      expect(fragment.textContent).toBe('Hello')
+    })
+  })
+
   describe('performance', () => {
     it('should be O(N) for each additional element', () => {
       const App = () => (
