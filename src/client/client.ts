@@ -176,9 +176,7 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
         }
       }
       result = removeIndexString(result)
-      return method === 'url'
-        ? new URL(result)
-        : '/' + result.replace(baseUrl, '').replace(/^\//, '')
+      return method === 'url' ? new URL(result) : mergePath('', result.replace(baseUrl, ''))
     }
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(
