@@ -419,6 +419,35 @@ describe('Basic - $url()', () => {
       }).href
     ).toBe('http://fake/content/search?page=123&limit=20')
   })
+
+  it('Should return a correct url via $path()', async () => {
+    const client = hc<typeof app>('http://fake')
+    expect(client.index.$path()).toBe('/')
+    expect(
+      client.index.$path({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      })
+    ).toBe('/?page=123&limit=20')
+    expect(client.api.$path()).toBe('/api')
+    expect(
+      client.api.posts[':id'].$path({
+        param: {
+          id: '123',
+        },
+      })
+    ).toBe('/api/posts/123')
+    expect(
+      client.content.search.$path({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      })
+    ).toBe('/content/search?page=123&limit=20')
+  })
 })
 
 describe('Form - Multiple Values', () => {
@@ -719,6 +748,10 @@ describe('Merge path with `app.route()`', () => {
       const url = client.api.bar.$url()
       expect(url.href).toBe('http://localhost/api/bar')
     })
+    it('Should work with $path', async () => {
+      const path = client.api.bar.$path()
+      expect(path).toBe('/api/bar')
+    })
   })
 
   describe('With a blank path', () => {
@@ -739,6 +772,35 @@ describe('Merge path with `app.route()`', () => {
       const url = client.api.v1.me.$url()
       expectTypeOf<URL>(url)
       expect(url.href).toBe('http://localhost/api/v1/me')
+
+      const path = client.api.v1.me.$path()
+      expectTypeOf<'/api/v1/me'>(path)
+      expect(path).toBe('/api/v1/me')
+    })
+  })
+
+  describe('With endpoint pathname', () => {
+    const app = new Hono().basePath('/api/v1')
+    const routes = app.route(
+      '/me',
+      new Hono().route(
+        '',
+        new Hono().get('', async (c) => {
+          return c.json({ name: 'hono' })
+        })
+      )
+    )
+    const client = hc<typeof routes>('http://localhost/proxy')
+
+    it('Should infer paths correctly', async () => {
+      // Should not a throw type error
+      const url = client.api.v1.me.$url()
+      expectTypeOf<URL>(url)
+      expect(url.href).toBe('http://localhost/proxy/api/v1/me')
+
+      const path = client.api.v1.me.$path()
+      expectTypeOf<'/api/v1/me'>(path)
+      expect(path).toBe('/api/v1/me')
     })
   })
 })
@@ -1014,40 +1076,46 @@ describe('Infer the response types from middlewares', () => {
   })
 })
 
-describe('$url() with a param option', () => {
-  const app = new Hono()
-    .get('/posts/:id/comments', (c) => c.json({ ok: true }))
-    .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
-  type AppType = typeof app
-  const client = hc<AppType>('http://localhost')
+const pathname = <T extends URL | string>(value: T): string =>
+  value instanceof URL ? value.pathname : value
 
-  it('Should return the correct path - /posts/123/comments', async () => {
-    const url = client.posts[':id'].comments.$url({
-      param: {
-        id: '123',
-      },
+describe.each([{ cmd: '$path' }, { cmd: '$url' }] as const)(
+  '$cmd with a param option',
+  ({ cmd }) => {
+    const app = new Hono()
+      .get('/posts/:id/comments', (c) => c.json({ ok: true }))
+      .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+
+    it('Should return the correct url path - /posts/123/comments', async () => {
+      const value = client.posts[':id'].comments[cmd]({
+        param: {
+          id: '123',
+        },
+      })
+      expect(pathname(value)).toBe('/posts/123/comments')
     })
-    expect(url.pathname).toBe('/posts/123/comments')
-  })
 
-  it('Should return the correct path - /posts/:id/comments', async () => {
-    const url = client.posts[':id'].comments.$url()
-    expect(url.pathname).toBe('/posts/:id/comments')
-  })
-
-  it('Should return the correct path - /something/123/456', async () => {
-    const url = client.something[':firstId'][':secondId'][':version?'].$url({
-      param: {
-        firstId: '123',
-        secondId: '456',
-        version: undefined,
-      },
+    it('Should return the correct path - /posts/:id/comments', async () => {
+      const value = client.posts[':id'].comments[cmd]()
+      expect(pathname(value)).toBe('/posts/:id/comments')
     })
-    expect(url.pathname).toBe('/something/123/456')
-  })
-})
 
-describe('$url() with a query option', () => {
+    it('Should return the correct path - /something/123/456', async () => {
+      const value = client.something[':firstId'][':secondId'][':version?'][cmd]({
+        param: {
+          firstId: '123',
+          secondId: '456',
+          version: undefined,
+        },
+      })
+      expect(pathname(value)).toBe('/something/123/456')
+    })
+  }
+)
+
+describe('$url()/$path() with a query option', () => {
   const app = new Hono().get(
     '/posts',
     validator('query', () => {
@@ -1065,6 +1133,13 @@ describe('$url() with a query option', () => {
       },
     })
     expect(url.search).toBe('?filter=test')
+
+    const path = client.posts.$path({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(path).toBe('/posts?filter=test')
   })
 })
 
