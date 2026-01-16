@@ -1,8 +1,29 @@
 import type { Hono } from '../hono'
 import type { HonoBase } from '../hono-base'
+import type { METHODS, METHOD_NAME_ALL_LOWERCASE } from '../router'
 import type { Endpoint, ResponseFormat, Schema } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
+
+/**
+ * Type representing the '$all' method name
+ */
+type MethodNameAll = `$${typeof METHOD_NAME_ALL_LOWERCASE}`
+
+/**
+ * Type representing all standard HTTP methods prefixed with '$'
+ * e.g., '$get' | '$post' | '$put' | '$delete' | '$options' | '$patch'
+ */
+type StandardMethods = `$${(typeof METHODS)[number]}`
+
+/**
+ * Expands '$all' into all standard HTTP methods.
+ * If the schema contains '$all', it creates a type where all standard HTTP methods
+ * point to the same endpoint definition as '$all', while removing '$all' itself.
+ */
+type ExpandAllMethod<S> = MethodNameAll extends keyof S
+  ? { [M in StandardMethods]: S[MethodNameAll] } & Omit<S, MethodNameAll>
+  : S
 
 type HonoRequest = (typeof Hono.prototype)['request']
 
@@ -44,11 +65,11 @@ export type ClientRequestOptions<T = unknown> = {
     })
 
 export type ClientRequest<Prefix extends string, Path extends string, S extends Schema> = {
-  [M in keyof S as Exclude<M, '$all'>]: S[M] extends Endpoint & { input: infer R }
+  [M in keyof ExpandAllMethod<S>]: ExpandAllMethod<S>[M] extends Endpoint & { input: infer R }
     ? R extends object
       ? HasRequiredKeys<R> extends true
-        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
-        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
+        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
+        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
       : never
     : never
 } & {
