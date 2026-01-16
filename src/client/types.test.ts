@@ -86,7 +86,7 @@ describe('app.all()', () => {
 
   it('should NOT expose $all on the client', () => {
     expectTypeOf<
-      typeof client['all-route'] extends { $all: unknown } ? true : false
+      (typeof client)['all-route'] extends { $all: unknown } ? true : false
     >().toEqualTypeOf<false>()
   })
 
