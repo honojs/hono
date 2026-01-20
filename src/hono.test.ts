@@ -1952,7 +1952,7 @@ describe('Hono with `app.route`', () => {
       const res = await app.request('https://example.com/sub/implicit-404')
       expect(res.status).toBe(404)
       expect(res.headers.get('explicit')).toBe(null)
-      expect(await res.text()).toBe('404 Not Found by app')
+      expect(await res.text()).toBe('404 Not Found by sub')
     })
   })
 })
