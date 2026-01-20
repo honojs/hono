@@ -147,7 +147,7 @@ export const renderToReadableStream = (
     async start(controller) {
       try {
         if (content instanceof JSXNode) {
-          // aJSXNode.toString() returns a string or Promise<string> and string is already escaped
+          // JSXNode.toString() returns a string or Promise<string> and string is already escaped
           content = content.toString() as HtmlEscapedString | Promise<HtmlEscapedString>
         }
         const context = typeof content === 'object' ? content : {}
@@ -176,21 +176,21 @@ export const renderToReadableStream = (
                   true,
                   context
                 )
-                ;(res as HtmlEscapedString).callbacks
-                  ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  .filter<Promise<string>>(Boolean as any)
-                  .forEach(then)
+                ;(
+                  (res as HtmlEscapedString).callbacks
+                    ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+                    .filter((result) => !!result) as Promise<string>[]
+                ).forEach(then)
                 resolvedCount++
                 controller.enqueue(textEncoder.encode(res))
               })
           )
         }
-        ;(resolved as HtmlEscapedString).callbacks
-          ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .filter<Promise<string>>(Boolean as any)
-          .forEach(then)
+        ;(
+          (resolved as HtmlEscapedString).callbacks
+            ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+            .filter((result) => !!result) as Promise<string>[]
+        ).forEach(then)
         while (resolvedCount !== callbacks.length) {
           await Promise.all(callbacks)
         }
