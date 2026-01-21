@@ -194,7 +194,7 @@ export const verifyWithJwks = async (
     keys?: HonoJsonWebKey[]
     jwks_uri?: string
     verification?: VerifyOptions
-    allowedAlgorithms: AsymmetricAlgorithm[]
+    allowedAlgorithms: readonly AsymmetricAlgorithm[]
   },
   init?: RequestInit
 ): Promise<JWTPayload> => {
