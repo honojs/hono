@@ -77,3 +77,36 @@ describe('with the leading slash', () => {
     expectTypeOf(client.foo[':id'].baz).toHaveProperty('$get')
   })
 })
+
+describe('app.all()', () => {
+  const app = new Hono()
+    .all('/all-route', (c) => c.json({ msg: 'all methods' }))
+    .get('/get-route', (c) => c.json({ msg: 'get only' }))
+  const client = hc<typeof app>('http://localhost', { fetch: app.request })
+
+  it('should NOT expose $all on the client', () => {
+    expectTypeOf<
+      (typeof client)['all-route'] extends { $all: unknown } ? true : false
+    >().toEqualTypeOf<false>()
+  })
+
+  it('should still expose valid HTTP methods like $get', () => {
+    expectTypeOf(client['get-route']).toHaveProperty('$get')
+  })
+
+  it('should expose all standard HTTP methods for routes defined with app.all()', () => {
+    // $all routes should have all standard HTTP methods typed
+    expectTypeOf(client['all-route']).toHaveProperty('$get')
+    expectTypeOf(client['all-route']).toHaveProperty('$post')
+    expectTypeOf(client['all-route']).toHaveProperty('$put')
+    expectTypeOf(client['all-route']).toHaveProperty('$delete')
+    expectTypeOf(client['all-route']).toHaveProperty('$options')
+    expectTypeOf(client['all-route']).toHaveProperty('$patch')
+  })
+
+  it('should have correct return type for expanded methods', async () => {
+    // The response type should match the original handler's return type
+    const res = await client['all-route'].$get()
+    expectTypeOf(res.json()).resolves.toEqualTypeOf<{ msg: string }>()
+  })
+})
