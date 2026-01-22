@@ -68,8 +68,14 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
   [M in keyof ExpandAllMethod<S>]: ExpandAllMethod<S>[M] extends Endpoint & { input: infer R }
     ? R extends object
       ? HasRequiredKeys<R> extends true
-        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
-        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
+        ? (
+            args: R,
+            options?: ClientRequestOptions
+          ) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
+        : (
+            args?: R,
+            options?: ClientRequestOptions
+          ) => Promise<ClientResponseOfEndpoint<ExpandAllMethod<S>[M]>>
       : never
     : never
 } & {
