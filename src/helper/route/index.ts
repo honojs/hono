@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import { GET_MATCH_RESULT } from '../../request/constants'
+import { HonoRequest } from '../../request'
 import type { RouterRoute } from '../../types'
 import { getPattern, splitRoutingPath } from '../../utils/url'
 
@@ -29,9 +29,7 @@ import { getPattern, splitRoutingPath } from '../../utils/url'
  * })
  * ```
  */
-export const matchedRoutes = (c: Context): RouterRoute[] =>
-  // @ts-expect-error c.req[GET_MATCH_RESULT] is not typed
-  (c.req as unknown)[GET_MATCH_RESULT][0].map(([[, route]]) => route)
+export const matchedRoutes = (c: Context): RouterRoute[] => HonoRequest.matchedRoutes(c)
 
 /**
  * Get the route path registered within the handler

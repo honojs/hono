@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Context } from './context'
 import { HTTPException } from './http-exception'
-import { GET_MATCH_RESULT } from './request/constants'
 import type { Result } from './router'
 import type {
   Input,
@@ -34,6 +34,10 @@ type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitPropert
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
+  static matchedRoutes(c: Context): RouterRoute[] {
+    return c.req.#matchResult[0].map(([[, route]]) => route)
+  }
+
   /**
    * `.raw` can get the raw Request object.
    *
@@ -366,10 +370,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   get method(): string {
     return this.raw.method
-  }
-
-  get [GET_MATCH_RESULT](): Result<[unknown, RouterRoute]> {
-    return this.#matchResult
   }
 
   /**
