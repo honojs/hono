@@ -1,1 +1,1 @@
-export const GET_MATCH_RESULT: symbol = Symbol()
+export const GET_MATCH_RESULT = Symbol()
