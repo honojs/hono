@@ -284,6 +284,32 @@ describe('toSSG function', () => {
     expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
   })
 
+  it('should escape Location header values when generating redirect HTML', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMock: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const maliciousLocation = '/new"> <script>alert(1)</script>'
+    const app = new Hono()
+    app.get(
+      '/evil',
+      (c) => new Response(null, { status: 301, headers: { Location: maliciousLocation } })
+    )
+
+    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
+
+    const content = writtenFiles['static/evil.html']
+    expect(content).toBeDefined()
+    expect(content).not.toContain('<script>alert(1)</script>')
+    expect(content).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(content).toContain('&quot;')
+  })
+
   it('should skip generating a redirect HTML when 301/302 has no Location header', async () => {
     const writtenFiles: Record<string, string> = {}
     const fsMock: FileSystemModule = {

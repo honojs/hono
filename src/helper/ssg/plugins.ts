@@ -1,15 +1,18 @@
+import { html } from '../html'
 import type { SSGPlugin } from './ssg'
 
 const generateRedirectHtml = (from: string, to: string) => {
-  const html = `<!DOCTYPE html>
+  // prettier-ignore
+  const content = html`<!DOCTYPE html>
 <title>Redirecting to: ${to}</title>
 <meta http-equiv="refresh" content="0;url=${to}" />
 <meta name="robots" content="noindex" />
 <link rel="canonical" href="${to}" />
 <body>
-  <a href="${to}">Redirecting from <code>${from}</code> to <code>${to}</code></a>
-</body>`
-  return html.replace(/\n/g, '')
+<a href="${to}">Redirecting from <code>${from}</code> to <code>${to}</code></a>
+</body>
+`
+  return content.toString().replace(/\n/g, '')
 }
 
 /**
