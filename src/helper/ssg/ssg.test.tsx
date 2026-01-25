@@ -980,6 +980,42 @@ describe('SSG Plugin System', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog - Modified</h1>')
   })
 
+  it('redirectPlugin before defaultPlugin generates redirect HTML', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMockLocal: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const app = new Hono()
+    app.get('/old', (c) => c.redirect('/new'))
+    app.get('/new', (c) => c.html('New Page'))
+
+    await toSSG(app, fsMockLocal, { dir: './static', plugins: [redirectPlugin(), defaultPlugin] })
+    expect(writtenFiles['static/old.html']).toBeDefined()
+  })
+
+  it('redirectPlugin after defaultPlugin does not generate redirect HTML', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMockLocal: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const app = new Hono()
+    app.get('/old', (c) => c.redirect('/new'))
+    app.get('/new', (c) => c.html('New Page'))
+
+    await toSSG(app, fsMockLocal, { dir: './static', plugins: [defaultPlugin, redirectPlugin()] })
+    expect(writtenFiles['static/old.html']).toBeUndefined()
+  })
+
   it('should correctly apply plugins with afterGenerateHook', async () => {
     const additionalFiles = ['sitemap.xml', 'robots.txt']
     const plugin: SSGPlugin = {
