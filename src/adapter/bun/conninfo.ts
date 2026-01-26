@@ -8,7 +8,13 @@ import { getBunServer } from './server'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const server = getBunServer(c)
+  const server = getBunServer<{
+    requestIP?: (req: Request) => {
+      address: string
+      family: string
+      port: number
+    } | null
+  }>(c)
 
   if (!server) {
     throw new TypeError('env has to include the 2nd argument of fetch.')

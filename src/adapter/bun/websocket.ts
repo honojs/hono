@@ -46,7 +46,15 @@ export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSCon
 }
 
 export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
-  const server = getBunServer(c)
+  const server = getBunServer<{
+    upgrade<T>(
+      req: Request,
+      options?: {
+        data: T
+      }
+    ): boolean
+  }>(c)
+
   if (!server) {
     throw new TypeError('env has to include the 2nd argument of fetch.')
   }
