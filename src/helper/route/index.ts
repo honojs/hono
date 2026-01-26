@@ -29,7 +29,7 @@ import { getPattern, splitRoutingPath } from '../../utils/url'
  * })
  * ```
  */
-export const matchedRoutes = (c: Context): RouterRoute[] => HonoRequest.matchedRoutes(c)
+export const matchedRoutes = (c: Context): RouterRoute[] => HonoRequest.matchedRoutes(c.req)
 
 /**
  * Get the route path registered within the handler
