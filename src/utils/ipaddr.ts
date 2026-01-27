@@ -33,7 +33,8 @@ export const expandIPv6 = (ipV6: string): string => {
   return sections.join(':')
 }
 
-const IPV4_REGEX = /^[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}$/
+const IPV4_OCTET_PART = '(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
+const IPV4_REGEX = new RegExp(`^(?:${IPV4_OCTET_PART}\\.){3}${IPV4_OCTET_PART}$`)
 
 /**
  * Distinct Remote Addr
