@@ -417,3 +417,86 @@ describe('Cache Middleware', () => {
     expect(res.headers.get('cache-control')).toBe(null)
   })
 })
+
+describe('Cache Skipping Logic', () => {
+  let putSpy: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    putSpy = vi.fn()
+    const mockCache = {
+      match: vi.fn().mockResolvedValue(undefined), // Always miss
+      put: putSpy, // We spy on this
+      keys: vi.fn().mockResolvedValue([]),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn().mockResolvedValue(mockCache),
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('Should NOT cache response if Cache-Control contains "private"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'private, max-age=3600')
+      return c.text('response')
+    })
+
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    // IMPORTANT: put() should NOT be called
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Cache-Control contains "no-store"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'no-store')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Cache-Control contains no-cache="Set-Cookie"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'no-cache="Set-Cookie"')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Set-Cookie header is present', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Set-Cookie', 'session=secret')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should cache normal responses (Control Test)', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      return c.text('response')
+    })
+
+    await app.request('/')
+    // IMPORTANT: put() SHOULD be called for normal responses
+    expect(putSpy).toHaveBeenCalled()
+  })
+})
