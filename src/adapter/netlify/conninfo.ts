@@ -78,4 +78,4 @@ export const getConnInfo: GetConnInfo = (c: Context<Env>) => ({
  * export default handle(app)
  * ```
  */
-export const getGeo = (c: Context<Env>) => c.env.context?.geo
+export const getGeo = (c: Context<Env>): NetlifyContext['geo'] | undefined => c.env.context?.geo
