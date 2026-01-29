@@ -50,3 +50,8 @@ export type { InferRequestType, InferResponseType, ClientRequestOptions } from '
  * Hono framework for building web applications.
  */
 export { Hono }
+
+/**
+ * Crypto utilities.
+ */
+export { sha256, sha1, md5 } from './utils/crypto'
