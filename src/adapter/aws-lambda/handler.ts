@@ -151,7 +151,6 @@ declare const awslambda: {
   }
 }
 
-
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
