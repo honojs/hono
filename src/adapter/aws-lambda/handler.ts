@@ -135,6 +135,23 @@ const streamToNodeStream = async (
   writer.end()
 }
 
+declare const awslambda: {
+  streamifyResponse: (
+    handler: (
+      event: LambdaEvent,
+      responseStream: NodeJS.WritableStream,
+      context: LambdaContext
+    ) => Promise<void>
+  ) => Handler
+  HttpResponseStream: {
+    from: (
+      stream: NodeJS.WritableStream,
+      metadata: { statusCode: number; headers: Record<string, string>; cookies: string[] }
+    ) => NodeJS.WritableStream
+  }
+}
+
+
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
