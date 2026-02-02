@@ -106,7 +106,7 @@ export const createAction = <Env extends BlankEnv>(
           // TBD: load client library, Might be simpler to make it globally referenceable and read from CDN
           jsxFn(
             'script',
-            { src: clientScriptUrl, async: true },
+            { src: absolutePath(clientScriptUrl), async: true },
             jsxFn(async () => '', {}, []) as any
           ) as any,
           raw(
