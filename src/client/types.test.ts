@@ -72,7 +72,7 @@ describe('without the leading slash', () => {
         param: { id: '123' },
         query: { q: 'hono' },
       })
-    ).toEqualTypeOf<TypedURL<'http:', 'localhost', '', '/foo/123/baz', `?${string}`>['pathname']>()
+    ).toEqualTypeOf<`/foo/123/baz?${string}`>()
   })
 })
 
@@ -140,6 +140,6 @@ describe('with base URL pathname', () => {
         param: { id: '123' },
         query: { q: 'hono' },
       })
-    ).toEqualTypeOf<'/foo/123/baz'>()
+    ).toEqualTypeOf<`/foo/123/baz?${string}`>()
   })
 })

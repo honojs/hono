@@ -108,7 +108,7 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
       | undefined = undefined,
   >(
     arg?: Arg
-  ) => BuildPathname<Path, Arg>
+  ) => BuildPath<Path, Arg>
 } & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
@@ -160,6 +160,8 @@ type BuildSearch<Arg, Key extends 'query'> = Arg extends { [K in Key]: infer Que
 type BuildPathname<P extends string, Arg> = Arg extends { param: infer Param }
   ? `${ApplyParam<TrimStartSlash<P>, Param>}`
   : `/${TrimStartSlash<P>}`
+
+type BuildPath<P extends string, Arg> = `${BuildPathname<P, Arg>}${BuildSearch<Arg, 'query'>}`
 
 type BuildTypedURL<
   Protocol extends string,
