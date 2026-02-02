@@ -1,4 +1,5 @@
-import { HonoRequest } from './request'
+import { HTTPException } from './http-exception'
+import { cloneRawRequest, HonoRequest } from './request'
 import type { RouterRoute } from './types'
 
 type RecursiveRecord<K extends string, T> = {
@@ -38,6 +39,21 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
+  test('req.param() should return empty string for zero-length match', () => {
+    // Simulate a route like '/:remaining{.*}' matching '/'
+    const rawRequest = new Request('http://localhost/')
+    const req = new HonoRequest<'/:remaining{.*}'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''], // ParamStash with empty string for remaining
+    ])
+
+    // Single param access should be empty string, not undefined
+    expect(req.param('remaining')).toBe('')
+
+    // All params should include key with empty string value
+    const all = req.param()
+    expect(all).toEqual({ remaining: '' })
+  })
   test('req.param() with ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
@@ -72,6 +88,24 @@ describe('Param', () => {
     expect(req.param('id')).toBe('456')
     expect(req.param('name')).toBe('key')
   })
+
+  test('req.param() returns empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param('remaining')).toBe('')
+  })
+
+  test('req.param() without argument returns object with empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param()).toEqual({ remaining: '' })
+  })
 })
 
 describe('matchedRoutes', () => {
@@ -81,17 +115,20 @@ describe('matchedRoutes', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
     ])
 
     expect(req.matchedRoutes).toEqual([
-      { handler: handlerA, method: 'GET', path: '/:id' },
-      { handler: handlerB, method: 'GET', path: '/:id/:name' },
+      { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' },
+      { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' },
     ])
   })
 })
@@ -103,9 +140,12 @@ describe('routePath', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
@@ -214,6 +254,18 @@ describe('Body methods with caching', () => {
         type: 'text/plain;charset=utf-8',
       })
     )
+  })
+
+  test('req.json() should keep the content as is', async () => {
+    const text = '{ "foo" : "bar" }'
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: text,
+      })
+    )
+    expect(await req.json()).toEqual(JSON.parse(text))
+    expect(await req.text()).toEqual(text)
   })
 
   test('req.arrayBuffer()', async () => {
@@ -325,5 +377,128 @@ describe('Body methods with caching', () => {
         ).toEqualTypeOf<{ key1: string; key2: string }>()
       })
     })
+  })
+})
+
+describe('cloneRawRequest', () => {
+  test('clones unconsumed request object', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Custom-Header': 'custom-value',
+        },
+        body: text,
+        cache: 'no-cache',
+        credentials: 'include',
+        integrity: 'sha256-test',
+        mode: 'cors',
+        redirect: 'follow',
+        referrer: 'http://example.com',
+        referrerPolicy: 'origin',
+      })
+    )
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('POST')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(await clonedReq.text()).toBe(text)
+    expect(clonedReq.headers.get('Content-Type')).toBe('application/json')
+    expect(clonedReq.headers.get('X-Custom-Header')).toBe('custom-value')
+    expect(clonedReq.cache).toBe('no-cache')
+    expect(clonedReq.credentials).toBe('include')
+    expect(clonedReq.integrity).toBe('sha256-test')
+    expect(clonedReq.mode).toBe('cors')
+    expect(clonedReq.redirect).toBe('follow')
+    expect(clonedReq.referrer).toBe('http://example.com/')
+    expect(clonedReq.referrerPolicy).toBe('origin')
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones consumed request object', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token123',
+        },
+        body: text,
+        mode: 'same-origin',
+        credentials: 'same-origin',
+      })
+    )
+    await req.json()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('POST')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(await clonedReq.json()).toEqual(json)
+    expect(clonedReq.headers.get('Authorization')).toBe('Bearer token123')
+    expect(clonedReq.mode).toBe('same-origin')
+    expect(clonedReq.credentials).toBe('same-origin')
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones GET request without body', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'test-agent',
+        },
+        cache: 'default',
+        redirect: 'manual',
+        referrerPolicy: 'no-referrer',
+      })
+    )
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.method).toBe('GET')
+    expect(clonedReq.url).toBe('http://localhost/')
+    expect(clonedReq.headers.get('User-Agent')).toBe('test-agent')
+    expect(clonedReq.cache).toBe('default')
+    expect(clonedReq.redirect).toBe('manual')
+    expect(clonedReq.referrerPolicy).toBe('no-referrer')
+    expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
+    expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones request when raw body was consumed directly without HonoRequest methods', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: text,
+      })
+    )
+
+    // Consume the raw request body directly, bypassing HonoRequest methods
+    // This means bodyCache will be empty
+    await req.raw.text()
+
+    expect(req.raw.bodyUsed).toBe(true)
+    expect(Object.keys(req.bodyCache).length).toBe(0)
+
+    let error: HTTPException | undefined = undefined
+    try {
+      await cloneRawRequest(req)
+    } catch (e) {
+      expect(e).toBeInstanceOf(HTTPException)
+      error = e as HTTPException
+    }
+
+    expect(error).not.toBeUndefined()
+    expect((error as HTTPException).status).toBe(500)
+    expect((error as HTTPException).message).toContain(
+      'Cannot clone request: body was already consumed and not cached'
+    )
   })
 })

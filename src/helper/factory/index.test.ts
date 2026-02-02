@@ -3,7 +3,7 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { ExtractSchema, ToSchema, TypedResponse } from '../../types'
+import type { Env, ExtractSchema, H, MiddlewareHandler, ToSchema, TypedResponse } from '../../types'
 import type { ContentfulStatusCode } from '../../utils/http-status'
 import type { Equal, Expect } from '../../utils/types'
 import { validator } from '../../validator'
@@ -63,6 +63,14 @@ describe('createMiddleware', () => {
       }
     )
   })
+
+  it('Should default to MiddlewareHandler<E, P, I, Response>', async () => {
+    const middleware = createMiddleware(async (c, next) => {
+      await next()
+    })
+    type Expected = MiddlewareHandler<any, string, {}, Response>
+    type _verify = Expect<Equal<Expected, typeof middleware>>
+  })
 })
 
 describe('createHandler', () => {
@@ -102,14 +110,18 @@ describe('createHandler', () => {
     it('Should return correct path types - /a', () => {
       const client = hc<typeof routesA>('/')
       expectTypeOf(client).toEqualTypeOf<{
-        a: ClientRequest<{
-          $get: {
-            input: {}
-            output: 'A'
-            outputFormat: 'text'
-            status: ContentfulStatusCode
+        a: ClientRequest<
+          string,
+          '/a',
+          {
+            $get: {
+              input: {}
+              output: 'A'
+              outputFormat: 'text'
+              status: ContentfulStatusCode
+            }
           }
-        }>
+        >
       }>()
     })
   })
@@ -326,6 +338,25 @@ describe('createHandler', () => {
       })
     })
   })
+
+  describe('Types - Multiple Handlers', () => {
+    const factory = createFactory()
+
+    const [handler1, handler2] = factory.createHandlers(
+      (c) => c.json({ first: 1 }),
+      (c) => c.json({ second: 'second' as const })
+    )
+
+    type ExtractOutput<R> = R extends H<any, any, any, TypedResponse<infer Inner>> ? Inner : never
+
+    type Handler1Output = ExtractOutput<typeof handler1>
+    type Handler2Output = ExtractOutput<typeof handler2>
+
+    it('Should allow multiple handlers with independent return types', () => {
+      expectTypeOf<Handler1Output>().toEqualTypeOf<{ first: number }>()
+      expectTypeOf<Handler2Output>().toEqualTypeOf<{ second: 'second' }>()
+    })
+  })
 })
 
 describe('createFactory', () => {
@@ -352,7 +383,7 @@ describe('createFactory', () => {
   })
 
   describe('createMiddleware', () => {
-    it('Should set the correct type', () => {
+    it('Should omit the `*` wildcard from the generated schema', () => {
       const factory = createFactory()
 
       const middleware = factory.createMiddleware(async (_, next) => {
@@ -361,10 +392,18 @@ describe('createFactory', () => {
 
       const routes = new Hono().use('*', middleware)
       type Actual = ExtractSchema<typeof routes>
-      type Expected = {
-        '*': {}
-      }
+      type Expected = {}
       type verify = Expect<Equal<Expected, Actual>>
+    })
+
+    it('Should default to MiddlewareHandler<E, P, I, Response>', async () => {
+      const factory = createFactory()
+
+      const middleware = factory.createMiddleware(async (c, next) => {
+        await next()
+      })
+      type Expected = MiddlewareHandler<Env, string, {}, Response>
+      type _verify = Expect<Equal<Expected, typeof middleware>>
     })
   })
 

@@ -116,6 +116,35 @@ describe('languageDetector', () => {
       const res = await app.request('/fr/page')
       expect(await res.text()).toBe('en')
     })
+
+    it('should detect language from original URL when getPath modifies the path', async () => {
+      const app = new Hono({
+        getPath: (req) => {
+          const url = new URL(req.url)
+          let pathname = url.pathname
+          // Remove language prefix /fr/
+          if (pathname.startsWith('/fr/')) {
+            pathname = pathname.replace('/fr/', '/')
+          }
+          return pathname
+        },
+      })
+
+      app.use(
+        '*',
+        languageDetector({
+          order: ['path'],
+          supportedLanguages: ['en', 'fr'],
+          fallbackLanguage: 'en',
+          lookupFromPathIndex: 0,
+        })
+      )
+
+      app.get('/home', (c) => c.text(c.get('language')))
+
+      const res = await app.request('/fr/home')
+      expect(await res.text()).toBe('fr')
+    })
   })
 
   describe('Detection Order', () => {

@@ -7,8 +7,14 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 type CORSOptions = {
-  origin: string | string[] | ((origin: string, c: Context) => string | undefined | null)
-  allowMethods?: string[]
+  origin:
+    | string
+    | string[]
+    | ((
+        origin: string,
+        c: Context
+      ) => Promise<string | undefined | null> | string | undefined | null)
+  allowMethods?: string[] | ((origin: string, c: Context) => Promise<string[]> | string[])
   allowHeaders?: string[]
   maxAge?: number
   credentials?: boolean
@@ -21,8 +27,8 @@ type CORSOptions = {
  * @see {@link https://hono.dev/docs/middleware/builtin/cors}
  *
  * @param {CORSOptions} [options] - The options for the CORS middleware.
- * @param {string | string[] | ((origin: string, c: Context) => string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
- * @param {string[]} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH']] - The value of "Access-Control-Allow-Methods" CORS header.
+ * @param {string | string[] | ((origin: string, c: Context) => Promise<string | undefined | null> | string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
+ * @param {string[] | ((origin: string, c: Context) => Promise<string[]> | string[])} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH']] - The value of "Access-Control-Allow-Methods" CORS header.
  * @param {string[]} [options.allowHeaders=[]] - The value of "Access-Control-Allow-Headers" CORS header.
  * @param {number} [options.maxAge] - The value of "Access-Control-Max-Age" CORS header.
  * @param {boolean} [options.credentials] - The value of "Access-Control-Allow-Credentials" CORS header.
@@ -80,26 +86,24 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
   })(opts.origin)
 
+  const findAllowMethods = ((optsAllowMethods) => {
+    if (typeof optsAllowMethods === 'function') {
+      return optsAllowMethods
+    } else if (Array.isArray(optsAllowMethods)) {
+      return () => optsAllowMethods
+    } else {
+      return () => []
+    }
+  })(opts.allowMethods)
+
   return async function cors(c, next) {
     function set(key: string, value: string) {
       c.res.headers.set(key, value)
     }
 
-    const allowOrigin = findAllowOrigin(c.req.header('origin') || '', c)
+    const allowOrigin = await findAllowOrigin(c.req.header('origin') || '', c)
     if (allowOrigin) {
       set('Access-Control-Allow-Origin', allowOrigin)
-    }
-
-    // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    if (opts.origin !== '*') {
-      const existingVary = c.req.header('Vary')
-
-      if (existingVary) {
-        set('Vary', existingVary)
-      } else {
-        set('Vary', 'Origin')
-      }
     }
 
     if (opts.credentials) {
@@ -111,12 +115,17 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
 
     if (c.req.method === 'OPTIONS') {
+      if (opts.origin !== '*') {
+        set('Vary', 'Origin')
+      }
+
       if (opts.maxAge != null) {
         set('Access-Control-Max-Age', opts.maxAge.toString())
       }
 
-      if (opts.allowMethods?.length) {
-        set('Access-Control-Allow-Methods', opts.allowMethods.join(','))
+      const allowMethods = await findAllowMethods(c.req.header('origin') || '', c)
+      if (allowMethods.length) {
+        set('Access-Control-Allow-Methods', allowMethods.join(','))
       }
 
       let headers = opts.allowHeaders
@@ -141,5 +150,11 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       })
     }
     await next()
+
+    // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+    if (opts.origin !== '*') {
+      c.header('Vary', 'Origin', { append: true })
+    }
   }
 }

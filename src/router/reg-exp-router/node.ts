@@ -73,14 +73,17 @@ export class Node {
           ? ['', '', ONLY_WILDCARD_REG_EXP_STR] // '*' matches to all the trailing paths
           : ['', '', LABEL_REG_EXP_STR]
         : token === '/*'
-        ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
-        : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
+          ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
+          : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
 
     let node
     if (pattern) {
       const name = pattern[1]
       let regexpStr = pattern[2] || LABEL_REG_EXP_STR
       if (name && pattern[2]) {
+        if (regexpStr === '.*') {
+          throw PATH_ERROR
+        }
         regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
         if (/\((?!\?:)/.test(regexpStr)) {
           // prefix(?:a|b) is allowed, but prefix(a|b) is not
@@ -138,8 +141,8 @@ export class Node {
         (typeof c.#varIndex === 'number'
           ? `(${k})@${c.#varIndex}`
           : regExpMetaChars.has(k)
-          ? `\\${k}`
-          : k) + c.buildRegExpStr()
+            ? `\\${k}`
+            : k) + c.buildRegExpStr()
       )
     })
 

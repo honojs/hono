@@ -9,7 +9,7 @@ import { generateDigest } from './digest'
 type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
-  generateDigest?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
+  generateDigest?: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
 }
 
 /**
@@ -27,8 +27,12 @@ export const RETAINED_304_HEADERS = [
   'vary',
 ]
 
+const stripWeak = (tag: string) => tag.replace(/^W\//, '')
+
 function etagMatches(etag: string, ifNoneMatch: string | null) {
-  return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
+  return (
+    ifNoneMatch != null && ifNoneMatch.split(/,\s*/).some((t) => stripWeak(t) === stripWeak(etag))
+  )
 }
 
 function initializeGenerator(
@@ -36,7 +40,7 @@ function initializeGenerator(
 ): ETagOptions['generateDigest'] | undefined {
   if (!generator) {
     if (crypto && crypto.subtle) {
-      generator = (body: Uint8Array) =>
+      generator = (body: Uint8Array<ArrayBuffer>) =>
         crypto.subtle.digest(
           {
             name: 'SHA-1',
@@ -68,7 +72,7 @@ function initializeGenerator(
  *
  * app.use('/etag/*', etag())
  * app.get('/etag/abc', (c) => {
- *   return c.text('Hono is cool')
+ *   return c.text('Hono is hot')
  * })
  * ```
  */
@@ -89,7 +93,11 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       if (!generator) {
         return
       }
-      const hash = await generateDigest(res.clone().body, generator)
+      const hash = await generateDigest(
+        // This type casing avoids the type error for `deno publish`
+        res.clone().body as ReadableStream<Uint8Array<ArrayBuffer>>,
+        generator
+      )
       if (hash === null) {
         return
       }

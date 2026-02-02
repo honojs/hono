@@ -27,7 +27,7 @@ const splitRule = (rule: string): string[] => {
     const char = rule[i]
 
     // consume quote
-    // eslint-disable-next-line quotes
+
     if (char === "'" || char === '"') {
       const quote = char
       i++
@@ -44,7 +44,6 @@ const splitRule = (rule: string): string[] => {
     }
 
     // comments are removed from the rule in advance
-
     if (char === '{') {
       depth++
       continue
@@ -66,7 +65,7 @@ interface CreateCssJsxDomObjectsType {
     {
       toString(this: CssClassName): string
     },
-    FC<PropsWithChildren<void>>
+    FC<PropsWithChildren<void>>,
   ]
 }
 
@@ -133,7 +132,7 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
           ),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    }) as any
 
   return [cssObject, Style] as const
 }

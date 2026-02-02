@@ -49,9 +49,8 @@ export class Node<T> {
       const pattern = getPattern(p, nextP)
       const key = Array.isArray(pattern) ? pattern[0] : p
 
-      if (Object.keys(curNode.#children).includes(key)) {
+      if (key in curNode.#children) {
         curNode = curNode.#children[key]
-        const pattern = getPattern(p, nextP)
         if (pattern) {
           possibleKeys.push(pattern[1])
         }
@@ -67,16 +66,13 @@ export class Node<T> {
       curNode = curNode.#children[key]
     }
 
-    const m: Record<string, HandlerSet<T>> = Object.create(null)
-
-    const handlerSet: HandlerSet<T> = {
-      handler,
-      possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
-      score: this.#order,
-    }
-
-    m[method] = handlerSet
-    curNode.#methods.push(m)
+    curNode.#methods.push({
+      [method]: {
+        handler,
+        possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
+        score: this.#order,
+      },
+    })
 
     return curNode
   }
@@ -100,7 +96,7 @@ export class Node<T> {
             const key = handlerSet.possibleKeys[i]
             const processed = processedSet[handlerSet.score]
             handlerSet.params[key] =
-              params?.[key] && !processed ? params[key] : nodeParams[key] ?? params?.[key]
+              params?.[key] && !processed ? params[key] : (nodeParams[key] ?? params?.[key])
             processedSet[handlerSet.score] = true
           }
         }
@@ -159,11 +155,11 @@ export class Node<T> {
             continue
           }
 
-          if (part === '') {
+          const [key, name, matcher] = pattern
+
+          if (!part && !(matcher instanceof RegExp)) {
             continue
           }
-
-          const [key, name, matcher] = pattern
 
           const child = node.#children[key]
 

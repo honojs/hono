@@ -8,7 +8,13 @@ import { getBunServer } from './server'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const server = getBunServer(c)
+  const server = getBunServer<{
+    requestIP?: (req: Request) => {
+      address: string
+      family: string
+      port: number
+    } | null
+  }>(c)
 
   if (!server) {
     throw new TypeError('env has to include the 2nd argument of fetch.')
@@ -16,7 +22,16 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
   if (typeof server.requestIP !== 'function') {
     throw new TypeError('server.requestIP is not a function.')
   }
+
+  // https://bun.sh/docs/runtime/http/server#server-requestip-request
+  // Returns null for closed requests or Unix domain sockets.
   const info = server.requestIP(c.req.raw)
+
+  if (!info) {
+    return {
+      remote: {},
+    }
+  }
 
   return {
     remote: {

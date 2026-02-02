@@ -14,7 +14,6 @@ import type {
   ErrorHandler,
   FetchEventLike,
   H,
-  HTTPResponseError,
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
@@ -29,13 +28,14 @@ import type {
 import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath, getRoutePath } from './utils/url'
 
-const notFoundHandler = (c: Context) => {
+const notFoundHandler: NotFoundHandler = (c) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
+const errorHandler: ErrorHandler = (err, c) => {
   if ('getResponse' in err) {
-    return err.getResponse()
+    const res = err.getResponse()
+    return c.newResponse(res.body, res)
   }
   console.error(err)
   return c.text('Internal Server Error', 500)
@@ -92,17 +92,22 @@ type MountOptions =
   | MountOptionHandler
   | {
       optionHandler?: MountOptionHandler
-      replaceRequest?: MountReplaceRequest
+      replaceRequest?: MountReplaceRequest | false
     }
 
-class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
-  get!: HandlerInterface<E, 'get', S, BasePath>
-  post!: HandlerInterface<E, 'post', S, BasePath>
-  put!: HandlerInterface<E, 'put', S, BasePath>
-  delete!: HandlerInterface<E, 'delete', S, BasePath>
-  options!: HandlerInterface<E, 'options', S, BasePath>
-  patch!: HandlerInterface<E, 'patch', S, BasePath>
-  all!: HandlerInterface<E, 'all', S, BasePath>
+class Hono<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/',
+  CurrentPath extends string = BasePath,
+> {
+  get!: HandlerInterface<E, 'get', S, BasePath, CurrentPath>
+  post!: HandlerInterface<E, 'post', S, BasePath, CurrentPath>
+  put!: HandlerInterface<E, 'put', S, BasePath, CurrentPath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
+  options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
 
@@ -162,17 +167,18 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       return this as any
     }
 
-    const strict = options.strict ?? true
-    delete options.strict
-    Object.assign(this, options)
-    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
+    const { strict, ...optionsWithoutStrict } = options
+    Object.assign(this, optionsWithoutStrict)
+    this.getPath = (strict ?? true) ? (options.getPath ?? getPath) : getPathNoStrict
   }
 
-  #clone(): Hono<E, S, BasePath> {
-    const clone = new Hono<E, S, BasePath>({
+  #clone(): Hono<E, S, BasePath, CurrentPath> {
+    const clone = new Hono<E, S, BasePath, CurrentPath>({
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
@@ -203,11 +209,12 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubPath extends string,
     SubEnv extends Env,
     SubSchema extends Schema,
-    SubBasePath extends string
+    SubBasePath extends string,
+    SubCurrentPath extends string,
   >(
     path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
+    app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
@@ -237,7 +244,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * const api = new Hono().basePath('/api')
    * ```
    */
-  basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
+  basePath<SubPath extends string>(
+    path: SubPath
+  ): Hono<E, S, MergePath<BasePath, SubPath>, MergePath<BasePath, SubPath>> {
     const subApp = this.#clone()
     subApp._basePath = mergePath(this._basePath, path)
     return subApp
@@ -259,7 +268,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * })
    * ```
    */
-  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.errorHandler = handler
     return this
   }
@@ -279,7 +288,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * })
    * ```
    */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.#notFoundHandler = handler
     return this
   }
@@ -320,7 +329,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     options?: MountOptions
-  ): Hono<E, S, BasePath> {
+  ): Hono<E, S, BasePath, CurrentPath> {
     // handle options
     let replaceRequest: MountReplaceRequest | undefined
     let optionHandler: MountOptionHandler | undefined
@@ -329,7 +338,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         optionHandler = options
       } else {
         optionHandler = options.optionHandler
-        replaceRequest = options.replaceRequest
+        if (options.replaceRequest === false) {
+          replaceRequest = (request) => request
+        } else {
+          replaceRequest = options.replaceRequest
+        }
       }
     }
 
@@ -357,7 +370,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
+      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res
@@ -369,15 +382,15 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return this
   }
 
-  #addRoute(method: string, path: string, handler: H) {
+  #addRoute(method: string, path: string, handler: H): void {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path: path, method: method, handler: handler }
-    this.router.add(method, getRoutePath(path), [handler, r])
+    const r: RouterRoute = { basePath: this._basePath, path, method, handler }
+    this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
 
-  #handleError(err: unknown, c: Context<E>) {
+  #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
@@ -425,7 +438,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
                 resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
             .catch((err: Error) => this.#handleError(err, c))
-        : res ?? this.#notFoundHandler(c)
+        : (res ?? this.#notFoundHandler(c))
     }
 
     const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
@@ -500,6 +513,16 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fire()` automatically adds a global fetch event listener.
    * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
+   * @deprecated
+   * Use `fire` from `hono/service-worker` instead.
+   * ```ts
+   * import { Hono } from 'hono'
+   * import { fire } from 'hono/service-worker'
+   *
+   * const app = new Hono()
+   * // ...
+   * fire(app)
+   * ```
    * @see https://hono.dev/docs/api/hono#fire
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/

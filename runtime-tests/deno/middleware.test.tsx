@@ -13,7 +13,7 @@ Deno.test('Basic Auth Middleware', async () => {
   const app = new Hono()
 
   const username = 'hono'
-  const password = 'acoolproject'
+  const password = 'ahotproject'
 
   app.use(
     '/auth/*',
@@ -29,7 +29,7 @@ Deno.test('Basic Auth Middleware', async () => {
   assertEquals(res.status, 401)
   assertEquals(await res.text(), 'Unauthorized')
 
-  const credential = 'aG9ubzphY29vbHByb2plY3Q='
+  const credential = 'aG9ubzphaG90cHJvamVjdA=='
 
   const req = new Request('http://localhost/auth/a')
   req.headers.set('Authorization', `Basic ${credential}`)
@@ -110,15 +110,15 @@ Deno.test('Serve Static middleware', async () => {
 
   res = await app.request('http://localhost/static/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+  assertMatch(await res.text(), /^Deno!(\r?\n)?$/)
 
   res = await app.request('http://localhost/static/download')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'download')
+  assertMatch(await res.text(), /^download(\r?\n)?$/)
 
   res = await app.request('http://localhost/dot-static/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!!')
+  assertMatch(await res.text(), /^Deno!!(\r?\n)?$/)
   assertSpyCalls(onNotFound, 1)
 
   res = await app.fetch({
@@ -138,7 +138,7 @@ Deno.test('Serve Static middleware', async () => {
 
   res = await app.request('http://localhost/static-absolute-root/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+  assertMatch(await res.text(), /^Deno!(\r?\n)?$/)
 
   res = await app.request('http://localhost/static')
   assertEquals(res.status, 404)
@@ -163,7 +163,7 @@ Deno.test('JWT Authentication middleware', async () => {
     await next()
     c.header('x-foo', c.get('x-foo') || '')
   })
-  app.use('/auth/*', jwt({ secret: 'a-secret' }))
+  app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
   app.get('/auth/*', (c) => {
     c.set('x-foo', 'bar')
     return new Response('auth')

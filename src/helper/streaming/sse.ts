@@ -18,7 +18,7 @@ export class SSEStreamingApi extends StreamingApi {
   async writeSSE(message: SSEMessage) {
     const data = await resolveCallback(message.data, HtmlEscapedCallbackPhase.Stringify, false, {})
     const dataLines = (data as string)
-      .split('\n')
+      .split(/\r\n|\r|\n/)
       .map((line) => {
         return `data: ${line}`
       })

@@ -1,6 +1,6 @@
 tasks:
-  - name:  Setup
-    init: bun install --no-save
+  - name: Setup
+    init: bun install --frozen-lockfile
 image:
   file: ./.devcontainer/Dockerfile
 vscode:

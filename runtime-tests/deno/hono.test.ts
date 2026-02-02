@@ -1,5 +1,4 @@
 import { assertEquals } from '@std/assert'
-import { Buffer } from 'node:buffer'
 
 import { Context } from '../../src/context.ts'
 import { env, getRuntimeKey } from '../../src/helper/adapter/index.ts'

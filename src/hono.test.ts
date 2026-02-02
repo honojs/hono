@@ -25,6 +25,27 @@ type Env = {
   }
 }
 
+const createResponseProxy = (response: Response) => {
+  return new Proxy(response, {
+    get(target, prop, receiver) {
+      const value = target[prop as keyof Response]
+      if (typeof value === 'function') {
+        return Object.defineProperties(
+          function (...args: unknown[]) {
+            // @ts-expect-error: `this` context is intentionally dynamic for proxy method binding
+            return Reflect.apply(value, this === receiver ? target : this, args)
+          },
+          {
+            name: { value: value.name },
+            length: { value: value.length },
+          }
+        )
+      }
+      return value
+    },
+  })
+}
+
 describe('GET Request', () => {
   describe('without middleware', () => {
     // In other words, this is a test for cases that do not use `compose()`
@@ -48,25 +69,9 @@ describe('GET Request', () => {
       return c.json(c.env)
     })
 
-    app.get(
-      '/proxy-object',
-      () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/proxy-object', () => createResponseProxy(new Response('proxy')))
 
-    app.get(
-      '/async-proxy-object',
-      async () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/async-proxy-object', async () => createResponseProxy(new Response('proxy')))
 
     it('GET http://localhost/hello is ok', async () => {
       const res = await app.request('http://localhost/hello')
@@ -159,25 +164,9 @@ describe('GET Request', () => {
       return c.json(c.env)
     })
 
-    app.get(
-      '/proxy-object',
-      () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/proxy-object', () => createResponseProxy(new Response('proxy')))
 
-    app.get(
-      '/async-proxy-object',
-      async () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/async-proxy-object', async () => createResponseProxy(new Response('proxy')))
 
     it('GET http://localhost/hello is ok', async () => {
       const res = await app.request('http://localhost/hello')
@@ -259,10 +248,9 @@ describe('Register handlers without a path', () => {
       expect(await res.text()).toBe('Hello')
     })
 
-    it('GET http://localhost/anything is ok', async () => {
-      const res = await app.request('/')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('Hello')
+    it('GET http://localhost/anything is not found', async () => {
+      const res = await app.request('/anything')
+      expect(res.status).toBe(404)
     })
   })
 
@@ -305,89 +293,98 @@ describe('Register handlers without a path', () => {
   })
 })
 
-describe('router option', () => {
-  it('Should be SmartRouter', () => {
-    const app = new Hono()
-    expect(app.router instanceof SmartRouter).toBe(true)
-  })
-  it('Should be RegExpRouter', () => {
-    const app = new Hono({
-      router: new RegExpRouter(),
+describe('Options', () => {
+  describe('router option', () => {
+    it('Should be SmartRouter', () => {
+      const app = new Hono()
+      expect(app.router instanceof SmartRouter).toBe(true)
     })
-    expect(app.router instanceof RegExpRouter).toBe(true)
-  })
-})
-
-describe('strict parameter', () => {
-  describe('strict is true with not slash', () => {
-    const app = new Hono()
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello/ is not found', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(404)
+    it('Should be RegExpRouter', () => {
+      const app = new Hono({
+        router: new RegExpRouter(),
+      })
+      expect(app.router instanceof RegExpRouter).toBe(true)
     })
   })
 
-  describe('strict is true with slash', () => {
-    const app = new Hono()
+  describe('strict parameter', () => {
+    describe('strict is true with not slash', () => {
+      const app = new Hono()
 
-    app.get('/hello/', (c) => {
-      return c.text('/hello/')
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello/ is not found', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(404)
+      })
     })
 
-    it('/hello is not found', async () => {
-      let res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(404)
+    describe('strict is true with slash', () => {
+      const app = new Hono()
+
+      app.get('/hello/', (c) => {
+        return c.text('/hello/')
+      })
+
+      it('/hello is not found', async () => {
+        let res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('strict is false', () => {
+      const app = new Hono({ strict: false })
+
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello and /hello/ are treated as the same', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+      })
+    })
+
+    describe('strict is false with `getPath` option', () => {
+      const app = new Hono({
+        strict: false,
+        getPath: getPath,
+      })
+
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello and /hello/ are treated as the same', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+      })
     })
   })
 
-  describe('strict is false', () => {
-    const app = new Hono({ strict: false })
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello and /hello/ are treated as the same', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-    })
-  })
-
-  describe('strict is false with `getPath` option', () => {
-    const app = new Hono({
-      strict: false,
-      getPath: getPath,
-    })
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello and /hello/ are treated as the same', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-    })
+  it('Should not modify the options passed to it', () => {
+    const options = { strict: true }
+    const clone = structuredClone(options)
+    const app = new Hono(clone)
+    expect(clone).toEqual(options)
   })
 })
 
@@ -1481,6 +1478,27 @@ describe('Error handle', () => {
       const res = await app.request('http://localhost/exception')
       expect(res.status).toBe(400)
       expect(await res.text()).toBe('Custom Error')
+    })
+  })
+
+  describe('HTTPException with finally block', () => {
+    const app = new Hono()
+    app.use(async (c) => {
+      try {
+        throw new Error()
+      } catch (cause) {
+        throw new HTTPException(302, {
+          cause,
+          res: c.redirect('/?error=invalid_request', 302),
+        })
+      } finally {
+        c.header('x-custom', 'custom message')
+      }
+    })
+    it('Should have the custom header', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(302)
+      expect(res.headers.get('x-custom')).toBe('custom message')
     })
   })
 })
@@ -2725,6 +2743,25 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('/app')
     })
   })
+
+  describe('With replaceRequest: false', () => {
+    const anotherApp = (req: Request) => {
+      const path = getPath(req)
+      if (path === '/app') {
+        return new Response(getPath(req))
+      }
+      return new Response(null, { status: 404 })
+    }
+
+    const app = new Hono()
+    app.mount('/app', anotherApp, { replaceRequest: false })
+
+    it('Should return 200 response with the correct path', async () => {
+      const res = await app.request('/app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/app')
+    })
+  })
 })
 
 describe('HEAD method', () => {
@@ -3592,5 +3629,45 @@ describe('Generics for Bindings and Variables', () => {
       expectTypeOf(c.env.foo).toMatchTypeOf<string>()
       return c.text('Hello Hono!')
     })
+  })
+})
+
+describe('app.basePath() with the internal #clone()', () => {
+  const app = new Hono()
+    .notFound((c) => {
+      return c.text('Custom not found', 404)
+    })
+    .onError((error, c) => {
+      return c.text(`Custom error "${error.message}"`, 500)
+    })
+    .basePath('/api')
+    .get('/test', async () => {
+      throw new Error('API Test error')
+    })
+
+  it('Should return the custom not found', async () => {
+    const res = await app.request('/api/not-found')
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom not found')
+  })
+
+  it('Should return the custom error', async () => {
+    const res = await app.request('/api/test')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom error "API Test error"')
+  })
+})
+
+describe('Catch-all route with empty segment', () => {
+  it('Should return empty string for empty catch-all param', async () => {
+    const app = new Hono()
+    app.get('/:remaining{.*}', (c) => {
+      const remaining = c.req.param('remaining')
+      return c.json({ type: typeof remaining, value: remaining })
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json).toEqual({ type: 'string', value: '' })
   })
 })

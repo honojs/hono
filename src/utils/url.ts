@@ -105,7 +105,7 @@ const tryDecodeURI = (str: string) => tryDecode(str, decodeURI)
 
 export const getPath = (request: Request): string => {
   const url = request.url
-  const start = url.indexOf('/', 8)
+  const start = url.indexOf('/', url.indexOf(':') + 4)
   let i = start
   for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)
@@ -173,12 +173,12 @@ export const getRoutePath = (path: string): string => {
 
 export const checkOptionalParameter = (path: string): string[] | null => {
   /*
-   If path is `/api/animals/:type?` it will return:
-   [`/api/animals`, `/api/animals/:type`]
-   in other cases it will return null
+    If path is `/api/animals/:type?` it will return:
+    [`/api/animals`, `/api/animals/:type`]
+    in other cases it will return null
   */
 
-  if (!path.match(/\:.+\?$/)) {
+  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(':')) {
     return null
   }
 
@@ -216,7 +216,7 @@ const _decodeURI = (value: string) => {
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
-  return value.indexOf('%') !== -1 ? decodeURIComponent_(value) : value
+  return value.indexOf('%') !== -1 ? tryDecode(value, decodeURIComponent_) : value
 }
 
 const _getQueryParam = (
@@ -229,9 +229,12 @@ const _getQueryParam = (
   if (!multiple && key && !/[%+]/.test(key)) {
     // optimized for unencoded key
 
-    let keyIndex = url.indexOf(`?${key}`, 8)
+    let keyIndex = url.indexOf('?', 8)
     if (keyIndex === -1) {
-      keyIndex = url.indexOf(`&${key}`, 8)
+      return undefined
+    }
+    if (!url.startsWith(key, keyIndex + 1)) {
+      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
     }
     while (keyIndex !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)

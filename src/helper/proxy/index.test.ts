@@ -140,22 +140,79 @@ describe('Proxy Middleware', () => {
 
     it('remove hop-by-hop headers', async () => {
       const app = new Hono()
-      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`, c.req))
 
       const res = await app.request('/proxy/hop-by-hop', {
         headers: {
-          Connection: 'keep-alive',
+          Host: 'example.com',
+          Connection: 'keep-alive, custom-header',
           'Keep-Alive': 'timeout=5, max=1000',
           'Proxy-Authorization': 'Basic 123456',
+          'Custom-Header': 'test',
+          'Allowed-Custom-Header': 'test',
         },
       })
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
+      expect(req.headers.get('Host')).toBe('example.com')
       expect(req.headers.get('Connection')).toBeNull()
       expect(req.headers.get('Keep-Alive')).toBeNull()
       expect(req.headers.get('Proxy-Authorization')).toBeNull()
+      expect(req.headers.get('Custom-Header')).toBe('test')
+      expect(req.headers.get('Allowed-Custom-Header')).toBe('test')
 
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('remove hop-by-hop headers with strictConnectionProcessing', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          strictConnectionProcessing: true,
+        })
+      )
+
+      const res = await app.request('/proxy/hop-by-hop', {
+        headers: {
+          Host: 'example.com',
+          Connection: 'keep-alive, custom-header',
+          'Keep-Alive': 'timeout=5, max=1000',
+          'Proxy-Authorization': 'Basic 123456',
+          'Custom-Header': 'test',
+          'Allowed-Custom-Header': 'test',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Host')).toBe('example.com')
+      expect(req.headers.get('Connection')).toBeNull()
+      expect(req.headers.get('Keep-Alive')).toBeNull()
+      expect(req.headers.get('Proxy-Authorization')).toBeNull()
+      expect(req.headers.get('Custom-Header')).toBeNull()
+      expect(req.headers.get('Allowed-Custom-Header')).toBe('test')
+
+      expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('invalid hop-by-hop headers with strictConnectionProcessing', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          strictConnectionProcessing: true,
+        })
+      )
+
+      const res = await app.request('/proxy/hop-by-hop', {
+        headers: {
+          Host: 'example.com',
+          Connection: 'keep-alive, invalid-header invalid-header',
+          'Keep-Alive': 'timeout=5, max=1000',
+        },
+      })
+
+      expect(res.status).toBe(400)
     })
 
     it('specify hop-by-hop header by options', async () => {
@@ -232,6 +289,48 @@ describe('Proxy Middleware', () => {
       app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
       const res = await app.request('/proxy/404')
       expect(res.status).toBe(404)
+    })
+
+    it('pass a Request object to proxyInit', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => {
+        const req = new Request(c.req.raw, {
+          headers: {
+            'X-Request-Id': '123',
+            'Accept-Encoding': 'gzip',
+          },
+        })
+        return proxy(`https://example.com/${c.req.param('path')}`, req)
+      })
+      const res = await app.request('/proxy/compressed')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/compressed')
+      expect(req.headers.get('X-Request-Id')).toBe('123')
+      expect(req.headers.get('Accept-Encoding')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('ok')
+    })
+
+    it('Should call the custom fetch method when specified', async () => {
+      const customFetch = vi.fn().mockImplementation(async (req: Request) => {
+        const text = await req.text()
+        return new Response('custom fetch response. message:' + text)
+      })
+      const app = new Hono()
+      app.post('/', (c) => {
+        return proxy(`https://example.com/`, {
+          customFetch,
+          ...c.req,
+        })
+      })
+      const res = await app.request('/', {
+        method: 'POST',
+        body: 'hi',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('custom fetch response. message:hi')
     })
   })
 })

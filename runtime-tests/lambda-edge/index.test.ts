@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 import type {
   Callback,
   CloudFrontConfig,
@@ -886,7 +885,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
         {
           key: string
           value: string
-        }
+        },
       ]
     }
     let called = false
@@ -1032,7 +1031,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
         {
           key: string
           value: string
-        }
+        },
       ]
     }
     let called = false

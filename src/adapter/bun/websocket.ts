@@ -6,7 +6,7 @@ import { getBunServer } from './server'
  * @internal
  */
 export interface BunServerWebSocket<T> {
-  send(data: string | ArrayBufferLike, compress?: boolean): void
+  send(data: string | ArrayBuffer | Uint8Array, compress?: boolean): void
   close(code?: number, reason?: string): void
   data: T
   readyState: 0 | 1 | 2 | 3
@@ -45,59 +45,67 @@ export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSCon
   })
 }
 
-export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
-    const server = getBunServer(c)
-    if (!server) {
-      throw new TypeError('env has to include the 2nd argument of fetch.')
-    }
-    const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
-      data: {
-        events,
-        url: new URL(c.req.url),
-        protocol: c.req.url,
-      },
-    })
-    if (upgradeResult) {
-      return new Response(null)
-    }
-    return // failed
-  })
-  const websocket: BunWebSocketHandler<BunWebSocketData> = {
-    open(ws) {
-      const websocketListeners = ws.data.events
-      if (websocketListeners.onOpen) {
-        websocketListeners.onOpen(new Event('open'), createWSContext(ws))
+export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
+  const server = getBunServer<{
+    upgrade<T>(
+      req: Request,
+      options?: {
+        data: T
       }
-    },
-    close(ws, code, reason) {
-      const websocketListeners = ws.data.events
-      if (websocketListeners.onClose) {
-        websocketListeners.onClose(
-          new CloseEvent('close', {
-            code,
-            reason,
-          }),
-          createWSContext(ws)
-        )
-      }
-    },
-    message(ws, message) {
-      const websocketListeners = ws.data.events
-      if (websocketListeners.onMessage) {
-        const normalizedReceiveData =
-          typeof message === 'string' ? message : (message.buffer satisfies WSMessageReceive)
+    ): boolean
+  }>(c)
 
-        websocketListeners.onMessage(
-          createWSMessageEvent(normalizedReceiveData),
-          createWSContext(ws)
-        )
-      }
+  if (!server) {
+    throw new TypeError('env has to include the 2nd argument of fetch.')
+  }
+  const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
+    data: {
+      events,
+      url: new URL(c.req.url),
+      protocol: c.req.url,
     },
+  })
+  if (upgradeResult) {
+    return new Response(null)
   }
-  return {
-    upgradeWebSocket,
-    websocket,
-  }
+  return // failed
+})
+
+export const websocket: BunWebSocketHandler<BunWebSocketData> = {
+  open(ws) {
+    const websocketListeners = ws.data.events
+    if (websocketListeners.onOpen) {
+      websocketListeners.onOpen(new Event('open'), createWSContext(ws))
+    }
+  },
+  close(ws, code, reason) {
+    const websocketListeners = ws.data.events
+    if (websocketListeners.onClose) {
+      websocketListeners.onClose(
+        new CloseEvent('close', {
+          code,
+          reason,
+        }),
+        createWSContext(ws)
+      )
+    }
+  },
+  message(ws, message) {
+    const websocketListeners = ws.data.events
+    if (websocketListeners.onMessage) {
+      const normalizedReceiveData: WSMessageReceive =
+        typeof message === 'string' ? message : message.buffer
+
+      websocketListeners.onMessage(createWSMessageEvent(normalizedReceiveData), createWSContext(ws))
+    }
+  },
 }
+
+/**
+ * @deprecated Import `upgradeWebSocket` and `websocket` directly from `hono/bun` instead.
+ * @returns A function to create a Bun WebSocket handler.
+ */
+export const createBunWebSocket = <T>(): CreateWebSocket<T> => ({
+  upgradeWebSocket,
+  websocket,
+})

@@ -46,6 +46,18 @@ describe('Compress Middleware', () => {
     c.header('Content-Length', '1024')
     return c.body(new Uint8Array(1024)) // Simulated compressed data
   })
+  app.get('/transfer-encoding-deflate', (c) => {
+    c.header('Content-Type', 'application/octet-stream')
+    c.header('Transfer-Encoding', 'deflate')
+    c.header('Content-Length', '1024')
+    return c.body(new Uint8Array(1024)) // Simulated deflate data
+  })
+  app.get('/chunked', (c) => {
+    c.header('Content-Type', 'application/octet-stream')
+    c.header('Transfer-Encoding', 'chunked')
+    c.header('Content-Length', '1024')
+    return c.body(new Uint8Array(1024)) // Simulated chunked data
+  })
   app.get('/stream', (c) =>
     stream(c, async (stream) => {
       c.header('Content-Type', 'text/plain')
@@ -132,6 +144,18 @@ describe('Compress Middleware', () => {
     it('should not remove Content-Length when not compressing', async () => {
       const res = await testCompression('/jpeg-image', 'gzip', null)
       expect(res.headers.get('Content-Length')).toBeDefined()
+    })
+
+    it('should not compress transfer-encoding: deflate', async () => {
+      const res = await testCompression('/transfer-encoding-deflate', 'gzip', null)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Transfer-Encoding')).toBe('deflate')
+    })
+
+    it('should not compress transfer-encoding: chunked', async () => {
+      const res = await testCompression('/chunked', 'gzip', null)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
     })
   })
 

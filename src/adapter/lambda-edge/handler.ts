@@ -175,7 +175,7 @@ const createRequest = (event: CloudFrontEdgeEvent): Request => {
 export const createBody = (
   method: string,
   requestBody: CloudFrontRequest['body']
-): string | Uint8Array | undefined => {
+): string | Uint8Array<ArrayBuffer> | undefined => {
   if (!requestBody || !requestBody.data) {
     return undefined
   }

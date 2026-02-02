@@ -10,7 +10,6 @@ beforeAll(() => {
     function fetch(this: undefined | typeof globalThis, arg0: string | Request) {
       if (this !== globalThis) {
         const error = new Error(
-          // eslint-disable-next-line quotes
           "Failed to execute 'fetch' on 'WorkerGlobalScope': Illegal invocation"
         )
         error.name = 'TypeError'
@@ -91,5 +90,32 @@ describe('handle', () => {
 
     expect(result.status).toBe(404)
     expect(await result.text()).toBe('Not found')
+  })
+
+  it('Should pass FetchEvent as second argument to app.fetch', async () => {
+    const app = new Hono()
+
+    app.get('/', (c) => {
+      return c.json({
+        // @ts-expect-error executionCtx is FetchEvent but not typed well
+        clientId: c.executionCtx.clientId,
+      })
+    })
+
+    const handler = handle(app)
+    // @ts-expect-error Force mocking FetchEvent including custom values
+    const mockFetchEvent = {
+      clientId: 'test-client-id',
+      respondWith: vi.fn(),
+      request: new Request('http://localhost'),
+    } as FetchEvent
+
+    const response = await new Promise<Response>((resolve) => {
+      mockFetchEvent.respondWith = resolve
+      handler(mockFetchEvent)
+    })
+
+    const json = await response.json()
+    expect(json.clientId).toBe('test-client-id')
   })
 })

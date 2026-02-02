@@ -36,7 +36,7 @@ export const getContentFromKVAsset = async (
     ASSET_NAMESPACE = __STATIC_CONTENT
   }
 
-  const key = ASSET_MANIFEST[path] || path
+  const key = ASSET_MANIFEST[path]
   if (!key) {
     return null
   }

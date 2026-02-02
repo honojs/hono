@@ -6,13 +6,6 @@
 
 <hr />
 
-<p align="center">
-<a href="https://hono.dev"><b>Documentation 👉 hono.dev</b></a><br />
-<i>Now supports <a href="https://jsr.io/@hono/hono">JSR</a> and <code>deno.land/x</code> is deprecated! See <a href="docs/MIGRATION.md">Migration guide</a>.</i>
-</p>
-
-<hr />
-
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/honojs/hono/ci.yml?branch=main)](https://github.com/honojs/hono/actions)
 [![GitHub](https://img.shields.io/github/license/honojs/hono)](https://github.com/honojs/hono/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
@@ -24,6 +17,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/main)
 [![codecov](https://codecov.io/github/honojs/hono/graph/badge.svg)](https://codecov.io/github/honojs/hono)
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/honojs/hono)
 
 Hono - _**means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework built on Web Standards. It works on any JavaScript runtime: Cloudflare Workers, Fastly Compute, Deno, Bun, Vercel, AWS Lambda, Lambda@Edge, and Node.js.
 
@@ -69,8 +63,8 @@ The migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 Contributions Welcome! You can contribute in the following ways.
 
 - Create an Issue - Propose a new feature. Report a bug.
-- Pull Request - Fix a bug and typo. Refactor the code.
-- Create third-party middleware - Instruct below.
+- Pull Request - Fix a bug or typo. Refactor the code.
+- Create third-party middleware - See instructions below.
 - Share - Share your thoughts on the Blog, X, and others.
 - Make your application - Please try to use Hono.
 

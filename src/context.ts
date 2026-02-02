@@ -13,13 +13,7 @@ import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { BaseMime } from './utils/mime'
-import type {
-  InvalidJSONValue,
-  IsAny,
-  JSONParsed,
-  JSONValue,
-  SimplifyDeepArray,
-} from './utils/types'
+import type { InvalidJSONValue, IsAny, JSONParsed, JSONValue } from './utils/types'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
@@ -29,7 +23,7 @@ type HeaderRecord =
 /**
  * Data type can be a string, ArrayBuffer, Uint8Array (buffer), or ReadableStream.
  */
-export type Data = string | ArrayBuffer | ReadableStream | Uint8Array
+export type Data = string | ArrayBuffer | ReadableStream | Uint8Array<ArrayBuffer>
 
 /**
  * Interface for the execution context in a web worker or similar environment.
@@ -45,6 +39,11 @@ export interface ExecutionContext {
    * Allows the event to be passed through to subsequent event listeners.
    */
   passThroughOnException(): void
+  /**
+   * For compatibility with Wrangler 4.x.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any
 }
 
 /**
@@ -116,14 +115,24 @@ interface NewResponse {
  */
 interface BodyRespond {
   // if we return content, only allow the status codes that allow for returning the body
-  <U extends ContentfulStatusCode>(data: Data, status?: U, headers?: HeaderRecord): Response &
-    TypedResponse<unknown, U, 'body'>
-  <U extends StatusCode>(data: null, status?: U, headers?: HeaderRecord): Response &
-    TypedResponse<null, U, 'body'>
-  <U extends ContentfulStatusCode>(data: Data, init?: ResponseOrInit<U>): Response &
-    TypedResponse<unknown, U, 'body'>
-  <U extends StatusCode>(data: null, init?: ResponseOrInit<U>): Response &
-    TypedResponse<null, U, 'body'>
+  <T extends Data, U extends ContentfulStatusCode>(
+    data: T,
+    status?: U,
+    headers?: HeaderRecord
+  ): Response & TypedResponse<T, U, 'body'>
+  <T extends Data, U extends ContentfulStatusCode>(
+    data: T,
+    init?: ResponseOrInit<U>
+  ): Response & TypedResponse<T, U, 'body'>
+  <T extends null, U extends StatusCode>(
+    data: T,
+    status?: U,
+    headers?: HeaderRecord
+  ): Response & TypedResponse<null, U, 'body'>
+  <T extends null, U extends StatusCode>(
+    data: T,
+    init?: ResponseOrInit<U>
+  ): Response & TypedResponse<null, U, 'body'>
 }
 
 /**
@@ -166,16 +175,16 @@ interface TextRespond {
  */
 interface JSONRespond {
   <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode
+    T extends JSONValue | {} | InvalidJSONValue,
+    U extends ContentfulStatusCode = ContentfulStatusCode,
   >(
     object: T,
     status?: U,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U>
   <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode
+    T extends JSONValue | {} | InvalidJSONValue,
+    U extends ContentfulStatusCode = ContentfulStatusCode,
   >(
     object: T,
     init?: ResponseOrInit<U>
@@ -186,21 +195,12 @@ interface JSONRespond {
  * @template T - The type of the JSON value or simplified unknown type.
  * @template U - The type of the status code.
  *
- * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ * @returns {Response & TypedResponse<JSONParsed<T>, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 type JSONRespondReturn<
-  T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-  U extends ContentfulStatusCode
-> = Response &
-  TypedResponse<
-    SimplifyDeepArray<T> extends JSONValue
-      ? JSONValue extends SimplifyDeepArray<T>
-        ? never
-        : JSONParsed<T>
-      : never,
-    U,
-    'json'
-  >
+  T extends JSONValue | {} | InvalidJSONValue,
+  U extends ContentfulStatusCode,
+> = Response & TypedResponse<JSONParsed<T>, U, 'json'>
 
 /**
  * Interface representing a function that responds with HTML content.
@@ -273,18 +273,11 @@ type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Respo
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
-/**
- * Sets the headers of a response.
- *
- * @param headers - The Headers object to set the headers on.
- * @param map - A record of header key-value pairs to set.
- * @returns The updated Headers object.
- */
-const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  for (const key of Object.keys(map)) {
-    headers.set(key, map[key])
+const setDefaultContentType = (contentType: string, headers?: HeaderRecord): HeaderRecord => {
+  return {
+    'Content-Type': contentType,
+    ...headers,
   }
-  return headers
 }
 
 export class Context<
@@ -292,7 +285,7 @@ export class Context<
   E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
-  I extends Input = {}
+  I extends Input = {},
 > {
   #rawRequest: Request
   #req: HonoRequest<P, I['out']> | undefined
@@ -329,15 +322,13 @@ export class Context<
    */
   error: Error | undefined
 
-  #status: StatusCode = 200
+  #status: StatusCode | undefined
   #executionCtx: FetchEventLike | ExecutionContext | undefined
-  #headers: Headers | undefined
-  #preparedHeaders: Record<string, string> | undefined
   #res: Response | undefined
-  #isFresh = true
   #layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined
   #renderer: Renderer | undefined
   #notFoundHandler: NotFoundHandler<E> | undefined
+  #preparedHeaders: Headers | undefined
 
   #matchResult: Result<[H, RouterRoute]> | undefined
   #path: string | undefined
@@ -400,8 +391,9 @@ export class Context<
    * The Response object for the current request.
    */
   get res(): Response {
-    this.#isFresh = false
-    return (this.#res ||= new Response('404 Not Found', { status: 404 }))
+    return (this.#res ||= new Response(null, {
+      headers: (this.#preparedHeaders ??= new Headers()),
+    }))
   }
 
   /**
@@ -410,33 +402,20 @@ export class Context<
    * @param _res - The Response object to set.
    */
   set res(_res: Response | undefined) {
-    this.#isFresh = false
     if (this.#res && _res) {
-      try {
-        for (const [k, v] of this.#res.headers.entries()) {
-          if (k === 'content-type') {
-            continue
-          }
-          if (k === 'set-cookie') {
-            const cookies = this.#res.headers.getSetCookie()
-            _res.headers.delete('set-cookie')
-            for (const cookie of cookies) {
-              _res.headers.append('set-cookie', cookie)
-            }
-          } else {
-            _res.headers.set(k, v)
-          }
+      _res = new Response(_res.body, _res)
+      for (const [k, v] of this.#res.headers.entries()) {
+        if (k === 'content-type') {
+          continue
         }
-      } catch (e) {
-        if (e instanceof TypeError && e.message.includes('immutable')) {
-          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
-          this.res = new Response(_res.body, {
-            headers: _res.headers,
-            status: _res.status,
-          })
-          return
+        if (k === 'set-cookie') {
+          const cookies = this.#res.headers.getSetCookie()
+          _res.headers.delete('set-cookie')
+          for (const cookie of cookies) {
+            _res.headers.append('set-cookie', cookie)
+          }
         } else {
-          throw e
+          _res.headers.set(k, v)
         }
       }
     }
@@ -510,7 +489,7 @@ export class Context<
   /**
    * `.header()` can set headers.
    *
-   * @see {@link https://hono.dev/docs/api/context#body}
+   * @see {@link https://hono.dev/docs/api/context#header}
    *
    * @example
    * ```ts
@@ -524,46 +503,20 @@ export class Context<
    * ```
    */
   header: SetHeaders = (name, value, options): void => {
-    // Clear the header
-    if (value === undefined) {
-      if (this.#headers) {
-        this.#headers.delete(name)
-      } else if (this.#preparedHeaders) {
-        delete this.#preparedHeaders[name.toLocaleLowerCase()]
-      }
-      if (this.finalized) {
-        this.res.headers.delete(name)
-      }
-      return
-    }
-
-    if (options?.append) {
-      if (!this.#headers) {
-        this.#isFresh = false
-        this.#headers = new Headers(this.#preparedHeaders)
-        this.#preparedHeaders = {}
-      }
-      this.#headers.append(name, value)
-    } else {
-      if (this.#headers) {
-        this.#headers.set(name, value)
-      } else {
-        this.#preparedHeaders ??= {}
-        this.#preparedHeaders[name.toLowerCase()] = value
-      }
-    }
-
     if (this.finalized) {
-      if (options?.append) {
-        this.res.headers.append(name, value)
-      } else {
-        this.res.headers.set(name, value)
-      }
+      this.#res = new Response((this.#res as Response).body, this.#res)
+    }
+    const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
+    if (value === undefined) {
+      headers.delete(name)
+    } else if (options?.append) {
+      headers.append(name, value)
+    } else {
+      headers.set(name, value)
     }
   }
 
   status = (status: StatusCode): void => {
-    this.#isFresh = false
     this.#status = status
   }
 
@@ -575,7 +528,7 @@ export class Context<
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
-   *   c.set('message', 'Hono is cool!!')
+   *   c.set('message', 'Hono is hot!!')
    *   await next()
    * })
    * ```
@@ -643,65 +596,36 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    // Optimized
-    if (this.#isFresh && !headers && !arg && this.#status === 200) {
-      return new Response(data, {
-        headers: this.#preparedHeaders,
-      })
-    }
+    const responseHeaders = this.#res
+      ? new Headers(this.#res.headers)
+      : (this.#preparedHeaders ?? new Headers())
 
-    if (arg && typeof arg !== 'number') {
-      const header = new Headers(arg.headers)
-      if (this.#headers) {
-        // If the header is set by c.header() and arg.headers, c.header() will be prioritized.
-        this.#headers.forEach((v, k) => {
-          if (k === 'set-cookie') {
-            header.append(k, v)
-          } else {
-            header.set(k, v)
-          }
-        })
-      }
-      const headers = setHeaders(header, this.#preparedHeaders)
-      return new Response(data, {
-        headers,
-        status: arg.status ?? this.#status,
-      })
-    }
-
-    const status = typeof arg === 'number' ? arg : this.#status
-    this.#preparedHeaders ??= {}
-
-    this.#headers ??= new Headers()
-    setHeaders(this.#headers, this.#preparedHeaders)
-
-    if (this.#res) {
-      this.#res.headers.forEach((v, k) => {
-        if (k === 'set-cookie') {
-          this.#headers?.append(k, v)
+    if (typeof arg === 'object' && 'headers' in arg) {
+      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
+      for (const [key, value] of argHeaders) {
+        if (key.toLowerCase() === 'set-cookie') {
+          responseHeaders.append(key, value)
         } else {
-          this.#headers?.set(k, v)
-        }
-      })
-      setHeaders(this.#headers, this.#preparedHeaders)
-    }
-
-    headers ??= {}
-    for (const [k, v] of Object.entries(headers)) {
-      if (typeof v === 'string') {
-        this.#headers.set(k, v)
-      } else {
-        this.#headers.delete(k)
-        for (const v2 of v) {
-          this.#headers.append(k, v2)
+          responseHeaders.set(key, value)
         }
       }
     }
 
-    return new Response(data, {
-      status,
-      headers: this.#headers,
-    })
+    if (headers) {
+      for (const [k, v] of Object.entries(headers)) {
+        if (typeof v === 'string') {
+          responseHeaders.set(k, v)
+        } else {
+          responseHeaders.delete(k)
+          for (const v2 of v) {
+            responseHeaders.append(k, v2)
+          }
+        }
+      }
+    }
+
+    const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
+    return new Response(data, { status, headers: responseHeaders })
   }
 
   newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
@@ -731,11 +655,7 @@ export class Context<
     data: Data | null,
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
-  ): ReturnType<BodyRespond> => {
-    return (
-      typeof arg === 'number' ? this.#newResponse(data, arg, headers) : this.#newResponse(data, arg)
-    ) as ReturnType<BodyRespond>
-  }
+  ): ReturnType<BodyRespond> => this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
 
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
@@ -754,22 +674,13 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
-    // If the header is empty, return Response immediately.
-    // Content-Type will be added automatically as `text/plain`.
-    if (!this.#preparedHeaders) {
-      if (this.#isFresh && !headers && !arg) {
-        // @ts-expect-error `Response` due to missing some types-only keys
-        return new Response(text)
-      }
-      this.#preparedHeaders = {}
-    }
-    this.#preparedHeaders['content-type'] = TEXT_PLAIN
-    if (typeof arg === 'number') {
-      // @ts-expect-error `Response` due to missing some types-only keys
-      return this.#newResponse(text, arg, headers)
-    }
-    // @ts-expect-error `Response` due to missing some types-only keys
-    return this.#newResponse(text, arg)
+    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+      ? (new Response(text) as ReturnType<TextRespond>)
+      : (this.#newResponse(
+          text,
+          arg,
+          setDefaultContentType(TEXT_PLAIN, headers)
+        ) as ReturnType<TextRespond>)
   }
 
   /**
@@ -785,20 +696,18 @@ export class Context<
    * ```
    */
   json: JSONRespond = <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode
+    T extends JSONValue | {} | InvalidJSONValue,
+    U extends ContentfulStatusCode = ContentfulStatusCode,
   >(
     object: T,
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
-    const body = JSON.stringify(object)
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json'
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    return (
-      typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
-    ) as any
+    return this.#newResponse(
+      JSON.stringify(object),
+      arg,
+      setDefaultContentType('application/json', headers)
+    ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
   }
 
   html: HTMLRespond = (
@@ -806,20 +715,11 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
-
-    if (typeof html === 'object') {
-      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
-        return typeof arg === 'number'
-          ? this.#newResponse(html, arg, headers)
-          : this.#newResponse(html, arg)
-      })
-    }
-
-    return typeof arg === 'number'
-      ? this.#newResponse(html as string, arg, headers)
-      : this.#newResponse(html as string, arg)
+    const res = (html: string) =>
+      this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
+    return typeof html === 'object'
+      ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
+      : res(html)
   }
 
   /**
@@ -841,8 +741,13 @@ export class Context<
     location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.#headers ??= new Headers()
-    this.#headers.set('Location', String(location))
+    const locationString = String(location)
+    this.header(
+      'Location',
+      // Multibyes should be encoded
+      // eslint-disable-next-line no-control-regex
+      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+    )
     return this.newResponse(null, status ?? 302) as any
   }
 
@@ -858,7 +763,7 @@ export class Context<
    * })
    * ```
    */
-  notFound = (): Response | Promise<Response> => {
+  notFound = (): ReturnType<NotFoundHandler> => {
     this.#notFoundHandler ??= () => new Response()
     return this.#notFoundHandler(this)
   }

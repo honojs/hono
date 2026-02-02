@@ -10,13 +10,26 @@ const makeResponseHeaderImmutable = (res: Response) => {
         }
         return Reflect.set(target, prop, value)
       },
-      get(target, prop) {
+      get(target, prop, receiver) {
         if (prop === 'set') {
           return function () {
             throw new TypeError('Cannot modify headers: Headers are immutable')
           }
         }
-        return Reflect.get(target, prop)
+        const value = Reflect.get(target, prop)
+        if (typeof value === 'function') {
+          return Object.defineProperties(
+            function (...args: unknown[]) {
+              // @ts-expect-error: `this` context is intentionally dynamic for proxy method binding
+              return Reflect.apply(value, this === receiver ? target : this, args)
+            },
+            {
+              name: { value: value.name },
+              length: { value: value.length },
+            }
+          )
+        }
+        return value
       },
     }),
     writable: false,
@@ -93,6 +106,27 @@ describe('Context', () => {
     const res = c.redirect(new URL('/destination', 'https://example.com'))
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
+  it('c.redirect() w/ multibytes', async () => {
+    const res = c.redirect('https://example.com/こんにちは')
+    expect(res.headers.get('Location')).toBe(
+      'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF'
+    )
+  })
+
+  const unchangedURLString = [
+    'https://example.com/%hello', // invalid ASCII chars
+    'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc',
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com', // with ://
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com&scope=email%20profile', // with spaces and ://
+  ]
+
+  unchangedURLString.forEach((urlString) => {
+    it(`c.redirect() w/ ${urlString}`, () => {
+      const res = c.redirect(urlString)
+      expect(res.headers.get('Location')).toBe(urlString)
+    })
   })
 
   it('c.header()', async () => {
@@ -172,6 +206,29 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - content-type can set explicitly via c.res.headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - Different header settings require ensuring order', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Content-Type', 'image/png')
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
   it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
@@ -199,7 +256,6 @@ describe('Context', () => {
     expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
     expect(res.headers.get('x-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
-    expect(await res.text()).toBe('this is body')
 
     // res is already set.
     c.res = res
@@ -207,6 +263,7 @@ describe('Context', () => {
     c.status(202)
     expect(c.res.headers.get('X-Custom4')).toBe('Message4')
     expect(c.res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
   })
 
   it('Inherit current status if not specified', async () => {
@@ -306,6 +363,7 @@ describe('event and executionCtx', () => {
       executionCtx: {
         passThroughOnException: pathThroughOnException,
         waitUntil: waitUntil,
+        props: {},
       },
       env: {},
     })
@@ -410,6 +468,29 @@ describe('Context header', () => {
     c.res = makeResponseHeaderImmutable(new Response('bar'))
     expect(await c.res.text()).toBe('bar')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should be able to set headers if the context is finalized', async () => {
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    expect(c.finalized).toBe(true)
+    c.header('X-Custom', 'Message')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should handle headers with array values correctly', async () => {
+    c.header('X-Array', 'value1')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Array': ['new1', 'new2'],
+    })
+    expect(res.headers.get('X-Array')).toBe('new1, new2')
+  })
+
+  it('Should remove existing header when new value is empty array', async () => {
+    c.header('X-Test', 'existing')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Test': [],
+    })
+    expect(res.headers.get('X-Test')).toBeNull()
   })
 })
 

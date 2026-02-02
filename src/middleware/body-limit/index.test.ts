@@ -20,12 +20,12 @@ const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half
 describe('Body Limit Middleware', () => {
   let app: Hono
 
-  const exampleText = 'hono is so cool' // 15byte
-  const exampleText2 = 'hono is so cool and cute' // 24byte
+  const exampleText = 'hono is so hot' // 14byte
+  const exampleText2 = 'hono is so hot and cute' // 23byte
 
   beforeEach(() => {
     app = new Hono()
-    app.use('*', bodyLimit({ maxSize: 15 }))
+    app.use('*', bodyLimit({ maxSize: 14 }))
     app.get('/', (c) => c.text('index'))
     app.post('/body-limit-15byte', async (c) => {
       return c.text(await c.req.raw.text())
@@ -128,6 +128,74 @@ describe('Body Limit Middleware', () => {
       expect(res).not.toBeNull()
       expect(res.status).toBe(413)
       expect(await res.text()).toBe('no')
+    })
+  })
+
+  describe('Transfer-Encoding and Content-Length headers', () => {
+    beforeEach(() => {
+      app = new Hono()
+      app.use('*', bodyLimit({ maxSize: 10 }))
+      app.post('/test', async (c) => {
+        return c.text(await c.req.text())
+      })
+    })
+
+    it('should prioritize Transfer-Encoding over Content-Length', async () => {
+      // Create a chunked body that exceeds the limit
+      const largeContent = 'this is a large content that exceeds 10 bytes'
+      const chunks = [largeContent.slice(0, 20), largeContent.slice(20)]
+
+      const stream = new ReadableStream({
+        start(controller) {
+          chunks.forEach((chunk) => {
+            controller.enqueue(new TextEncoder().encode(chunk))
+          })
+          controller.close()
+        },
+      })
+
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Content-Length': '5', // Small content-length (bypass attempt)
+          'Transfer-Encoding': 'chunked', // But chunked encoding with large content
+        },
+        body: stream,
+        duplex: 'half',
+      } as RequestInit)
+
+      // Should reject based on actual chunked content size, not Content-Length
+      expect(res.status).toBe(413)
+    })
+
+    it('should handle only Content-Length header correctly', async () => {
+      const smallContent = 'small'
+      const res = await app.request('/test', buildRequestInit({ body: smallContent }))
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(smallContent)
+    })
+
+    it('should handle only Transfer-Encoding header correctly', async () => {
+      const content = 'test'
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(content))
+          controller.close()
+        },
+      })
+
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Transfer-Encoding': 'chunked',
+        },
+        body: stream,
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(content)
     })
   })
 })

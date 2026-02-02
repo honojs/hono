@@ -10,7 +10,9 @@ import type { MiddlewareHandler } from '../../types'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
+import type { AsymmetricAlgorithm } from '../../utils/jwt/jwa'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+import type { VerifyOptions } from '../../utils/jwt/jwt'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -18,17 +20,24 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
  *
  * @param {object} options - The options for the JWK middleware.
- * @param {HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)} [options.keys] - The values of your public keys, or a function that returns them.
- * @param {string} [options.jwks_uri] - If this value is set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
- * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
- * @param {RequestInit} [init] - Optional initialization options for the `fetch` request when retrieving JWKS from a URI.
+ * @param {HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])} [options.keys] - The public keys used for JWK verification, or a function that returns them.
+ * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set to a URI string or a function that returns a URI string, attempt to fetch JWKs from it. The response must be a JSON object containing a `keys` array, which will be merged with the `keys` option.
+ * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
+ * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
+ * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
+ * @param {AsymmetricAlgorithm[]} options.alg - An array of allowed asymmetric algorithms for JWT verification. Only tokens signed with these algorithms will be accepted.
+ * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
+ * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
  * const app = new Hono()
  *
- * app.use("/auth/*", jwk({ jwks_uri: "https://example-backend.hono.dev/.well-known/jwks.json" }))
+ * app.use("/auth/*", jwk({
+ *   jwks_uri: (c) => `https://${c.env.authServer}/.well-known/jwks.json`,
+ *   headerName: 'x-custom-auth-header', // Optional, default is 'Authorization'
+ * }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
@@ -38,14 +47,23 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 
 export const jwk = (
   options: {
-    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
-    jwks_uri?: string
+    keys?: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
+    jwks_uri?: string | ((ctx: Context) => Promise<string> | string)
+    allow_anon?: boolean
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+
+    headerName?: string
+
+    alg: AsymmetricAlgorithm[]
+
+    verification?: VerifyOptions
   },
   init?: RequestInit
 ): MiddlewareHandler => {
+  const verifyOpts = options.verification || {}
+
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
@@ -55,7 +73,9 @@ export const jwk = (
   }
 
   return async function jwk(ctx, next) {
-    const credentials = ctx.req.raw.headers.get('Authorization')
+    const headerName = options.headerName || 'Authorization'
+
+    const credentials = ctx.req.raw.headers.get(headerName)
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
@@ -96,6 +116,9 @@ export const jwk = (
     }
 
     if (!token) {
+      if (options.allow_anon) {
+        return next()
+      }
       const errDescription = 'no authorization included in request'
       throw new HTTPException(401, {
         message: errDescription,
@@ -110,7 +133,14 @@ export const jwk = (
     let payload
     let cause
     try {
-      payload = await Jwt.verifyFromJwks(token, options, init)
+      const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
+      const jwks_uri =
+        typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
+      payload = await Jwt.verifyWithJwks(
+        token,
+        { keys, jwks_uri, verification: verifyOpts, allowedAlgorithms: options.alg },
+        init
+      )
     } catch (e) {
       cause = e
     }

@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 /** @jsxImportSource ../../jsx */
 import type {
   Style as StyleComponent,
@@ -416,12 +415,11 @@ export const renderTest = (
       const headerClass = css`
         background-color: blue;
         ${[1, 2].map(
-          (i) =>
-            css`
-              :nth-child(${i}) {
-                color: red;
-              }
-            `
+          (i) => css`
+            :nth-child(${i}) {
+              color: red;
+            }
+          `
         )}
       `
       const template = (

@@ -43,10 +43,13 @@ export const runTest = ({
           stash
             ? {
                 handler: r[0],
-                params: Object.keys(r[1]).reduce((acc, key) => {
-                  acc[key] = stash[(r[1] as ParamIndexMap)[key]]
-                  return acc
-                }, Object.create(null) as Params),
+                params: Object.keys(r[1]).reduce(
+                  (acc, key) => {
+                    acc[key] = stash[(r[1] as ParamIndexMap)[key]]
+                    return acc
+                  },
+                  Object.create(null) as Params
+                ),
               }
             : { handler: r[0], params: r[1] as Params }
         )
@@ -106,10 +109,14 @@ export const runTest = ({
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
-        const res = match('GET', '/entry/123')
+        let res = match('GET', '/entry/123')
+
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('get entry')
         expect(res[0].params['id']).toBe('123')
+
+        res = match('GET', '/entry-123')
+        expect(res.length).toBe(0)
       })
 
       it('Wildcard', async () => {
@@ -142,6 +149,26 @@ export const runTest = ({
         expect(res.length).toBe(0)
         res = match('GET', '/post/123/123')
         expect(res.length).toBe(0)
+      })
+
+      it('Parameter with {.*} regexp', () => {
+        router.add('GET', '/files/:name{.*}', 'file')
+        let res = match('GET', '/files')
+        expect(res.length).toBe(0)
+
+        res = match('GET', '/files/a')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
+        expect(res[0].params['name']).toEqual('a')
+
+        res = match('GET', '/files/a/b')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
+        expect(res[0].params['name']).toEqual('a/b')
+
+        res = match('GET', '/files/')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
       })
 
       it('/*', async () => {

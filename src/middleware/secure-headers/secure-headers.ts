@@ -29,6 +29,7 @@ interface ContentSecurityPolicyOptions {
   mediaSrc?: ContentSecurityPolicyOptionValue
   objectSrc?: ContentSecurityPolicyOptionValue
   reportTo?: string
+  reportUri?: string | string[]
   sandbox?: ContentSecurityPolicyOptionValue
   scriptSrc?: ContentSecurityPolicyOptionValue
   scriptSrcAttr?: ContentSecurityPolicyOptionValue
@@ -38,6 +39,8 @@ interface ContentSecurityPolicyOptions {
   styleSrcElem?: ContentSecurityPolicyOptionValue
   upgradeInsecureRequests?: ContentSecurityPolicyOptionValue
   workerSrc?: ContentSecurityPolicyOptionValue
+  requireTrustedTypesFor?: ContentSecurityPolicyOptionValue
+  trustedTypes?: ContentSecurityPolicyOptionValue
 }
 
 interface ReportToOptions {
@@ -126,9 +129,9 @@ type SecureHeadersCallback = (
 ) => [string, string][]
 
 const generateNonce = () => {
-  const buffer = new Uint8Array(16)
-  crypto.getRandomValues(buffer)
-  return encodeBase64(buffer)
+  const arrayBuffer = new Uint8Array(16)
+  crypto.getRandomValues(arrayBuffer)
+  return encodeBase64(arrayBuffer.buffer)
 }
 
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {

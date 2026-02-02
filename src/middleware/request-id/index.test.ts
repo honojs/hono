@@ -20,13 +20,26 @@ describe('Request ID Middleware', () => {
   it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
-        'X-Request-Id': 'hono-is-cool',
+        'X-Request-Id': 'hono-is-hot',
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe('hono-is-cool')
-    expect(await res.text()).toBe('hono-is-cool')
+    expect(res.headers.get('X-Request-Id')).toBe('hono-is-hot')
+    expect(await res.text()).toBe('hono-is-hot')
+  })
+
+  it('Should return custom request id with all valid characters', async () => {
+    const validRequestId = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_='
+    const res = await app.request('http://localhost/requestId', {
+      headers: {
+        'X-Request-Id': validRequestId,
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Request-Id')).toBe(validRequestId)
+    expect(await res.text()).toBe(validRequestId)
   })
 
   it('Should return random request id without using request header', async () => {
@@ -136,13 +149,13 @@ describe('Request ID Middleware with custom header', () => {
   it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
-        'Hono-Request-Id': 'hono-is-cool',
+        'Hono-Request-Id': 'hono-is-hot',
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('Hono-Request-Id')).toBe('hono-is-cool')
-    expect(await res.text()).toBe('hono-is-cool')
+    expect(res.headers.get('Hono-Request-Id')).toBe('hono-is-hot')
+    expect(await res.text()).toBe('hono-is-hot')
   })
 
   it('Should not return request id', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.7.2",
+  "version": "4.11.7",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -10,20 +10,21 @@
     "dist"
   ],
   "scripts": {
-    "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
+    "test": "tsc --noEmit && vitest --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno && deno test --no-lock -c runtime-tests/deno-jsx/deno.precompile.json runtime-tests/deno-jsx && deno test --no-lock -c runtime-tests/deno-jsx/deno.react-jsx.json runtime-tests/deno-jsx",
-    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/index.test.tsx",
-    "test:fastly": "vitest --run --config ./runtime-tests/fastly/vitest.config.ts",
-    "test:node": "vitest --run --config ./runtime-tests/node/vitest.config.ts",
-    "test:workerd": "vitest --run --config ./runtime-tests/workerd/vitest.config.ts",
-    "test:lambda": "vitest --run --config ./runtime-tests/lambda/vitest.config.ts",
-    "test:lambda-edge": "vitest --run --config ./runtime-tests/lambda-edge/vitest.config.ts",
-    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
-    "lint": "eslint src runtime-tests build perf-measures",
-    "lint:fix": "eslint src runtime-tests build perf-measures --fix",
-    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
+    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/*",
+    "test:fastly": "vitest --run --project fastly",
+    "test:node": "vitest --run --project node",
+    "test:workerd": "vitest --run --project workerd",
+    "test:lambda": "vitest --run --project lambda",
+    "test:lambda-edge": "vitest --run --project lambda-edge",
+    "test:all": "bun run test && bun test:deno && bun test:bun",
+    "lint": "eslint src runtime-tests build perf-measures benchmarks",
+    "lint:fix": "eslint src runtime-tests build perf-measures benchmarks --fix",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
+    "editorconfig-checker": "editorconfig-checker",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
     "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
@@ -93,6 +94,11 @@
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
+    },
+    "./route": {
+      "types": "./dist/types/helper/route/index.d.ts",
+      "import": "./dist/helper/route/index.js",
+      "require": "./dist/cjs/helper/route/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
@@ -445,6 +451,9 @@
       "cache": [
         "./dist/types/middleware/cache"
       ],
+      "route": [
+        "./dist/types/helper/route"
+      ],
       "cookie": [
         "./dist/types/helper/cookie"
       ],
@@ -631,7 +640,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/hono.git"
+    "url": "git+https://github.com/honojs/hono.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -655,31 +664,35 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^1.0.2",
+    "@hono/eslint-config": "^2.0.5",
     "@hono/node-server": "^1.13.5",
-    "@types/glob": "^8.1.0",
+    "@types/glob": "^9.0.0",
     "@types/jsdom": "^21.1.7",
-    "@types/node": "20.11.4",
-    "@types/supertest": "^2.0.16",
-    "@vitest/coverage-v8": "^3.0.5",
+    "@types/node": "^24.3.0",
+    "@typescript/native-preview": "7.0.0-dev.20251220.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "arg": "^5.0.2",
-    "bun-types": "^1.1.39",
-    "esbuild": "^0.15.18",
-    "eslint": "^9.10.0",
+    "bun-types": "^1.2.20",
+    "editorconfig-checker": "6.1.1",
+    "esbuild": "^0.27.1",
+    "eslint": "9.39.1",
     "glob": "^11.0.0",
-    "jsdom": "^22.1.0",
+    "jsdom": "22.1.0",
     "msw": "^2.6.0",
     "np": "10.2.0",
-    "prettier": "^2.6.2",
-    "publint": "^0.1.16",
-    "supertest": "^6.3.4",
-    "typescript": "^5.3.3",
+    "oxc-parser": "^0.96.0",
+    "pkg-pr-new": "^0.0.53",
+    "prettier": "3.7.4",
+    "publint": "0.3.15",
+    "typescript": "^5.9.2",
+    "undici": "^6.21.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vitest": "^3.0.5",
-    "wrangler": "3.58.0",
+    "vitest": "^3.2.4",
+    "wrangler": "4.12.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
+  "packageManager": "bun@1.2.20",
   "engines": {
     "node": ">=16.9.0"
   }

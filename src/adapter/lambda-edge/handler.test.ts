@@ -27,7 +27,7 @@ describe('createBody', () => {
     const data = encoder.encode('test')
     const body = {
       action: 'read-only',
-      data: encodeBase64(data),
+      data: encodeBase64(data.buffer),
       encoding: 'base64',
       inputTruncated: false,
     }

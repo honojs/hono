@@ -15,11 +15,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          deno-version-file: '.tool-versions'
       - run: deno install --no-lock --allow-scripts
       - name: Publish to JSR
         run: deno run -A jsr:@david/publish-on-tag@0.1.4

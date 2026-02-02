@@ -79,6 +79,10 @@ export class LinearRouter<T> implements Router<T> {
 
             const part = parts[j]
             if (part.charCodeAt(1) === 58) {
+              if (path.charCodeAt(pos) !== 47) {
+                continue ROUTES_LOOP
+              }
+
               // /:label
               let name = part.slice(2)
               let value

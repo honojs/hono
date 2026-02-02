@@ -12,6 +12,16 @@ import { validator } from '../validator'
 import { hc } from './client'
 import type { ClientResponse, InferRequestType, InferResponseType } from './types'
 
+class SafeBigInt {
+  unsafe = BigInt(42)
+
+  toJSON() {
+    return {
+      value: '42n',
+    }
+  }
+}
+
 describe('Basic - JSON', () => {
   const app = new Hono()
 
@@ -51,6 +61,8 @@ describe('Basic - JSON', () => {
     .get('/hello-not-found', (c) => c.notFound())
     .get('/null', (c) => c.json(null))
     .get('/empty', (c) => c.json({}))
+    .get('/bigint', (c) => c.json({ value: BigInt(42) }))
+    .get('/safe-bigint', (c) => c.json(new SafeBigInt()))
 
   type AppType = typeof route
 
@@ -80,6 +92,12 @@ describe('Basic - JSON', () => {
     }),
     http.get('http://localhost/empty', () => {
       return HttpResponse.json({})
+    }),
+    http.get('http://localhost/bigint', () => {
+      return HttpResponse.json({ value: BigInt(42) })
+    }),
+    http.get('http://localhost/safe-bigint', () => {
+      return HttpResponse.json(new SafeBigInt())
     }),
     http.get('http://localhost/api/string', () => {
       return HttpResponse.json('a-string')
@@ -149,6 +167,26 @@ describe('Basic - JSON', () => {
     const data = await res.json()
     expectTypeOf(data).toMatchTypeOf<{}>()
     expect(data).toStrictEqual({})
+  })
+
+  it('Should get a `{}` content', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client['safe-bigint'].$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<{ value: string }>()
+    expect(data).toStrictEqual({ value: '42n' })
+  })
+
+  it('Should get an error response', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.bigint.$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<never>()
+    expect(res.status).toBe(500)
+    expect(data).toMatchObject({
+      message: 'Do not know how to serialize a BigInt',
+      name: 'TypeError',
+    })
   })
 
   it('Should have correct types - primitives', async () => {
@@ -339,6 +377,50 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
   })
 })
 
+describe('Basic - $url()', () => {
+  const api = new Hono().get('/', (c) => c.text('API')).get('/posts/:id', (c) => c.text('Post'))
+  const content = new Hono().get(
+    '/search',
+    validator('query', () => {
+      return { page: '1', limit: '10' }
+    }),
+    (c) => c.text('Search')
+  )
+  const app = new Hono()
+    .get('/', (c) => c.text('Index'))
+    .route('/api', api)
+    .route('/content', content)
+
+  it('Should return a correct url via $url().href', async () => {
+    const client = hc<typeof app>('http://fake')
+    expect(client.index.$url().href).toBe('http://fake/')
+    expect(
+      client.index.$url({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      }).href
+    ).toBe('http://fake/?page=123&limit=20')
+    expect(client.api.$url().href).toBe('http://fake/api')
+    expect(
+      client.api.posts[':id'].$url({
+        param: {
+          id: '123',
+        },
+      }).href
+    ).toBe('http://fake/api/posts/123')
+    expect(
+      client.content.search.$url({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      }).href
+    ).toBe('http://fake/content/search?page=123&limit=20')
+  })
+})
+
 describe('Form - Multiple Values', () => {
   const server = setupServer(
     http.post('http://localhost/multiple-values', async ({ request }) => {
@@ -451,7 +533,7 @@ describe('Infer the response/request type', () => {
       const req = client.index.$get
 
       type Actual = InferResponseType<typeof req>
-      type Expected = { ok: boolean }
+      type Expected = { ok: true }
       type verify = Expect<Equal<Expected, Actual>>
     })
 
@@ -514,7 +596,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -525,7 +607,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -536,7 +618,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.v1.book.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -823,6 +905,112 @@ describe('Infer the response type with different status codes', () => {
       data: string
     } | null
     type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Infer the response types from middlewares', () => {
+  const app = new Hono()
+    .get(
+      '/',
+      validator('query', (input, c) => {
+        if (!input.page || typeof input.page !== 'string') {
+          return c.json({ error: 'Bad request' as const }, 400)
+        }
+
+        return input as { page: string }
+      }),
+      async (c) => {
+        const query = c.req.valid('query')
+        return c.json({ data: 'foo', page: query.page }, 200)
+      }
+    )
+    .post(
+      '/posts',
+      async (c, next) => {
+        const auth = c.req.header('authorization')
+        if (!auth || !auth.startsWith('Bearer ')) {
+          return c.json({ error: 'Unauthorized' as const }, 401)
+        }
+        return next()
+      },
+      validator('json', (input, c) => {
+        if (!input.title) {
+          return c.json({ error: 'Bad request' as const }, 400)
+        }
+
+        return input as { title: string }
+      }),
+      (c) => {
+        const data = c.req.valid('json')
+        return c.json(data, 200)
+      }
+    )
+
+  type AppType = typeof app
+  const client = hc<AppType>('', { fetch: app.request })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      title: string
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 400 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 400>
+    type Expected = {
+      error: 'Bad request'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 401 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 401>
+    type Expected = {
+      error: 'Unauthorized'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer all possible response statuses', async () => {
+    const req = await client.posts.$post({
+      json: {
+        title: 'hello',
+      },
+    })
+
+    type Actual = typeof req.status
+    type Expected = 200 | 400 | 401
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should properly assign response to corresponding status', async () => {
+    const req = await client.posts.$post({
+      json: {
+        title: 'hello',
+      },
+    })
+
+    if (req.status === 200) {
+      const data = await req.json()
+
+      expectTypeOf(data).toEqualTypeOf<{ title: string }>()
+    } else if (req.status === 400) {
+      const data = await req.json()
+
+      expectTypeOf(data).toEqualTypeOf<{ error: 'Bad request' }>()
+    } else if (req.status === 401) {
+      const data = await req.json()
+
+      expectTypeOf(data).toEqualTypeOf<{ error: 'Unauthorized' }>()
+    }
   })
 })
 
@@ -1264,7 +1452,7 @@ describe('Redirect response - only types', () => {
     type Actual = InferResponseType<typeof req>
     type Expected =
       | {
-          ok: boolean
+          ok: true
         }
       | undefined
     type verify = Expect<Equal<Expected, Actual>>
@@ -1333,5 +1521,85 @@ describe('WebSocket Provider Integration', () => {
     })
     client.index.$ws({ query })
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+})
+
+describe('Custom buildSearchParams', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/search',
+    validator('query', () => {
+      return {} as { q: string; tags: string[] }
+    }),
+    (c) => {
+      return c.json({
+        message: 'success',
+        queryString: '',
+      })
+    }
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    http.get('http://localhost/search', ({ request }) => {
+      const url = new URL(request.url)
+      return HttpResponse.json({
+        message: 'success',
+        queryString: url.search,
+      })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  // Custom buildSearchParams that uses bracket notation for arrays (key[]=value)
+  const customBuildSearchParams = (query: Record<string, string | string[]>) => {
+    const searchParams = new URLSearchParams()
+    for (const [k, v] of Object.entries(query)) {
+      if (v === undefined) {
+        continue
+      }
+      if (Array.isArray(v)) {
+        v.forEach((item) => searchParams.append(`${k}[]`, item))
+      } else {
+        searchParams.set(k, v)
+      }
+    }
+    return searchParams
+  }
+
+  it('Should use custom buildSearchParams for query serialization', async () => {
+    const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
+    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2', 'tag3'] } })
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.queryString).toBe('?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2&tags%5B%5D=tag3')
+  })
+
+  it('Should use default buildSearchParams when custom one is not provided', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.search.$get({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.queryString).toBe('?q=test&tags=tag1&tags=tag2')
+  })
+
+  it('Should use custom buildSearchParams in $url() method', () => {
+    const client = hc<AppType>('http://localhost', { buildSearchParams: customBuildSearchParams })
+    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(url.href).toBe('http://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2')
+  })
+
+  it('Should use default buildSearchParams in $url() when custom one is not provided', () => {
+    const client = hc<AppType>('http://localhost')
+    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
   })
 })

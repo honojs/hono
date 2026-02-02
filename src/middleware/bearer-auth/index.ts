@@ -14,6 +14,10 @@ const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
+type CustomizedErrorResponseOptions = {
+  wwwAuthenticateHeader?: string | object | MessageFunction
+  message?: string | object | MessageFunction
+}
 
 type BearerAuthOptions =
   | {
@@ -22,9 +26,21 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
+      /**
+       * @deprecated Use noAuthenticationHeader.message instead
+       */
       noAuthenticationHeaderMessage?: string | object | MessageFunction
+      noAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidAuthenticationHeader.message instead
+       */
       invalidAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidToken.message instead
+       */
       invalidTokenMessage?: string | object | MessageFunction
+      invalidToken?: CustomizedErrorResponseOptions
     }
   | {
       realm?: string
@@ -32,9 +48,21 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
+      /**
+       * @deprecated Use noAuthenticationHeader.message instead
+       */
       noAuthenticationHeaderMessage?: string | object | MessageFunction
+      noAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidAuthenticationHeader.message instead
+       */
       invalidAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeader?: CustomizedErrorResponseOptions
+      /**
+       * @deprecated Use invalidToken.message instead
+       */
       invalidTokenMessage?: string | object | MessageFunction
+      invalidToken?: CustomizedErrorResponseOptions
     }
 
 /**
@@ -49,9 +77,12 @@ type BearerAuthOptions =
  * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
- * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
- * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeader.message="Unauthorized"] - The no authentication header message.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeader.wwwAuthenticateHeader="Bearer realm=\"\""] - The response header value for the WWW-Authenticate header when no authentication header is provided.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.message="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The response header value for the WWW-Authenticate header when authentication header is invalid.
+ * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The response header value for the WWW-Authenticate header when token is invalid.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
@@ -60,7 +91,7 @@ type BearerAuthOptions =
  * ```ts
  * const app = new Hono()
  *
- * const token = 'honoiscool'
+ * const token = 'honoishot'
  *
  * app.use('/api/*', bearerAuth({ token }))
  *
@@ -88,11 +119,21 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   const throwHTTPException = async (
     c: Context,
     status: ContentfulStatusCode,
-    wwwAuthenticateHeader: string,
+    wwwAuthenticateHeader: string | object | MessageFunction,
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
+    const wwwAuthenticateHeaderValue: string | object =
+      typeof wwwAuthenticateHeader === 'function'
+        ? await wwwAuthenticateHeader(c)
+        : wwwAuthenticateHeader
+
     const headers = {
-      'WWW-Authenticate': wwwAuthenticateHeader,
+      'WWW-Authenticate':
+        typeof wwwAuthenticateHeaderValue === 'string'
+          ? wwwAuthenticateHeaderValue
+          : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeaderValue)
+              .map(([key, value]) => `${key}="${value}"`)
+              .join(',')}`,
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
@@ -116,8 +157,11 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
       await throwHTTPException(
         c,
         401,
-        `${wwwAuthenticatePrefix}realm="${realm}"`,
-        options.noAuthenticationHeaderMessage || 'Unauthorized'
+        options.noAuthenticationHeader?.wwwAuthenticateHeader ||
+          `${wwwAuthenticatePrefix}realm="${realm}"`,
+        options.noAuthenticationHeader?.message ||
+          options.noAuthenticationHeaderMessage ||
+          'Unauthorized'
       )
     } else {
       const match = regexp.exec(headerToken)
@@ -126,8 +170,11 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
         await throwHTTPException(
           c,
           400,
-          `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeaderMessage || 'Bad Request'
+          options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
+            `${wwwAuthenticatePrefix}error="invalid_request"`,
+          options.invalidAuthenticationHeader?.message ||
+            options.invalidAuthenticationHeaderMessage ||
+            'Bad Request'
         )
       } else {
         let equal = false
@@ -148,8 +195,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           await throwHTTPException(
             c,
             401,
-            `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidTokenMessage || 'Unauthorized'
+            options.invalidToken?.wwwAuthenticateHeader ||
+              `${wwwAuthenticatePrefix}error="invalid_token"`,
+            options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
           )
         }
       }

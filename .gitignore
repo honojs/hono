@@ -134,3 +134,7 @@ out
 
 # IDE-specific settings
 .idea
+
+# Claude Code local files
+CLAUDE.local.md
+settings.local.json

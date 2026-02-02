@@ -1,10 +1,10 @@
 import { decodeBase64Url, encodeBase64Url } from './encode'
 
 const toURLBase64 = (base64String: string): string =>
-  base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' }[m] ?? m))
+  base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' })[m] ?? m)
 
-const str2UInt8Array = (s: string): Uint8Array => {
-  const buffer = new Uint8Array(new ArrayBuffer(s.length))
+const str2UInt8Array = (s: string): Uint8Array<ArrayBuffer> => {
+  const buffer = new Uint8Array<ArrayBuffer>(new ArrayBuffer(s.length))
   for (let i = 0, len = buffer.byteLength; i < len; i++) {
     buffer[i] = s.charCodeAt(i)
   }
@@ -48,7 +48,7 @@ describe('base64', () => {
     [str2UInt8Array('sure.'), 'c3VyZS4='],
   ])('%s, %s', (stdDecoded, stdEncoded) => {
     it('encode', () => {
-      const got = encodeBase64Url(stdDecoded)
+      const got = encodeBase64Url(stdDecoded.buffer)
       const want = toURLBase64(stdEncoded)
       expect(got).toStrictEqual(want)
     })

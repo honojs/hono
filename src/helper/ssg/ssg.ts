@@ -5,7 +5,7 @@ import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
 import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
-import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
+import { dirname, filterStaticGenerateRoutes, isDynamicRoute, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
@@ -16,6 +16,8 @@ const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 //  This approach maintains performance consistency across different environments.
 //  For details, see GitHub issues: oven-sh/bun#8530 and https://github.com/honojs/hono/issues/2284.
 const DEFAULT_CONTENT_TYPE = 'text/plain'
+
+export const DEFAULT_OUTPUT_DIR = './static'
 
 /**
  * @experimental
@@ -95,7 +97,11 @@ const determineExtension = (
 
 export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
 export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
-export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
+export type AfterGenerateHook = (
+  result: ToSSGResult,
+  fsModule: FileSystemModule,
+  options?: ToSSGOptions
+) => void | Promise<void>
 
 export const combineBeforeRequestHooks = (
   hooks: BeforeRequestHook | BeforeRequestHook[]
@@ -140,25 +146,43 @@ export const combineAfterResponseHooks = (
 }
 
 export const combineAfterGenerateHooks = (
-  hooks: AfterGenerateHook | AfterGenerateHook[]
+  hooks: AfterGenerateHook | AfterGenerateHook[],
+  fsModule: FileSystemModule,
+  options?: ToSSGOptions
 ): AfterGenerateHook => {
   if (!Array.isArray(hooks)) {
     return hooks
   }
   return async (result: ToSSGResult): Promise<void> => {
     for (const hook of hooks) {
-      await hook(result)
+      await hook(result, fsModule, options)
     }
   }
 }
 
-export interface ToSSGOptions {
-  dir?: string
+export interface SSGPlugin {
   beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
   afterResponseHook?: AfterResponseHook | AfterResponseHook[]
   afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
+}
+
+export interface ToSSGOptions {
+  dir?: string
+  /**
+   * @deprecated Use plugins[].beforeRequestHook instead.
+   */
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  /**
+   * @deprecated Use plugins[].afterResponseHook instead.
+   */
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  /**
+   * @deprecated Use plugins[].afterGenerateHook instead.
+   */
+  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
+  plugins?: SSGPlugin[]
 }
 
 /**
@@ -169,7 +193,7 @@ export interface ToSSGOptions {
 export const fetchRoutesContent = function* <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 >(
   app: Hono<E, S, BasePath>,
   beforeRequestHook?: BeforeRequestHook,
@@ -265,10 +289,6 @@ export const fetchRoutesContent = function* <
   }
 }
 
-const isDynamicRoute = (path: string): boolean => {
-  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
-}
-
 /**
  * @experimental
  * `saveContentToFile` is an experimental feature.
@@ -323,9 +343,25 @@ export interface ToSSGInterface {
 export interface ToSSGAdaptorInterface<
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 > {
   (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
+}
+
+/**
+ * The default plugin that defines the recommended behavior.
+ *
+ * @experimental
+ * `defaultPlugin` is an experimental feature.
+ * The API might be changed.
+ */
+export const defaultPlugin: SSGPlugin = {
+  afterResponseHook: (res) => {
+    if (res.status !== 200) {
+      return false
+    }
+    return res
+  },
 }
 
 /**
@@ -337,15 +373,63 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
+  const plugins = options?.plugins || [defaultPlugin]
+  const beforeRequestHooks: BeforeRequestHook[] = []
+  const afterResponseHooks: AfterResponseHook[] = []
+  const afterGenerateHooks: AfterGenerateHook[] = []
+  if (options?.beforeRequestHook) {
+    beforeRequestHooks.push(
+      ...(Array.isArray(options.beforeRequestHook)
+        ? options.beforeRequestHook
+        : [options.beforeRequestHook])
+    )
+  }
+  if (options?.afterResponseHook) {
+    afterResponseHooks.push(
+      ...(Array.isArray(options.afterResponseHook)
+        ? options.afterResponseHook
+        : [options.afterResponseHook])
+    )
+  }
+  if (options?.afterGenerateHook) {
+    afterGenerateHooks.push(
+      ...(Array.isArray(options.afterGenerateHook)
+        ? options.afterGenerateHook
+        : [options.afterGenerateHook])
+    )
+  }
+  for (const plugin of plugins) {
+    if (plugin.beforeRequestHook) {
+      beforeRequestHooks.push(
+        ...(Array.isArray(plugin.beforeRequestHook)
+          ? plugin.beforeRequestHook
+          : [plugin.beforeRequestHook])
+      )
+    }
+    if (plugin.afterResponseHook) {
+      afterResponseHooks.push(
+        ...(Array.isArray(plugin.afterResponseHook)
+          ? plugin.afterResponseHook
+          : [plugin.afterResponseHook])
+      )
+    }
+    if (plugin.afterGenerateHook) {
+      afterGenerateHooks.push(
+        ...(Array.isArray(plugin.afterGenerateHook)
+          ? plugin.afterGenerateHook
+          : [plugin.afterGenerateHook])
+      )
+    }
+  }
   try {
-    const outputDir = options?.dir ?? './static'
+    const outputDir = options?.dir ?? DEFAULT_OUTPUT_DIR
     const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
 
     const combinedBeforeRequestHook = combineBeforeRequestHooks(
-      options?.beforeRequestHook || ((req) => req)
+      beforeRequestHooks.length > 0 ? beforeRequestHooks : [(req) => req]
     )
     const combinedAfterResponseHook = combineAfterResponseHooks(
-      options?.afterResponseHook || ((req) => req)
+      afterResponseHooks.length > 0 ? afterResponseHooks : [(req) => req]
     )
     const getInfoGen = fetchRoutesContent(
       app,
@@ -360,7 +444,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
             return
           }
           for (const content of getContentGen) {
-            savePromises.push(saveContentToFile(content, fs, outputDir).catch((e) => e))
+            savePromises.push(
+              saveContentToFile(content, fs, outputDir, options?.extensionMap).catch((e) => e)
+            )
           }
         })
       )
@@ -380,9 +466,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const errorObj = error instanceof Error ? error : new Error(String(error))
     result = { success: false, files: [], error: errorObj }
   }
-  if (options?.afterGenerateHook) {
-    const combinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
-    await combinedAfterGenerateHooks(result)
+  if (afterGenerateHooks.length > 0) {
+    const combinedAfterGenerateHooks = combineAfterGenerateHooks(afterGenerateHooks, fs, options)
+    await combinedAfterGenerateHooks(result, fs, options)
   }
   return result
 }

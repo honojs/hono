@@ -8,13 +8,13 @@
 /// <reference types="bun-types/bun" />
 
 import arg from 'arg'
-import { $, stdout } from 'bun'
-import { build } from 'esbuild'
+import { $ } from 'bun'
+import { build, context } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
 import fs from 'fs'
 import path from 'path'
-import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
+import { removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 
 const args = arg({
@@ -67,53 +67,44 @@ const addExtension = (extension: string = '.js', fileExtension: string = '.ts'):
 })
 
 const commonOptions: BuildOptions = {
-  watch: isWatch,
   entryPoints,
   logLevel: 'info',
   platform: 'node',
 }
 
-const cjsBuild = () =>
-  build({
-    ...commonOptions,
-    outbase: './src',
-    outdir: './dist/cjs',
-    format: 'cjs',
-  })
+const cjsConfig: BuildOptions = {
+  ...commonOptions,
+  outbase: './src',
+  outdir: './dist/cjs',
+  format: 'cjs',
+}
 
-const esmBuild = () =>
-  build({
-    ...commonOptions,
-    bundle: true,
-    outbase: './src',
-    outdir: './dist',
-    format: 'esm',
-    plugins: [addExtension('.js')],
-  })
+const esmConfig: BuildOptions = {
+  ...commonOptions,
+  bundle: true,
+  outbase: './src',
+  outdir: './dist',
+  format: 'esm',
+  plugins: [addExtension('.js')],
+}
 
-Promise.all([esmBuild(), cjsBuild()])
+const runBuild = async (config: BuildOptions) => {
+  if (isWatch) {
+    const ctx = await context(config)
+    await ctx.watch()
+  } else {
+    await build(config)
+  }
+}
 
-await $`tsc ${
-  isWatch ? '-w' : ''
-} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+await Promise.all([
+  runBuild(esmConfig),
+  runBuild(cjsConfig),
+  $`tsc ${
+    isWatch ? '-w' : ''
+  } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow(),
+])
 
 // Remove #private fields
 const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
-const writer = stdout.writer()
-writer.write('\n')
-let lastOutputLength = 0
-let removedCount = 0
-
-await Promise.all(
-  dtsEntries.map(async (e) => {
-    await fs.promises.writeFile(e, await removePrivateFields(e))
-
-    const message = `Private fields removed(${++removedCount}/${dtsEntries.length}): ${e}`
-    writer.write(`\r${' '.repeat(lastOutputLength)}`)
-    lastOutputLength = message.length
-    writer.write(`\r${message}`)
-  })
-)
-
-writer.write('\n')
-cleanupWorkers()
+await removePrivateFields(dtsEntries)

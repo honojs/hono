@@ -108,7 +108,7 @@ const documentMetadataTag = (
     existingElements = head.querySelectorAll<HTMLElement>(tag)
   }
 
-  precedence = supportSort ? precedence ?? '' : undefined
+  precedence = supportSort ? (precedence ?? '') : undefined
   if (supportSort) {
     restProps[dataPrecedenceAttr] = precedence
   }

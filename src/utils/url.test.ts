@@ -111,6 +111,20 @@ describe('url', () => {
       path = getPath(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey/')
     })
+
+    it('getPath - http+unix', () => {
+      const path = getPath(new Request('http+unix://%2Ftmp%2Fsocket%2Esock/hello/'))
+      expect(path).toBe('/hello/')
+    })
+
+    it.each([
+      'http:/example.com/hello', // invalid HTTP URL
+      'http:///hello', // invalid HTTP URL
+      'http://a/:/hello', // starts with `/:/`
+      'x://a/:/hello', // unknown schema
+    ])('getPath - %s', (url) => {
+      expect(getPath(new Request(url))).toBe(new URL(url).pathname)
+    })
   })
 
   describe('getQueryStrings', () => {
@@ -204,6 +218,7 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
         'a web framework'
       )
+      expect(getQueryParam('http://example.com/?name=%E0%A4%A', 'name')).toBe('%E0%A4%A')
 
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name0')).toBe('sam')
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name1')).toBe('tom')
@@ -233,6 +248,8 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?pretty', 'pretty')).toBe('')
       expect(getQueryParam('http://example.com/?pretty', 'prtt')).toBe(undefined)
       expect(getQueryParam('http://example.com/?name=sam&name=tom', 'name')).toBe('sam')
+      expect(getQueryParam('http://example.com/&name=sam?name=tom', 'name')).toBe('tom')
+      expect(getQueryParam('http://example.com/&name=sam', 'name')).toBe(undefined)
       expect(getQueryParam('http://example.com/?name=sam&name=tom')).toEqual({
         name: 'sam',
       })
@@ -258,6 +275,8 @@ describe('url', () => {
       expect(getQueryParams('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toEqual([
         'a web framework',
       ])
+      expect(getQueryParams('http://example.com/?name=%E0%A4%A', 'name')).toEqual(['%E0%A4%A'])
+
       let searchParams = new URLSearchParams()
       searchParams.append('tag', '炎')
       searchParams.append('tag', 'ほのお')

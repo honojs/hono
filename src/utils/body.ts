@@ -13,10 +13,10 @@ type SimplifyBodyData<T> = {
   [K in keyof T]: string | File | (string | File)[] | BodyDataValueDotAll extends T[K]
     ? string | File | (string | File)[] | BodyDataValueDotAll
     : string | File | BodyDataValueDot extends T[K]
-    ? string | File | BodyDataValueDot
-    : string | File | (string | File)[] extends T[K]
-    ? string | File | (string | File)[]
-    : string | File
+      ? string | File | BodyDataValueDot
+      : string | File | (string | File)[] extends T[K]
+        ? string | File | (string | File)[]
+        : string | File
 } & {}
 
 type BodyDataValueComponent<T> =
@@ -25,16 +25,16 @@ type BodyDataValueComponent<T> =
   | (T extends { all: false }
       ? never // explicitly set to false
       : T extends { all: true } | { all: boolean }
-      ? (string | File)[] // use all option
-      : never) // without options
+        ? (string | File)[] // use all option
+        : never) // without options
 type BodyDataValueObject<T> = { [key: string]: BodyDataValueComponent<T> | BodyDataValueObject<T> }
 type BodyDataValue<T> =
   | BodyDataValueComponent<T>
   | (T extends { dot: false }
       ? never // explicitly set to false
       : T extends { dot: true } | { dot: boolean }
-      ? BodyDataValueObject<T> // use dot option
-      : never) // without options
+        ? BodyDataValueObject<T> // use dot option
+        : never) // without options
 export type BodyData<T extends Partial<ParseBodyOptions> = {}> = SimplifyBodyData<
   Record<string, BodyDataValue<T>>
 >
@@ -188,7 +188,11 @@ const handleParsingAllValues = (
       form[key] = [form[key] as string | File, value]
     }
   } else {
-    form[key] = value
+    if (!key.endsWith('[]')) {
+      form[key] = value
+    } else {
+      form[key] = [value]
+    }
   }
 }
 

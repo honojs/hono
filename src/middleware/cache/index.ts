@@ -5,6 +5,33 @@
 
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
+
+/**
+ * status codes that can be cached by default.
+ */
+const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
+
+const shouldSkipCache = (res: Response) => {
+  const vary = res.headers.get('Vary')
+  if (vary && vary.includes('*')) {
+    return true
+  }
+
+  const cacheControl = res.headers.get('Cache-Control')
+  if (
+    cacheControl &&
+    /(?:^|,\s*)(?:private|no-(?:store|cache))(?:\s*(?:=|,|$))/i.test(cacheControl)
+  ) {
+    return true
+  }
+
+  if (res.headers.has('Set-Cookie')) {
+    return true
+  }
+
+  return false
+}
 
 /**
  * Cache Middleware for Hono.
@@ -17,6 +44,7 @@ import type { MiddlewareHandler } from '../../types'
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
+ * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
@@ -37,6 +65,7 @@ export const cache = (options: {
   cacheControl?: string
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
+  cacheableStatusCodes?: StatusCode[]
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
     console.log('Cache Middleware is not enabled because caches is not defined.')
@@ -60,6 +89,10 @@ export const cache = (options: {
       'Middleware vary configuration cannot include "*", as it disallows effective caching.'
     )
   }
+
+  const cacheableStatusCodes = new Set<number>(
+    options.cacheableStatusCodes ?? defaultCacheableStatusCodes
+  )
 
   const addHeader = (c: Context) => {
     if (cacheControlDirectives) {
@@ -113,10 +146,15 @@ export const cache = (options: {
     }
 
     await next()
-    if (!c.res.ok) {
+    if (!cacheableStatusCodes.has(c.res.status)) {
       return
     }
     addHeader(c)
+
+    if (shouldSkipCache(c.res)) {
+      return
+    }
+
     const res = c.res.clone()
     if (options.wait) {
       await cache.put(key, res)

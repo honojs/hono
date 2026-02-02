@@ -3,7 +3,7 @@
  * Cookie utility.
  */
 
-import { decodeURIComponent_ } from './url'
+import { decodeURIComponent_, tryDecode } from './url'
 
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
@@ -21,10 +21,9 @@ export type CookieOptions = {
   maxAge?: number
   path?: string
   secure?: boolean
-  signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
-  priority?: 'Low' | 'Medium' | 'High'
+  priority?: 'Low' | 'Medium' | 'High' | 'low' | 'medium' | 'high'
   prefix?: CookiePrefixOptions
 } & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
@@ -32,8 +31,8 @@ export type CookiePrefixOptions = 'host' | 'secure'
 export type CookieConstraint<Name> = Name extends `__Secure-${string}`
   ? CookieOptions & SecureCookieConstraint
   : Name extends `__Host-${string}`
-  ? CookieOptions & HostCookieConstraint
-  : CookieOptions
+    ? CookieOptions & HostCookieConstraint
+    : CookieOptions
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
 
@@ -101,7 +100,8 @@ export const parse = (cookie: string, name?: string): Cookie => {
       cookieValue = cookieValue.slice(1, -1)
     }
     if (validCookieValueRegEx.test(cookieValue)) {
-      parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+      parsedCookie[cookieName] =
+        cookieValue.indexOf('%') !== -1 ? tryDecode(cookieValue, decodeURIComponent_) : cookieValue
       if (name) {
         // Fast-path: return only the demanded-key immediately. Other keys are not needed.
         break
@@ -142,14 +142,12 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   let cookie = `${name}=${value}`
 
   if (name.startsWith('__Secure-') && !opt.secure) {
-    // FIXME: replace link to RFC
-    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.1
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
   }
 
   if (name.startsWith('__Host-')) {
-    // FIXME: replace link to RFC
-    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.2
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.2
     if (!opt.secure) {
       throw new Error('__Host- Cookie must have Secure attributes')
     }
@@ -165,8 +163,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     if (opt.maxAge > 34560000) {
-      // FIXME: replace link to RFC
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.2
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
       throw new Error(
         'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
       )
@@ -184,8 +181,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt.expires) {
     if (opt.expires.getTime() - Date.now() > 34560000_000) {
-      // FIXME: replace link to RFC
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.1
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
       throw new Error(
         'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
       )
@@ -206,12 +202,11 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.priority) {
-    cookie += `; Priority=${opt.priority}`
+    cookie += `; Priority=${opt.priority.charAt(0).toUpperCase() + opt.priority.slice(1)}`
   }
 
   if (opt.partitioned) {
-    // FIXME: replace link to RFC
-    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.3
+    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
     if (!opt.secure) {
       throw new Error('Partitioned Cookie must have Secure attributes')
     }

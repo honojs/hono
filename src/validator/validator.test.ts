@@ -1,42 +1,65 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
+import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
+import { cloneRawRequest } from '../request'
 import type {
   ErrorHandler,
   ExtractSchema,
+  ExtractSchemaForStatusCode,
+  FormValue,
   MiddlewareHandler,
-  ParsedFormValue,
+  TypedResponse,
   ValidationTargets,
 } from '../types'
-import type { ContentfulStatusCode } from '../utils/http-status'
+import type { ContentfulStatusCode, StatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
+
+// Helper type to extract the response type from the validation function
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
+  ? R extends Promise<infer PR>
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      PR extends Response | TypedResponse<any, any, any>
+      ? PR
+      : never
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      R extends Response | TypedResponse<any, any, any>
+      ? R
+      : never
+  : never
 
 // Reference implementation for only testing
 const zodValidator = <
   T extends ZodSchema,
   E extends {},
   P extends string,
-  Target extends keyof ValidationTargets
+  Target extends keyof ValidationTargets,
 >(
   target: Target,
   schema: T
-): MiddlewareHandler<
-  E,
-  P,
-  { in: { [K in Target]: z.input<T> }; out: { [K in Target]: z.output<T> } }
-> =>
-  validator(target, (value, c) => {
+) => {
+  const validationFunc = (value: unknown, c: Context<E, P>) => {
     const result = schema.safeParse(value)
     if (!result.success) {
       return c.text('Invalid!', 400)
     }
-    const data = result.data as z.output<T>
-    return data
-  })
+    return result.data as z.output<T>
+  }
+
+  type ResponseType = InferValidatorResponse<typeof validationFunc>
+
+  return validator(target, validationFunc) as MiddlewareHandler<
+    E,
+    P,
+    { in: { [K in Target]: z.input<T> }; out: { [K in Target]: z.output<T> } },
+    ResponseType
+  >
+}
 
 describe('Basic', () => {
   const app = new Hono()
@@ -48,25 +71,34 @@ describe('Basic', () => {
     },
     validator('query', (value, c) => {
       type verify = Expect<Equal<Record<string, string | string[]>, typeof value>>
-      if (!value) {
+      if (!value.q) {
         return c.text('Invalid!', 400)
       }
     }),
     (c) => {
-      return c.text('Valid!')
+      return c.text('Valid!', 200)
     }
   )
 
   type Expected = {
     '/search': {
-      $get: {
-        input: {
-          query: undefined
-        }
-        output: 'Valid!'
-        outputFormat: 'text'
-        status: ContentfulStatusCode
-      }
+      $get:
+        | {
+            input: {
+              query: {}
+            }
+            output: 'Invalid!'
+            outputFormat: 'text'
+            status: 400
+          }
+        | {
+            input: {
+              query: {}
+            }
+            output: 'Valid!'
+            outputFormat: 'text'
+            status: 200
+          }
     }
   }
 
@@ -81,7 +113,7 @@ describe('Basic', () => {
 
   it('Should return 400 response', async () => {
     const res = await app.request('http://localhost/search')
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(400)
   })
 })
 
@@ -465,20 +497,31 @@ describe('Validator middleware with a custom validation function', () => {
 
   type Expected = {
     '/post': {
-      $post: {
-        input: {
-          json: {
-            id: string
+      $post:
+        | {
+            input: {
+              json: {
+                id: number
+              }
+            }
+            output: {}
+            outputFormat: string
+            status: StatusCode
           }
-        }
-        output: {
-          post: {
-            id: number
+        | {
+            input: {
+              json: {
+                id: number
+              }
+            }
+            output: {
+              post: {
+                id: number
+              }
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
           }
-        }
-        outputFormat: 'json'
-        status: ContentfulStatusCode
-      }
     }
   }
 
@@ -526,22 +569,34 @@ describe('Validator middleware with Zod validates JSON', () => {
 
   type Expected = {
     '/post': {
-      $post: {
-        input: {
-          json: {
-            id: number
-            title: string
+      $post:
+        | {
+            input: {
+              json: {
+                id: number
+                title: string
+              }
+            }
+            output: 'Invalid!'
+            outputFormat: 'text'
+            status: 400
           }
-        }
-        output: {
-          post: {
-            id: number
-            title: string
+        | {
+            input: {
+              json: {
+                id: number
+                title: string
+              }
+            }
+            output: {
+              post: {
+                id: number
+                title: string
+              }
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
           }
-        }
-        outputFormat: 'json'
-        status: ContentfulStatusCode
-      }
     }
   }
 
@@ -814,23 +869,38 @@ describe('Validator middleware with Zod multiple validators', () => {
 
   type Expected = {
     '/posts': {
-      $post: {
-        input: {
-          query: {
-            page: string
+      $post:
+        | {
+            input: {
+              query: {
+                page: string
+              }
+            } & {
+              form: {
+                title: string
+              }
+            }
+            output: 'Invalid!'
+            outputFormat: 'text'
+            status: 400
           }
-        } & {
-          form: {
-            title: string
+        | {
+            input: {
+              query: {
+                page: string
+              }
+            } & {
+              form: {
+                title: string
+              }
+            }
+            output: {
+              page: number
+              title: string
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
           }
-        }
-        output: {
-          page: number
-          title: string
-        }
-        outputFormat: 'json'
-        status: ContentfulStatusCode
-      }
     }
   }
 
@@ -884,7 +954,7 @@ it('With path parameters', () => {
       $put: {
         input: {
           form: {
-            title: ParsedFormValue | ParsedFormValue[]
+            title: FormValue | FormValue[]
           }
         } & {
           param: {
@@ -930,7 +1000,7 @@ it('`on`', () => {
       $purge: {
         input: {
           form: {
-            tag: ParsedFormValue | ParsedFormValue[]
+            tag: FormValue | FormValue[]
           }
         } & {
           query: {
@@ -938,7 +1008,7 @@ it('`on`', () => {
           }
         }
         output: {
-          success: boolean
+          success: true
         }
         outputFormat: 'json'
         status: ContentfulStatusCode
@@ -1149,7 +1219,7 @@ describe('Validator with using Zod directly', () => {
       }
     )
 
-    expectTypeOf<ExtractSchema<typeof route>>().toEqualTypeOf<{
+    expectTypeOf<ExtractSchemaForStatusCode<typeof route, 201>>().toEqualTypeOf<{
       '/posts': {
         $post: {
           input: {
@@ -1164,6 +1234,25 @@ describe('Validator with using Zod directly', () => {
           }
           outputFormat: 'json'
           status: 201
+        }
+      }
+    }>()
+
+    expectTypeOf<ExtractSchemaForStatusCode<typeof route, 401>>().toEqualTypeOf<{
+      '/posts': {
+        $post: {
+          input: {
+            json: {
+              type: 'a'
+              name: string
+              age: number
+            }
+          }
+          output: {
+            foo: string
+          }
+          outputFormat: 'json'
+          status: 401
         }
       }
     }>()
@@ -1205,5 +1294,128 @@ describe('Transform', () => {
 
     type Actual = ExtractSchema<typeof route>
     type verify = Expect<Equal<Expected, Actual>>
+
+    // Temporary: let's see what the actual type is
+    type TestActual = Actual
+  })
+
+  it('Should be number and union when the type is transformed', () => {
+    const app = new Hono()
+    const route = app.get(
+      '/',
+      validator('query', () => {
+        return {
+          page: 1,
+          orderBy: 'asc',
+        } as {
+          page: number
+          orderBy: 'asc' | 'desc'
+          ordreByWithdefault?: 'asc' | 'desc' | undefined
+        }
+      }),
+      (c) => {
+        const { page, orderBy, ordreByWithdefault } = c.req.valid('query')
+        expectTypeOf(page).toEqualTypeOf<number>()
+        expectTypeOf(orderBy).toEqualTypeOf<'asc' | 'desc'>()
+        expectTypeOf(ordreByWithdefault).toEqualTypeOf<'asc' | 'desc' | undefined>()
+        return c.json({ page, orderBy, ordreByWithdefault })
+      }
+    )
+
+    type Expected = {
+      '/': {
+        $get: {
+          input: {
+            query: {
+              page: string | string[]
+              orderBy: 'asc' | 'desc'
+              ordreByWithdefault?: 'asc' | 'desc' | undefined
+            }
+          }
+          output: {
+            page: number
+            orderBy: 'asc' | 'desc'
+            ordreByWithdefault: 'asc' | 'desc' | undefined
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+
+    type Actual = ExtractSchema<typeof route>
+    type verify = Expect<Equal<Expected, Actual>>
+
+    // Temporary: let's see what the actual type is
+    type TestActual = Actual
+  })
+})
+
+describe('Raw Request cloning after validation', () => {
+  it('Should allow the `cloneRawRequest` util to clone the request object after validation', async () => {
+    const app = new Hono()
+
+    app.post(
+      '/json-validation',
+      validator('json', (data) => data),
+      async (c) => {
+        const clonedReq = await cloneRawRequest(c.req)
+        const clonedJSON = await clonedReq.json()
+
+        return c.json({
+          originalMethod: c.req.raw.method,
+          clonedMethod: clonedReq.method,
+          clonedUrl: clonedReq.url,
+          clonedHeaders: {
+            contentType: clonedReq.headers.get('Content-Type'),
+            customHeader: clonedReq.headers.get('X-Custom-Header'),
+          },
+          originalCache: c.req.raw.cache,
+          clonedCache: clonedReq.cache,
+          originalCredentials: c.req.raw.credentials,
+          clonedCredentials: clonedReq.credentials,
+          originalMode: c.req.raw.mode,
+          clonedMode: clonedReq.mode,
+          originalRedirect: c.req.raw.redirect,
+          clonedRedirect: clonedReq.redirect,
+          originalReferrerPolicy: c.req.raw.referrerPolicy,
+          clonedReferrerPolicy: clonedReq.referrerPolicy,
+          cloned: JSON.stringify(clonedJSON) === JSON.stringify(await c.req.json()),
+          payload: clonedJSON,
+        })
+      }
+    )
+
+    const testData = { message: 'test', userId: 123 }
+    const res = await app.request('/json-validation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Custom-Header': 'test-value',
+      },
+      body: JSON.stringify(testData),
+      cache: 'no-cache',
+      credentials: 'include',
+      mode: 'cors',
+      redirect: 'follow',
+      referrerPolicy: 'origin',
+    })
+
+    expect(res.status).toBe(200)
+
+    const result = await res.json()
+
+    expect(result.originalMethod).toBe('POST')
+    expect(result.clonedMethod).toBe('POST')
+    expect(result.clonedUrl).toBe('http://localhost/json-validation')
+    expect(result.clonedHeaders.contentType).toBe('application/json')
+    expect(result.clonedHeaders.customHeader).toBe('test-value')
+    expect(result.clonedCache).toBe(result.originalCache)
+    expect(result.clonedCredentials).toBe(result.originalCredentials)
+    expect(result.clonedMode).toBe(result.originalMode)
+    expect(result.clonedRedirect).toBe(result.originalRedirect)
+    expect(result.clonedReferrerPolicy).toBe(result.originalReferrerPolicy)
+    expect(result.cloned).toBe(true)
+    expect(result.payload).toMatchObject(testData)
   })
 })

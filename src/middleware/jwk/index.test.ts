@@ -7,7 +7,7 @@ import { encodeBase64Url } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import { signing } from '../../utils/jwt/jws'
-import { verifyFromJwks } from '../../utils/jwt/jwt'
+import { verifyWithJwks } from '../../utils/jwt/jwt'
 import type { JWTPayload } from '../../utils/jwt/types'
 import { utf8Encoder } from '../../utils/jwt/utf8'
 import * as test_keys from './keys.test.json'
@@ -34,12 +34,65 @@ describe('JWK', () => {
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
 
-  describe('verifyFromJwks', () => {
-    it('Should throw error on missing options', async () => {
+  describe('verifyWithJwks', () => {
+    it('Should throw error on missing keys/jwks_uri options', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      await expect(verifyFromJwks(credential, {})).rejects.toThrow(
-        'verifyFromJwks requires options for either "keys" or "jwks_uri" or both'
+      await expect(verifyWithJwks(credential, { allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+        'verifyWithJwks requires options for either "keys" or "jwks_uri" or both'
       )
+    })
+  })
+
+  describe('options.allow_anon = true', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/backend-auth-or-anon/*', jwk({ keys: verify_keys, allow_anon: true, alg: ['RS256'] }))
+
+    app.get('/backend-auth-or-anon/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload ?? { message: 'hello anon' })
+    })
+
+    it('Should skip JWK if no token is present', async () => {
+      const req = new Request('http://localhost/backend-auth-or-anon/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello anon' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize if token is present', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/backend-auth-or-anon/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize if bad token is present', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const url = 'http://localhost/backend-auth-or-anon/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
     })
   })
 
@@ -52,10 +105,10 @@ describe('JWK', () => {
 
     const app = new Hono()
 
-    app.use('/auth-with-keys/*', jwk({ keys: verify_keys }))
-    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys }))
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
+    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
     app.use('/auth-with-keys-nested/*', async (c, next) => {
-      const auth = jwk({ keys: verify_keys })
+      const auth = jwk({ keys: verify_keys, alg: ['RS256'] })
       return auth(c, next)
     })
     app.use(
@@ -66,37 +119,43 @@ describe('JWK', () => {
           const data = await response.json()
           return data.keys
         },
+        alg: ['RS256'],
       })
     )
     app.use(
       '/auth-with-jwks_uri/*',
       jwk({
         jwks_uri: 'http://localhost/.well-known/jwks.json',
+        alg: ['RS256'],
       })
     )
     app.use(
       '/auth-with-keys-and-jwks_uri/*',
       jwk({
         keys: verify_keys,
-        jwks_uri: 'http://localhost/.well-known/jwks.json',
+        jwks_uri: () => 'http://localhost/.well-known/jwks.json',
+        alg: ['RS256'],
       })
     )
     app.use(
       '/auth-with-missing-jwks_uri/*',
       jwk({
         jwks_uri: 'http://localhost/.well-known/missing-jwks.json',
+        alg: ['RS256'],
       })
     )
     app.use(
       '/auth-with-404-jwks_uri/*',
       jwk({
         jwks_uri: 'http://localhost/.well-known/404-jwks.json',
+        alg: ['RS256'],
       })
     )
     app.use(
       '/auth-with-bad-jwks_uri/*',
       jwk({
         jwks_uri: 'http://localhost/.well-known/bad-jwks.json',
+        alg: ['RS256'],
       })
     )
 
@@ -147,6 +206,7 @@ describe('JWK', () => {
     })
 
     it('Should throw an error if the middleware is missing both keys and jwks_uri (empty)', async () => {
+      // @ts-expect-error - Testing runtime error with missing required alg option
       expect(() => app.use('/auth-with-empty-middleware/*', jwk({}))).toThrow(
         'JWK auth middleware requires options for either "keys" or "jwks_uri"'
       )
@@ -157,7 +217,9 @@ describe('JWK', () => {
         importKey: undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
-      expect(() => app.use('/auth-with-bad-env/*', jwk({ keys: verify_keys }))).toThrow()
+      expect(() =>
+        app.use('/auth-with-bad-env/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
+      ).toThrow()
       subtleSpy.mockRestore()
     })
 
@@ -222,7 +284,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token without header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
       const encodeSignaturePart = (buf: ArrayBufferLike): string =>
         encodeBase64Url(buf).replace(/=/g, '')
       const jwtSignWithoutHeader = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
@@ -249,7 +311,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token with missing "kid" in header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
       const encodeSignaturePart = (buf: ArrayBufferLike): string =>
         encodeBase64Url(buf).replace(/=/g, '')
       const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
@@ -381,6 +443,60 @@ describe('JWK', () => {
     })
   })
 
+  describe('Credentials in custom header', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth-with-keys/*',
+      jwk({ keys: verify_keys, headerName: 'x-custom-auth-header', alg: ['RS256'] })
+    )
+
+    app.get('/auth-with-keys/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth-with-keys/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize even if default authorization header present', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
+
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('x-custom-auth-header', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
   describe('Credentials in cookie', () => {
     let handlerExecuted: boolean
 
@@ -390,15 +506,22 @@ describe('JWK', () => {
 
     const app = new Hono()
 
-    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
-    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, cookie: 'access_token', alg: ['RS256'] }))
+    app.use(
+      '/auth-with-keys-unicode/*',
+      jwk({ keys: verify_keys, cookie: 'access_token', alg: ['RS256'] })
+    )
     app.use(
       '/auth-with-keys-prefixed/*',
-      jwk({ keys: verify_keys, cookie: { key: 'access_token', prefixOptions: 'host' } })
+      jwk({
+        keys: verify_keys,
+        cookie: { key: 'access_token', prefixOptions: 'host' },
+        alg: ['RS256'],
+      })
     )
     app.use(
       '/auth-with-keys-unprefixed/*',
-      jwk({ keys: verify_keys, cookie: { key: 'access_token' } })
+      jwk({ keys: verify_keys, cookie: { key: 'access_token' }, alg: ['RS256'] })
     )
 
     app.get('/auth-with-keys/*', (c) => {
@@ -533,13 +656,18 @@ describe('JWK', () => {
 
     app.use(
       '/auth-with-signed-cookie/*',
-      jwk({ keys: verify_keys, cookie: { key: 'access_token', secret: test_secret } })
+      jwk({
+        keys: verify_keys,
+        cookie: { key: 'access_token', secret: test_secret },
+        alg: ['RS256'],
+      })
     )
     app.use(
       '/auth-with-signed-with-prefix-options-cookie/*',
       jwk({
         keys: verify_keys,
         cookie: { key: 'access_token', secret: test_secret, prefixOptions: 'host' },
+        alg: ['RS256'],
       })
     )
 
@@ -617,7 +745,7 @@ describe('JWK', () => {
   describe('Error handling with `cause`', () => {
     const app = new Hono()
 
-    app.use('/auth-with-keys/*', jwk({ keys: verify_keys }))
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
     app.get('/auth-with-keys/*', (c) => c.text('Authorized'))
 
     app.onError((e, c) => {
@@ -638,5 +766,232 @@ describe('JWK', () => {
         message: `invalid JWT token: ${credential}`,
       })
     })
+  })
+
+  describe('Verification of token attributes', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    function inFuture() {
+      return Date.now() / 1000 + 100
+    }
+
+    function inPast() {
+      return Date.now() / 1000 - 100
+    }
+
+    const app = new Hono()
+
+    app.use('/auth-with-keys-default/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
+    app.use(
+      '/auth-with-keys-and-issuer/*',
+      jwk({ keys: verify_keys, verification: { iss: 'http://issuer.test' }, alg: ['RS256'] })
+    )
+
+    app.get('/auth-with-keys-default/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-and-issuer/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should validate exp/nbf/iat and pass when good by default', async () => {
+      const payload = {
+        exp: inFuture(),
+        nbf: inPast(),
+        iat: inPast(),
+        iss: 'http://not-checked.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should validate exp and fail when bad', async () => {
+      const payload = {
+        exp: inPast(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate nbf and fail when bad', async () => {
+      const payload = {
+        nbf: inFuture(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate iat and fail when bad', async () => {
+      const payload = {
+        iat: inFuture(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate iss when supplied', async () => {
+      const payload = {
+        iss: 'http://issuer.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should reject missing iss when required', async () => {
+      const payload = {
+        // Nothing
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should reject iss when different', async () => {
+      const payload = {
+        iss: 'http://bad-issuer.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Algorithm whitelist (options.alg)', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    // Only allow RS256
+    app.use('/auth-whitelist-rs256/*', jwk({ keys: verify_keys, alg: ['RS256'] }))
+    app.get('/auth-whitelist-rs256/*', (c) => {
+      handlerExecuted = true
+      return c.json(c.get('jwtPayload'))
+    })
+
+    // Allow multiple algorithms
+    app.use('/auth-whitelist-multi/*', jwk({ keys: verify_keys, alg: ['RS256', 'ES256'] }))
+    app.get('/auth-whitelist-multi/*', (c) => {
+      handlerExecuted = true
+      return c.json(c.get('jwtPayload'))
+    })
+
+    // Note: Test for "no whitelist" was removed because alg is now required.
+    // This is a breaking change that enforces explicit algorithm specification for security.
+
+    it('Should authorize RS256 token when RS256 is in whitelist', async () => {
+      const payload = { message: 'hello world' }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0]) // RS256 key
+      const req = new Request('http://localhost/auth-whitelist-rs256/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should reject token when algorithm is not in whitelist', async () => {
+      // Create a token with ES256 algorithm manually
+      const kid = 'hono-test-kid-1' // Use existing kid but header will have different alg
+      const payload = { message: 'hello world' }
+
+      // Generate ES256 key pair for signing
+      const keyPair = await crypto.subtle.generateKey(
+        {
+          name: 'ECDSA',
+          namedCurve: 'P-256',
+        },
+        true,
+        ['sign', 'verify']
+      )
+
+      // Create JWT with ES256
+      const header = { alg: 'ES256', typ: 'JWT', kid }
+      const encode = (obj: object) =>
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+      const encodedHeader = encode(header)
+      const encodedPayload = encode(payload)
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+
+      const signatureBuffer = await signing(
+        keyPair.privateKey,
+        'ES256',
+        utf8Encoder.encode(signingInput)
+      )
+      const signature = encodeBase64Url(signatureBuffer)
+
+      const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+      const url = 'http://localhost/auth-whitelist-rs256/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${token}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toMatch(/token verification failure/)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize RS256 token when multiple algorithms are in whitelist', async () => {
+      const payload = { message: 'hello world' }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0]) // RS256 key
+      const req = new Request('http://localhost/auth-whitelist-multi/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    // Note: Test for "no whitelist" was removed because alg is now required.
+    // This is a breaking change that enforces explicit algorithm specification for security.
   })
 })

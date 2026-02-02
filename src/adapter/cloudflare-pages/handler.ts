@@ -14,6 +14,8 @@ export type EventContext<Env = {}, P extends string = any, Data = Record<string,
   functionPath: string
   waitUntil: (promise: Promise<unknown>) => void
   passThroughOnException: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any
   next: (input?: Request | string, init?: RequestInit) => Promise<Response>
   env: Env & { ASSETS: { fetch: typeof fetch } }
   params: Params<P>
@@ -24,7 +26,7 @@ declare type PagesFunction<
   Env = unknown,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Params extends string = any,
-  Data extends Record<string, unknown> = Record<string, unknown>
+  Data extends Record<string, unknown> = Record<string, unknown>,
 > = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
 export const handle =
@@ -38,6 +40,7 @@ export const handle =
       {
         waitUntil: eventContext.waitUntil,
         passThroughOnException: eventContext.passThroughOnException,
+        props: {},
       }
     )
   }

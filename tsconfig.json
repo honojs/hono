@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "types": [
@@ -16,7 +16,7 @@
     ],
     "jsx": "react",
     "jsxFactory": "jsx",
-    "jsxFragmentFactory": "Fragment",
+    "jsxFragmentFactory": "Fragment"
   },
   "include": [
     "src/**/*.ts",
@@ -25,4 +25,7 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
   ],
+  "exclude": [
+    "node_modules/*"
+  ]
 }

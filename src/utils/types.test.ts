@@ -1,4 +1,4 @@
-import type { Equal, Expect, JSONParsed } from './types'
+import type { JSONParsed, JSONValue } from './types'
 
 describe('JSONParsed', () => {
   enum SampleEnum {
@@ -60,6 +60,11 @@ describe('JSONParsed', () => {
       type Expected = { a: number }
       expectTypeOf<Actual>().toEqualTypeOf<Expected>()
     })
+    it('should convert invalid type with { toJSON() => T to T', () => {
+      type Actual = JSONParsed<bigint & { toJSON(): string }>
+      type Expected = string
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
   })
 
   describe('invalid types', () => {
@@ -75,6 +80,11 @@ describe('JSONParsed', () => {
     })
     it('should convert function type to never', () => {
       type Actual = JSONParsed<() => void>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert bigint type to never', () => {
+      type Actual = JSONParsed<bigint>
       type Expected = never
       expectTypeOf<Actual>().toEqualTypeOf<Expected>()
     })
@@ -154,6 +164,20 @@ describe('JSONParsed', () => {
     })
   })
 
+  describe('unknown', () => {
+    it('should convert unknown type to unknown', () => {
+      type Actual = JSONParsed<unknown>
+      type Expected = JSONValue
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+
+    it('Should convert unknown value to JSONValue', () => {
+      type Actual = JSONParsed<{ value: unknown }>
+      type Expected = { value: JSONValue }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
   describe('Set/Map', () => {
     it('should convert Set to empty object', () => {
       type Actual = JSONParsed<Set<number>>
@@ -199,19 +223,62 @@ describe('JSONParsed', () => {
       datetime: string
     }
     type Actual = JSONParsed<Post>
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    type verify = Expect<Equal<Expected, Actual>>
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 
   it('Should convert bigint to never', () => {
     type Post = {
       num: bigint
     }
-    type Expected = {
-      num: never
-    }
+    type Expected = never
     type Actual = JSONParsed<Post>
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    type verify = Expect<Equal<Expected, Actual>>
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
+  it('Should convert bigint when TError is provided', () => {
+    type Post = {
+      num: bigint
+    }
+    type Expected = {
+      num: JSONValue
+    }
+    type Actual = JSONParsed<Post, never>
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
+  it('Should convert bigint[] to never', () => {
+    type Post = {
+      nums: bigint[]
+    }
+    type Expected = never
+    type Actual = JSONParsed<Post>
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
+  it('Should convert bigint[] when TError is provided', () => {
+    type Post = {
+      num: bigint[]
+    }
+    type Expected = {
+      num: JSONValue[]
+    }
+    type Actual = JSONParsed<Post, never>
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
+  it('Should parse bigint with a toJSON function', () => {
+    class SafeBigInt {
+      unsafe = BigInt('42')
+
+      toJSON() {
+        return {
+          unsafe: '42n',
+        }
+      }
+    }
+
+    type Actual = JSONParsed<SafeBigInt>
+    type Expected = { unsafe: string }
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 })

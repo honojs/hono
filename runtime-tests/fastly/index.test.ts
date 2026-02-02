@@ -4,9 +4,14 @@ import { Hono } from '../../src/index'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-globalThis.fastly = true
+beforeAll(() => {
+  vi.stubGlobal('fastly', true)
+  vi.stubGlobal('navigator', undefined)
+})
+
+afterAll(() => {
+  vi.unstubAllGlobals()
+})
 
 const app = new Hono()
 

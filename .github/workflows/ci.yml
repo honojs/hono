@@ -18,43 +18,37 @@ jobs:
     needs:
       - main
       - bun
-      - fastly
-      - node
       - deno
-      - workerd
-      - lambda
-      - lambda-edge
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
         with:
           pattern: coverage-*
           merge-multiple: true
           path: ./coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           directory: ./coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   main:
     name: 'Main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20.x'
+          node-version-file: '.tool-versions'
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.39'
-      - run: bun install
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run format
       - run: bun run lint
+      - run: bun run editorconfig-checker -format github-actions
       - run: bun run build
       - run: bun run test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-main
           path: coverage/
@@ -63,27 +57,29 @@ jobs:
     name: "Checking if it's valid for JSR"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          deno-version-file: '.tool-versions'
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: '.tool-versions'
       - run: bunx jsr publish --dry-run
 
   deno:
     name: 'Deno'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          deno-version-file: '.tool-versions'
       - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno
       - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
       - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
       - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-deno
           path: coverage/
@@ -92,29 +88,38 @@ jobs:
     name: 'Bun'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.39'
-      - run: bun install
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run test:bun
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-bun
           path: coverage/
+
+  bun-windows:
+    name: 'Bun - Windows'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun run test:bun
+
   fastly:
     name: 'Fastly Compute'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:fastly
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-fastly
-          path: coverage/
 
   node:
     name: 'Node.js v${{ matrix.node }}'
@@ -123,112 +128,134 @@ jobs:
       matrix:
         node: ['18.18.2', '20.x', '22.x']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:node
-      - uses: actions/upload-artifact@v4
-        if: matrix.node == '22.x'
-        with:
-          name: coverage-node
-          path: coverage/
 
   workerd:
     name: 'workerd'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20.x'
+          node-version-file: '.tool-versions'
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:workerd
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-workerd
-          path: coverage/
 
   lambda:
     name: 'AWS Lambda'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-lambda
-          path: coverage/
 
   lambda-edge:
     name: 'Lambda@Edge'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: '.tool-versions'
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-lambda-edge
-          path: coverage/
 
-  perf-measures-type-and-bundle-check-on-pr:
+  perf-measures-check-on-pr:
     name: 'Type & Bundle size Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - name: Performance measurement of type check
-        run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
-        working-directory: perf-measures/type-check
-      - name: Performance measurement of bundle check
-        run: |
-          bun run build
-          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
-      - name: Run octocov
-        uses: k1LoW/octocov-action@v1
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/perf-measures
         with:
-          config: perf-measures/.octocov.perf-measures.yml
-        env:
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+          target-ref: 'auto'
 
-  perf-measures-type-and-bundle-check-on-main:
+  http-benchmark-on-pr:
+    name: 'HTTP Speed Check on PR'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: '.tool-versions'
+      - run: bun install --frozen-lockfile
+      - name: Install bombardier
+        run: |
+          wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
+          chmod +x bombardier
+          sudo mv bombardier /usr/local/bin/
+      - name: Run HTTP benchmark
+        run: |
+          cd benchmarks/http-server
+          bun run benchmark.ts
+      - name: Comment PR
+        uses: actions/github-script@v7
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('benchmarks/http-server/benchmark-results.md', 'utf8');
+
+            // Minimize previous benchmark comments
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            for (const comment of comments.data) {
+              if (comment.body.includes('## HTTP Performance Benchmark')) {
+                await github.graphql(`
+                  mutation {
+                    minimizeComment(input: { subjectId: "${comment.node_id}", classifier: OUTDATED }) {
+                      minimizedComment {
+                        isMinimized
+                      }
+                    }
+                  }
+                `);
+              }
+            }
+
+            // Post new comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: results
+            });
+      - name: Show benchmark results for forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "## HTTP Performance Benchmark Results"
+          echo "Note: Cannot post comment due to security restrictions on fork PRs"
+          cat benchmarks/http-server/benchmark-results.md
+
+  perf-measures-check-on-main:
     name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - name: Performance measurement of type check
-        run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
-        working-directory: perf-measures/type-check
-      - name: Performance measurement of bundle check
-        run: |
-          bun run build
-          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
-      - name: Run octocov (main)
-        uses: k1LoW/octocov-action@v1
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/perf-measures
         with:
-          config: perf-measures/.octocov.perf-measures.main.yml
-        env:
-          OCTOCOV_GITHUB_REF: refs/heads/main
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+          target-ref: 'main'

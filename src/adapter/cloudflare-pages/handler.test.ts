@@ -18,12 +18,13 @@ function createEventContext(
     env: {
       ...context.env,
       ASSETS: { fetch: vi.fn(), ...context.env?.ASSETS },
-      TOKEN: context.env?.TOKEN ?? 'HONOISCOOL',
+      TOKEN: context.env?.TOKEN ?? 'HONOISHOT',
     },
     functionPath: '_worker.js',
     next: vi.fn(),
     params: {},
     passThroughOnException: vi.fn(),
+    props: {},
     request: new Request('http://localhost/api/foo'),
     waitUntil: vi.fn(),
     ...context,
@@ -35,10 +36,11 @@ describe('Adapter for Cloudflare Pages', () => {
     const request = new Request('http://localhost/api/foo')
     const env = {
       ASSETS: { fetch },
-      TOKEN: 'HONOISCOOL',
+      TOKEN: 'HONOISHOT',
     }
     const waitUntil = vi.fn()
     const passThroughOnException = vi.fn()
+    const props = {}
     const eventContext = createEventContext({
       request,
       env,
@@ -55,11 +57,11 @@ describe('Adapter for Cloudflare Pages', () => {
     expect(appFetchSpy).toHaveBeenCalledWith(
       request,
       { ...env, eventContext },
-      { waitUntil, passThroughOnException }
+      { waitUntil, passThroughOnException, props }
     )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      TOKEN: 'HONOISCOOL',
+      TOKEN: 'HONOISHOT',
       requestURL: 'http://localhost/api/foo',
     })
   })
@@ -250,7 +252,7 @@ describe('serveStatic()', () => {
     const request = new Request('http://localhost/foo.png')
     const env = {
       ASSETS: { fetch: assetsFetch },
-      TOKEN: 'HONOISCOOL',
+      TOKEN: 'HONOISHOT',
     }
 
     const eventContext = createEventContext({ request, env })
@@ -269,7 +271,7 @@ describe('serveStatic()', () => {
     const request = new Request('http://localhost/foo.png')
     const env = {
       ASSETS: { fetch: assetsFetch },
-      TOKEN: 'HONOISCOOL',
+      TOKEN: 'HONOISHOT',
     }
 
     const eventContext = createEventContext({ request, env })

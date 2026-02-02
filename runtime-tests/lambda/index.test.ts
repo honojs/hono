@@ -10,11 +10,13 @@ import {
 import type {
   ALBProxyEvent,
   APIGatewayProxyEventV2,
+  LatticeProxyEventV2,
   LambdaEvent,
 } from '../../src/adapter/aws-lambda/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
+  LatticeRequestContextV2,
   LambdaContext,
 } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
@@ -59,6 +61,17 @@ const testApiGatewayRequestContextV2 = {
   time: '12/Mar/2020:19:03:58 +0000',
   timeEpoch: 1583348638390,
   customProperty: 'customValue',
+}
+
+const testLatticeRequestContext: LatticeRequestContextV2 = {
+  serviceNetworkArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:servicenetwork/sn-a1b2c3',
+  serviceArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:service/svc-a1b2c3',
+  targetGroupArn: 'arn:aws:vpc-lattice:us-east-1:111122223333:targetgroup/tg-a1b2c3',
+  region: 'us-east-1',
+  timeEpoch: '1759915938150314',
+  identity: {
+    sourceVpcArn: 'arn:aws:ec2:us-east-1:111122223333:vpc/vpc-a1b2c3',
+  },
 }
 
 describe('AWS Lambda Adapter for Hono', () => {
@@ -194,38 +207,6 @@ describe('AWS Lambda Adapter for Hono', () => {
     customProperty: 'customValue',
   }
 
-  const testApiGatewayRequestContextV2 = {
-    accountId: '123456789012',
-    apiId: 'urlid',
-    authentication: null,
-    authorizer: {
-      iam: {
-        accessKey: 'AKIA...',
-        accountId: '111122223333',
-        callerId: 'AIDA...',
-        cognitoIdentity: null,
-        principalOrgId: null,
-        userArn: 'arn:aws:iam::111122223333:user/example-user',
-        userId: 'AIDA...',
-      },
-    },
-    domainName: 'example.com',
-    domainPrefix: '<url-id>',
-    http: {
-      method: 'POST',
-      path: '/my/path',
-      protocol: 'HTTP/1.1',
-      sourceIp: '123.123.123.123',
-      userAgent: 'agent',
-    },
-    requestId: 'id',
-    routeKey: '$default',
-    stage: '$default',
-    time: '12/Mar/2020:19:03:58 +0000',
-    timeEpoch: 1583348638390,
-    customProperty: 'customValue',
-  }
-
   const testALBRequestContext = {
     elb: {
       targetGroupArn:
@@ -249,6 +230,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -268,6 +250,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('RmFrZSBJbWFnZQ==')
     expect(response.headers['content-type']).toMatch(/^image\/png/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(true)
   })
 
@@ -289,6 +272,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -309,6 +293,27 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
+    expect(response.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response (LatticeProxyEvent)', async () => {
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/?query=1234ABCD',
+      method: 'GET',
+      headers: { 'content-type': ['text/plain'] },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLatticeRequestContext,
+    }
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -519,6 +524,27 @@ describe('AWS Lambda Adapter for Hono', () => {
     ])
   })
 
+  it('Should handle a POST request and return a 200 response with cookies set (LatticeProxyEvent V2)', async () => {
+    const latticeProxyEvent: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/cookie',
+      method: 'POST',
+      headers: { 'content-type': ['text/plain'] },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLatticeRequestContext,
+    }
+
+    const latticeResponse = await handler(latticeProxyEvent)
+
+    expect(latticeResponse.statusCode).toBe(200)
+    expect(latticeResponse.headers).toHaveProperty(
+      'set-cookie',
+      [testCookie1.serialized, testCookie2.serialized].join(', ')
+    )
+  })
+
   describe('headers', () => {
     describe('single-value headers', () => {
       it('Should extract single-value headers and return 200 (ALBProxyEvent)', async () => {
@@ -540,6 +566,7 @@ describe('AWS Lambda Adapter for Hono', () => {
             'content-type': 'application/json',
           })
         )
+        expect(albResponse.multiValueHeaders).toBeUndefined()
       })
 
       it('Should extract single-value headers and return 200 (APIGatewayProxyEvent)', async () => {
@@ -621,6 +648,26 @@ describe('AWS Lambda Adapter for Hono', () => {
         const apiGatewayResponseV2 = await handler(apigatewayProxyEvent)
         expect(apiGatewayResponseV2.statusCode).toBe(200)
       })
+
+      it('Should extract multi-value headers and return 200 (LatticeProxyEvent)', async () => {
+        const event: LatticeProxyEventV2 = {
+          version: '2.0',
+          path: '/headers',
+          method: 'POST',
+          headers: {
+            host: ['localhost'],
+            foo: ['bar'],
+          },
+          queryStringParameters: {},
+          body: null,
+          isBase64Encoded: false,
+          requestContext: testLatticeRequestContext,
+        }
+
+        const response = await handler(event)
+
+        expect(response.statusCode).toBe(200)
+      })
     })
   })
 
@@ -687,6 +734,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
     expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -709,7 +757,10 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^text\/plain/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -759,9 +810,8 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Cookies Set')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
-    expect(albResponse.multiValueHeaders).toBeDefined()
-    expect(albResponse.multiValueHeaders && albResponse.multiValueHeaders['set-cookie']).toEqual(
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['set-cookie']).toEqual(
       expect.arrayContaining([testCookie1.serialized, testCookie2.serialized])
     )
     expect(albResponse.isBase64Encoded).toBe(false)
@@ -794,6 +844,7 @@ describe('AWS Lambda Adapter for Hono', () => {
       })
     )
     expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -823,7 +874,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: 'value2',
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -853,7 +907,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: ['value2', 'otherValue2'],
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 })

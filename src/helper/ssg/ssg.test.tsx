@@ -9,13 +9,21 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import {
+  defaultExtensionMap,
+  fetchRoutesContent,
+  saveContentToFile,
+  toSSG,
+  defaultPlugin,
+} from './ssg'
 import type {
   AfterGenerateHook,
   AfterResponseHook,
   BeforeRequestHook,
   FileSystemModule,
   ToSSGResult,
+  SSGPlugin,
+  ToSSGOptions,
 } from './ssg'
 
 const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
@@ -161,7 +169,18 @@ describe('toSSG function', () => {
   })
 
   it('Should correctly generate files with the expected paths', async () => {
-    await toSSG(app, fsMock, { dir: './static' })
+    app.get('/data', (c) =>
+      c.text(JSON.stringify({ title: 'hono' }), 200, {
+        'Content-Type': 'text/x-foo',
+      })
+    )
+    await toSSG(app, fsMock, {
+      dir: './static',
+      extensionMap: {
+        ...defaultExtensionMap,
+        'text/x-foo': 'foo',
+      },
+    })
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
@@ -173,6 +192,7 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/data.foo', expect.any(String))
   })
 
   it('should modify the request if the hook is provided', async () => {
@@ -216,16 +236,22 @@ describe('toSSG function', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>((result) => {
-      if (result.files) {
-        result.files.forEach((file) => console.log(file))
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>(
+      (result, fsModule, options) => {
+        if (result.files) {
+          result.files.forEach((file) => console.log(file))
+        }
       }
-    })
+    )
 
     await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
 
     expect(afterGenerateHookMock).toHaveBeenCalled()
-    expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
+    expect(afterGenerateHookMock).toHaveBeenCalledWith(
+      expect.anything(), // result
+      expect.anything(), // fsModule
+      expect.anything() // options
+    )
   })
 
   it('should handle asynchronous beforeRequestHook correctly', async () => {
@@ -259,7 +285,7 @@ describe('toSSG function', () => {
   })
 
   it('should handle asynchronous afterGenerateHook correctly', async () => {
-    const afterGenerateHook: AfterGenerateHook = async (result) => {
+    const afterGenerateHook: AfterGenerateHook = async (result, fsModule, options) => {
       await new Promise((resolve) => setTimeout(resolve, 10))
       console.log(`Generated ${result.files.length} files.`)
     }
@@ -747,13 +773,21 @@ describe('Combined Generate hooks - AfterGenerateHook', () => {
   let fsMock: FileSystemModule
 
   const logResultAfterGenerateHook = (): AfterGenerateHook => {
-    return async (result: ToSSGResult): Promise<void> => {
+    return async (
+      result: ToSSGResult,
+      fsModule: FileSystemModule,
+      options?: ToSSGOptions
+    ): Promise<void> => {
       console.log('Generation completed with status:', result.success) // Log the generation success
     }
   }
 
   const appendFilesAfterGenerateHook = (additionalFiles: string[]): AfterGenerateHook => {
-    return async (result: ToSSGResult): Promise<void> => {
+    return async (
+      result: ToSSGResult,
+      fsModule: FileSystemModule,
+      options?: ToSSGOptions
+    ): Promise<void> => {
       result.files = result.files.concat(additionalFiles) // Append additional files to the result
     }
   }
@@ -786,5 +820,211 @@ describe('Combined Generate hooks - AfterGenerateHook', () => {
     // Check that additional files were appended to the result
     expect(result.files).toContain('/extra/file1.html')
     expect(result.files).toContain('/extra/file2.html')
+  })
+})
+
+describe('SSG Plugin System', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/', (c) => c.html('<h1>Home</h1>'))
+    app.get('/about', (c) => c.html('<h1>About</h1>'))
+    app.get('/blog', (c) => c.html('<h1>Blog</h1>'))
+    app.get('/created', (c) => c.text('201 Created', 201))
+    app.get('/redirect', (c) => c.redirect('/'))
+    app.get('/notfound', (c) => c.notFound())
+    app.get('/error', (c) => c.text('500 Error', 500))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should use defaultPlugin when plugins option is omitted', async () => {
+    // @ts-expect-error defaultPlugin has afterResponseHook
+    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(defaultPluginSpy).toHaveBeenCalled()
+    defaultPluginSpy.mockRestore()
+  })
+
+  it('should skip non-200 responses with defaultPlugin', async () => {
+    const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/created.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/redirect.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/notfound.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/error.txt', expect.any(String))
+    expect(result.files.some((f) => f.includes('created'))).toBe(false)
+    expect(result.files.some((f) => f.includes('redirect'))).toBe(false)
+    expect(result.files.some((f) => f.includes('notfound'))).toBe(false)
+    expect(result.files.some((f) => f.includes('error'))).toBe(false)
+    expect(result.success).toBe(true)
+  })
+
+  it('should correctly apply plugins with beforeRequestHook', async () => {
+    const plugin: SSGPlugin = {
+      beforeRequestHook: (req) => {
+        // Skip requests to the blog page
+        const url = new URL(req.url)
+        if (url.pathname === '/blog') {
+          return false
+        }
+        return req
+      },
+    }
+
+    const result = await toSSG(app, fsMock, {
+      plugins: [plugin],
+    })
+
+    expect(result.files).toHaveLength(6)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
+  })
+
+  it('should correctly apply plugins with afterResponseHook', async () => {
+    const plugin: SSGPlugin = {
+      afterResponseHook: async (res) => {
+        const text = await res.text()
+        return new Response(text.replace('</h1>', ' - Modified</h1>'), res)
+      },
+    }
+
+    await toSSG(app, fsMock, {
+      plugins: [plugin],
+    })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home - Modified</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About - Modified</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog - Modified</h1>')
+  })
+
+  it('should correctly apply plugins with afterGenerateHook', async () => {
+    const additionalFiles = ['sitemap.xml', 'robots.txt']
+    const plugin: SSGPlugin = {
+      afterGenerateHook: (result) => {
+        result.files.push(...additionalFiles)
+      },
+    }
+
+    const result = await toSSG(app, fsMock, {
+      plugins: [plugin],
+    })
+
+    expect(result.files).toContain('sitemap.xml')
+    expect(result.files).toContain('robots.txt')
+  })
+
+  it('should correctly combine multiple plugins', async () => {
+    const skipBlogPlugin: SSGPlugin = {
+      beforeRequestHook: (req) => {
+        const url = new URL(req.url)
+        if (url.pathname === '/blog') {
+          return false
+        }
+        return req
+      },
+    }
+
+    const prefixPlugin: SSGPlugin = {
+      afterResponseHook: async (res) => {
+        const text = await res.text()
+        return new Response(`[Prefix] ${text}`, res)
+      },
+    }
+
+    const sitemapPlugin: SSGPlugin = {
+      afterGenerateHook: (result, fsModule, options) => {
+        result.files.push('sitemap.xml')
+      },
+    }
+
+    const result = await toSSG(app, fsMock, {
+      plugins: [skipBlogPlugin, prefixPlugin, sitemapPlugin],
+    })
+
+    expect(result.files).toHaveLength(7)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '[Prefix] <h1>Home</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '[Prefix] <h1>About</h1>')
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/blog.html', expect.any(String))
+    expect(result.files).toContain('sitemap.xml')
+  })
+
+  it('should correctly combine plugin hooks with option hooks', async () => {
+    const plugin: SSGPlugin = {
+      afterResponseHook: async (res) => {
+        const text = await res.text()
+        return new Response(`${text} [Plugin]`, res)
+      },
+    }
+
+    const afterResponseHook: AfterResponseHook = async (res) => {
+      const text = await res.text()
+      return new Response(`${text} [Option]`, res)
+    }
+
+    await toSSG(app, fsMock, {
+      plugins: [plugin],
+      afterResponseHook,
+    })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/index.html',
+      '<h1>Home</h1> [Option] [Plugin]'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/about.html',
+      '<h1>About</h1> [Option] [Plugin]'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/blog.html',
+      '<h1>Blog</h1> [Option] [Plugin]'
+    )
+  })
+})
+
+describe('ssgParams', () => {
+  it('should invoke callback only once', async () => {
+    const app = new Hono()
+    const cb = vi.fn(() => [{ post: '1' }, { post: '2' }])
+    app.get('/post/:post', ssgParams(cb), (c) => c.html(<h1>{c.req.param('post')}</h1>))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    await toSSG(app, fsMock)
+
+    expect(cb).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not invoke handler after ssgParams for dynamic route request', async () => {
+    const app = new Hono()
+    const log = vi.fn()
+    app.get(
+      '/shops/:id',
+      ssgParams(() => [{ id: 'shop1' }]),
+      async (c) => {
+        const id = c.req.param('id')
+        log(id)
+        return c.html(id)
+      }
+    )
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    await toSSG(app, fsMock)
+
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith('shop1')
+    expect(fsMock.writeFile).toHaveBeenCalledTimes(1)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/shops/shop1.html', 'shop1')
   })
 })
