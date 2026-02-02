@@ -1,9 +1,9 @@
 export default function client() {
   const init = () => {
     document
-      .querySelectorAll<HTMLFormElement | HTMLInputElement>(
-        'form[action^="/hono-action-"], input[formaction^="/hono-action-"]'
-      )
+      .querySelectorAll<
+        HTMLFormElement | HTMLInputElement
+      >('form[action^="/hono-action-"], input[formaction^="/hono-action-"]')
       .forEach((el) => {
         const form = el instanceof HTMLFormElement ? el : el.form
         const action = el.getAttribute(el instanceof HTMLFormElement ? 'action' : 'formaction')
@@ -63,7 +63,6 @@ export default function client() {
               for (
                 let node: ChildNode | null | undefined = startNode.nextSibling;
                 node !== endNode;
-
               ) {
                 const next: ChildNode | null | undefined = node?.nextSibling
                 node?.parentNode?.removeChild(node)

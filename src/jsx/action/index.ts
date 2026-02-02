@@ -13,11 +13,11 @@ import type { FC } from '../types'
 import client from './client'
 
 interface ActionHandler<Env extends BlankEnv> {
-  (data: Record<string, any> | undefined, c: Context<Env>, props: Props | undefined):
-    | HtmlEscapedString
-    | Promise<HtmlEscapedString>
-    | Response
-    | Promise<Response>
+  (
+    data: Record<string, any> | undefined,
+    c: Context<Env>,
+    props: Props | undefined
+  ): HtmlEscapedString | Promise<HtmlEscapedString> | Response | Promise<Response>
 }
 
 type ActionReturn = [(key: string) => () => void, FC]
