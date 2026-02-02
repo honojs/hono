@@ -1403,6 +1403,27 @@ describe('Method Not Allowed', () => {
     })
   })
 
+  describe('With nested routers (app.route)', () => {
+    const app = new Hono()
+    const api = new Hono()
+    api.get('/users', (c) => c.text('GET users'))
+    api.post('/users', (c) => c.text('POST users'))
+    app.route('/api', api)
+
+    it('Should return 405 for unsupported method on nested route', async () => {
+      const res = await app.request('http://localhost/api/users', { method: 'DELETE' })
+      expect(res.status).toBe(405)
+      const allow = res.headers.get('Allow')
+      expect(allow).toContain('GET')
+      expect(allow).toContain('POST')
+    })
+
+    it('Should return 404 for non-existent path on nested route', async () => {
+      const res = await app.request('http://localhost/api/nonexistent', { method: 'GET' })
+      expect(res.status).toBe(404)
+    })
+  })
+
   describe('HEAD method handling', () => {
     const app = new Hono()
     app.get('/resource', (c) => c.text('GET'))
