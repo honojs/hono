@@ -730,9 +730,12 @@ describe('Routing', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('POST for abc')
     })
-    it('Should return 404 response from PUT request', async () => {
+    it('Should return 405 response from PUT request (route exists but method not allowed)', async () => {
       const res = await app.request('http://localhost/chained/abc', { method: 'PUT' })
-      expect(res.status).toBe(404)
+      expect(res.status).toBe(405)
+      const allow = res.headers.get('Allow')
+      expect(allow).toContain('GET')
+      expect(allow).toContain('POST')
     })
   })
 
@@ -1340,6 +1343,77 @@ describe('Not Found', () => {
   })
 })
 
+describe('Method Not Allowed', () => {
+  describe('Default handler', () => {
+    const app = new Hono()
+    app.get('/resource', (c) => c.text('GET /resource'))
+    app.post('/resource', (c) => c.text('POST /resource'))
+
+    it('Should return 405 for unsupported method when route exists', async () => {
+      const res = await app.request('http://localhost/resource', { method: 'DELETE' })
+      expect(res.status).toBe(405)
+      expect(await res.text()).toBe('405 Method Not Allowed')
+    })
+
+    it('Should include Allow header with supported methods', async () => {
+      const res = await app.request('http://localhost/resource', { method: 'DELETE' })
+      expect(res.status).toBe(405)
+      const allow = res.headers.get('Allow')
+      expect(allow).toContain('GET')
+      expect(allow).toContain('POST')
+    })
+
+    it('Should return 200 for supported method', async () => {
+      const res = await app.request('http://localhost/resource', { method: 'GET' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /resource')
+    })
+
+    it('Should return 404 for non-existent path', async () => {
+      const res = await app.request('http://localhost/nonexistent', { method: 'DELETE' })
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Custom handler', () => {
+    const app = new Hono()
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.json({ error: 'Method not allowed', allowed: allowedMethods }, 405)
+    })
+    app.get('/api/users', (c) => c.text('GET users'))
+    app.post('/api/users', (c) => c.text('POST users'))
+
+    it('Should use custom methodNotAllowed handler', async () => {
+      const res = await app.request('http://localhost/api/users', { method: 'PUT' })
+      expect(res.status).toBe(405)
+      const body = await res.json()
+      expect(body.error).toBe('Method not allowed')
+      expect(body.allowed).toContain('GET')
+      expect(body.allowed).toContain('POST')
+    })
+  })
+
+  describe('With basePath', () => {
+    const app = new Hono().basePath('/api')
+    app.get('/users', (c) => c.text('GET users'))
+
+    it('Should return 405 for unsupported method on basePath route', async () => {
+      const res = await app.request('http://localhost/api/users', { method: 'POST' })
+      expect(res.status).toBe(405)
+    })
+  })
+
+  describe('HEAD method handling', () => {
+    const app = new Hono()
+    app.get('/resource', (c) => c.text('GET'))
+
+    it('Should handle HEAD for GET routes', async () => {
+      const res = await app.request('http://localhost/resource', { method: 'HEAD' })
+      expect(res.status).toBe(200)
+    })
+  })
+})
+
 describe('Redirect', () => {
   const app = new Hono()
   app.get('/redirect', (c) => {
@@ -1774,9 +1848,12 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('POST /POST v2')
     })
 
-    it('Should return 404 response - DELETE /v2/post', async () => {
+    it('Should return 405 response - DELETE /v2/post (route exists but method not allowed)', async () => {
       const res = await app.request('http://localhost/v2/post', { method: 'DELETE' })
-      expect(res.status).toBe(404)
+      expect(res.status).toBe(405)
+      const allow = res.headers.get('Allow')
+      expect(allow).toContain('GET')
+      expect(allow).toContain('POST')
     })
   })
 
@@ -2018,12 +2095,15 @@ describe('Multiple methods with `app.on`', () => {
     })
   })
 
-  it('Should return 404 with POST', async () => {
+  it('Should return 405 with POST (route exists but method not allowed)', async () => {
     const req = new Request('http://localhost/posts/123', {
       method: 'POST',
     })
     const res = await app.request(req)
-    expect(res.status).toBe(404)
+    expect(res.status).toBe(405)
+    const allow = res.headers.get('Allow')
+    expect(allow).toContain('PUT')
+    expect(allow).toContain('DELETE')
   })
 })
 

@@ -119,6 +119,23 @@ export type ErrorHandler<E extends Env = any> = (
   c: Context<E>
 ) => Response | Promise<Response>
 
+/**
+ * You can extend this interface to define a custom `c.methodNotAllowed()` Response type.
+ *
+ * @example
+ * declare module 'hono' {
+ *   interface MethodNotAllowedResponse extends Response, TypedResponse<string, 405, 'text'> {}
+ * }
+ */
+export interface MethodNotAllowedResponse {}
+
+export type MethodNotAllowedHandler<E extends Env = any> = (
+  c: Context<E>,
+  allowedMethods: string[]
+) => MethodNotAllowedResponse extends Response
+  ? MethodNotAllowedResponse | Promise<MethodNotAllowedResponse>
+  : Response | Promise<Response>
+
 ////////////////////////////////////////
 //////                            //////
 //////     HandlerInterface       //////

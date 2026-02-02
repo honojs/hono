@@ -17,6 +17,7 @@ import type {
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
+  MethodNotAllowedHandler,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
   Next,
@@ -39,6 +40,11 @@ const errorHandler: ErrorHandler = (err, c) => {
   }
   console.error(err)
   return c.text('Internal Server Error', 500)
+}
+
+const methodNotAllowedHandler: MethodNotAllowedHandler = (c, allowedMethods) => {
+  c.header('Allow', allowedMethods.join(', '))
+  return c.text('405 Method Not Allowed', 405)
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
@@ -179,11 +185,13 @@ class Hono<
     })
     clone.errorHandler = this.errorHandler
     clone.#notFoundHandler = this.#notFoundHandler
+    clone.#methodNotAllowedHandler = this.#methodNotAllowedHandler
     clone.routes = this.routes
     return clone
   }
 
   #notFoundHandler: NotFoundHandler = notFoundHandler
+  #methodNotAllowedHandler: MethodNotAllowedHandler = methodNotAllowedHandler
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
 
@@ -294,6 +302,26 @@ class Hono<
   }
 
   /**
+   * `.methodNotAllowed()` allows you to customize a Method Not Allowed Response.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#method-not-allowed}
+   *
+   * @param {MethodNotAllowedHandler} handler - request handler for method-not-allowed
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.methodNotAllowed((c, allowedMethods) => {
+   *   return c.text(`Method not allowed. Allowed: ${allowedMethods.join(', ')}`, 405)
+   * })
+   * ```
+   */
+  methodNotAllowed = (handler: MethodNotAllowedHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+    this.#methodNotAllowedHandler = handler
+    return this
+  }
+
+  /**
    * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
    * @see {@link https://hono.dev/docs/api/hono#mount}
@@ -397,6 +425,17 @@ class Hono<
     throw err
   }
 
+  #getAllowedMethods(path: string): string[] {
+    const allowed: string[] = []
+    for (const m of METHODS) {
+      const result = this.router.match(m.toUpperCase(), path)
+      if (result[0].length > 0) {
+        allowed.push(m.toUpperCase())
+      }
+    }
+    return allowed
+  }
+
   #dispatch(
     request: Request,
     executionCtx: ExecutionContext | FetchEventLike | undefined,
@@ -411,6 +450,20 @@ class Hono<
 
     const path = this.getPath(request, { env })
     const matchResult = this.router.match(method, path)
+
+    if (matchResult[0].length === 0) {
+      const allowedMethods = this.#getAllowedMethods(path)
+      if (allowedMethods.length > 0) {
+        const c = new Context(request, {
+          path,
+          matchResult,
+          env,
+          executionCtx,
+          notFoundHandler: this.#notFoundHandler,
+        })
+        return this.#methodNotAllowedHandler(c, allowedMethods)
+      }
+    }
 
     const c = new Context(request, {
       path,
