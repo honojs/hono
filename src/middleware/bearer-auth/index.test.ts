@@ -901,4 +901,21 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
   })
+
+  it.each([['bearer'], ['BEARER'], ['BeArEr']])(
+    'Should authorize with case-insensitive prefix: %s',
+    async (prefix) => {
+      const req = new Request('http://localhost/auth/a')
+      req.headers.set('Authorization', `${prefix} ${token}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+    }
+  )
+
+  it('Should not authorize with different case token', async () => {
+    const req = new Request('http://localhost/auth/a')
+    req.headers.set('Authorization', `Bearer ${token.toUpperCase()}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(401)
+  })
 })

@@ -113,7 +113,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
 
   const realm = options.realm?.replace(/"/g, '\\"')
   const prefixRegexStr = options.prefix === '' ? '' : `${options.prefix} +`
-  const regexp = new RegExp(`^${prefixRegexStr}(${TOKEN_STRINGS}) *$`)
+  const regexp = new RegExp(`^${prefixRegexStr}(${TOKEN_STRINGS}) *$`, 'i')
   const wwwAuthenticatePrefix = options.prefix === '' ? '' : `${options.prefix} `
 
   const throwHTTPException = async (
