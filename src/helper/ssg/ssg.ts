@@ -5,6 +5,7 @@ import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
 import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
+import { defaultPlugin } from './plugins'
 import { dirname, filterStaticGenerateRoutes, isDynamicRoute, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
@@ -349,22 +350,6 @@ export interface ToSSGAdaptorInterface<
 }
 
 /**
- * The default plugin that defines the recommended behavior.
- *
- * @experimental
- * `defaultPlugin` is an experimental feature.
- * The API might be changed.
- */
-export const defaultPlugin: SSGPlugin = {
-  afterResponseHook: (res) => {
-    if (res.status !== 200) {
-      return false
-    }
-    return res
-  },
-}
-
-/**
  * @experimental
  * `toSSG` is an experimental feature.
  * The API might be changed.
@@ -373,7 +358,7 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
-  const plugins = options?.plugins || [defaultPlugin]
+  const plugins = options?.plugins || [defaultPlugin()]
   const beforeRequestHooks: BeforeRequestHook[] = []
   const afterResponseHooks: AfterResponseHook[] = []
   const afterGenerateHooks: AfterGenerateHook[] = []
