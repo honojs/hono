@@ -1,7 +1,9 @@
 import { Hono } from '../../hono'
-import { defaultPlugin, redirectPlugin } from './plugins'
+import * as plugins from './plugins'
 import { toSSG } from './ssg'
 import type { FileSystemModule } from './ssg'
+
+const { defaultPlugin, redirectPlugin } = plugins
 
 describe('Built-in SSG plugins', () => {
   let app: Hono
@@ -25,15 +27,14 @@ describe('Built-in SSG plugins', () => {
 
   describe('default plugin', () => {
     it('uses defaultPlugin when plugins option is omitted', async () => {
-      // @ts-expect-error defaultPlugin has afterResponseHook
-      const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
+      const defaultPluginSpy = vi.spyOn(plugins, 'defaultPlugin')
       await toSSG(app, fsMock, { dir: './static' })
       expect(defaultPluginSpy).toHaveBeenCalled()
       defaultPluginSpy.mockRestore()
     })
 
     it('skips non-200 responses with defaultPlugin', async () => {
-      const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
+      const result = await toSSG(app, fsMock, { plugins: [defaultPlugin()], dir: './static' })
       expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
       expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
       expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
@@ -139,7 +140,7 @@ describe('Built-in SSG plugins', () => {
 
       await toSSG(redirectApp, fsMockLocal, {
         dir: './static',
-        plugins: [redirectPlugin(), defaultPlugin],
+        plugins: [redirectPlugin(), defaultPlugin()],
       })
       expect(writtenFiles['static/old.html']).toBeDefined()
     })
@@ -160,7 +161,7 @@ describe('Built-in SSG plugins', () => {
 
       await toSSG(redirectApp, fsMockLocal, {
         dir: './static',
-        plugins: [defaultPlugin, redirectPlugin()],
+        plugins: [defaultPlugin(), redirectPlugin()],
       })
       expect(writtenFiles['static/old.html']).toBeUndefined()
     })
