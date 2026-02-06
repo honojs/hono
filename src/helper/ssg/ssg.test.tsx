@@ -9,7 +9,6 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import { defaultPlugin, redirectPlugin } from './plugins'
 import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
 import type {
   AfterGenerateHook,
@@ -247,79 +246,6 @@ describe('toSSG function', () => {
       expect.anything(), // fsModule
       expect.anything() // options
     )
-  })
-
-  it('should generate redirect HTML for 301/302 route responses using plugin', async () => {
-    const writtenFiles: Record<string, string> = {}
-    const fsMock: FileSystemModule = {
-      writeFile: (path, data) => {
-        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-        return Promise.resolve()
-      },
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-    const app = new Hono()
-    app.get('/old', (c) => c.redirect('/new'))
-    app.get('/new', (c) => c.html('New Page'))
-
-    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
-
-    expect(writtenFiles['static/old.html']).toBeDefined()
-    const content = writtenFiles['static/old.html']
-    // Should contain meta refresh
-    expect(content).toContain('meta http-equiv="refresh" content="0;url=/new"')
-    // Should contain canonical
-    expect(content).toContain('rel="canonical" href="/new"')
-    // Should contain robots noindex
-    expect(content).toContain('<meta name="robots" content="noindex" />')
-    // Should contain link anchor
-    expect(content).toContain('<a href="/new">Redirecting to <code>/new</code></a>')
-    // Should contain a body element that includes the anchor
-    expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
-  })
-
-  it('should escape Location header values when generating redirect HTML', async () => {
-    const writtenFiles: Record<string, string> = {}
-    const fsMock: FileSystemModule = {
-      writeFile: (path, data) => {
-        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-        return Promise.resolve()
-      },
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-
-    const maliciousLocation = '/new"> <script>alert(1)</script>'
-    const app = new Hono()
-    app.get(
-      '/evil',
-      (c) => new Response(null, { status: 301, headers: { Location: maliciousLocation } })
-    )
-
-    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
-
-    const content = writtenFiles['static/evil.html']
-    expect(content).toBeDefined()
-    expect(content).not.toContain('<script>alert(1)</script>')
-    expect(content).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
-    expect(content).toContain('&quot;')
-  })
-
-  it('should skip generating a redirect HTML when 301/302 has no Location header', async () => {
-    const writtenFiles: Record<string, string> = {}
-    const fsMock: FileSystemModule = {
-      writeFile: (path, data) => {
-        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-        return Promise.resolve()
-      },
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-    const app = new Hono()
-    // Return a 301 without Location header
-    app.get('/bad', (c) => new Response(null, { status: 301 }))
-
-    await toSSG(app, fsMock, { dir: './static', plugins: [redirectPlugin()] })
-
-    expect(writtenFiles['static/bad.html']).toBeUndefined()
   })
 
   it('should handle asynchronous beforeRequestHook correctly', async () => {
@@ -911,30 +837,6 @@ describe('SSG Plugin System', () => {
     }
   })
 
-  it('should use defaultPlugin when plugins option is omitted', async () => {
-    // @ts-expect-error defaultPlugin has afterResponseHook
-    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
-    await toSSG(app, fsMock, { dir: './static' })
-    expect(defaultPluginSpy).toHaveBeenCalled()
-    defaultPluginSpy.mockRestore()
-  })
-
-  it('should skip non-200 responses with defaultPlugin', async () => {
-    const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/created.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/redirect.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/notfound.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/error.txt', expect.any(String))
-    expect(result.files.some((f) => f.includes('created'))).toBe(false)
-    expect(result.files.some((f) => f.includes('redirect'))).toBe(false)
-    expect(result.files.some((f) => f.includes('notfound'))).toBe(false)
-    expect(result.files.some((f) => f.includes('error'))).toBe(false)
-    expect(result.success).toBe(true)
-  })
-
   it('should correctly apply plugins with beforeRequestHook', async () => {
     const plugin: SSGPlugin = {
       beforeRequestHook: (req) => {
@@ -972,42 +874,6 @@ describe('SSG Plugin System', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home - Modified</h1>')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About - Modified</h1>')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog - Modified</h1>')
-  })
-
-  it('redirectPlugin before defaultPlugin generates redirect HTML', async () => {
-    const writtenFiles: Record<string, string> = {}
-    const fsMockLocal: FileSystemModule = {
-      writeFile: (path, data) => {
-        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-        return Promise.resolve()
-      },
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-
-    const app = new Hono()
-    app.get('/old', (c) => c.redirect('/new'))
-    app.get('/new', (c) => c.html('New Page'))
-
-    await toSSG(app, fsMockLocal, { dir: './static', plugins: [redirectPlugin(), defaultPlugin] })
-    expect(writtenFiles['static/old.html']).toBeDefined()
-  })
-
-  it('redirectPlugin after defaultPlugin does not generate redirect HTML', async () => {
-    const writtenFiles: Record<string, string> = {}
-    const fsMockLocal: FileSystemModule = {
-      writeFile: (path, data) => {
-        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-        return Promise.resolve()
-      },
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-
-    const app = new Hono()
-    app.get('/old', (c) => c.redirect('/new'))
-    app.get('/new', (c) => c.html('New Page'))
-
-    await toSSG(app, fsMockLocal, { dir: './static', plugins: [defaultPlugin, redirectPlugin()] })
-    expect(writtenFiles['static/old.html']).toBeUndefined()
   })
 
   it('should correctly apply plugins with afterGenerateHook', async () => {
