@@ -58,8 +58,8 @@ export const redirectPlugin = (): SSGPlugin => {
         if (!location) {
           return false
         }
-        const html = generateRedirectHtml(location)
-        return new Response(html, {
+        const htmlBody = generateRedirectHtml(location)
+        return new Response(htmlBody, {
           status: 200,
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
         })
