@@ -279,7 +279,7 @@ describe('toSSG function', () => {
     // Should contain robots noindex
     expect(content).toContain('<meta name="robots" content="noindex" />')
     // Should contain link anchor
-    expect(content).toContain('<a href="/new">Redirecting from')
+    expect(content).toContain('<a href="/new">Redirecting to <code>/new</code></a>')
     // Should contain a body element that includes the anchor
     expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
   })

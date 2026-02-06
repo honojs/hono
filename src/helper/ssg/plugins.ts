@@ -1,15 +1,15 @@
 import { html } from '../html'
 import type { SSGPlugin } from './ssg'
 
-const generateRedirectHtml = (from: string, to: string) => {
+const generateRedirectHtml = (location: string) => {
   // prettier-ignore
   const content = html`<!DOCTYPE html>
-<title>Redirecting to: ${to}</title>
-<meta http-equiv="refresh" content="0;url=${to}" />
+<title>Redirecting to: ${location}</title>
+<meta http-equiv="refresh" content="0;url=${location}" />
 <meta name="robots" content="noindex" />
-<link rel="canonical" href="${to}" />
+<link rel="canonical" href="${location}" />
 <body>
-<a href="${to}">Redirecting from <code>${from}</code> to <code>${to}</code></a>
+<a href="${location}">Redirecting to <code>${location}</code></a>
 </body>
 `
   return content.toString().replace(/\n/g, '')
@@ -35,7 +35,7 @@ export const redirectPlugin = (): SSGPlugin => {
         if (!location) {
           return false
         }
-        const html = generateRedirectHtml('', location)
+        const html = generateRedirectHtml(location)
         return new Response(html, {
           status: 200,
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
