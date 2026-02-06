@@ -302,15 +302,11 @@ const getNextChildren = (
   })
 }
 
-const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC?.[0] ? node.nN : node.vC[0]) {
-    if (!node) {
-      return null
-    }
-    if (node.tag !== HONO_PORTAL_ELEMENT && node.e) {
-      return node.e
-    }
+const findInsertBefore = (node: Node | undefined): SupportedElement | Text | undefined => {
+  while (node && (node.tag === HONO_PORTAL_ELEMENT || !node.e)) {
+    node = node.tag === HONO_PORTAL_ELEMENT || !node.vC?.[0] ? node.nN : node.vC[0]
   }
+  return node?.e
 }
 
 const removeNode = (node: Node): void => {
@@ -343,7 +339,7 @@ const apply = (node: NodeObject, container: Container, isNew: boolean): void => 
 
 const findChildNodeIndex = (
   childNodes: NodeListOf<ChildNode>,
-  child: ChildNode | null | undefined
+  child: ChildNode | undefined
 ): number | undefined => {
   if (!child) {
     return
