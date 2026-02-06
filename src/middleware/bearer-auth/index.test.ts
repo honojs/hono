@@ -450,6 +450,18 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('x-custom')).toBe('foo')
   })
 
+  it.each([['bearer'], ['BEARER'], ['BeArEr']])(
+    'Should authorize - prefix is case-insensitive: %s',
+    async (prefix) => {
+      const req = new Request('http://localhost/auth/a')
+      req.headers.set('Authorization', `${prefix} ${token}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    }
+  )
+
   it('Should not authorize - no authorization header', async () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
@@ -479,6 +491,15 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
     expect(res.headers.get('x-custom')).toBeNull()
+  })
+
+  it('Should not authorize - token is case-sensitive', async () => {
+    const req = new Request('http://localhost/auth/a')
+    req.headers.set('Authorization', `Bearer ${token.toUpperCase()}`)
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
   })
 
   it('Should authorize', async () => {
