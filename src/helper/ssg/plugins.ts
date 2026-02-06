@@ -38,7 +38,13 @@ const generateRedirectHtml = (location: string) => {
  *
  * When used with `defaultPlugin`, place `redirectPlugin` before it, because `defaultPlugin` skips non-200 responses.
  *
- * @returns A SSGPlugin that generates HTML redirect pages.
+ * ```ts
+ * // ✅ Will work as expected
+ * toSSG(app, fs, { plugins: [redirectPlugin(), defaultPlugin()] })
+ *
+ * // ❌ Will not work as expected
+ * toSSG(app, fs, { plugins: [defaultPlugin(), redirectPlugin()] })
+ * ```
  *
  * @experimental
  * `redirectPlugin` is an experimental feature.
