@@ -1,6 +1,22 @@
 import { html } from '../html'
 import type { SSGPlugin } from './ssg'
 
+/**
+ * The default plugin that defines the recommended behavior.
+ *
+ * @experimental
+ * `defaultPlugin` is an experimental feature.
+ * The API might be changed.
+ */
+export const defaultPlugin: SSGPlugin = {
+  afterResponseHook: (res) => {
+    if (res.status !== 200) {
+      return false
+    }
+    return res
+  },
+}
+
 const generateRedirectHtml = (location: string) => {
   // prettier-ignore
   const content = html`<!DOCTYPE html>

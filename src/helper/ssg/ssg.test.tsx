@@ -9,14 +9,8 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import { redirectPlugin } from './plugins'
-import {
-  defaultExtensionMap,
-  fetchRoutesContent,
-  saveContentToFile,
-  toSSG,
-  defaultPlugin,
-} from './ssg'
+import { defaultPlugin, redirectPlugin } from './plugins'
+import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
 import type {
   AfterGenerateHook,
   AfterResponseHook,
