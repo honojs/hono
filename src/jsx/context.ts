@@ -30,16 +30,9 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
     }
 
     if (string instanceof Promise) {
-      return string.then(
-        (resString) => {
-          values.pop()
-          return raw(resString, (resString as HtmlEscapedString).callbacks)
-        },
-        (e) => {
-          values.pop()
-          throw e
-        }
-      )
+      return string
+        .finally(() => values.pop())
+        .then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
     } else {
       values.pop()
       return raw(string)
