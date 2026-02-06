@@ -34,9 +34,8 @@ const generateRedirectHtml = (location: string) => {
 }
 
 /**
- * Redirect plugin for Hono SSG.
+ * The redirect plugin that generates HTML redirect pages for HTTP 301 and 302 responses.
  *
- * Generates HTML redirect pages for HTTP 301 and 302 responses.
  * When used with `defaultPlugin`, place `redirectPlugin` before it, because `defaultPlugin` skips non-200 responses.
  *
  * @returns A SSGPlugin that generates HTML redirect pages.
