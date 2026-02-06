@@ -94,6 +94,21 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
   >(
     arg?: Arg
   ) => HonoURL<Prefix, Path, Arg>
+  $path: <
+    const Arg extends
+      | (S[keyof S] extends { input: infer R }
+          ? R extends { param: infer P }
+            ? R extends { query: infer Q }
+              ? { param: P; query: Q }
+              : { param: P }
+            : R extends { query: infer Q }
+              ? { query: Q }
+              : {}
+          : {})
+      | undefined = undefined,
+  >(
+    arg?: Arg
+  ) => BuildPath<Path, Arg>
 } & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
@@ -145,6 +160,8 @@ type BuildSearch<Arg, Key extends 'query'> = Arg extends { [K in Key]: infer Que
 type BuildPathname<P extends string, Arg> = Arg extends { param: infer Param }
   ? `${ApplyParam<TrimStartSlash<P>, Param>}`
   : `/${TrimStartSlash<P>}`
+
+type BuildPath<P extends string, Arg> = `${BuildPathname<P, Arg>}${BuildSearch<Arg, 'query'>}`
 
 type BuildTypedURL<
   Protocol extends string,

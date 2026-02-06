@@ -35,12 +35,14 @@ describe('without the leading slash', () => {
   it('`foo` should have `$get`', () => {
     expectTypeOf(client.foo).toHaveProperty('$get')
     expectTypeOf(client.foo.$url()).toEqualTypeOf<TypedURL<'http:', 'localhost', '', '/foo', ''>>()
+    expectTypeOf(client.foo.$path()).toEqualTypeOf<'/foo'>()
   })
   it('`foo.bar` should not have `$get`', () => {
     expectTypeOf(client.foo.bar).toHaveProperty('$get')
     expectTypeOf(client.foo.bar.$url()).toEqualTypeOf<
       TypedURL<'http:', 'localhost', '', '/foo/bar', ''>
     >()
+    expectTypeOf(client.foo.bar.$path()).toEqualTypeOf<'/foo/bar'>()
   })
   it('`foo[":id"].baz` should have `$get`', () => {
     expectTypeOf(client.foo[':id'].baz).toHaveProperty('$get')
@@ -58,6 +60,19 @@ describe('without the leading slash', () => {
         query: { q: 'hono' },
       })
     ).toEqualTypeOf<TypedURL<'http:', 'localhost', '', '/foo/123/baz', `?${string}`>>()
+
+    expectTypeOf(client.foo[':id'].baz.$path()).toEqualTypeOf<'/foo/:id/baz'>()
+    expectTypeOf(
+      client.foo[':id'].baz.$path({
+        param: { id: '123' },
+      })
+    ).toEqualTypeOf<'/foo/123/baz'>()
+    expectTypeOf(
+      client.foo[':id'].baz.$path({
+        param: { id: '123' },
+        query: { q: 'hono' },
+      })
+    ).toEqualTypeOf<`/foo/123/baz?${string}`>()
   })
 })
 
@@ -108,5 +123,23 @@ describe('app.all()', () => {
     // The response type should match the original handler's return type
     const res = await client['all-route'].$get()
     expectTypeOf(res.json()).resolves.toEqualTypeOf<{ msg: string }>()
+  })
+})
+
+describe('with base URL pathname', () => {
+  const app = new Hono()
+    .get('foo', (c) => c.json({}))
+    .get('foo/bar', (c) => c.json({}))
+    .get('foo/:id/baz', (c) => c.json({}))
+  const client = hc<typeof app, 'http://localhost/api'>('http://localhost/api')
+  it('$path', () => {
+    expectTypeOf(client.foo.$path()).toEqualTypeOf<'/foo'>()
+    expectTypeOf(client.foo.bar.$path()).toEqualTypeOf<'/foo/bar'>()
+    expectTypeOf(
+      client.foo[':id'].baz.$path({
+        param: { id: '123' },
+        query: { q: 'hono' },
+      })
+    ).toEqualTypeOf<`/foo/123/baz?${string}`>()
   })
 })
