@@ -428,7 +428,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
     }
   }
   if (node.pP) {
-    delete node.pP
+    node.pP = undefined
   }
   if (callbacks.length) {
     const useLayoutEffectCbs: Array<() => void> = []
