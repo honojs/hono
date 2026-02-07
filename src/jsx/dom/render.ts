@@ -303,7 +303,7 @@ const getNextChildren = (
 }
 
 const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC || !node.pP ? node.nN : node.vC[0]) {
+  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC?.[0] ? node.nN : node.vC[0]) {
     if (!node) {
       return null
     }
