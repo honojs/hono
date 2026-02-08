@@ -309,6 +309,157 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div>2</div><div>1</div><button>+</button>')
       expect(Child).toBeCalledTimes(3)
     })
+
+    it('multiple children', async () => {
+      const Child = ({ name }: { name: string }) => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>
+              {name} {count}
+            </div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>parent {count}</div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <div>
+              <Child name='child 1' />
+              <Child name='child 2' />
+              <Child name='child 3' />
+            </div>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 0</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      const [parentButton, child1Button, child2Button, child3Button] =
+        root.querySelectorAll('button')
+      parentButton?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child2Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child1Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child3Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 1</div><button>+</button></div></div></div>'
+      )
+    })
+
+    it('keeps sibling order when a null sibling exists after parent update', async () => {
+      const Empty = () => null
+      const Child = () => {
+        const [count, setCount] = useState(0)
+        return count === 0 ? (
+          <>
+            <div>A0</div>
+            <button id='child' onClick={() => setCount(1)}>
+              child+
+            </button>
+          </>
+        ) : (
+          <>
+            <span>A1</span>
+            <span>A2</span>
+          </>
+        )
+      }
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <>
+            <Child />
+            <Empty />
+            <div id='tail'>T{count}</div>
+            <button id='parent' onClick={() => setCount(count + 1)}>
+              parent+
+            </button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div>A0</div><button id="child">child+</button><div id="tail">T0</div><button id="parent">parent+</button>'
+      )
+      root.querySelector<HTMLButtonElement>('#parent')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div>A0</div><button id="child">child+</button><div id="tail">T1</div><button id="parent">parent+</button>'
+      )
+      root.querySelector<HTMLButtonElement>('#child')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<span>A1</span><span>A2</span><div id="tail">T1</div><button id="parent">parent+</button>'
+      )
+    })
+
+    it('multiple children with dynamic addition and rerender', async () => {
+      const Child = ({ name }: { name: string }) => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>
+              {name} {count}
+            </div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const App = () => {
+        const [showThird, setShowThird] = useState(false)
+        return (
+          <div>
+            <Child name='child 1' />
+            <Child name='child 2' />
+            {showThird && <Child name='child 3' />}
+            <button onClick={() => setShowThird(true)}>add</button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // add child 3
+      let buttons = root.querySelectorAll('button')
+      buttons[2]?.click() // add
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // click child 1
+      buttons = root.querySelectorAll('button')
+      buttons[0]?.click() // child 1
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // click child 2 - verify child 2 and child 3 do not swap positions
+      buttons = root.querySelectorAll('button')
+      buttons[1]?.click() // child 2
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
+    })
   })
 
   describe('defaultProps', () => {
