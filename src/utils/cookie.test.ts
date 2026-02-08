@@ -240,26 +240,20 @@ describe('Set cookie', () => {
     expect(serialized).toBe('great_cookie=banana')
   })
 
-  it('Should throw Error cookie with maxAge grater than 400days', () => {
-    expect(() => {
-      serialize('great_cookie', 'banana', {
-        maxAge: 3600 * 24 * 401,
-      })
-    }).toThrowError(
-      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
-    )
+  it('Should allow cookie with maxAge greater than 400 days', () => {
+    const maxAge = 3600 * 24 * 401
+    const serialized = serialize('great_cookie', 'banana', {
+      maxAge,
+    })
+    expect(serialized).toBe(`great_cookie=banana; Max-Age=${maxAge}`)
   })
 
-  it('Should throw Error cookie with expires grater than 400days', () => {
-    const now = Date.now()
-    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
-    expect(() => {
-      serialize('great_cookie', 'banana', {
-        expires: day401,
-      })
-    }).toThrowError(
-      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
-    )
+  it('Should allow cookie with expires greater than 400 days', () => {
+    const day401 = new Date(Date.now() + 1000 * 3600 * 24 * 401)
+    const serialized = serialize('great_cookie', 'banana', {
+      expires: day401,
+    })
+    expect(serialized).toBe(`great_cookie=banana; Expires=${day401.toUTCString()}`)
   })
 
   it('Should throw Error Partitioned cookie without Secure attributes', () => {

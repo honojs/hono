@@ -162,12 +162,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
-    if (opt.maxAge > 34560000) {
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
-      throw new Error(
-        'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
-      )
-    }
     cookie += `; Max-Age=${opt.maxAge | 0}`
   }
 
@@ -180,12 +174,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.expires) {
-    if (opt.expires.getTime() - Date.now() > 34560000_000) {
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
-      throw new Error(
-        'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
-      )
-    }
     cookie += `; Expires=${opt.expires.toUTCString()}`
   }
 
