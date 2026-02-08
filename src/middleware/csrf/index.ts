@@ -105,7 +105,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
   })(options?.origin)
   const isAllowedOrigin = async (origin: string | undefined, c: Context) => {
     if (origin === undefined) {
-      // denied always when origin header is not present
+      // deny when origin header is not present
       return false
     }
     return await originHandler(origin, c)
@@ -125,7 +125,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
   })(options?.secFetchSite)
   const isAllowedSecFetchSite = async (secFetchSite: string | undefined, c: Context) => {
     if (secFetchSite === undefined) {
-      // denied always when sec-fetch-site header is not present
+      // deny when sec-fetch-site header is not present
       return false
     }
     // type guard to check if the value is a valid SecFetchSite

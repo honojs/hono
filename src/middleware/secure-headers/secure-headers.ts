@@ -96,7 +96,7 @@ const HEADERS_MAP: HeadersMap = {
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
   originAgentCluster: ['Origin-Agent-Cluster', '?1'],
-  referrerPolicy: ['Referrer-Policy', 'no-referrer'],
+  referrerPolicy: ['Referrer-Policy', 'strict-origin-when-cross-origin'],
   strictTransportSecurity: ['Strict-Transport-Security', 'max-age=15552000; includeSubDomains'],
   xContentTypeOptions: ['X-Content-Type-Options', 'nosniff'],
   xDnsPrefetchControl: ['X-DNS-Prefetch-Control', 'off'],
