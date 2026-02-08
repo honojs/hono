@@ -65,9 +65,13 @@ const verifySignature = async (
   }
 }
 
-// all alphanumeric chars and all of _!#$%&'*.^`|~+-
-// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+// RFC 6265 cookie-name token chars for serialization (strict)
 const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+
+// Lenient cookie name validation for parsing: accept any non-empty name
+// that doesn't contain control chars, spaces, '=', ';', or ','
+// This allows real-world cookie names like 'paraglide:lang'
+const validCookieNameLoose = /^[^\x00-\x1f\x7f =;,\\]+$/
 
 // all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
 // (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
@@ -91,7 +95,7 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
-    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+    if ((name && name !== cookieName) || !validCookieNameLoose.test(cookieName)) {
       continue
     }
 

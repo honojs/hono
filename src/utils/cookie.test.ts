@@ -73,6 +73,13 @@ describe('Parse cookie', () => {
     expect(cookie['']).toBeUndefined()
   })
 
+  it('Should parse cookie names with non-RFC characters like colons', () => {
+    const cookieString = 'paraglide:lang=en; test=ok'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['test']).toBe('ok')
+  })
+
   it('Should ignore invalid cookie values', () => {
     const cookieString = 'yummy_cookie=choco\\nchip; tasty_cookie=strawberry; best_cookie="sugar'
     const cookie: Cookie = parse(cookieString)
