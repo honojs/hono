@@ -89,6 +89,36 @@ describe('handle', () => {
     expect(res.body).toBe('https://hono.dev/test-path')
   })
 
+  it('Should base64 encode compressed response body', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return new Response('compressed-data', {
+        headers: {
+          'content-type': 'text/html; charset=UTF-8',
+          'content-encoding': 'gzip',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.bodyEncoding).toBe('base64')
+  })
+
+  it('Should not base64 encode uncompressed text response', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text('hello')
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.bodyEncoding).toBeUndefined()
+    expect(res.body).toBe('hello')
+  })
+
   it('Should support multiple cookies', async () => {
     const app = new Hono()
     app.get('/test-path', (c) => {
