@@ -282,6 +282,26 @@ describe('Special Wildcard deeply', () => {
   })
 })
 
+describe('Double star wildcard', () => {
+  const node = new Node()
+  node.insert('get', '/auth/**', 'match auth')
+  it('/auth/login', () => {
+    const [res] = node.search('get', '/auth/login')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('match auth')
+  })
+  it('/auth/signup', () => {
+    const [res] = node.search('get', '/auth/signup')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('match auth')
+  })
+  it('/auth', () => {
+    const [res] = node.search('get', '/auth')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('match auth')
+  })
+})
+
 describe('Default with wildcard', () => {
   const node = new Node()
   node.insert('ALL', '/api/*', 'fallback')

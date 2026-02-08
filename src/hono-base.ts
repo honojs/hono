@@ -394,7 +394,10 @@ class Hono<
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
-    throw err
+    return this.errorHandler(
+      new Error(typeof err === 'string' ? err : String(err)),
+      c
+    )
   }
 
   #dispatch(

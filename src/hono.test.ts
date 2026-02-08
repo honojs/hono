@@ -1374,8 +1374,11 @@ describe('Error handle', () => {
       return c.text('Custom Error Message', 500)
     })
 
-    it('Should throw Error if a non-Error object is thrown in a handler', async () => {
-      expect(() => app.request('/error-string')).toThrowError()
+    it('Should handle non-Error object thrown in a handler via onError', async () => {
+      const res = await app.request('/error-string')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
     })
 
     it('Custom Error Message', async () => {
@@ -2462,6 +2465,16 @@ describe('json', () => {
         message: 'Hello',
       })
     })
+  })
+
+  it('Should return 500 for non-serializable values like undefined', async () => {
+    const app = new Hono()
+    app.get('/json-undefined', (c) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return c.json(undefined as any)
+    })
+    const res = await app.request('/json-undefined')
+    expect(res.status).toBe(500)
   })
 })
 
