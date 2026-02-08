@@ -777,7 +777,7 @@ export const runTest = ({
     describe('Capture Group', () => {
       describe('Simple capturing group', () => {
         beforeEach(() => {
-          router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
+          router.add('get', '/foo/:capture{(bar|baz)}', 'ok')
         })
 
         it('GET /foo/bar', () => {
