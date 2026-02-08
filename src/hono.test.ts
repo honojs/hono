@@ -1374,8 +1374,11 @@ describe('Error handle', () => {
       return c.text('Custom Error Message', 500)
     })
 
-    it('Should throw Error if a non-Error object is thrown in a handler', async () => {
-      expect(() => app.request('/error-string')).toThrowError()
+    it('Should handle non-Error object thrown in a handler via onError', async () => {
+      const res = await app.request('/error-string')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
     })
 
     it('Custom Error Message', async () => {
