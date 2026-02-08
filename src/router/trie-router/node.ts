@@ -44,7 +44,7 @@ export class Node<T> {
     const possibleKeys: string[] = []
 
     for (let i = 0, len = parts.length; i < len; i++) {
-      const p: string = parts[i]
+      const p: string = parts[i] === '**' ? '*' : parts[i]
       const nextP = parts[i + 1]
       const pattern = getPattern(p, nextP)
       const key = Array.isArray(pattern) ? pattern[0] : p
