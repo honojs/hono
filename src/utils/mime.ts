@@ -3,6 +3,20 @@
  * MIME utility.
  */
 
+const charsetTypes = new Set([
+  'css',
+  'csv',
+  'htm',
+  'html',
+  'ics',
+  'js',
+  'mjs',
+  'svg',
+  'txt',
+  'xhtml',
+  'xml',
+])
+
 export const getMimeType = (
   filename: string,
   mimes: Record<string, string> = baseMimes
@@ -13,7 +27,7 @@ export const getMimeType = (
     return
   }
   let mimeType = mimes[match[1]]
-  if (mimeType && mimeType.startsWith('text')) {
+  if (mimeType && charsetTypes.has(match[1])) {
     mimeType += '; charset=utf-8'
   }
   return mimeType
