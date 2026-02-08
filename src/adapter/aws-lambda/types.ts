@@ -88,6 +88,9 @@ export interface ApiGatewayRequestContext {
   authorizer: {
     claims?: unknown
     scopes?: unknown
+    principalId?: string
+    integrationLatency?: number
+    [key: string]: unknown
   }
   domainName: string
   domainPrefix: string
@@ -114,6 +117,11 @@ interface Authorizer {
     userArn: string
     userId: string
   }
+  jwt?: {
+    claims: Record<string, string | number | boolean>
+    scopes?: string[]
+  }
+  lambda?: Record<string, unknown>
 }
 
 export interface ApiGatewayRequestContextV2 {

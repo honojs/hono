@@ -122,22 +122,36 @@ export const handle = (
   callback?: Callback
 ) => Promise<CloudFrontResult>) => {
   return async (event, context?, callback?) => {
-    const res = await app.fetch(createRequest(event), {
-      event,
-      context,
-      callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
-        callback?.(err, result)
-      },
-      config: event.Records[0].cf.config,
-      request: event.Records[0].cf.request,
-      response: event.Records[0].cf.response,
-    })
-    return createResult(res)
+    try {
+      const res = await app.fetch(createRequest(event), {
+        event,
+        context,
+        callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
+          callback?.(err, result)
+        },
+        config: event.Records[0].cf.config,
+        request: event.Records[0].cf.request,
+        response: event.Records[0].cf.response,
+      })
+      return createResult(res)
+    } catch (e) {
+      return {
+        status: '500',
+        statusDescription: 'Internal Server Error',
+        body: `Error: Unable to handle CloudFront event: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      }
+    }
   }
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  let isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  if (!isBase64Encoded) {
+    const contentEncoding = res.headers.get('content-encoding')
+    if (contentEncoding && /^(gzip|deflate|compress|br)/.test(contentEncoding)) {
+      isBase64Encoded = true
+    }
+  }
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
   return {
