@@ -262,12 +262,12 @@ describe('Set cookie', () => {
     )
   })
 
-  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+  it('Should throw Error Partitioned cookie without Secure attribute', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
         partitioned: true,
       })
-    }).toThrowError('Partitioned Cookie must have Secure attributes')
+    }).toThrowError('Partitioned Cookie must have Secure attribute')
   })
 
   it('Should serialize cookie with lowercase priority values', () => {

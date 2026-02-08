@@ -143,21 +143,21 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (name.startsWith('__Secure-') && !opt.secure) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
-    throw new Error('__Secure- Cookie must have Secure attributes')
+    throw new Error('__Secure- Cookie must have Secure attribute')
   }
 
   if (name.startsWith('__Host-')) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.2
     if (!opt.secure) {
-      throw new Error('__Host- Cookie must have Secure attributes')
+      throw new Error('__Host- Cookie must have Secure attribute')
     }
 
     if (opt.path !== '/') {
-      throw new Error('__Host- Cookie must have Path attributes with "/"')
+      throw new Error('__Host- Cookie must have Path attribute with "/"')
     }
 
     if (opt.domain) {
-      throw new Error('__Host- Cookie must not have Domain attributes')
+      throw new Error('__Host- Cookie must not have Domain attribute')
     }
   }
 
@@ -208,7 +208,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   if (opt.partitioned) {
     // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
     if (!opt.secure) {
-      throw new Error('Partitioned Cookie must have Secure attributes')
+      throw new Error('Partitioned Cookie must have Secure attribute')
     }
     cookie += '; Partitioned'
   }
