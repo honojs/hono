@@ -108,16 +108,15 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {
     const enabled = typeof options.enabled === 'function' ? options.enabled(c) : options.enabled
 
     if (enabled) {
-      c.res.headers.append('Server-Timing', headers.join(','))
+      c.header('Server-Timing', headers.join(','), { append: true })
 
       const crossOrigin =
         typeof options.crossOrigin === 'function' ? options.crossOrigin(c) : options.crossOrigin
 
       if (crossOrigin) {
-        c.res.headers.append(
-          'Timing-Allow-Origin',
-          typeof crossOrigin === 'string' ? crossOrigin : '*'
-        )
+        c.header('Timing-Allow-Origin', typeof crossOrigin === 'string' ? crossOrigin : '*', {
+          append: true,
+        })
       }
     }
   }

@@ -73,6 +73,13 @@ describe('Parse cookie', () => {
     expect(cookie['']).toBeUndefined()
   })
 
+  it('Should parse cookie names with non-RFC characters like colons', () => {
+    const cookieString = 'paraglide:lang=en; test=ok'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['test']).toBe('ok')
+  })
+
   it('Should ignore invalid cookie values', () => {
     const cookieString = 'yummy_cookie=choco\\nchip; tasty_cookie=strawberry; best_cookie="sugar'
     const cookie: Cookie = parse(cookieString)
@@ -240,34 +247,28 @@ describe('Set cookie', () => {
     expect(serialized).toBe('great_cookie=banana')
   })
 
-  it('Should throw Error cookie with maxAge grater than 400days', () => {
-    expect(() => {
-      serialize('great_cookie', 'banana', {
-        maxAge: 3600 * 24 * 401,
-      })
-    }).toThrowError(
-      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
-    )
+  it('Should allow cookie with maxAge greater than 400 days', () => {
+    const maxAge = 3600 * 24 * 401
+    const serialized = serialize('great_cookie', 'banana', {
+      maxAge,
+    })
+    expect(serialized).toBe(`great_cookie=banana; Max-Age=${maxAge}`)
   })
 
-  it('Should throw Error cookie with expires grater than 400days', () => {
-    const now = Date.now()
-    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
-    expect(() => {
-      serialize('great_cookie', 'banana', {
-        expires: day401,
-      })
-    }).toThrowError(
-      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
-    )
+  it('Should allow cookie with expires greater than 400 days', () => {
+    const day401 = new Date(Date.now() + 1000 * 3600 * 24 * 401)
+    const serialized = serialize('great_cookie', 'banana', {
+      expires: day401,
+    })
+    expect(serialized).toBe(`great_cookie=banana; Expires=${day401.toUTCString()}`)
   })
 
-  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+  it('Should throw Error Partitioned cookie without Secure attribute', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
         partitioned: true,
       })
-    }).toThrowError('Partitioned Cookie must have Secure attributes')
+    }).toThrowError('Partitioned Cookie must have Secure attribute')
   })
 
   it('Should serialize cookie with lowercase priority values', () => {

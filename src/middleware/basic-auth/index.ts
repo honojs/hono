@@ -8,8 +8,17 @@ import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { auth } from '../../utils/basic-auth'
 import { timingSafeEqual } from '../../utils/buffer'
+import type {} from '../..'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
+
+export type BasicAuthVariables = {
+  basicAuthUsername: string
+}
+
+declare module '../..' {
+  interface ContextVariableMap extends BasicAuthVariables {}
+}
 
 type BasicAuthOptions =
   | {
@@ -88,6 +97,7 @@ export const basicAuth = (
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
+          ctx.set('basicAuthUsername', requestUser.username)
           await next()
           return
         }
@@ -98,6 +108,7 @@ export const basicAuth = (
             timingSafeEqual(user.password, requestUser.password, options.hashFunction),
           ])
           if (usernameEqual && passwordEqual) {
+            ctx.set('basicAuthUsername', requestUser.username)
             await next()
             return
           }

@@ -9,12 +9,21 @@ describe('mime', () => {
   it('getMimeType', () => {
     expect(getMimeType('hello.txt')).toBe('text/plain; charset=utf-8')
     expect(getMimeType('hello.html')).toBe('text/html; charset=utf-8')
+    expect(getMimeType('hello.css')).toBe('text/css; charset=utf-8')
+    expect(getMimeType('hello.js')).toBe('text/javascript; charset=utf-8')
+    expect(getMimeType('hello.csv')).toBe('text/csv; charset=utf-8')
     expect(getMimeType('hello.json')).toBe('application/json')
     expect(getMimeType('favicon.ico')).toBe('image/x-icon')
     expect(getMimeType('good.morning.hello.gif')).toBe('image/gif')
     expect(getMimeType('site.webmanifest')).toBe('application/manifest+json')
     expect(getMimeType('goodmorninghellogif')).toBeUndefined()
     expect(getMimeType('indexjs.abcd')).toBeUndefined()
+  })
+
+  it('getMimeType - charset for XML-based types', () => {
+    expect(getMimeType('image.svg')).toBe('image/svg+xml; charset=utf-8')
+    expect(getMimeType('page.xhtml')).toBe('application/xhtml+xml; charset=utf-8')
+    expect(getMimeType('data.xml')).toBe('application/xml; charset=utf-8')
   })
 
   it('getMimeType with custom mime', () => {

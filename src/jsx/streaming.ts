@@ -1,6 +1,6 @@
 /**
  * @module
- * This module enables JSX to supports streaming Response.
+ * This module enables JSX to support streaming Response.
  */
 
 import { raw } from '../helper/html'
@@ -147,7 +147,7 @@ export const renderToReadableStream = (
     async start(controller) {
       try {
         if (content instanceof JSXNode) {
-          // aJSXNode.toString() returns a string or Promise<string> and string is already escaped
+          // A JSXNode.toString() returns a string or Promise<string> and string is already escaped
           content = content.toString() as HtmlEscapedString | Promise<HtmlEscapedString>
         }
         const context = typeof content === 'object' ? content : {}
@@ -165,7 +165,7 @@ export const renderToReadableStream = (
           callbacks.push(
             promise
               .catch((err) => {
-                console.log(err)
+                console.error(err)
                 onError(err)
                 return ''
               })

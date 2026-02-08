@@ -56,7 +56,7 @@ export class JwtTokenIssuedAt extends Error {
 
 export class JwtTokenIssuer extends Error {
   constructor(expected: string | RegExp, iss: string | null) {
-    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : 'none'} `)
+    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : 'none'}`)
     this.name = 'JwtTokenIssuer'
   }
 }
@@ -91,7 +91,7 @@ export class JwtAlgorithmNotAllowed extends Error {
 
 export class JwtTokenSignatureMismatched extends Error {
   constructor(token: string) {
-    super(`token(${token}) signature mismatched`)
+    super(`token (${token}) signature mismatched`)
     this.name = 'JwtTokenSignatureMismatched'
   }
 }
