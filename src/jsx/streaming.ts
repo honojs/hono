@@ -1,6 +1,6 @@
 /**
  * @module
- * This module enables JSX to supports streaming Response.
+ * This module enables JSX to support streaming Response.
  */
 
 import { raw } from '../helper/html'
