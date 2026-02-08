@@ -89,6 +89,19 @@ describe('handle', () => {
     expect(res.body).toBe('https://hono.dev/test-path')
   })
 
+  it('Should return 500 for malformed CloudFront event', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text('ok'))
+    const handler = handle(app)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const malformedEvent = { Records: [] } as any
+    const res = await handler(malformedEvent)
+
+    expect(res.status).toBe('500')
+    expect(res.body).toContain('Unable to handle CloudFront event')
+  })
+
   it('Should support multiple cookies', async () => {
     const app = new Hono()
     app.get('/test-path', (c) => {
