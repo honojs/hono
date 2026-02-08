@@ -135,7 +135,7 @@ export const setSignedCookie = async (
   opt?: CookieOptions
 ): Promise<void> => {
   const cookie = await generateSignedCookie(name, value, secret, opt)
-  c.header('set-cookie', cookie, { append: true })
+  c.header('Set-Cookie', cookie, { append: true })
 }
 
 export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {
