@@ -318,4 +318,53 @@ describe('Basic Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom unauthorized message as function object"}')
   })
+
+  describe('Should set basicAuthUsername in context', () => {
+    it('Should set basicAuthUsername after successful auth', async () => {
+      const usernameApp = new Hono()
+      usernameApp.use('/auth/*', basicAuth({ username, password }))
+      usernameApp.get('/auth/user', (c) => {
+        return c.text(c.get('basicAuthUsername'))
+      })
+
+      const credential = Buffer.from(username + ':' + password).toString('base64')
+      const req = new Request('http://localhost/auth/user')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await usernameApp.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(username)
+    })
+
+    it('Should set basicAuthUsername after successful verifyUser auth', async () => {
+      const usernameApp = new Hono()
+      usernameApp.use(
+        '/auth/*',
+        basicAuth({
+          verifyUser: (u, p) => u === 'dynamic-user' && p === 'hono-password',
+        })
+      )
+      usernameApp.get('/auth/user', (c) => {
+        return c.text(c.get('basicAuthUsername'))
+      })
+
+      const credential = Buffer.from('dynamic-user:hono-password').toString('base64')
+      const req = new Request('http://localhost/auth/user')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await usernameApp.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('dynamic-user')
+    })
+
+    it('Should not set basicAuthUsername when auth fails', async () => {
+      const usernameApp = new Hono()
+      usernameApp.use('/auth/*', basicAuth({ username, password }))
+      usernameApp.get('/auth/user', (c) => {
+        return c.text(c.get('basicAuthUsername') ?? 'no-user')
+      })
+
+      const req = new Request('http://localhost/auth/user')
+      const res = await usernameApp.request(req)
+      expect(res.status).toBe(401)
+    })
+  })
 })
