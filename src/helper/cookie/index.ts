@@ -97,8 +97,24 @@ export const generateCookie = (name: string, value: string, opt?: CookieOptions)
 }
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+  let cookieName = name
+  if (opt?.prefix === 'secure') {
+    cookieName = '__Secure-' + name
+  } else if (opt?.prefix === 'host') {
+    cookieName = '__Host-' + name
+  }
+
   const cookie = generateCookie(name, value, opt)
-  c.header('Set-Cookie', cookie, { append: true })
+  const headers = c.res.headers
+  const cookies = headers.getSetCookie?.() ?? []
+  headers.delete('Set-Cookie')
+  for (const existing of cookies) {
+    const existingName = existing.split('=')[0]
+    if (existingName !== cookieName) {
+      headers.append('Set-Cookie', existing)
+    }
+  }
+  headers.append('Set-Cookie', cookie)
 }
 
 export const generateSignedCookie = async (
@@ -134,8 +150,24 @@ export const setSignedCookie = async (
   secret: string | BufferSource,
   opt?: CookieOptions
 ): Promise<void> => {
+  let cookieName = name
+  if (opt?.prefix === 'secure') {
+    cookieName = '__Secure-' + name
+  } else if (opt?.prefix === 'host') {
+    cookieName = '__Host-' + name
+  }
+
   const cookie = await generateSignedCookie(name, value, secret, opt)
-  c.header('set-cookie', cookie, { append: true })
+  const headers = c.res.headers
+  const cookies = headers.getSetCookie?.() ?? []
+  headers.delete('Set-Cookie')
+  for (const existing of cookies) {
+    const existingName = existing.split('=')[0]
+    if (existingName !== cookieName) {
+      headers.append('Set-Cookie', existing)
+    }
+  }
+  headers.append('Set-Cookie', cookie)
 }
 
 export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {

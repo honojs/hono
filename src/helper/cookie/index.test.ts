@@ -371,11 +371,11 @@ describe('Cookie Middleware', () => {
       return c.text('Give cookie')
     })
 
-    it('Multiple values', async () => {
+    it('Multiple values with same name should deduplicate', async () => {
       const res = await app.request('http://localhost/set-cookie-multiple')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha; Path=/, delicious_cookie=choco; Path=/')
+      expect(header).toBe('delicious_cookie=choco; Path=/')
     })
   })
 
