@@ -3,13 +3,23 @@ import * as fs from 'node:fs'
 import * as os from 'os'
 import * as path from 'path'
 
-async function main() {
-  const tempDir = os.tmpdir()
-  const tempFilePath = path.join(tempDir, 'bundle.tmp.js')
+interface BundleTarget {
+  entryPoint: string
+  label: string
+  keyPrefix: string
+}
+
+const targets: BundleTarget[] = [
+  { entryPoint: 'dist/index.js', label: 'hono', keyPrefix: 'bundle-size' },
+  { entryPoint: 'dist/preset/tiny.js', label: 'hono/tiny', keyPrefix: 'bundle-size-tiny' },
+]
+
+async function measureBundle(target: BundleTarget, tempDir: string) {
+  const tempFilePath = path.join(tempDir, `${target.keyPrefix}.tmp.js`)
 
   try {
     await esbuild.build({
-      entryPoints: ['dist/index.js'],
+      entryPoints: [target.entryPoint],
       bundle: true,
       minify: true,
       format: 'esm' as esbuild.Format,
@@ -18,21 +28,38 @@ async function main() {
     })
 
     const bundleSize = fs.statSync(tempFilePath).size
+
+    return [
+      {
+        key: `${target.keyPrefix}-b`,
+        name: `Bundle Size - ${target.label} (B)`,
+        value: bundleSize,
+        unit: 'B',
+      },
+      {
+        key: `${target.keyPrefix}-kb`,
+        name: `Bundle Size - ${target.label} (KB)`,
+        value: parseFloat((bundleSize / 1024).toFixed(2)),
+        unit: 'K',
+      },
+    ]
+  } finally {
+    if (fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath)
+    }
+  }
+}
+
+async function main() {
+  const tempDir = os.tmpdir()
+
+  try {
     const metrics = []
 
-    metrics.push({
-      key: 'bundle-size-b',
-      name: 'Bundle Size (B)',
-      value: bundleSize,
-      unit: 'B',
-    })
-
-    metrics.push({
-      key: 'bundle-size-kb',
-      name: 'Bundle Size (KB)',
-      value: parseFloat((bundleSize / 1024).toFixed(2)),
-      unit: 'K',
-    })
+    for (const target of targets) {
+      const targetMetrics = await measureBundle(target, tempDir)
+      metrics.push(...targetMetrics)
+    }
 
     const benchmark = {
       key: 'bundle-size-check',
@@ -42,10 +69,6 @@ async function main() {
     console.log(JSON.stringify(benchmark, null, 2))
   } catch (error) {
     console.error('Build failed:', error)
-  } finally {
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath)
-    }
   }
 }
 
