@@ -105,6 +105,22 @@ describe('url', () => {
       expect(path).toBe('/hello/hey')
     })
 
+    it('getPath - strip fragment identifiers', () => {
+      let path = getPath(new Request('https://example.com/hello#fragment'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/hello/hey#section'))
+      expect(path).toBe('/hello/hey')
+      path = getPath(new Request('https://example.com/hello?name=foo#fragment'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/#top'))
+      expect(path).toBe('/')
+    })
+
+    it('getPath - strip fragment with percent encoding', () => {
+      const path = getPath(new Request('https://example.com/%E7%82%8E#fragment'))
+      expect(path).toBe('/\u708e')
+    })
+
     it('getPath - with trailing slash', () => {
       let path = getPath(new Request('https://example.com/hello/'))
       expect(path).toBe('/hello/')
