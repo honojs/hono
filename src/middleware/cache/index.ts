@@ -68,7 +68,7 @@ export const cache = (options: {
   cacheableStatusCodes?: StatusCode[]
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    console.log('Cache Middleware is not enabled because caches is not defined.')
+    console.warn('Cache Middleware is not enabled because caches is not defined.')
     return async (_c, next) => await next()
   }
 
