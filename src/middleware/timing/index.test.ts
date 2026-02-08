@@ -103,6 +103,35 @@ describe('Server-Timing API', () => {
     consoleWarnSpy.mockRestore()
   })
 
+  describe('Should handle immutable response headers', () => {
+    it('Should set Server-Timing header even when response is a new Response object', async () => {
+      const immutableApp = new Hono()
+      immutableApp.use('*', timing())
+      immutableApp.get('/', () => {
+        return new Response('ok', {
+          headers: { 'Content-Type': 'text/plain' },
+        })
+      })
+
+      const res = await immutableApp.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.get('server-timing')?.includes('total;dur=')).toBeTruthy()
+    })
+
+    it('Should set Timing-Allow-Origin even when response is a new Response object', async () => {
+      const immutableApp = new Hono()
+      immutableApp.use('*', timing({ crossOrigin: true }))
+      immutableApp.get('/', () => {
+        return new Response('ok')
+      })
+
+      const res = await immutableApp.request('http://localhost/')
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.get('timing-allow-origin')).toBe('*')
+    })
+  })
+
   describe('Should handle crossOrigin setting', async () => {
     it('Should do nothing when crossOrigin is falsy', async () => {
       const crossOriginApp = new Hono()
