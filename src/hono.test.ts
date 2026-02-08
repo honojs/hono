@@ -2463,6 +2463,16 @@ describe('json', () => {
       })
     })
   })
+
+  it('Should return 500 for non-serializable values like undefined', async () => {
+    const app = new Hono()
+    app.get('/json-undefined', (c) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return c.json(undefined as any)
+    })
+    const res = await app.request('/json-undefined')
+    expect(res.status).toBe(500)
+  })
 })
 
 describe('Optional parameters', () => {

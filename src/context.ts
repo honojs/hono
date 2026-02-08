@@ -703,8 +703,12 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
+    const body = JSON.stringify(object)
+    if (body === undefined) {
+      throw new TypeError('Value is not JSON serializable')
+    }
     return this.#newResponse(
-      JSON.stringify(object),
+      body,
       arg,
       setDefaultContentType('application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
