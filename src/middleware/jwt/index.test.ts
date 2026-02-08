@@ -1,6 +1,7 @@
 import { describe } from 'vitest'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
+import { Jwt } from '../../utils/jwt'
 import { jwt } from '.'
 
 describe('JWT', () => {
@@ -80,9 +81,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
-      expect(res.headers.get('www-authenticate')).toEqual(
-        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
-      )
+      expect(res.headers.get('www-authenticate')).toContain('error="invalid_token"')
       expect(handlerExecuted).toBeFalsy()
     })
 
@@ -97,6 +96,21 @@ describe('JWT', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
       )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should include specific error description for expired token', async () => {
+      const expiredToken = await Jwt.sign(
+        { message: 'hello', exp: Math.floor(Date.now() / 1000) - 100 },
+        'a-secret',
+        'HS256'
+      )
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${expiredToken}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toContain('expired')
       expect(handlerExecuted).toBeFalsy()
     })
 
@@ -216,9 +230,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
-      expect(res.headers.get('www-authenticate')).toEqual(
-        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
-      )
+      expect(res.headers.get('www-authenticate')).toContain('error="invalid_token"')
       expect(handlerExecuted).toBeFalsy()
     })
 
@@ -360,9 +372,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
-      expect(res.headers.get('www-authenticate')).toEqual(
-        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
-      )
+      expect(res.headers.get('www-authenticate')).toContain('error="invalid_token"')
       expect(handlerExecuted).toBeFalsy()
     })
 
@@ -374,9 +384,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
-      expect(res.headers.get('www-authenticate')).toEqual(
-        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
-      )
+      expect(res.headers.get('www-authenticate')).toContain('error="invalid_token"')
       expect(handlerExecuted).toBeFalsy()
     })
   })

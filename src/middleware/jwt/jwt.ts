@@ -145,7 +145,7 @@ export const jwt = (options: {
           ctx,
           error: 'invalid_token',
           statusText: 'Unauthorized',
-          errDescription: 'token verification failure',
+          errDescription: cause instanceof Error ? cause.message : 'token verification failure',
         }),
         cause,
       })
