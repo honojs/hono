@@ -7,7 +7,7 @@
 const nullBodyResponses = new Set([101, 204, 205, 304])
 
 /**
- * Smartly parses and return the consumable result from a fetch `Response`.
+ * Smartly parses and returns the consumable result from a fetch `Response`.
  *
  * Throwing a structured error if the response is not `ok`. ({@link DetailedError})
  */

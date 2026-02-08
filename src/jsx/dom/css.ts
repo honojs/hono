@@ -1,6 +1,6 @@
 /**
  * @module
- * This module provides APIs that enable `hono/jsx/dom` to support.
+ * This module provides APIs that enable `hono/jsx/dom` to support CSS.
  */
 
 import type { FC, PropsWithChildren } from '../'
