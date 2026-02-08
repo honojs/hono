@@ -165,7 +165,7 @@ export const renderToReadableStream = (
           callbacks.push(
             promise
               .catch((err) => {
-                console.log(err)
+                console.error(err)
                 onError(err)
                 return ''
               })
