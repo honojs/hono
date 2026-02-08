@@ -23,7 +23,19 @@ export function getColorEnabled(): boolean {
           'NO_COLOR' in process?.env
         : false
 
-  return !isNoColor
+  if (isNoColor) {
+    return false
+  }
+
+  // Check if stdout is a TTY (Node.js / Deno)
+  if (typeof Deno?.stdout?.isTerminal === 'function') {
+    return Deno.stdout.isTerminal()
+  }
+  if (typeof process?.stdout?.isTTY === 'boolean') {
+    return process.stdout.isTTY
+  }
+
+  return true
 }
 
 /**

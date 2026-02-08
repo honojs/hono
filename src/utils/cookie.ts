@@ -65,9 +65,13 @@ const verifySignature = async (
   }
 }
 
-// all alphanumeric chars and all of _!#$%&'*.^`|~+-
-// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+// RFC 6265 cookie-name token chars for serialization (strict)
 const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+
+// Lenient cookie name validation for parsing: accept any non-empty name
+// that doesn't contain control chars, spaces, '=', ';', or ','
+// This allows real-world cookie names like 'paraglide:lang'
+const validCookieNameLoose = /^[^\x00-\x1f\x7f =;,\\]+$/
 
 // all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
 // (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
@@ -91,7 +95,7 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
-    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+    if ((name && name !== cookieName) || !validCookieNameLoose.test(cookieName)) {
       continue
     }
 
@@ -143,31 +147,25 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (name.startsWith('__Secure-') && !opt.secure) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
-    throw new Error('__Secure- Cookie must have Secure attributes')
+    throw new Error('__Secure- Cookie must have Secure attribute')
   }
 
   if (name.startsWith('__Host-')) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.2
     if (!opt.secure) {
-      throw new Error('__Host- Cookie must have Secure attributes')
+      throw new Error('__Host- Cookie must have Secure attribute')
     }
 
     if (opt.path !== '/') {
-      throw new Error('__Host- Cookie must have Path attributes with "/"')
+      throw new Error('__Host- Cookie must have Path attribute with "/"')
     }
 
     if (opt.domain) {
-      throw new Error('__Host- Cookie must not have Domain attributes')
+      throw new Error('__Host- Cookie must not have Domain attribute')
     }
   }
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
-    if (opt.maxAge > 34560000) {
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
-      throw new Error(
-        'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
-      )
-    }
     cookie += `; Max-Age=${opt.maxAge | 0}`
   }
 
@@ -180,12 +178,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.expires) {
-    if (opt.expires.getTime() - Date.now() > 34560000_000) {
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
-      throw new Error(
-        'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
-      )
-    }
     cookie += `; Expires=${opt.expires.toUTCString()}`
   }
 
@@ -208,7 +200,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   if (opt.partitioned) {
     // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
     if (!opt.secure) {
-      throw new Error('Partitioned Cookie must have Secure attributes')
+      throw new Error('Partitioned Cookie must have Secure attribute')
     }
     cookie += '; Partitioned'
   }
