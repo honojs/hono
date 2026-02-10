@@ -19,6 +19,8 @@ export const defaultPlugin = (): SSGPlugin => {
   }
 }
 
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308])
+
 const generateRedirectHtml = (location: string) => {
   // prettier-ignore
   const content = html`<!DOCTYPE html>
@@ -34,7 +36,7 @@ const generateRedirectHtml = (location: string) => {
 }
 
 /**
- * The redirect plugin that generates HTML redirect pages for HTTP 301 and 302 responses.
+ * The redirect plugin that generates HTML redirect pages for HTTP redirect responses for status codes 301, 302, 303, 307 and 308.
  *
  * When used with `defaultPlugin`, place `redirectPlugin` before it, because `defaultPlugin` skips non-200 responses.
  *
@@ -53,7 +55,7 @@ const generateRedirectHtml = (location: string) => {
 export const redirectPlugin = (): SSGPlugin => {
   return {
     afterResponseHook: (res) => {
-      if (res.status === 301 || res.status === 302) {
+      if (REDIRECT_STATUS_CODES.has(res.status)) {
         const location = res.headers.get('Location')
         if (!location) {
           return false
