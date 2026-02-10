@@ -4,8 +4,8 @@
  */
 
 import type { Context } from '../../context'
-import type { MiddlewareHandler } from '../../types'
 import { matchedRoutes } from '../../helper/route'
+import type { MiddlewareHandler } from '../../types'
 import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
 type RouteCheckOptions = {
