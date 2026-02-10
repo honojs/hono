@@ -255,6 +255,11 @@
       "import": "./dist/middleware/language/index.js",
       "require": "./dist/cjs/middleware/language/index.js"
     },
+    "./route-check": {
+      "types": "./dist/types/middleware/route-check/index.d.ts",
+      "import": "./dist/middleware/route-check/index.js",
+      "require": "./dist/cjs/middleware/route-check/index.js"
+    },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
       "import": "./dist/middleware/secure-headers/index.js",
@@ -538,6 +543,9 @@
       ],
       "ssg": [
         "./dist/types/helper/ssg"
+      ],
+      "route-check": [
+        "./dist/types/middleware/route-check"
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
