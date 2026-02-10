@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import type { RedirectStatusCode, StatusCode } from '../../utils/http-status'
 import * as plugins from './plugins'
 import { toSSG } from './ssg'
 import type { FileSystemModule } from './ssg'
@@ -51,33 +52,108 @@ describe('Built-in SSG plugins', () => {
   })
 
   describe('redirect plugin', () => {
-    it('generates redirect HTML for 301/302 responses using redirectPlugin', async () => {
-      const writtenFiles: Record<string, string> = {}
-      const fsMockLocal: FileSystemModule = {
-        writeFile: (path, data) => {
-          writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-          return Promise.resolve()
-        },
-        mkdir: vi.fn(() => Promise.resolve()),
+    it('generates redirect HTML for status codes requiring Location per HTTP Semantics specification', async () => {
+      const statusCodes = [301, 302, 303, 307, 308] satisfies RedirectStatusCode[]
+      for (const statusCode of statusCodes) {
+        const writtenFiles: Record<string, string> = {}
+        const fsMockLocal: FileSystemModule = {
+          writeFile: (path, data) => {
+            writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+            return Promise.resolve()
+          },
+          mkdir: vi.fn(() => Promise.resolve()),
+        }
+        const redirectApp = new Hono()
+        redirectApp.get('/old', (c) => c.redirect('/new', statusCode)) // Default is 302
+        redirectApp.get('/new', (c) => c.html('New Page'))
+
+        await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
+
+        expect(writtenFiles['static/old.html']).toBeDefined()
+        const content = writtenFiles['static/old.html']
+        // Should contain meta refresh
+        expect(content).toContain('meta http-equiv="refresh" content="0;url=/new"')
+        // Should contain canonical
+        expect(content).toContain('rel="canonical" href="/new"')
+        // Should contain robots noindex
+        expect(content).toContain('<meta name="robots" content="noindex" />')
+        // Should contain link anchor
+        expect(content).toContain('<a href="/new">Redirecting to <code>/new</code></a>')
+        // Should contain a body element that includes the anchor
+        expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
       }
-      const redirectApp = new Hono()
-      redirectApp.get('/old', (c) => c.redirect('/new'))
-      redirectApp.get('/new', (c) => c.html('New Page'))
+    })
 
-      await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
+    it('skips generating redirect HTML for status codes requiring Location when Location header is missing', async () => {
+      const statusCodes = [301, 302, 303, 307, 308] satisfies RedirectStatusCode[]
+      for (const statusCode of statusCodes) {
+        const writtenFiles: Record<string, string> = {}
+        const fsMockLocal: FileSystemModule = {
+          writeFile: (path, data) => {
+            writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+            return Promise.resolve()
+          },
+          mkdir: vi.fn(() => Promise.resolve()),
+        }
+        const redirectApp = new Hono()
+        redirectApp.get('/bad', () => new Response(null, { status: statusCode }))
 
-      expect(writtenFiles['static/old.html']).toBeDefined()
-      const content = writtenFiles['static/old.html']
-      // Should contain meta refresh
-      expect(content).toContain('meta http-equiv="refresh" content="0;url=/new"')
-      // Should contain canonical
-      expect(content).toContain('rel="canonical" href="/new"')
-      // Should contain robots noindex
-      expect(content).toContain('<meta name="robots" content="noindex" />')
-      // Should contain link anchor
-      expect(content).toContain('<a href="/new">Redirecting to <code>/new</code></a>')
-      // Should contain a body element that includes the anchor
-      expect(content).toMatch(/<body[^>]*>[\s\S]*<a href=\"\/new\">[\s\S]*<\/body>/)
+        await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
+
+        expect(writtenFiles['static/bad.html']).toBeUndefined()
+      }
+    })
+
+    it('skips generating redirect HTML for status codes not requiring Location per HTTP Semantics specification', async () => {
+      const statusCodes = [300, 304, 305, 306] satisfies RedirectStatusCode[]
+      for (const statusCode of statusCodes) {
+        const writtenFiles: Record<string, string> = {}
+        const fsMockLocal: FileSystemModule = {
+          writeFile: (path, data) => {
+            writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+            return Promise.resolve()
+          },
+          mkdir: vi.fn(() => Promise.resolve()),
+        }
+        const redirectApp = new Hono()
+
+        redirectApp.get(
+          '/response',
+          () => new Response(null, { status: statusCode, headers: { Location: '/' } })
+        )
+
+        await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
+
+        expect(writtenFiles['static/response.html']).toBeUndefined()
+      }
+    })
+
+    it('does not apply redirect HTML for non-redirect status codes even with Location header', async () => {
+      const statusCodes = [200, 201, 400, 404, 500] satisfies Exclude<
+        StatusCode,
+        RedirectStatusCode
+      >[]
+      for (const statusCode of statusCodes) {
+        const writtenFiles: Record<string, string> = {}
+        const fsMockLocal: FileSystemModule = {
+          writeFile: (path, data) => {
+            writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+            return Promise.resolve()
+          },
+          mkdir: vi.fn(() => Promise.resolve()),
+        }
+        const redirectApp = new Hono()
+
+        redirectApp.get(
+          '/response',
+          () => new Response('Response Body', { status: statusCode, headers: { Location: '/' } })
+        )
+
+        await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
+
+        expect(writtenFiles['static/response.txt']).toBeDefined()
+        expect(writtenFiles['static/response.txt']).toBe('Response Body')
+      }
     })
 
     it('escapes Location header values when generating redirect HTML', async () => {
@@ -104,24 +180,6 @@ describe('Built-in SSG plugins', () => {
       expect(content).not.toContain('<script>alert(1)</script>')
       expect(content).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
       expect(content).toContain('&quot;')
-    })
-
-    it('skips generating a redirect HTML when 301/302 has no Location header', async () => {
-      const writtenFiles: Record<string, string> = {}
-      const fsMockLocal: FileSystemModule = {
-        writeFile: (path, data) => {
-          writtenFiles[path] = typeof data === 'string' ? data : data.toString()
-          return Promise.resolve()
-        },
-        mkdir: vi.fn(() => Promise.resolve()),
-      }
-      const redirectApp = new Hono()
-      // Return a 301 without Location header
-      redirectApp.get('/bad', (c) => new Response(null, { status: 301 }))
-
-      await toSSG(redirectApp, fsMockLocal, { dir: './static', plugins: [redirectPlugin()] })
-
-      expect(writtenFiles['static/bad.html']).toBeUndefined()
     })
 
     it('redirectPlugin before defaultPlugin generates redirect HTML', async () => {
