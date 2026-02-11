@@ -704,15 +704,13 @@ export class Context<
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     const jsonString = JSON.stringify(object)
-    return (!this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
-      ? new Response(jsonString, {
-          headers: { 'Content-Type': 'application/json' },
-        })
-      : this.#newResponse(
-          jsonString,
-          arg,
-          setDefaultContentType('application/json', headers)
-        )) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
+    return (
+      !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+        ? new Response(jsonString, {
+            headers: { 'Content-Type': 'application/json' },
+          })
+        : this.#newResponse(jsonString, arg, setDefaultContentType('application/json', headers))
+    ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
   }
 
   html: HTMLRespond = (
