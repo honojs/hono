@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { ZodSchema } from 'zod'
-import { z } from 'zod'
+import * as z from 'zod'
 import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
@@ -35,7 +34,7 @@ type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
 
 // Reference implementation for only testing
 const zodValidator = <
-  T extends ZodSchema,
+  T extends z.ZodSchema,
   E extends {},
   P extends string,
   Target extends keyof ValidationTargets,
