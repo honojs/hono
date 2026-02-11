@@ -107,9 +107,10 @@ export const normalizeLanguage = (
     }
 
     // Progressive truncation (RFC 4647 Lookup)
-    const parts = compLang.split('-')
-    for (let len = parts.length - 1; len > 0; len--) {
-      const candidate = parts.slice(0, len).join('-')
+    let candidate = compLang
+    let dashIndex: number
+    while ((dashIndex = candidate.lastIndexOf('-')) > 0) {
+      candidate = candidate.substring(0, dashIndex)
       const prefixIndex = compSupported.indexOf(candidate)
       if (prefixIndex !== -1) {
         return options.supportedLanguages[prefixIndex]
