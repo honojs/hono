@@ -3682,3 +3682,110 @@ describe('Handlers returning Promise<void>', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
+
+// Regression tests for #4388: routes before .use() with explicit paths should not be dropped
+describe('Routes before .use() with explicit paths (#4388)', () => {
+  it('should preserve explicit-path .get() before .use() with path', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('Hello from /'))
+      .use('/noop', async (c, next) => {
+        await next()
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'Hello from /'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should preserve .get() route and infer .post() under .use() path', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('Hello from /'))
+      .use('/:slug', async (c, next) => {
+        await next()
+      })
+      .post((c) => c.text('posted'))
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'Hello from /'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/:slug': {
+        $post: {
+          input: {
+            param: {
+              slug: string
+            }
+          }
+          output: 'posted'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should preserve routes through .route() wrapping', () => {
+    const inner = new Hono()
+      .get('/', (c) => c.text('index'))
+      .use('/:slug', async (c, next) => {
+        await next()
+      })
+      .post((c) => c.text('posted'))
+
+    const app = new Hono().route('/api', inner)
+
+    const client = hc<typeof app>('http://localhost')
+    // '/api' $get should exist (from inner .get('/'))
+    expectTypeOf(client.api.$get).toBeFunction()
+    // '/api/:slug' $post should exist (from inner .post() after .use('/:slug'))
+    expectTypeOf(client.api[':slug'].$post).toBeFunction()
+  })
+
+  it('should preserve multiple explicit-path routes before .use()', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('home'))
+      .get('/about', (c) => c.text('about'))
+      .use('/mw', async (c, next) => {
+        await next()
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'home'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/about': {
+        $get: {
+          input: {}
+          output: 'about'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
