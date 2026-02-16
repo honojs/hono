@@ -420,7 +420,7 @@ describe('Basic - $url()', () => {
     ).toBe('http://fake/content/search?page=123&limit=20')
   })
 
-  it.each(['http://fake', 'http://fake/', 'http://fake/api'])(
+  it.each(['http://fake', 'http://fake/', 'http://fake//', 'http://fake/api'])(
     'Should return a correct path via $path() regardless of %s',
     async (baseURL) => {
       const client = hc<typeof app>(baseURL)
