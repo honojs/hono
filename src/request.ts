@@ -91,6 +91,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * const { id, comment_id } = c.req.param()
    * ```
    */
+  param(key: 0 extends (1 & P) ? string : never): string | undefined
   param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
   param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
     key: P2
