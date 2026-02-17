@@ -16,7 +16,6 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 const emptyParams = Object.create(null)
 
 const hasChildren = (children: Record<string, unknown>): boolean => {
-   
   for (const _ in children) {
     return true
   }
