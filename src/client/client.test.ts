@@ -1549,21 +1549,23 @@ describe('ApplyGlobalResponse Type Helper', () => {
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
 
-  it('Should add global error response type to all routes', () => {
-    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+  it('Should add global error response types to all routes', () => {
+    // Use explicit status codes for proper type narrowing
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
 
-    // Apply global 500 error response
-    type AppWithGlobalError = ApplyGlobalResponse<
+    // Apply global error responses with new object syntax
+    type AppWithGlobalErrors = ApplyGlobalResponse<
       typeof app,
-      { error: string; message: string },
-      500,
-      'json'
+      {
+        401: { json: { error: string; message: string } }
+        500: { json: { error: string; message: string } }
+      }
     >
 
-    const client = hc<AppWithGlobalError>('http://localhost')
+    const client = hc<AppWithGlobalErrors>('http://localhost')
     const req = client.api.users.$get
 
-    // Type should be a union of normal response and global error
+    // Type should be a union of normal response and global errors
     type ResponseType = InferResponseType<typeof req>
     type Expected = { users: string[] } | { error: string; message: string }
 
@@ -1572,7 +1574,7 @@ describe('ApplyGlobalResponse Type Helper', () => {
 
   it('Should support multiple global error status codes', async () => {
     const app = new Hono()
-      .get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+      .get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
       .get('/api/unauthorized', (c) =>
         c.json({ error: 'Unauthorized', message: 'Please login' }, 401)
       )
@@ -1580,18 +1582,13 @@ describe('ApplyGlobalResponse Type Helper', () => {
         c.json({ error: 'Internal Server Error', message: 'Something went wrong' }, 500)
       )
 
-    // Apply multiple global error types
-    type AppWith500 = ApplyGlobalResponse<
-      typeof app,
-      { error: string; message: string },
-      500,
-      'json'
-    >
+    // Apply multiple global error types in one definition
     type AppWithGlobalErrors = ApplyGlobalResponse<
-      AppWith500,
-      { error: string; message: string },
-      401,
-      'json'
+      typeof app,
+      {
+        401: { json: { error: string; message: string } }
+        500: { json: { error: string; message: string } }
+      }
     >
 
     const client = hc<AppWithGlobalErrors>('http://localhost')
@@ -1614,10 +1611,16 @@ describe('ApplyGlobalResponse Type Helper', () => {
 
   it('Should work with onError handler pattern', () => {
     // Simulating typical Hono app with onError handler
-    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }))
+    // Use explicit status code for proper type narrowing
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
 
     // In real app: app.onError((err, c) => c.json({ error: err.message }, 500))
-    type AppWithOnError = ApplyGlobalResponse<typeof app, { error: string }, 500, 'json'>
+    type AppWithOnError = ApplyGlobalResponse<
+      typeof app,
+      {
+        500: { json: { error: string } }
+      }
+    >
 
     const client = hc<AppWithOnError>('http://localhost')
     const req = client.api.users.$get
