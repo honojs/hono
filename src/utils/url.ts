@@ -299,13 +299,12 @@ const _getQueryParam = (
   return key ? results[key] : results
 }
 
-export const getQueryParam: (
+export const getQueryParam = (
   url: string,
   key?: string
-) => string | undefined | Record<string, string> = _getQueryParam as (
-  url: string,
-  key?: string
-) => string | undefined | Record<string, string>
+): string | undefined | Record<string, string> => {
+  return _getQueryParam(url, key) as string | undefined | Record<string, string>
+}
 
 export const getQueryParams = (
   url: string,
