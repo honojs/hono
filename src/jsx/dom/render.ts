@@ -58,7 +58,7 @@ export type NodeObject = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         any[][], // stash for hooks
         LocalJSXContexts, // context
-        [Context, Function, NodeObject] // [context, error handler, node] for closest error boundary or suspense
+        [Context, Function, NodeObject], // [context, error handler, node] for closest error boundary or suspense
       ]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | [number, any[][]]
@@ -95,7 +95,7 @@ export type Context =
       UpdateHook, // update hook
       boolean, // is in view transition
       boolean, // is in top level render
-      [Context, Function, NodeObject][] //  [context, error handler, node] stack for this context
+      [Context, Function, NodeObject][], //  [context, error handler, node] stack for this context
     ]
   | [PendingType, boolean, UpdateHook, boolean]
   | [PendingType, boolean, UpdateHook]
@@ -302,15 +302,11 @@ const getNextChildren = (
   })
 }
 
-const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC || !node.pP ? node.nN : node.vC[0]) {
-    if (!node) {
-      return null
-    }
-    if (node.tag !== HONO_PORTAL_ELEMENT && node.e) {
-      return node.e
-    }
+const findInsertBefore = (node: Node | undefined): SupportedElement | Text | undefined => {
+  while (node && (node.tag === HONO_PORTAL_ELEMENT || !node.e)) {
+    node = node.tag === HONO_PORTAL_ELEMENT || !node.vC?.[0] ? node.nN : node.vC[0]
   }
+  return node?.e
 }
 
 const removeNode = (node: Node): void => {
@@ -343,7 +339,7 @@ const apply = (node: NodeObject, container: Container, isNew: boolean): void => 
 
 const findChildNodeIndex = (
   childNodes: NodeListOf<ChildNode>,
-  child: ChildNode | null | undefined
+  child: ChildNode | undefined
 ): number | undefined => {
   if (!child) {
     return
@@ -428,7 +424,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
     }
   }
   if (node.pP) {
-    delete node.pP
+    node.pP = undefined
   }
   if (callbacks.length) {
     const useLayoutEffectCbs: Array<() => void> = []
@@ -484,8 +480,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
     const oldVChildren: Node[] | undefined = buildWithPreviousChildren
       ? [...(node.pC as Node[])]
       : node.vC
-      ? [...node.vC]
-      : undefined
+        ? [...node.vC]
+        : undefined
     const vChildren: Node[] = []
     let prevNode: Node | undefined
     for (let i = 0; i < children.length; i++) {
@@ -513,8 +509,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
             isNodeString(child)
               ? (c) => isNodeString(c)
               : child.key !== undefined
-              ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
-              : (c) => c.tag === (child as Node).tag
+                ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+                : (c) => c.tag === (child as Node).tag
           )
 
           if (i !== -1) {
@@ -791,4 +787,4 @@ export const createPortal = (children: Child, container: HTMLElement, key?: stri
     e: container,
     p: 1,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any)
+  }) as any

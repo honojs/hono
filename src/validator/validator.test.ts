@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { ZodSchema } from 'zod'
-import { z } from 'zod'
+import * as z from 'zod'
 import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
@@ -28,17 +27,17 @@ type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
       ? PR
       : never
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    R extends Response | TypedResponse<any, any, any>
-    ? R
-    : never
+      R extends Response | TypedResponse<any, any, any>
+      ? R
+      : never
   : never
 
 // Reference implementation for only testing
 const zodValidator = <
-  T extends ZodSchema,
+  T extends z.ZodSchema,
   E extends {},
   P extends string,
-  Target extends keyof ValidationTargets
+  Target extends keyof ValidationTargets,
 >(
   target: Target,
   schema: T
@@ -1285,6 +1284,57 @@ describe('Transform', () => {
           }
           output: {
             page: number
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+
+    type Actual = ExtractSchema<typeof route>
+    type verify = Expect<Equal<Expected, Actual>>
+
+    // Temporary: let's see what the actual type is
+    type TestActual = Actual
+  })
+
+  it('Should be number and union when the type is transformed', () => {
+    const app = new Hono()
+    const route = app.get(
+      '/',
+      validator('query', () => {
+        return {
+          page: 1,
+          orderBy: 'asc',
+        } as {
+          page: number
+          orderBy: 'asc' | 'desc'
+          ordreByWithdefault?: 'asc' | 'desc' | undefined
+        }
+      }),
+      (c) => {
+        const { page, orderBy, ordreByWithdefault } = c.req.valid('query')
+        expectTypeOf(page).toEqualTypeOf<number>()
+        expectTypeOf(orderBy).toEqualTypeOf<'asc' | 'desc'>()
+        expectTypeOf(ordreByWithdefault).toEqualTypeOf<'asc' | 'desc' | undefined>()
+        return c.json({ page, orderBy, ordreByWithdefault })
+      }
+    )
+
+    type Expected = {
+      '/': {
+        $get: {
+          input: {
+            query: {
+              page: string | string[]
+              orderBy: 'asc' | 'desc'
+              ordreByWithdefault?: 'asc' | 'desc' | undefined
+            }
+          }
+          output: {
+            page: number
+            orderBy: 'asc' | 'desc'
+            ordreByWithdefault: 'asc' | 'desc' | undefined
           }
           outputFormat: 'json'
           status: ContentfulStatusCode

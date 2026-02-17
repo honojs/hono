@@ -10,6 +10,7 @@ import type { MiddlewareHandler } from '../../types'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
+import type { AsymmetricAlgorithm } from '../../utils/jwt/jwa'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import type { VerifyOptions } from '../../utils/jwt/jwt'
 
@@ -24,6 +25,7 @@ import type { VerifyOptions } from '../../utils/jwt/jwt'
  * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
+ * @param {AsymmetricAlgorithm[]} options.alg - An array of allowed asymmetric algorithms for JWT verification. Only tokens signed with these algorithms will be accepted.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
@@ -53,6 +55,8 @@ export const jwk = (
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
 
     headerName?: string
+
+    alg: AsymmetricAlgorithm[]
 
     verification?: VerifyOptions
   },
@@ -132,7 +136,11 @@ export const jwk = (
       const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
       const jwks_uri =
         typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
-      payload = await Jwt.verifyWithJwks(token, { keys, jwks_uri, verification: verifyOpts }, init)
+      payload = await Jwt.verifyWithJwks(
+        token,
+        { keys, jwks_uri, verification: verifyOpts, allowedAlgorithms: options.alg },
+        init
+      )
     } catch (e) {
       cause = e
     }

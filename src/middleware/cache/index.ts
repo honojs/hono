@@ -14,10 +14,23 @@ const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
 
 const shouldSkipCache = (res: Response) => {
   const vary = res.headers.get('Vary')
-  // Don't cache for Vary: *
-  // https://www.rfc-editor.org/rfc/rfc9111#section-4.1
-  // Also note that some runtimes throw a TypeError for it.
-  return vary && vary.includes('*')
+  if (vary && vary.includes('*')) {
+    return true
+  }
+
+  const cacheControl = res.headers.get('Cache-Control')
+  if (
+    cacheControl &&
+    /(?:^|,\s*)(?:private|no-(?:store|cache))(?:\s*(?:=|,|$))/i.test(cacheControl)
+  ) {
+    return true
+  }
+
+  if (res.headers.has('Set-Cookie')) {
+    return true
+  }
+
+  return false
 }
 
 /**

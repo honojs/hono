@@ -55,4 +55,22 @@ describe('JSON pretty by Middleware', () => {
     const nonPrettyText = await (await app.request('?pretty')).text()
     expect(nonPrettyText).toBe('{"message":"Hono!"}')
   })
+
+  it('Should force pretty JSON output when force option is true', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/', (c) => {
+      return c.json({ message: 'Hono!' })
+    })
+
+    const resWithoutQuery = await (await app.request('http://localhost/')).text()
+    expect(resWithoutQuery).toBe(`{
+  "message": "Hono!"
+}`)
+
+    const resWithQuery = await (await app.request('http://localhost/?pretty')).text()
+    expect(resWithQuery).toBe(`{
+  "message": "Hono!"
+}`)
+  })
 })

@@ -13,10 +13,10 @@ describe('JWT', () => {
 
     const app = new Hono()
 
-    app.use('/auth/*', jwt({ secret: 'a-secret' }))
-    app.use('/auth-unicode/*', jwt({ secret: 'a-secret' }))
+    app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
+    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
     app.use('/nested/*', async (c, next) => {
-      const auth = jwt({ secret: 'a-secret' })
+      const auth = jwt({ secret: 'a-secret', alg: 'HS256' })
       return auth(c, next)
     })
 
@@ -131,10 +131,16 @@ describe('JWT', () => {
 
     const app = new Hono()
 
-    app.use('/auth/*', jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' }))
-    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' }))
+    app.use(
+      '/auth/*',
+      jwt({ secret: 'a-secret', alg: 'HS256', headerName: 'x-custom-auth-header' })
+    )
+    app.use(
+      '/auth-unicode/*',
+      jwt({ secret: 'a-secret', alg: 'HS256', headerName: 'x-custom-auth-header' })
+    )
     app.use('/nested/*', async (c, next) => {
-      const auth = jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' })
+      const auth = jwt({ secret: 'a-secret', alg: 'HS256', headerName: 'x-custom-auth-header' })
       return auth(c, next)
     })
 
@@ -289,8 +295,8 @@ describe('JWT', () => {
 
     const app = new Hono()
 
-    app.use('/auth/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
-    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
+    app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256', cookie: 'access_token' }))
+    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', alg: 'HS256', cookie: 'access_token' }))
 
     app.get('/auth/*', (c) => {
       handlerExecuted = true
@@ -378,7 +384,7 @@ describe('JWT', () => {
   describe('Error handling with `cause`', () => {
     const app = new Hono()
 
-    app.use('/auth/*', jwt({ secret: 'a-secret' }))
+    app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
     app.get('/auth/*', (c) => c.text('Authorized'))
 
     app.onError((e, c) => {
@@ -414,6 +420,7 @@ describe('JWT', () => {
       '/auth/*',
       jwt({
         secret: 'a-secret',
+        alg: 'HS256',
         cookie: {
           key: 'cookie_name',
           secret: 'cookie_secret',
@@ -466,6 +473,7 @@ describe('JWT', () => {
       '/auth/*',
       jwt({
         secret: 'a-secret',
+        alg: 'HS256',
         cookie: {
           key: 'cookie_name',
           secret: 'cookie_secret',
@@ -517,6 +525,7 @@ describe('JWT', () => {
       '/auth/*',
       jwt({
         secret: 'a-secret',
+        alg: 'HS256',
         cookie: {
           key: 'cookie_name',
           prefixOptions: 'host',
@@ -568,6 +577,7 @@ describe('JWT', () => {
       '/auth/*',
       jwt({
         secret: 'a-secret',
+        alg: 'HS256',
         cookie: {
           key: 'cookie_name',
         },
@@ -602,6 +612,49 @@ describe('JWT', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Security: Algorithm Confusion Attack Prevention', () => {
+    it('Should throw error when alg option is not provided', () => {
+      expect(() => {
+        // @ts-expect-error - intentionally testing without alg option
+        jwt({ secret: 'a-secret' })
+      }).toThrow('JWT auth middleware requires options for "alg"')
+    })
+
+    it('Should reject tokens with mismatched algorithm', async () => {
+      const app = new Hono()
+
+      // Configure middleware to expect RS256
+      app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'RS256' }))
+      app.get('/auth/*', (c) => {
+        return c.json(c.get('jwtPayload'))
+      })
+
+      // Try to use a HS256 token (algorithm confusion attempt)
+      const hs256Token =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const req = new Request('http://localhost/auth/a')
+      req.headers.set('Authorization', `Bearer ${hs256Token}`)
+      const res = await app.request(req)
+
+      // Should fail because the token algorithm doesn't match expected algorithm
+      expect(res.status).toBe(401)
+    })
+
+    it('Should require explicit alg specification in middleware options', () => {
+      // This should work - explicit alg specified
+      expect(() => {
+        jwt({ secret: 'a-secret', alg: 'HS256' })
+      }).not.toThrow()
+
+      // This should throw - alg not specified
+      expect(() => {
+        // @ts-expect-error - intentionally testing without alg option
+        jwt({ secret: 'a-secret' })
+      }).toThrow('JWT auth middleware requires options for "alg"')
     })
   })
 })

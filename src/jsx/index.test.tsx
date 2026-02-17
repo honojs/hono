@@ -29,15 +29,16 @@ describe('JSX middleware', () => {
   })
 
   it('Should be able to be used with html middleware', async () => {
-    const Layout = (props: SiteData) => html`<!DOCTYPE html>
-      <html>
-        <head>
-          <title>${props.title}</title>
-        </head>
-        <body>
-          ${props.children}
-        </body>
-      </html>`
+    const Layout = (props: SiteData) =>
+      html`<!DOCTYPE html>
+        <html>
+          <head>
+            <title>${props.title}</title>
+          </head>
+          <body>
+            ${props.children}
+          </body>
+        </html>`
 
     const Content = (props: { siteData: SiteData; name: string }) => (
       <Layout {...props.siteData}>
@@ -58,14 +59,14 @@ describe('JSX middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe(`<!DOCTYPE html>
-      <html>
-        <head>
-          <title>with html middleware</title>
-        </head>
-        <body>
-          <h1>JSX</h1>
-        </body>
-      </html>`)
+        <html>
+          <head>
+            <title>with html middleware</title>
+          </head>
+          <body>
+            <h1>JSX</h1>
+          </body>
+        </html>`)
   })
 
   it('Should render async component', async () => {
@@ -1019,6 +1020,44 @@ d.replaceWith(c.content)
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+  })
+
+  describe('async with html helper', () => {
+    it('should preserve context when using await before html helper', async () => {
+      // Regression test for https://github.com/honojs/hono/issues/4582
+      // Context was being popped before async children resolved
+      const AsyncParentWithHtml = async (props: { children?: any }) => {
+        await new Promise((r) => setTimeout(r, 10))
+        return html`<div>${props.children}</div>`
+      }
+
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <AsyncParentWithHtml>
+            <Consumer />
+          </AsyncParentWithHtml>
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<div><span>dark</span></div>')
+    })
+
+    it('should preserve nested context when using await before html helper', async () => {
+      const AsyncParentWithHtml = async (props: { children?: any }) => {
+        await new Promise((r) => setTimeout(r, 10))
+        return html`<div>${props.children}</div>`
+      }
+
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <AsyncParentWithHtml>
+            <ThemeContext.Provider value='black'>
+              <Consumer />
+            </ThemeContext.Provider>
+          </AsyncParentWithHtml>
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<div><span>black</span></div>')
     })
   })
 })

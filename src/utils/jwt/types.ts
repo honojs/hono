@@ -10,6 +10,20 @@ export class JwtAlgorithmNotImplemented extends Error {
   }
 }
 
+export class JwtAlgorithmRequired extends Error {
+  constructor() {
+    super('JWT verification requires "alg" option to be specified')
+    this.name = 'JwtAlgorithmRequired'
+  }
+}
+
+export class JwtAlgorithmMismatch extends Error {
+  constructor(expected: string, actual: string) {
+    super(`JWT algorithm mismatch: expected "${expected}", got "${actual}"`)
+    this.name = 'JwtAlgorithmMismatch'
+  }
+}
+
 export class JwtTokenInvalid extends Error {
   constructor(token: string) {
     super(`invalid JWT token: ${token}`)
@@ -58,6 +72,20 @@ export class JwtHeaderRequiresKid extends Error {
   constructor(header: object) {
     super(`required "kid" in jwt header: ${JSON.stringify(header)}`)
     this.name = 'JwtHeaderRequiresKid'
+  }
+}
+
+export class JwtSymmetricAlgorithmNotAllowed extends Error {
+  constructor(alg: string) {
+    super(`symmetric algorithm "${alg}" is not allowed for JWK verification`)
+    this.name = 'JwtSymmetricAlgorithmNotAllowed'
+  }
+}
+
+export class JwtAlgorithmNotAllowed extends Error {
+  constructor(alg: string, allowedAlgorithms: readonly string[]) {
+    super(`algorithm "${alg}" is not in the allowed list: [${allowedAlgorithms.join(', ')}]`)
+    this.name = 'JwtAlgorithmNotAllowed'
   }
 }
 

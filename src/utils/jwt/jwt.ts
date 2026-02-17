@@ -6,13 +6,17 @@
 
 import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
-import type { SignatureAlgorithm } from './jwa'
+import type { AsymmetricAlgorithm, SignatureAlgorithm, SymmetricAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
 import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
+  JwtAlgorithmMismatch,
+  JwtAlgorithmNotAllowed,
+  JwtAlgorithmRequired,
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
   JwtPayloadRequiresAud,
+  JwtSymmetricAlgorithmNotAllowed,
   JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
@@ -86,22 +90,30 @@ export type VerifyOptions = {
 
 export type VerifyOptionsWithAlg = {
   /** The algorithm used for decoding the token */
-  alg?: SignatureAlgorithm
+  alg: SignatureAlgorithm
 } & VerifyOptions
 
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
-  algOrOptions?: SignatureAlgorithm | VerifyOptionsWithAlg
+  algOrOptions: SignatureAlgorithm | VerifyOptionsWithAlg
 ): Promise<JWTPayload> => {
+  if (!algOrOptions) {
+    throw new JwtAlgorithmRequired()
+  }
+
   const {
-    alg = 'HS256',
+    alg,
     iss,
     nbf = true,
     exp = true,
     iat = true,
     aud,
-  } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
+  } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions
+
+  if (!alg) {
+    throw new JwtAlgorithmRequired()
+  }
 
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
@@ -111,6 +123,9 @@ export const verify = async (
   const { header, payload } = decode(token)
   if (!isTokenHeader(header)) {
     throw new JwtHeaderInvalid(header)
+  }
+  if (header.alg !== alg) {
+    throw new JwtAlgorithmMismatch(alg, header.alg)
   }
   const now = (Date.now() / 1000) | 0
   if (nbf && payload.nbf && payload.nbf > now) {
@@ -144,8 +159,8 @@ export const verify = async (
       aud instanceof RegExp
         ? aud.test(payloadAud)
         : typeof aud === 'string'
-        ? payloadAud === aud
-        : Array.isArray(aud) && aud.includes(payloadAud)
+          ? payloadAud === aud
+          : Array.isArray(aud) && aud.includes(payloadAud)
     )
     if (!matched) {
       throw new JwtTokenAudience(aud, payload.aud)
@@ -166,12 +181,20 @@ export const verify = async (
   return payload
 }
 
+// Symmetric algorithms that are not allowed for JWK verification
+const symmetricAlgorithms: SymmetricAlgorithm[] = [
+  AlgorithmTypes.HS256,
+  AlgorithmTypes.HS384,
+  AlgorithmTypes.HS512,
+]
+
 export const verifyWithJwks = async (
   token: string,
   options: {
     keys?: HonoJsonWebKey[]
     jwks_uri?: string
     verification?: VerifyOptions
+    allowedAlgorithms: readonly AsymmetricAlgorithm[]
   },
   init?: RequestInit
 ): Promise<JWTPayload> => {
@@ -184,6 +207,16 @@ export const verifyWithJwks = async (
   }
   if (!header.kid) {
     throw new JwtHeaderRequiresKid(header)
+  }
+
+  // Reject symmetric algorithms (HS256, HS384, HS512) to prevent algorithm confusion attacks
+  if (symmetricAlgorithms.includes(header.alg as SymmetricAlgorithm)) {
+    throw new JwtSymmetricAlgorithmNotAllowed(header.alg)
+  }
+
+  // Validate against allowed algorithms
+  if (!options.allowedAlgorithms.includes(header.alg as AsymmetricAlgorithm)) {
+    throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms)
   }
 
   if (options.jwks_uri) {
@@ -212,8 +245,13 @@ export const verifyWithJwks = async (
     throw new JwtTokenInvalid(token)
   }
 
+  // Verify that JWK's alg matches JWT header's alg when JWK has alg field
+  if (matchingKey.alg && matchingKey.alg !== header.alg) {
+    throw new JwtAlgorithmMismatch(matchingKey.alg, header.alg)
+  }
+
   return await verify(token, matchingKey, {
-    alg: (matchingKey.alg as SignatureAlgorithm) || header.alg,
+    alg: header.alg,
     ...verifyOpts,
   })
 }

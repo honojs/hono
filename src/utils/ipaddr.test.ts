@@ -28,6 +28,20 @@ describe('distinctRemoteAddr', () => {
 
     expect(distinctRemoteAddr('example.com')).toBeUndefined()
   })
+
+  it('Should reject invalid IPv4 addresses with octets > 255', () => {
+    expect(distinctRemoteAddr('1.2.3.256')).toBeUndefined()
+    expect(distinctRemoteAddr('1.2.3.999')).toBeUndefined()
+    expect(distinctRemoteAddr('1.2.2.355')).toBeUndefined()
+    expect(distinctRemoteAddr('256.0.0.1')).toBeUndefined()
+    expect(distinctRemoteAddr('999.999.999.999')).toBeUndefined()
+  })
+
+  it('Should accept valid IPv4 edge cases', () => {
+    expect(distinctRemoteAddr('0.0.0.0')).toBe('IPv4')
+    expect(distinctRemoteAddr('255.255.255.255')).toBe('IPv4')
+    expect(distinctRemoteAddr('1.2.3.4')).toBe('IPv4')
+  })
 })
 
 describe('convertIPv4ToBinary', () => {
