@@ -249,7 +249,15 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   json<T = any>(): Promise<T> {
-    return this.#cachedBody('text').then((text: string) => JSON.parse(text))
+    const cachedBody = this.#cachedBody('text')
+
+    return cachedBody.then((text: string) => {
+      try {
+        return JSON.parse(text) as T
+      } catch (e) {
+        throw new HTTPException(400, { message: 'Invalid JSON in request body', cause: e })
+      }
+    })
   }
 
   /**
