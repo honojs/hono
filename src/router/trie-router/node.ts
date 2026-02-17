@@ -16,7 +16,7 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 const emptyParams = Object.create(null)
 
 const hasChildren = (children: Record<string, unknown>): boolean => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   for (const _ in children) {
     return true
   }
