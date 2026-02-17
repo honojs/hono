@@ -31,7 +31,7 @@ export class SSEStreamingApi extends StreamingApi {
         message.id && `id: ${message.id}`,
         message.retry && `retry: ${message.retry}`,
       ]
-        .filter(Boolean)
+        .filter((data) => !!data)
         .join('\n') + '\n\n'
 
     await this.write(sseData)
