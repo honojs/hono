@@ -87,9 +87,9 @@ describe('Resolve trailing slash', () => {
     })
   })
 
-  describe('trimTrailingSlash middleware with strict option', () => {
+  describe('trimTrailingSlash middleware with eager option', () => {
     const app = new Hono()
-    app.use('*', trimTrailingSlash({ strict: true }))
+    app.use('*', trimTrailingSlash({ eager: true }))
 
     app.get('/', async (c) => {
       return c.text('ok')
@@ -255,9 +255,9 @@ describe('Resolve trailing slash', () => {
     })
   })
 
-  describe('appendTrailingSlash middleware with strict option', () => {
+  describe('appendTrailingSlash middleware with eager option', () => {
     const app = new Hono()
-    app.use('*', appendTrailingSlash({ strict: true }))
+    app.use('*', appendTrailingSlash({ eager: true }))
 
     app.get('/', async (c) => {
       return c.text('ok')

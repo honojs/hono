@@ -7,12 +7,13 @@ import type { MiddlewareHandler } from '../../types'
 
 type TrimTrailingSlashOptions = {
   /**
-   * If `true`, the middleware will always redirect requests with a trailing slash.
+   * If `true`, the middleware will always redirect requests with a trailing slash
+   * before executing handlers.
    * This is useful for routes with wildcards (`*`).
    * If `false` (default), it will only redirect when the route is not found (404).
    * @default false
    */
-  strict?: boolean
+  eager?: boolean
 }
 
 /**
@@ -33,16 +34,16 @@ type TrimTrailingSlashOptions = {
  *
  * @example
  * ```ts
- * // With strict option for wildcard routes
+ * // With eager option for wildcard routes
  * const app = new Hono()
  *
- * app.use(trimTrailingSlash({ strict: true }))
+ * app.use(trimTrailingSlash({ eager: true }))
  * app.get('/my-path/*', (c) => c.text('Wildcard route'))
  * ```
  */
 export const trimTrailingSlash = (options?: TrimTrailingSlashOptions): MiddlewareHandler => {
   return async function trimTrailingSlash(c, next) {
-    if (options?.strict) {
+    if (options?.eager) {
       if (
         (c.req.method === 'GET' || c.req.method === 'HEAD') &&
         c.req.path !== '/' &&
@@ -58,7 +59,7 @@ export const trimTrailingSlash = (options?: TrimTrailingSlashOptions): Middlewar
     await next()
 
     if (
-      !options?.strict &&
+      !options?.eager &&
       c.res.status === 404 &&
       (c.req.method === 'GET' || c.req.method === 'HEAD') &&
       c.req.path !== '/' &&
@@ -74,12 +75,13 @@ export const trimTrailingSlash = (options?: TrimTrailingSlashOptions): Middlewar
 
 type AppendTrailingSlashOptions = {
   /**
-   * If `true`, the middleware will always redirect requests without a trailing slash.
+   * If `true`, the middleware will always redirect requests without a trailing slash
+   * before executing handlers.
    * This is useful for routes with wildcards (`*`).
    * If `false` (default), it will only redirect when the route is not found (404).
    * @default false
    */
-  strict?: boolean
+  eager?: boolean
 }
 
 /**
@@ -100,16 +102,16 @@ type AppendTrailingSlashOptions = {
  *
  * @example
  * ```ts
- * // With strict option for wildcard routes
+ * // With eager option for wildcard routes
  * const app = new Hono()
  *
- * app.use(appendTrailingSlash({ strict: true }))
+ * app.use(appendTrailingSlash({ eager: true }))
  * app.get('/my-path/*', (c) => c.text('Wildcard route'))
  * ```
  */
 export const appendTrailingSlash = (options?: AppendTrailingSlashOptions): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {
-    if (options?.strict) {
+    if (options?.eager) {
       if ((c.req.method === 'GET' || c.req.method === 'HEAD') && c.req.path.at(-1) !== '/') {
         const url = new URL(c.req.url)
         url.pathname += '/'
@@ -121,7 +123,7 @@ export const appendTrailingSlash = (options?: AppendTrailingSlashOptions): Middl
     await next()
 
     if (
-      !options?.strict &&
+      !options?.eager &&
       c.res.status === 404 &&
       (c.req.method === 'GET' || c.req.method === 'HEAD') &&
       c.req.path.at(-1) !== '/'
