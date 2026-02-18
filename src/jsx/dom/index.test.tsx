@@ -124,8 +124,12 @@ describe('DOM', () => {
     const terms: string[] = ['hello']
     const App = () => (
       <div>
-        {tags.map((x) => <span>{x}</span>)}
-        {terms.map((x) => <span>{x}</span>)}
+        {tags.map((x) => (
+          <span>{x}</span>
+        ))}
+        {terms.map((x) => (
+          <span>{x}</span>
+        ))}
         <input type='text' />
       </div>
     )
