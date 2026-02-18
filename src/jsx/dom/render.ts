@@ -487,6 +487,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
     for (let i = 0; i < children.length; i++) {
       if (Array.isArray(children[i])) {
         children.splice(i, 1, ...(children[i] as Child[]).flat())
+        i--
+        continue
       }
       let child = buildNode(children[i])
       if (child) {

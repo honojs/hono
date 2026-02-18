@@ -119,6 +119,20 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('Hello')
   })
 
+  it('render with empty array followed by non-empty array', () => {
+    const tags: string[] = []
+    const terms: string[] = ['hello']
+    const App = () => (
+      <div>
+        {tags.map((x) => <span>{x}</span>)}
+        {terms.map((x) => <span>{x}</span>)}
+        <input type='text' />
+      </div>
+    )
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><span>hello</span><input type="text"></div>')
+  })
+
   describe('performance', () => {
     it('should be O(N) for each additional element', () => {
       const App = () => (
