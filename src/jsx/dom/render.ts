@@ -486,7 +486,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
     let prevNode: Node | undefined
     for (let i = 0; i < children.length; i++) {
       if (Array.isArray(children[i])) {
-        children.splice(i, 1, ...(children[i] as Child[]).flat())
+        children.splice(i, 1, ...((children[i] as unknown[]).flat(Infinity) as Child[]))
         i--
         continue
       }
