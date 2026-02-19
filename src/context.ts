@@ -285,6 +285,11 @@ const setDefaultContentType = (contentType: string, headers?: HeaderRecord): Hea
   }
 }
 
+const createResponseInstance = (
+  body?: BodyInit | null | undefined,
+  init?: globalThis.ResponseInit
+): Response => new Response(body, init)
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -396,7 +401,7 @@ export class Context<
    * The Response object for the current request.
    */
   get res(): Response {
-    return (this.#res ||= new Response(null, {
+    return (this.#res ||= createResponseInstance(null, {
       headers: (this.#preparedHeaders ??= new Headers()),
     }))
   }
@@ -408,7 +413,7 @@ export class Context<
    */
   set res(_res: Response | undefined) {
     if (this.#res && _res) {
-      _res = new Response(_res.body, _res)
+      _res = createResponseInstance(_res.body, _res)
       for (const [k, v] of this.#res.headers.entries()) {
         if (k === 'content-type') {
           continue
@@ -509,7 +514,7 @@ export class Context<
    */
   header: SetHeaders = (name, value, options): void => {
     if (this.finalized) {
-      this.#res = new Response((this.#res as Response).body, this.#res)
+      this.#res = createResponseInstance((this.#res as Response).body, this.#res)
     }
     const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
     if (value === undefined) {
@@ -630,7 +635,7 @@ export class Context<
     }
 
     const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
-    return new Response(data, { status, headers: responseHeaders })
+    return createResponseInstance(data, { status, headers: responseHeaders })
   }
 
   newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
@@ -684,7 +689,7 @@ export class Context<
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
     return this.#useFastPath() && !arg && !headers
-      ? (new Response(text) as ReturnType<TextRespond>)
+      ? (createResponseInstance(text) as ReturnType<TextRespond>)
       : (this.#newResponse(
           text,
           arg,
@@ -777,7 +782,7 @@ export class Context<
    * ```
    */
   notFound = (): ReturnType<NotFoundHandler> => {
-    this.#notFoundHandler ??= () => new Response()
+    this.#notFoundHandler ??= () => createResponseInstance()
     return this.#notFoundHandler(this)
   }
 }
