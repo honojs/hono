@@ -683,13 +683,11 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
-    return this.#useFastPath() && !arg && !headers
-      ? (new Response(text) as ReturnType<TextRespond>)
-      : (this.#newResponse(
-          text,
-          arg,
-          setDefaultContentType(TEXT_PLAIN, headers)
-        ) as ReturnType<TextRespond>)
+    return (
+      this.#useFastPath() && !arg && !headers
+        ? new Response(text)
+        : this.#newResponse(text, arg, setDefaultContentType(TEXT_PLAIN, headers))
+    ) as ReturnType<TextRespond>
   }
 
   /**
