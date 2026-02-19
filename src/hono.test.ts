@@ -1340,6 +1340,200 @@ describe('Not Found', () => {
   })
 })
 
+describe('Method Not Allowed', () => {
+  it('Should return 404 by default when method is not allowed', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
+
+    const res = await app.request('http://localhost/hello', { method: 'POST' })
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+  })
+
+  it('Should return 405 when methodNotAllowed handler is set', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/hello', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET')
+    expect(await res.text()).toBe('405 Method Not Allowed')
+  })
+
+  it('Should return 404 when path does not exist even with methodNotAllowed handler', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/nonexistent', { method: 'POST' })
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+  })
+
+  it('Should include all allowed methods in Allow header', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => c.text('GET'))
+    app.post('/hello', (c) => c.text('POST'))
+    app.put('/hello', (c) => c.text('PUT'))
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/hello', { method: 'DELETE' })
+    expect(res.status).toBe(405)
+    const allowHeader = res.headers.get('Allow')
+    expect(allowHeader).toContain('GET')
+    expect(allowHeader).toContain('POST')
+    expect(allowHeader).toContain('PUT')
+    expect(allowHeader?.split(', ').length).toBe(3)
+  })
+
+  it('Should work with custom methodNotAllowed handler', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => c.text('hello'))
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.json({ error: 'Method not allowed', allowed: allowedMethods }, 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/hello', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET')
+    const json = await res.json()
+    expect(json.error).toBe('Method not allowed')
+    expect(json.allowed).toEqual(['GET'])
+  })
+
+  it('Should work with routes with parameters', async () => {
+    const app = new Hono()
+
+    app.get('/user/:id', (c) => {
+      return c.text(`User ${c.req.param('id')}`)
+    })
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/user/123', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET')
+  })
+
+  it('Should work with HEAD method (which maps to GET)', async () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => c.text('hello'))
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    // HEAD should work (maps to GET)
+    const headRes = await app.request('http://localhost/hello', { method: 'HEAD' })
+    expect(headRes.status).toBe(200)
+
+    // But POST should return 405
+    const postRes = await app.request('http://localhost/hello', { method: 'POST' })
+    expect(postRes.status).toBe(405)
+    expect(postRes.headers.get('Allow')).toBe('GET')
+  })
+
+  it('Should work with app.route()', async () => {
+    const app = new Hono()
+    const subApp = new Hono()
+
+    subApp.get('/hello', (c) => c.text('hello'))
+    app.route('/api', subApp)
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/api/hello', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET')
+  })
+
+  it('Should work with multiple methods on same path', async () => {
+    const app = new Hono()
+
+    app.get('/resource', (c) => c.text('GET'))
+    app.post('/resource', (c) => c.text('POST'))
+    app.delete('/resource', (c) => c.text('DELETE'))
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text('405 Method Not Allowed', 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    const res = await app.request('http://localhost/resource', { method: 'PUT' })
+    expect(res.status).toBe(405)
+    const allowHeader = res.headers.get('Allow')
+    expect(allowHeader).toContain('GET')
+    expect(allowHeader).toContain('POST')
+    expect(allowHeader).toContain('DELETE')
+  })
+
+  it('Should work with app.use() middleware', async () => {
+    const app = new Hono()
+
+    app.methodNotAllowed((c, allowedMethods) => {
+      return c.text(`Method not allowed. Allowed: ${allowedMethods.join(', ')}`, 405, {
+        Allow: allowedMethods.join(', ').toUpperCase(),
+      })
+    })
+
+    // Adding middleware should not prevent methodNotAllowed from being called
+    app.use(async (c, next) => {
+      await next()
+    })
+
+    app.get('/', (c) => {
+      return new Response('Hello, World!')
+    })
+
+    const res = await app.request('http://localhost/', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET')
+    expect(await res.text()).toBe('Method not allowed. Allowed: GET')
+  })
+})
+
 describe('Redirect', () => {
   const app = new Hono()
   app.get('/redirect', (c) => {
