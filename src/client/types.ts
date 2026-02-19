@@ -1,7 +1,7 @@
 import type { Hono } from '../hono'
 import type { HonoBase } from '../hono-base'
 import type { METHODS, METHOD_NAME_ALL_LOWERCASE } from '../router'
-import type { Endpoint, ResponseFormat, Schema } from '../types'
+import type { Endpoint, KnownResponseFormat, ResponseFormat, Schema } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
@@ -309,3 +309,34 @@ interface CallbackOptions {
 export type ObjectType<T = unknown> = {
   [key: string]: T
 }
+
+type GlobalResponseDefinition = {
+  [S in StatusCode]?: {
+    [F in KnownResponseFormat]?: unknown
+  }
+}
+
+type ToEndpoints<Def extends GlobalResponseDefinition, R> = {
+  [S in keyof Def & StatusCode]: {
+    [F in keyof Def[S] & KnownResponseFormat]: Omit<R, 'output' | 'status' | 'outputFormat'> & {
+      output: Def[S][F]
+      status: S
+      outputFormat: F
+    }
+  }[keyof Def[S] & KnownResponseFormat]
+}[keyof Def & StatusCode]
+
+type ModRoute<R, Def extends GlobalResponseDefinition> = R extends Endpoint
+  ? R | ToEndpoints<Def, R>
+  : R
+
+type ModSchema<D, Def extends GlobalResponseDefinition> = {
+  [K in keyof D]: {
+    [M in keyof D[K]]: ModRoute<D[K][M], Def>
+  }
+}
+
+export type ApplyGlobalResponse<App, Def extends GlobalResponseDefinition> =
+  App extends HonoBase<infer E, infer D extends Schema, infer B>
+    ? Hono<E, ModSchema<D, Def> extends Schema ? ModSchema<D, Def> : never, B>
+    : never
