@@ -18,10 +18,6 @@ type BasicAuthOptions =
       realm?: string
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
-      /**
-       * Callback function called when authentication succeeds.
-       * Useful for custom logic like logging or setting additional context variables.
-       */
       onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
   | {
@@ -29,10 +25,6 @@ type BasicAuthOptions =
       realm?: string
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
-      /**
-       * Callback function called when authentication succeeds.
-       * Useful for custom logic like logging or setting additional context variables.
-       */
       onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
 
