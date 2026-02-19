@@ -2471,9 +2471,117 @@ export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise
     : never
 
 type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
-export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
-  ? ProcessHead<Head> & IntersectNonAnyTypes<Rest>
-  : {}
+// Specialized overloads to reduce type instantiations
+export type IntersectNonAnyTypes<T extends any[]> = T extends [infer E1]
+  ? ProcessHead<E1>
+  : T extends [infer E1, infer E2]
+    ? ProcessHead<E1> & ProcessHead<E2>
+    : T extends [infer E1, infer E2, infer E3]
+      ? ProcessHead<E1> & ProcessHead<E2> & ProcessHead<E3>
+      : T extends [infer E1, infer E2, infer E3, infer E4]
+        ? ProcessHead<E1> & ProcessHead<E2> & ProcessHead<E3> & ProcessHead<E4>
+        : T extends [infer E1, infer E2, infer E3, infer E4, infer E5]
+          ? ProcessHead<E1> & ProcessHead<E2> & ProcessHead<E3> & ProcessHead<E4> & ProcessHead<E5>
+          : T extends [infer E1, infer E2, infer E3, infer E4, infer E5, infer E6]
+            ? ProcessHead<E1> &
+                ProcessHead<E2> &
+                ProcessHead<E3> &
+                ProcessHead<E4> &
+                ProcessHead<E5> &
+                ProcessHead<E6>
+            : T extends [infer E1, infer E2, infer E3, infer E4, infer E5, infer E6, infer E7]
+              ? ProcessHead<E1> &
+                  ProcessHead<E2> &
+                  ProcessHead<E3> &
+                  ProcessHead<E4> &
+                  ProcessHead<E5> &
+                  ProcessHead<E6> &
+                  ProcessHead<E7>
+              : T extends [
+                    infer E1,
+                    infer E2,
+                    infer E3,
+                    infer E4,
+                    infer E5,
+                    infer E6,
+                    infer E7,
+                    infer E8,
+                  ]
+                ? ProcessHead<E1> &
+                    ProcessHead<E2> &
+                    ProcessHead<E3> &
+                    ProcessHead<E4> &
+                    ProcessHead<E5> &
+                    ProcessHead<E6> &
+                    ProcessHead<E7> &
+                    ProcessHead<E8>
+                : T extends [
+                      infer E1,
+                      infer E2,
+                      infer E3,
+                      infer E4,
+                      infer E5,
+                      infer E6,
+                      infer E7,
+                      infer E8,
+                      infer E9,
+                    ]
+                  ? ProcessHead<E1> &
+                      ProcessHead<E2> &
+                      ProcessHead<E3> &
+                      ProcessHead<E4> &
+                      ProcessHead<E5> &
+                      ProcessHead<E6> &
+                      ProcessHead<E7> &
+                      ProcessHead<E8> &
+                      ProcessHead<E9>
+                  : T extends [
+                        infer E1,
+                        infer E2,
+                        infer E3,
+                        infer E4,
+                        infer E5,
+                        infer E6,
+                        infer E7,
+                        infer E8,
+                        infer E9,
+                        infer E10,
+                      ]
+                    ? ProcessHead<E1> &
+                        ProcessHead<E2> &
+                        ProcessHead<E3> &
+                        ProcessHead<E4> &
+                        ProcessHead<E5> &
+                        ProcessHead<E6> &
+                        ProcessHead<E7> &
+                        ProcessHead<E8> &
+                        ProcessHead<E9> &
+                        ProcessHead<E10>
+                    : T extends [
+                          infer E1,
+                          infer E2,
+                          infer E3,
+                          infer E4,
+                          infer E5,
+                          infer E6,
+                          infer E7,
+                          infer E8,
+                          infer E9,
+                          infer E10,
+                          infer E11,
+                        ]
+                      ? ProcessHead<E1> &
+                          ProcessHead<E2> &
+                          ProcessHead<E3> &
+                          ProcessHead<E4> &
+                          ProcessHead<E5> &
+                          ProcessHead<E6> &
+                          ProcessHead<E7> &
+                          ProcessHead<E8> &
+                          ProcessHead<E9> &
+                          ProcessHead<E10> &
+                          ProcessHead<E11>
+                      : {}
 
 ////////////////////////////////////////
 //////                            //////
