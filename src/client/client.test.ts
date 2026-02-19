@@ -447,6 +447,42 @@ describe('Form - Multiple Values', () => {
   })
 })
 
+describe('Form - Undefined Values', () => {
+  const server = setupServer(
+    http.post('http://localhost/form-undefined', async ({ request }) => {
+      const data = await request.formData()
+      return HttpResponse.json({
+        keys: [...data.keys()],
+        title: data.get('title'),
+        optional: data.get('optional'),
+      })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const client = hc('http://localhost/')
+
+  it('Should skip undefined values in form data', async () => {
+    // @ts-expect-error `client['form-undefined'].$post` is not typed
+    const res = await client['form-undefined'].$post({
+      form: {
+        title: 'Hello',
+        optional: undefined,
+      },
+    })
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json).toEqual({
+      keys: ['title'],
+      title: 'Hello',
+      optional: null,
+    })
+  })
+})
+
 describe('Infer the response/request type', () => {
   const app = new Hono()
   const route = app.get(
