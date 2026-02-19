@@ -44,6 +44,11 @@ export interface ExecutionContext {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   props: any
+  /**
+   * For compatibility with Wrangler 4.x.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  exports?: any
 }
 
 /**
