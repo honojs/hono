@@ -55,27 +55,3 @@ export const getConnInfo: GetConnInfo = (c: Context<Env>) => ({
     address: c.env.context?.ip,
   },
 })
-
-/**
- * Get geolocation data from Netlify context
- * @param c - Context
- * @returns Geolocation data or undefined
- * @example
- * ```ts
- * import { Hono } from 'hono'
- * import { handle, getGeo } from 'hono/netlify'
- *
- * const app = new Hono()
- *
- * app.get('/', (c) => {
- *   const geo = getGeo(c)
- *   return c.json({
- *     country: geo?.country?.code,
- *     city: geo?.city,
- *   })
- * })
- *
- * export default handle(app)
- * ```
- */
-export const getGeo = (c: Context<Env>): NetlifyContext['geo'] | undefined => c.env.context?.geo
