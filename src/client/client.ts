@@ -64,6 +64,9 @@ class ClientRequestImpl {
       if (args.form) {
         const form = new FormData()
         for (const [k, v] of Object.entries(args.form)) {
+          if (v === undefined) {
+            continue
+          }
           if (Array.isArray(v)) {
             for (const v2 of v) {
               form.append(k, v2)
