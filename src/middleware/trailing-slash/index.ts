@@ -13,7 +13,7 @@ type TrimTrailingSlashOptions = {
    * If `false` (default), it will only redirect when the route is not found (404).
    * @default false
    */
-  eager?: boolean
+  alwaysRedirect?: boolean
 }
 
 /**
@@ -34,16 +34,16 @@ type TrimTrailingSlashOptions = {
  *
  * @example
  * ```ts
- * // With eager option for wildcard routes
+ * // With alwaysRedirect option for wildcard routes
  * const app = new Hono()
  *
- * app.use(trimTrailingSlash({ eager: true }))
+ * app.use(trimTrailingSlash({ alwaysRedirect: true }))
  * app.get('/my-path/*', (c) => c.text('Wildcard route'))
  * ```
  */
 export const trimTrailingSlash = (options?: TrimTrailingSlashOptions): MiddlewareHandler => {
   return async function trimTrailingSlash(c, next) {
-    if (options?.eager) {
+    if (options?.alwaysRedirect) {
       if (
         (c.req.method === 'GET' || c.req.method === 'HEAD') &&
         c.req.path !== '/' &&
@@ -59,7 +59,7 @@ export const trimTrailingSlash = (options?: TrimTrailingSlashOptions): Middlewar
     await next()
 
     if (
-      !options?.eager &&
+      !options?.alwaysRedirect &&
       c.res.status === 404 &&
       (c.req.method === 'GET' || c.req.method === 'HEAD') &&
       c.req.path !== '/' &&
@@ -81,7 +81,7 @@ type AppendTrailingSlashOptions = {
    * If `false` (default), it will only redirect when the route is not found (404).
    * @default false
    */
-  eager?: boolean
+  alwaysRedirect?: boolean
 }
 
 /**
@@ -102,16 +102,16 @@ type AppendTrailingSlashOptions = {
  *
  * @example
  * ```ts
- * // With eager option for wildcard routes
+ * // With alwaysRedirect option for wildcard routes
  * const app = new Hono()
  *
- * app.use(appendTrailingSlash({ eager: true }))
+ * app.use(appendTrailingSlash({ alwaysRedirect: true }))
  * app.get('/my-path/*', (c) => c.text('Wildcard route'))
  * ```
  */
 export const appendTrailingSlash = (options?: AppendTrailingSlashOptions): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {
-    if (options?.eager) {
+    if (options?.alwaysRedirect) {
       if ((c.req.method === 'GET' || c.req.method === 'HEAD') && c.req.path.at(-1) !== '/') {
         const url = new URL(c.req.url)
         url.pathname += '/'
@@ -123,7 +123,7 @@ export const appendTrailingSlash = (options?: AppendTrailingSlashOptions): Middl
     await next()
 
     if (
-      !options?.eager &&
+      !options?.alwaysRedirect &&
       c.res.status === 404 &&
       (c.req.method === 'GET' || c.req.method === 'HEAD') &&
       c.req.path.at(-1) !== '/'
