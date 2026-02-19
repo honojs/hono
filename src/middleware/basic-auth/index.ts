@@ -19,12 +19,6 @@ type BasicAuthOptions =
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
       /**
-       * If set, the authenticated username will be stored in the context.
-       * - `true`: stores under the key `'basicAuthUsername'`
-       * - `string`: stores under the specified custom key
-       */
-      usernameContextKey?: boolean | string
-      /**
        * Callback function called when authentication succeeds.
        * Useful for custom logic like logging or setting additional context variables.
        */
@@ -35,12 +29,6 @@ type BasicAuthOptions =
       realm?: string
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
-      /**
-       * If set, the authenticated username will be stored in the context.
-       * - `true`: stores under the key `'basicAuthUsername'`
-       * - `string`: stores under the specified custom key
-       */
-      usernameContextKey?: boolean | string
       /**
        * Callback function called when authentication succeeds.
        * Useful for custom logic like logging or setting additional context variables.
@@ -60,7 +48,6 @@ type BasicAuthOptions =
  * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
- * @param {boolean | string} [options.usernameContextKey] - If set, stores the authenticated username in context.
  * @param {Function} [options.onAuthSuccess] - Callback function called on successful authentication.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
@@ -79,24 +66,6 @@ type BasicAuthOptions =
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
- * })
- * ```
- *
- * @example
- * ```ts
- * // With usernameContextKey
- * app.use(
- *   '/auth/*',
- *   basicAuth({
- *     username: 'hono',
- *     password: 'ahotproject',
- *     usernameContextKey: true, // or 'authUser' for custom key
- *   })
- * )
- *
- * app.get('/auth/page', (c) => {
- *   const username = c.get('basicAuthUsername')
- *   return c.text(`Hello, ${username}!`)
  * })
  * ```
  *
@@ -146,14 +115,6 @@ export const basicAuth = (
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
-          // Store username in context if configured
-          if (options.usernameContextKey) {
-            const key =
-              typeof options.usernameContextKey === 'string'
-                ? options.usernameContextKey
-                : 'basicAuthUsername'
-            ctx.set(key, requestUser.username)
-          }
           // Call onAuthSuccess callback if provided
           if (options.onAuthSuccess) {
             await options.onAuthSuccess(ctx, requestUser.username)
@@ -168,14 +129,6 @@ export const basicAuth = (
             timingSafeEqual(user.password, requestUser.password, options.hashFunction),
           ])
           if (usernameEqual && passwordEqual) {
-            // Store username in context if configured
-            if (options.usernameContextKey) {
-              const key =
-                typeof options.usernameContextKey === 'string'
-                  ? options.usernameContextKey
-                  : 'basicAuthUsername'
-              ctx.set(key, requestUser.username)
-            }
             // Call onAuthSuccess callback if provided
             if (options.onAuthSuccess) {
               await options.onAuthSuccess(ctx, requestUser.username)
