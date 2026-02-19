@@ -138,3 +138,7 @@ out
 # Claude Code local files
 CLAUDE.local.md
 settings.local.json
+
+# WhiteRose bug scanning (keep reports private)
+.whiterose/
+whiterose-output/

@@ -80,7 +80,7 @@ export const jwt = (options: {
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
-      if (parts.length !== 2) {
+      if (parts.length !== 2 || parts[0] !== 'Bearer') {
         const errDescription = 'invalid credentials structure'
         throw new HTTPException(401, {
           message: errDescription,
