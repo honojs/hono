@@ -87,6 +87,73 @@ describe('Resolve trailing slash', () => {
     })
   })
 
+  describe('trimTrailingSlash middleware with alwaysRedirect option', () => {
+    const app = new Hono()
+    app.use('*', trimTrailingSlash({ alwaysRedirect: true }))
+
+    app.get('/', async (c) => {
+      return c.text('ok')
+    })
+    app.get('/my-path/*', async (c) => {
+      return c.text('wildcard')
+    })
+    app.get('/exact-path', async (c) => {
+      return c.text('exact')
+    })
+
+    it('should handle GET request for root path correctly', async () => {
+      const resp = await app.request('/')
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(200)
+    })
+
+    it('should redirect wildcard route with trailing slash', async () => {
+      const resp = await app.request('/my-path/something/else/')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something/else')
+    })
+
+    it('should not redirect wildcard route without trailing slash', async () => {
+      const resp = await app.request('/my-path/something/else')
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(200)
+      expect(await resp.text()).toBe('wildcard')
+    })
+
+    it('should redirect exact route with trailing slash', async () => {
+      const resp = await app.request('/exact-path/')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/exact-path')
+    })
+
+    it('should preserve query parameters when redirecting', async () => {
+      const resp = await app.request('/my-path/something/?param=1')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something')
+      expect(loc.searchParams.get('param')).toBe('1')
+    })
+
+    it('should handle HEAD request for wildcard route with trailing slash', async () => {
+      const resp = await app.request('/my-path/something/', { method: 'HEAD' })
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something')
+    })
+  })
+
   describe('appendTrailingSlash middleware', () => {
     const app = new Hono({ strict: true })
     app.use('*', appendTrailingSlash())
@@ -185,6 +252,73 @@ describe('Resolve trailing slash', () => {
       expect(resp.status).toBe(301)
       expect(loc.pathname).toBe('/the/example/endpoint/with/trailing/slash/')
       expect(loc.searchParams.get('exampleParam')).toBe('1')
+    })
+  })
+
+  describe('appendTrailingSlash middleware with alwaysRedirect option', () => {
+    const app = new Hono()
+    app.use('*', appendTrailingSlash({ alwaysRedirect: true }))
+
+    app.get('/', async (c) => {
+      return c.text('ok')
+    })
+    app.get('/my-path/*', async (c) => {
+      return c.text('wildcard')
+    })
+    app.get('/exact-path/', async (c) => {
+      return c.text('exact')
+    })
+
+    it('should handle GET request for root path correctly', async () => {
+      const resp = await app.request('/')
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(200)
+    })
+
+    it('should redirect wildcard route without trailing slash', async () => {
+      const resp = await app.request('/my-path/something/else')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something/else/')
+    })
+
+    it('should not redirect wildcard route with trailing slash', async () => {
+      const resp = await app.request('/my-path/something/else/')
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(200)
+      expect(await resp.text()).toBe('wildcard')
+    })
+
+    it('should redirect exact route without trailing slash', async () => {
+      const resp = await app.request('/exact-path')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/exact-path/')
+    })
+
+    it('should preserve query parameters when redirecting', async () => {
+      const resp = await app.request('/my-path/something?param=1')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something/')
+      expect(loc.searchParams.get('param')).toBe('1')
+    })
+
+    it('should handle HEAD request for wildcard route without trailing slash', async () => {
+      const resp = await app.request('/my-path/something', { method: 'HEAD' })
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp).not.toBeNull()
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something/')
     })
   })
 })
