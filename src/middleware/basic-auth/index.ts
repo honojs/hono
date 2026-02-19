@@ -107,7 +107,6 @@ export const basicAuth = (
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
-          // Call onAuthSuccess callback if provided
           if (options.onAuthSuccess) {
             await options.onAuthSuccess(ctx, requestUser.username)
           }
@@ -121,7 +120,6 @@ export const basicAuth = (
             timingSafeEqual(user.password, requestUser.password, options.hashFunction),
           ])
           if (usernameEqual && passwordEqual) {
-            // Call onAuthSuccess callback if provided
             if (options.onAuthSuccess) {
               await options.onAuthSuccess(ctx, requestUser.username)
             }
