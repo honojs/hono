@@ -9,13 +9,7 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import {
-  defaultExtensionMap,
-  fetchRoutesContent,
-  saveContentToFile,
-  toSSG,
-  defaultPlugin,
-} from './ssg'
+import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
 import type {
   AfterGenerateHook,
   AfterResponseHook,
@@ -841,30 +835,6 @@ describe('SSG Plugin System', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-  })
-
-  it('should use defaultPlugin when plugins option is omitted', async () => {
-    // @ts-expect-error defaultPlugin has afterResponseHook
-    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
-    await toSSG(app, fsMock, { dir: './static' })
-    expect(defaultPluginSpy).toHaveBeenCalled()
-    defaultPluginSpy.mockRestore()
-  })
-
-  it('should skip non-200 responses with defaultPlugin', async () => {
-    const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/created.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/redirect.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/notfound.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/error.txt', expect.any(String))
-    expect(result.files.some((f) => f.includes('created'))).toBe(false)
-    expect(result.files.some((f) => f.includes('redirect'))).toBe(false)
-    expect(result.files.some((f) => f.includes('notfound'))).toBe(false)
-    expect(result.files.some((f) => f.includes('error'))).toBe(false)
-    expect(result.success).toBe(true)
   })
 
   it('should correctly apply plugins with beforeRequestHook', async () => {

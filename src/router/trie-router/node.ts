@@ -15,6 +15,13 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 
 const emptyParams = Object.create(null)
 
+const hasChildren = (children: Record<string, unknown>): boolean => {
+  for (const _ in children) {
+    return true
+  }
+  return false
+}
+
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[]
 
@@ -77,13 +84,13 @@ export class Node<T> {
     return curNode
   }
 
-  #getHandlerSets(
+  #pushHandlerSets(
+    handlerSets: HandlerParamsSet<T>[],
     node: Node<T>,
     method: string,
     nodeParams: Record<string, string>,
     params?: Record<string, string>
-  ): HandlerParamsSet<T>[] {
-    const handlerSets: HandlerParamsSet<T>[] = []
+  ): void {
     for (let i = 0, len = node.#methods.length; i < len; i++) {
       const m = node.#methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
@@ -102,7 +109,6 @@ export class Node<T> {
         }
       }
     }
-    return handlerSets
   }
 
   search(method: string, path: string): [[T, Params][]] {
@@ -115,7 +121,10 @@ export class Node<T> {
     const parts = splitPath(path)
     const curNodesQueue: Node<T>[][] = []
 
-    for (let i = 0, len = parts.length; i < len; i++) {
+    const len = parts.length
+    let partOffsets: number[] | null = null
+
+    for (let i = 0; i < len; i++) {
       const part: string = parts[i]
       const isLast = i === len - 1
       const tempNodes: Node<T>[] = []
@@ -129,11 +138,9 @@ export class Node<T> {
           if (isLast) {
             // '/hello/*' => match '/hello'
             if (nextNode.#children['*']) {
-              handlerSets.push(
-                ...this.#getHandlerSets(nextNode.#children['*'], method, node.#params)
-              )
+              this.#pushHandlerSets(handlerSets, nextNode.#children['*'], method, node.#params)
             }
-            handlerSets.push(...this.#getHandlerSets(nextNode, method, node.#params))
+            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
           } else {
             tempNodes.push(nextNode)
           }
@@ -148,7 +155,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.#children['*']
             if (astNode) {
-              handlerSets.push(...this.#getHandlerSets(astNode, method, node.#params))
+              this.#pushHandlerSets(handlerSets, astNode, method, node.#params)
               astNode.#params = params
               tempNodes.push(astNode)
             }
@@ -164,14 +171,23 @@ export class Node<T> {
           const child = node.#children[key]
 
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
-          const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp) {
+            if (partOffsets === null) {
+              partOffsets = new Array(len)
+              let offset = path[0] === '/' ? 1 : 0
+              for (let p = 0; p < len; p++) {
+                partOffsets[p] = offset
+                offset += parts[p].length + 1
+              }
+            }
+            const restPathString = path.substring(partOffsets[i])
+
             const m = matcher.exec(restPathString)
             if (m) {
               params[name] = m[0]
-              handlerSets.push(...this.#getHandlerSets(child, method, node.#params, params))
+              this.#pushHandlerSets(handlerSets, child, method, node.#params, params)
 
-              if (Object.keys(child.#children).length) {
+              if (hasChildren(child.#children)) {
                 child.#params = params
                 const componentCount = m[0].match(/\//)?.length ?? 0
                 const targetCurNodes = (curNodesQueue[componentCount] ||= [])
@@ -185,10 +201,14 @@ export class Node<T> {
           if (matcher === true || matcher.test(part)) {
             params[name] = part
             if (isLast) {
-              handlerSets.push(...this.#getHandlerSets(child, method, params, node.#params))
+              this.#pushHandlerSets(handlerSets, child, method, params, node.#params)
               if (child.#children['*']) {
-                handlerSets.push(
-                  ...this.#getHandlerSets(child.#children['*'], method, params, node.#params)
+                this.#pushHandlerSets(
+                  handlerSets,
+                  child.#children['*'],
+                  method,
+                  params,
+                  node.#params
                 )
               }
             } else {
@@ -199,7 +219,8 @@ export class Node<T> {
         }
       }
 
-      curNodes = tempNodes.concat(curNodesQueue.shift() ?? [])
+      const shifted = curNodesQueue.shift()
+      curNodes = shifted ? tempNodes.concat(shifted) : tempNodes
     }
 
     if (handlerSets.length > 1) {

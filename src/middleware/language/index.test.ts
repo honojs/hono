@@ -77,6 +77,82 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('fr')
     })
 
+    it('should fallback to language code when locale code is not in supportedLanguages', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'ja'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'ja-JP',
+        },
+      })
+      expect(await res.text()).toBe('ja')
+    })
+
+    it('should match after multiple truncations', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['zh-Hant', 'en'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'zh-Hant-CN',
+        },
+      })
+      expect(await res.text()).toBe('zh-Hant')
+    })
+
+    it('should fallback when truncation does not match any supported language', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'ja'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'ko-KR',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should prefer exact match over truncated match', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'fr-CA'],
+        fallbackLanguage: 'fr',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr-CA',
+        },
+      })
+      expect(await res.text()).toBe('fr-CA')
+    })
+
+    it('should handle case-insensitive truncation matching', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'ja'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+        ignoreCase: true,
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'JA-JP',
+        },
+      })
+      expect(await res.text()).toBe('ja')
+    })
+
     it('should handle malformed Accept-Language headers', async () => {
       const app = createTestApp({
         supportedLanguages: ['en', 'fr'],

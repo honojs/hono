@@ -44,6 +44,11 @@ export interface ExecutionContext {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   props: any
+  /**
+   * For compatibility with Wrangler 4.x.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  exports?: any
 }
 
 /**
@@ -662,6 +667,10 @@ export class Context<
     headers?: HeaderRecord
   ): ReturnType<BodyRespond> => this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
 
+  #useFastPath(): boolean {
+    return !this.#preparedHeaders && !this.#status && !this.finalized
+  }
+
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
    *
@@ -679,7 +688,7 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
-    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+    return this.#useFastPath() && !arg && !headers
       ? (createResponseInstance(text) as ReturnType<TextRespond>)
       : (this.#newResponse(
           text,
@@ -708,11 +717,15 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
-    return this.#newResponse(
-      JSON.stringify(object),
-      arg,
-      setDefaultContentType('application/json', headers)
-    ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
+    return (
+      this.#useFastPath() && !arg && !headers
+        ? Response.json(object)
+        : this.#newResponse(
+            JSON.stringify(object),
+            arg,
+            setDefaultContentType('application/json', headers)
+          )
+    ) as JSONRespondReturn<T, U>
   }
 
   html: HTMLRespond = (

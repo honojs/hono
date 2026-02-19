@@ -10,7 +10,12 @@ import { parse } from '../utils/cookie'
 import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { ClientResponse, InferRequestType, InferResponseType } from './types'
+import type {
+  ClientResponse,
+  InferRequestType,
+  InferResponseType,
+  ApplyGlobalResponse,
+} from './types'
 
 class SafeBigInt {
   unsafe = BigInt(42)
@@ -419,6 +424,38 @@ describe('Basic - $url()', () => {
       }).href
     ).toBe('http://fake/content/search?page=123&limit=20')
   })
+
+  it.each(['http://fake', 'http://fake/', 'http://fake//', 'http://fake/api'])(
+    'Should return a correct path via $path() regardless of %s',
+    async (baseURL) => {
+      const client = hc<typeof app>(baseURL)
+      expect(client.index.$path()).toBe('/')
+      expect(
+        client.index.$path({
+          query: {
+            page: '123',
+            limit: '20',
+          },
+        })
+      ).toBe('/?page=123&limit=20')
+      expect(client.api.$path()).toBe('/api')
+      expect(
+        client.api.posts[':id'].$path({
+          param: {
+            id: '123',
+          },
+        })
+      ).toBe('/api/posts/123')
+      expect(
+        client.content.search.$path({
+          query: {
+            page: '123',
+            limit: '20',
+          },
+        })
+      ).toBe('/content/search?page=123&limit=20')
+    }
+  )
 })
 
 describe('Form - Multiple Values', () => {
@@ -755,6 +792,10 @@ describe('Merge path with `app.route()`', () => {
       const url = client.api.bar.$url()
       expect(url.href).toBe('http://localhost/api/bar')
     })
+    it('Should work with $path', async () => {
+      const path = client.api.bar.$path()
+      expect(path).toBe('/api/bar')
+    })
   })
 
   describe('With a blank path', () => {
@@ -775,6 +816,35 @@ describe('Merge path with `app.route()`', () => {
       const url = client.api.v1.me.$url()
       expectTypeOf<URL>(url)
       expect(url.href).toBe('http://localhost/api/v1/me')
+
+      const path = client.api.v1.me.$path()
+      expectTypeOf<'/api/v1/me'>(path)
+      expect(path).toBe('/api/v1/me')
+    })
+  })
+
+  describe('With endpoint pathname', () => {
+    const app = new Hono().basePath('/api/v1')
+    const routes = app.route(
+      '/me',
+      new Hono().route(
+        '',
+        new Hono().get('', async (c) => {
+          return c.json({ name: 'hono' })
+        })
+      )
+    )
+    const client = hc<typeof routes>('http://localhost/proxy')
+
+    it('Should infer paths correctly', async () => {
+      // Should not a throw type error
+      const url = client.api.v1.me.$url()
+      expectTypeOf<URL>(url)
+      expect(url.href).toBe('http://localhost/proxy/api/v1/me')
+
+      const path = client.api.v1.me.$path()
+      expectTypeOf<'/api/v1/me'>(path)
+      expect(path).toBe('/api/v1/me')
     })
   })
 })
@@ -1050,40 +1120,43 @@ describe('Infer the response types from middlewares', () => {
   })
 })
 
-describe('$url() with a param option', () => {
+const pathname = <T extends URL | string>(value: T): string =>
+  value instanceof URL ? value.pathname : value
+
+describe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {
   const app = new Hono()
     .get('/posts/:id/comments', (c) => c.json({ ok: true }))
     .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
-  it('Should return the correct path - /posts/123/comments', async () => {
-    const url = client.posts[':id'].comments.$url({
+  it('Should return the correct url path - /posts/123/comments', async () => {
+    const value = client.posts[':id'].comments[cmd]({
       param: {
         id: '123',
       },
     })
-    expect(url.pathname).toBe('/posts/123/comments')
+    expect(pathname(value)).toBe('/posts/123/comments')
   })
 
   it('Should return the correct path - /posts/:id/comments', async () => {
-    const url = client.posts[':id'].comments.$url()
-    expect(url.pathname).toBe('/posts/:id/comments')
+    const value = client.posts[':id'].comments[cmd]()
+    expect(pathname(value)).toBe('/posts/:id/comments')
   })
 
   it('Should return the correct path - /something/123/456', async () => {
-    const url = client.something[':firstId'][':secondId'][':version?'].$url({
+    const value = client.something[':firstId'][':secondId'][':version?'][cmd]({
       param: {
         firstId: '123',
         secondId: '456',
         version: undefined,
       },
     })
-    expect(url.pathname).toBe('/something/123/456')
+    expect(pathname(value)).toBe('/something/123/456')
   })
 })
 
-describe('$url() with a query option', () => {
+describe('$url() / $path() with a query option', () => {
   const app = new Hono().get(
     '/posts',
     validator('query', () => {
@@ -1101,6 +1174,13 @@ describe('$url() with a query option', () => {
       },
     })
     expect(url.search).toBe('?filter=test')
+
+    const path = client.posts.$path({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(path).toBe('/posts?filter=test')
   })
 })
 
@@ -1637,5 +1717,109 @@ describe('Custom buildSearchParams', () => {
     const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
 
     expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
+  })
+})
+
+describe('ApplyGlobalResponse Type Helper', () => {
+  const server = setupServer(
+    http.get('http://localhost/api/users', () => {
+      return HttpResponse.json({ users: ['alice', 'bob'] })
+    }),
+    http.get('http://localhost/api/error', () => {
+      return HttpResponse.json(
+        { error: 'Internal Server Error', message: 'Something went wrong' },
+        { status: 500 }
+      )
+    }),
+    http.get('http://localhost/api/unauthorized', () => {
+      return HttpResponse.json({ error: 'Unauthorized', message: 'Please login' }, { status: 401 })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  it('Should add global error response types to all routes', () => {
+    // Use explicit status codes for proper type narrowing
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
+
+    // Apply global error responses with new object syntax
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      typeof app,
+      {
+        401: { json: { error: string; message: string } }
+        500: { json: { error: string; message: string } }
+      }
+    >
+
+    const client = hc<AppWithGlobalErrors>('http://localhost')
+    const req = client.api.users.$get
+
+    // Type should be a union of normal response and global errors
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string; message: string }
+
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+
+  it('Should support multiple global error status codes', async () => {
+    const app = new Hono()
+      .get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
+      .get('/api/unauthorized', (c) =>
+        c.json({ error: 'Unauthorized', message: 'Please login' }, 401)
+      )
+      .get('/api/error', (c) =>
+        c.json({ error: 'Internal Server Error', message: 'Something went wrong' }, 500)
+      )
+
+    // Apply multiple global error types in one definition
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      typeof app,
+      {
+        401: { json: { error: string; message: string } }
+        500: { json: { error: string; message: string } }
+      }
+    >
+
+    const client = hc<AppWithGlobalErrors>('http://localhost')
+
+    // Verify runtime behavior for different status codes
+    const usersRes = await client.api.users.$get()
+    expect(usersRes.status).toBe(200)
+
+    const unauthorizedRes = await client.api.unauthorized.$get()
+    expect(unauthorizedRes.status).toBe(401)
+    expect(await unauthorizedRes.json()).toEqual({ error: 'Unauthorized', message: 'Please login' })
+
+    const errorRes = await client.api.error.$get()
+    expect(errorRes.status).toBe(500)
+    expect(await errorRes.json()).toEqual({
+      error: 'Internal Server Error',
+      message: 'Something went wrong',
+    })
+  })
+
+  it('Should work with onError handler pattern', () => {
+    // Simulating typical Hono app with onError handler
+    // Use explicit status code for proper type narrowing
+    const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
+
+    // In real app: app.onError((err, c) => c.json({ error: err.message }, 500))
+    type AppWithOnError = ApplyGlobalResponse<
+      typeof app,
+      {
+        500: { json: { error: string } }
+      }
+    >
+
+    const client = hc<AppWithOnError>('http://localhost')
+    const req = client.api.users.$get
+
+    // RPC client should know about the error format
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string }
+
+    type verify = Expect<Equal<ResponseType, Expected>>
   })
 })
