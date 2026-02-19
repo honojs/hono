@@ -711,7 +711,7 @@ export class Context<
             arg,
             setDefaultContentType('application/json', headers)
           )
-    ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
+    ) as JSONRespondReturn<T, U>
   }
 
   html: HTMLRespond = (
