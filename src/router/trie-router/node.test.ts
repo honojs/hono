@@ -804,3 +804,13 @@ describe('The same name is used for path params', () => {
     })
   })
 })
+
+describe('Node with initial method and handler', () => {
+  it('should create a node with method and handler via constructor', () => {
+    const node = new Node('get', 'initial handler')
+    node.insert('get', '/hello', 'hello handler')
+    const [res] = node.search('get', '/hello')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('hello handler')
+  })
+})
