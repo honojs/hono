@@ -100,8 +100,23 @@ export const normalizeLanguage = (
       options.ignoreCase ? l.toLowerCase() : l
     )
 
-    const matchedLang = compSupported.find((l) => l === compLang)
-    return matchedLang ? options.supportedLanguages[compSupported.indexOf(matchedLang)] : undefined
+    // Exact match
+    const exactIndex = compSupported.indexOf(compLang)
+    if (exactIndex !== -1) {
+      return options.supportedLanguages[exactIndex]
+    }
+
+    // Progressive truncation (RFC 4647 Lookup)
+    const parts = compLang.split('-')
+    for (let i = parts.length - 1; i > 0; i--) {
+      const candidate = parts.slice(0, i).join('-')
+      const prefixIndex = compSupported.indexOf(candidate)
+      if (prefixIndex !== -1) {
+        return options.supportedLanguages[prefixIndex]
+      }
+    }
+
+    return undefined
   } catch {
     return undefined
   }
