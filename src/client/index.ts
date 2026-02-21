@@ -12,4 +12,5 @@ export type {
   ClientRequestOptions,
   ClientRequest,
   ClientResponse,
+  ApplyGlobalResponse,
 } from './types'
