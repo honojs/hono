@@ -106,6 +106,27 @@ describe('Param', () => {
     ])
     expect(req.param()).toEqual({ remaining: '' })
   })
+
+  describe('Type', () => {
+    it('param() returns string | undefined when P is any (middleware context)', () => {
+      // When middleware uses Context without an explicit path type, P defaults to any.
+      // param(key) should return string | undefined, not string.
+      const rawRequest = new Request('http://localhost/users/123')
+      const req = new HonoRequest<any>(rawRequest, '/users/123', [
+        [[[undefined, {} as RouterRoute], { id: '123' }]],
+      ])
+      expectTypeOf(req.param('id')).toEqualTypeOf<string | undefined>()
+    })
+
+    it('param() returns string when P is a known route string', () => {
+      // When P is a concrete route, named params should still return string (non-optional).
+      const rawRequest = new Request('http://localhost/123')
+      const req = new HonoRequest<'/:id'>(rawRequest, '/123', [
+        [[[undefined, {} as RouterRoute], { id: '123' }]],
+      ])
+      expectTypeOf(req.param('id')).toEqualTypeOf<string>()
+    })
+  })
 })
 
 describe('matchedRoutes', () => {
