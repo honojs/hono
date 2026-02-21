@@ -141,13 +141,15 @@ export const validator = <
         value = form
         break
       }
-      case 'query':
+      case 'query': {
+        const queries = c.req.queries() || {}
         value = Object.fromEntries(
-          Object.entries(c.req.queries()).map(([k, v]) => {
+          Object.entries(queries).map(([k, v]) => {
             return v.length === 1 ? [k, v[0]] : [k, v]
           })
         )
         break
+      }
       case 'param':
         value = c.req.param() as Record<string, string>
         break
