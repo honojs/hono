@@ -642,6 +642,47 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  describe('null body handling', () => {
+    it('Should create a Request with no body when event.body is null', async () => {
+      // All base events have body: null by default
+      const processor = getProcessor(baseV1Event)
+      const request = processor.createRequest(baseV1Event)
+
+      expect(request.body).toBeNull()
+      expect(await request.text()).toBe('')
+    })
+  })
+
+  describe('empty query string handling', () => {
+    it('Should not append "?" to URL when no query parameters are provided', () => {
+      // baseV1Event has queryStringParameters: {} and no multiValueQueryStringParameters
+      const event: LambdaEvent = {
+        ...baseV1Event,
+        queryStringParameters: {},
+        multiValueQueryStringParameters: undefined,
+      }
+
+      const processor = getProcessor(event)
+      const request = processor.createRequest(event)
+
+      expect(request.url).toBe('https://id.execute-api.us-east-1.amazonaws.com/my/path')
+      expect(request.url).not.toContain('?')
+    })
+
+    it('Should not append "?" to URL for V2 event with empty rawQueryString', () => {
+      const event: LambdaEvent = {
+        ...baseV2Event,
+        rawQueryString: '',
+      }
+
+      const processor = getProcessor(event)
+      const request = processor.createRequest(event)
+
+      expect(request.url).toBe('https://id.execute-api.us-east-1.amazonaws.com/my/path')
+      expect(request.url).not.toContain('?')
+    })
+  })
+
   describe('getDomainName fallback', () => {
     it('Should use domainName from requestContext when available', () => {
       // baseV1Event has requestContext.domainName set
