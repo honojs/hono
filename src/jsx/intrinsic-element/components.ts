@@ -94,7 +94,7 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
 
   if (string instanceof Promise) {
     return string.then((resString) =>
-      raw(string, [
+      raw(resString, [
         ...((resString as HtmlEscapedString).callbacks || []),
         insertIntoHead(tag, resString, restProps, precedence),
       ])
@@ -172,7 +172,8 @@ export const form: FC<
   }>
 > = (props) => {
   if (typeof props.action === 'function') {
-    props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
+    props.action =
+      PERMALINK in props.action ? (props.action[PERMALINK] as () => string)() : undefined
   }
   return newJSXNode('form', props)
 }
@@ -185,7 +186,7 @@ const formActionableElement = (
 ) => {
   if (typeof props.formAction === 'function') {
     props.formAction =
-      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as string) : undefined
+      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as () => string)() : undefined
   }
   return newJSXNode(tag, props)
 }
