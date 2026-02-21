@@ -1,9 +1,24 @@
 import { Hono } from '../../hono'
 import { handle } from './handler'
 
+type NetlifyContext = {
+  geo: {
+    city: string
+    country: { code: string; name: string }
+  }
+  ip: string
+  requestId: string
+}
+
+type Env = {
+  Bindings: {
+    context: NetlifyContext
+  }
+}
+
 describe('Netlify Adapter', () => {
   // Mock Netlify context
-  const createMockContext = (overrides = {}) => ({
+  const createMockContext = (overrides = {}): NetlifyContext => ({
     geo: {
       city: 'San Francisco',
       country: { code: 'US', name: 'United States' },
@@ -88,7 +103,7 @@ describe('Netlify Adapter', () => {
 
   describe('Context Handling', () => {
     it('Should pass Netlify context to Hono env', async () => {
-      const app = new Hono()
+      const app = new Hono<Env>()
       app.get('/', (c) => {
         const netlifyCtx = c.env.context
         return c.json({
@@ -111,7 +126,7 @@ describe('Netlify Adapter', () => {
     })
 
     it('Should access geo information from context', async () => {
-      const app = new Hono()
+      const app = new Hono<Env>()
       app.get('/geo', (c) => {
         const { geo } = c.env.context
         return c.json({
