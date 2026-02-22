@@ -1448,3 +1448,48 @@ describe('Security: Algorithm Confusion Attack Prevention', () => {
     expect(err).toBeInstanceOf(JwtAlgorithmRequired)
   })
 })
+
+describe('JWT decode token format validation', () => {
+  it('decode should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decode(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 1 part', () => {
+    expect(() => JWT.decode('eyJhbGciOiJIUzI1NiJ9')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 4 parts', () => {
+    const fourParts = 'a.b.c.d'
+    expect(() => JWT.decode(fourParts)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decode('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decodeHeader(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decodeHeader('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const decoded = JWT.decode(tok)
+    expect(decoded.header.alg).toBe('HS256')
+    expect(decoded.payload).toEqual({ message: 'hello' })
+  })
+
+  it('decodeHeader should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const header = JWT.decodeHeader(tok)
+    expect(header.alg).toBe('HS256')
+    expect(header.typ).toBe('JWT')
+  })
+})
