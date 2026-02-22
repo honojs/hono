@@ -13,6 +13,8 @@ const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
+const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
 type CustomizedErrorResponseOptions = {
   wwwAuthenticateHeader?: string | object | MessageFunction
@@ -112,7 +114,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   }
 
   const realm = options.realm?.replace(/"/g, '\\"')
-  const prefixRegexStr = options.prefix === '' ? '' : `${options.prefix} +`
+  const prefixRegexStr = options.prefix === '' ? '' : `${escapeRegExp(options.prefix)} +`
   const regexp = new RegExp(`^${prefixRegexStr}(${TOKEN_STRINGS}) *$`, 'i')
   const wwwAuthenticatePrefix = options.prefix === '' ? '' : `${options.prefix} `
 
