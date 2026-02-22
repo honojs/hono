@@ -122,7 +122,7 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
-  it('JwtTokenExpired after Y2038 (regression: bitwise OR overflow)', async () => {
+  it('JwtTokenExpired after Y2038', async () => {
     const postY2038 = 2147483648 // 2038-01-19 03:14:08 UTC
     vi.useFakeTimers().setSystemTime(new Date(postY2038 * 1000))
 
