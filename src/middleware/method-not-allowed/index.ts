@@ -7,7 +7,7 @@ import type { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import { METHOD_NAME_ALL } from '../../router'
 import { TrieRouter } from '../../router/trie-router/router'
-import type { Env , MiddlewareHandler } from '../../types'
+import type { Env, MiddlewareHandler } from '../../types'
 
 type MethodNotAllowedOptions = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
