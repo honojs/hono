@@ -6,7 +6,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
-type CORSOptions = {
+export type CORSOptions = {
   origin:
     | string
     | string[]
