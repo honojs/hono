@@ -1418,3 +1418,25 @@ describe('Raw Request cloning after validation', () => {
     expect(result.payload).toMatchObject(testData)
   })
 })
+
+describe('Form validator prototype pollution prevention', () => {
+  it('should store __proto__ as data and not misdetect inherited keys', async () => {
+    const app = new Hono()
+    app.post(
+      '/form',
+      validator('form', (value) => value),
+      (c) => c.json(c.req.valid('form'))
+    )
+
+    const form = new FormData()
+    form.append('__proto__', 'evil')
+    form.append('toString', 'hello')
+
+    const res = await app.request('/form', { method: 'POST', body: form })
+    const result = await res.json()
+    // Object.create(null) → __proto__ is stored as a regular property
+    expect(result['__proto__']).toBe('evil')
+    // Object.hasOwn → toString is not mistaken for an existing key and stays a string
+    expect(result['toString']).toBe('hello')
+  })
+})
