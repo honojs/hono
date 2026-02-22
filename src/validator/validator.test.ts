@@ -1434,9 +1434,7 @@ describe('Form validator prototype pollution prevention', () => {
 
     const res = await app.request('/form', { method: 'POST', body: form })
     const result = await res.json()
-    // Object.create(null) → __proto__ is stored as a regular property
     expect(result['__proto__']).toBe('evil')
-    // Object.hasOwn → toString is not mistaken for an existing key and stays a string
     expect(result['toString']).toBe('hello')
   })
 })
