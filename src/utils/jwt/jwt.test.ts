@@ -123,10 +123,6 @@ describe('JWT', () => {
   })
 
   it('JwtTokenExpired after Y2038 (regression: bitwise OR overflow)', async () => {
-    // After 2038-01-19 03:14:08 UTC, Unix timestamps exceed 2^31-1.
-    // `(Date.now() / 1000) | 0` would overflow to a negative number,
-    // causing `exp <= now` to be false and expired tokens to be accepted.
-    // `Math.floor(Date.now() / 1000)` handles this correctly.
     const postY2038 = 2147483648 // 2038-01-19 03:14:08 UTC
     vi.useFakeTimers().setSystemTime(new Date(postY2038 * 1000))
 
