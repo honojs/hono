@@ -1285,8 +1285,9 @@ describe('verifyWithJwks key handling', () => {
 
     const originalKeys = structuredClone(localKeys)
     const originalFetch = globalThis.fetch
-    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' }))
-      .toString('base64url')
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' })
+    ).toString('base64url')
     const payload = Buffer.from(JSON.stringify({})).toString('base64url')
     const token = `${header}.${payload}.x`
 
