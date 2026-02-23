@@ -2,6 +2,7 @@
 import { vi } from 'vitest'
 import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
+import type { HonoJsonWebKey } from './jws'
 import { signing } from './jws'
 import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
@@ -1272,7 +1273,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
 
 describe('verifyWithJwks key handling', () => {
   it('Should not mutate provided keys when JWKS is fetched repeatedly', async () => {
-    const localKeys: JsonWebKey[] = [
+    const localKeys: HonoJsonWebKey[] = [
       {
         kty: 'RSA',
         kid: 'local-key',
