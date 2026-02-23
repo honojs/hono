@@ -717,11 +717,15 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
+    const body = JSON.stringify(object)
+    if (body === undefined) {
+      throw new TypeError('Value is not JSON serializable')
+    }
     return (
       this.#useFastPath() && !arg && !headers
-        ? Response.json(object)
+        ? new Response(body, { headers: { 'content-type': 'application/json' } })
         : this.#newResponse(
-            JSON.stringify(object),
+            body,
             arg,
             setDefaultContentType('application/json', headers)
           )
