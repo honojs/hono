@@ -1270,6 +1270,62 @@ describe('verifyWithJwks algorithm whitelist', () => {
   })
 })
 
+describe('verifyWithJwks key handling', () => {
+  it('Should not mutate provided keys when JWKS is fetched repeatedly', async () => {
+    const localKeys: JsonWebKey[] = [
+      {
+        kty: 'RSA',
+        kid: 'local-key',
+        alg: 'RS256',
+        e: 'AQAB',
+        n: 'sXchAZo4YqB7f1_g8U9RVcdpShUMHbOWcZHhGXLiCFYI8aAizI0s5momkMumZ5qX6Ch12yvDqOiiMHDLecxB2S7RMyCV2wAPOQgpdnXl16rDpD6PEw24kTx5cDIeEJD7BqXc9Ejo4kKDAdAm8YGtS-wGGyRyvE4s46HoPazTA7k',
+        use: 'sig',
+      },
+    ]
+
+    const originalKeys = structuredClone(localKeys)
+    const originalFetch = globalThis.fetch
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' }))
+      .toString('base64url')
+    const payload = Buffer.from(JSON.stringify({})).toString('base64url')
+    const token = `${header}.${payload}.x`
+
+    try {
+      globalThis.fetch = (async () => {
+        return new Response(
+          JSON.stringify({
+            keys: [
+              { ...localKeys[0], kid: 'remote-key' },
+              { ...localKeys[0], kid: 'remote-key' },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }) as typeof globalThis.fetch
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(localKeys).toEqual(originalKeys)
+  })
+})
+
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('pkcs8', key)
   const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
