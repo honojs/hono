@@ -22,12 +22,49 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
     .sort(sortByQualityAndIndex)
     .map(({ type, params, q }) => ({ type, params, q }))
 }
-const parseAcceptValueRegex = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/
+
+const splitBySemicolon = (value: string): string[] => {
+  const parts: string[] = []
+  let current = ''
+  let inQuotes = false
+  let escaped = false
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i]
+
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\' && inQuotes) {
+      current += char
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes
+      current += char
+      continue
+    }
+
+    if (char === ';' && !inQuotes) {
+      parts.push(current)
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  parts.push(current)
+  return parts
+}
+
 const parseAcceptValue = ({ value, index }: { value: string; index: number }) => {
-  const parts = value
-    .trim()
-    .split(parseAcceptValueRegex)
-    .map((s) => s.trim())
+  const parts = splitBySemicolon(value.trim()).map((s) => s.trim())
   const type = parts[0]
   if (!type) {
     return null

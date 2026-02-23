@@ -121,6 +121,12 @@ describe('parseAccept Comprehensive Tests', () => {
       })
     })
 
+    test('handles many semicolons with an unbalanced quote', () => {
+      const header = `text/plain;${'a;'.repeat(8000)}"`
+      const result = parseAccept(header)
+      expect(result[0].type).toBe('text/plain')
+    })
+
     test('handles extremely large input', () => {
       const header = 'a;q=0.9,'.repeat(100000)
       expect(() => parseAccept(header)).not.toThrow()
