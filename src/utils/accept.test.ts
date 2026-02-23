@@ -105,6 +105,36 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result.map((x) => x.type)).toEqual(['b', 'a'])
     })
+
+    test('handles escaped quote and semicolon inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\";b";q=0.5'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: '"a\\";b"',
+            q: '0.5',
+          },
+          q: 0.5,
+        },
+      ])
+    })
+
+    test('handles escaped character inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\\z;c";q=0.3'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: '"a\\\\z;c"',
+            q: '0.3',
+          },
+          q: 0.3,
+        },
+      ])
+    })
   })
 
   describe('Security Cases', () => {
