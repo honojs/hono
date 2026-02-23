@@ -154,14 +154,17 @@ describe('createHandler', () => {
         {
           in: {
             query: {
-              page: string
+              page: string | string[]
             }
           }
         },
-        TypedResponse<{
-          page: string
-          foo: string
-        }>
+        TypedResponse<
+          {
+            page: string
+            foo: string
+          },
+          ContentfulStatusCode
+        >
       >,
       '/'
     >
@@ -218,7 +221,7 @@ describe('createHandler', () => {
             }
           } & {
             query: {
-              page: string
+              page: string | string[]
             }
           } & {
             json: {
@@ -226,12 +229,15 @@ describe('createHandler', () => {
             }
           }
         },
-        TypedResponse<{
-          auth: string
-          page: string
-          foo: string
-          id: number
-        }>
+        TypedResponse<
+          {
+            auth: string
+            page: string
+            foo: string
+            id: number
+          },
+          ContentfulStatusCode
+        >
       >,
       '/'
     >
