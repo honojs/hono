@@ -724,11 +724,7 @@ export class Context<
     return (
       this.#useFastPath() && !arg && !headers
         ? new Response(body, { headers: { 'content-type': 'application/json' } })
-        : this.#newResponse(
-            body,
-            arg,
-            setDefaultContentType('application/json', headers)
-          )
+        : this.#newResponse(body, arg, setDefaultContentType('application/json', headers))
     ) as JSONRespondReturn<T, U>
   }
 
