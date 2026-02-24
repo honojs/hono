@@ -138,11 +138,12 @@ export interface HandlerInterface<
     I extends Input = BlankInput,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
+    M1 extends H<E2, P, I, R> = H<E2, P, I, R>,
   >(
-    handler: H<E2, P, I, R>
+    handler: H<E2, P, I, R> & M1
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2]>,
-    S & ToSchema<M, P, I, MergeTypedResponse<R>>,
+    S & ToSchema<M, P, I, MergeTypedResponseOrMiddlewareResponse<R, M1>>,
     BasePath,
     CurrentPath
   >
@@ -172,12 +173,13 @@ export interface HandlerInterface<
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     E2 extends Env = E,
+    M1 extends H<E2, MergedPath, I, R> = H<E2, MergedPath, I, R>,
   >(
     path: P,
-    handler: H<E2, MergedPath, I, R>
+    handler: H<E2, MergedPath, I, R> & M1
   ): HonoBase<
     E,
-    AddSchemaIfHasResponse<MergeTypedResponse<R>, S, M, P, I, BasePath>,
+    AddSchemaIfHasResponse<MergeTypedResponseOrMiddlewareResponse<R, M1>, S, M, P, I, BasePath>,
     BasePath,
     MergePath<BasePath, P>
   >
@@ -2357,18 +2359,18 @@ export type TypedResponse<
   _format: F
 }
 
+type ExtractTypedResponseOnly<T> = T extends TypedResponse ? T : never
+
 type MergeTypedResponse<T> =
   T extends Promise<void>
     ? T
     : T extends Promise<infer T2>
-      ? [ExtractTypedResponseOnly<T2>] extends [never]
-        ? TypedResponse
-        : ExtractTypedResponseOnly<T2>
-      : [ExtractTypedResponseOnly<T>] extends [never]
-        ? TypedResponse
-        : ExtractTypedResponseOnly<T>
-
-type ExtractTypedResponseOnly<T> = T extends TypedResponse ? T : never
+      ? T2 extends TypedResponse
+        ? T2
+        : TypedResponse
+      : T extends TypedResponse
+        ? T
+        : TypedResponse
 
 type MergeMiddlewareResponse<T> = T extends (c: any, next: any) => Promise<infer R>
   ? Exclude<R, void> extends never
@@ -2381,6 +2383,10 @@ type MergeMiddlewareResponse<T> = T extends (c: any, next: any) => Promise<infer
       ? ExtractTypedResponseOnly<R>
       : never
     : never
+
+type MergeTypedResponseOrMiddlewareResponse<R, M> = [MergeMiddlewareResponse<M>] extends [never]
+  ? MergeTypedResponse<R>
+  : MergeMiddlewareResponse<M>
 
 ////////////////////////////////////////
 //////                             /////

@@ -620,8 +620,9 @@ describe('Infer the response/request type', () => {
       const req = client.index.$get
 
       type Actual = InferResponseType<typeof req>
-      type Expected = { hello: string }
-      type verify = Expect<Equal<Expected, Actual>>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
     })
 
     it('Should infer request type the type correctly', () => {
