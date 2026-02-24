@@ -1,4 +1,5 @@
-import type { Context } from '../../context'
+import { Context } from '../../context'
+import type { HonoBase } from '../../hono-base'
 import { GET_MATCH_RESULT } from '../../request/constants'
 import type { RouterRoute } from '../../types'
 import { getPattern, splitRoutingPath } from '../../utils/url'
@@ -83,7 +84,7 @@ export const baseRoutePath = (c: Context, index?: number): string =>
   matchedRoutes(c).at(index ?? c.req.routeIndex)?.basePath ?? ''
 
 /**
- * Get the basePath with embedded parameters
+ * Get the basePath with embedded parameters, or the base path of a Hono instance.
  *
  * @param {Context} c - The context object
  * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
@@ -102,9 +103,27 @@ export const baseRoutePath = (c: Context, index?: number): string =>
  *
  * app.route('/:sub', subApp)
  * ```
+ *
+ * @example
+ * ```ts
+ * import { basePath } from 'hono/route'
+ *
+ * const subApp = new Hono()
+ * const path = basePath(subApp) // '/'
+ *
+ * const api = new Hono().basePath('/api')
+ * const apiPath = basePath(api) // '/api'
+ * ```
  */
 const basePathCacheMap: WeakMap<Context, Record<number, string>> = new WeakMap()
-export const basePath = (c: Context, index?: number): string => {
+export function basePath(app: HonoBase): string
+export function basePath(c: Context, index?: number): string
+export function basePath(c: Context | HonoBase, index?: number): string {
+  if (!(c instanceof Context)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (c as any)._basePath as string
+  }
+
   index ??= c.req.routeIndex
 
   const cache = basePathCacheMap.get(c) || []
