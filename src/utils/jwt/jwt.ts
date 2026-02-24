@@ -127,7 +127,7 @@ export const verify = async (
   if (header.alg !== alg) {
     throw new JwtAlgorithmMismatch(alg, header.alg)
   }
-  const now = (Date.now() / 1000) | 0
+  const now = Math.floor(Date.now() / 1000)
   if (nbf && payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }

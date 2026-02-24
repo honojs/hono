@@ -122,6 +122,28 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  it('JwtTokenExpired after Y2038', async () => {
+    const postY2038 = 2147483648 // 2038-01-19 03:14:08 UTC
+    vi.useFakeTimers().setSystemTime(new Date(postY2038 * 1000))
+
+    const expIn2025 = 1735689600 // 2025-01-01 00:00:00 UTC
+    const payload = { message: 'hello', exp: expIn2025 }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenExpired(tok))
+    expect(authorized).toBeUndefined()
+
+    vi.useRealTimers()
+  })
+
   it('JwtTokenIssuedAt', async () => {
     const now = 1633046400
     vi.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
