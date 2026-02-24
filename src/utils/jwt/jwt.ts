@@ -188,26 +188,6 @@ const symmetricAlgorithms: SymmetricAlgorithm[] = [
   AlgorithmTypes.HS512,
 ]
 
-const mergeJwkKeys = (
-  existingKeys: readonly HonoJsonWebKey[],
-  fetchedKeys: readonly HonoJsonWebKey[]
-): HonoJsonWebKey[] => {
-  const mergedKeys: HonoJsonWebKey[] = []
-  const seenKids = new Set<string>()
-
-  for (const key of [...existingKeys, ...fetchedKeys]) {
-    if (typeof key.kid === 'string') {
-      if (seenKids.has(key.kid)) {
-        continue
-      }
-      seenKids.add(key.kid)
-    }
-    mergedKeys.push(key)
-  }
-
-  return mergedKeys
-}
-
 export const verifyWithJwks = async (
   token: string,
   options: {
@@ -239,7 +219,7 @@ export const verifyWithJwks = async (
     throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms)
   }
 
-  let verifyKeys = options.keys ? [...options.keys] : undefined
+  const verifyKeys = options.keys ? [...options.keys] : []
 
   if (options.jwks_uri) {
     const response = await fetch(options.jwks_uri, init)
@@ -253,8 +233,8 @@ export const verifyWithJwks = async (
     if (!Array.isArray(data.keys)) {
       throw new Error('invalid JWKS response. "keys" field is not an array')
     }
-    verifyKeys = mergeJwkKeys(verifyKeys ?? [], data.keys as HonoJsonWebKey[])
-  } else if (!verifyKeys) {
+    verifyKeys.push(...(data.keys as HonoJsonWebKey[]))
+  } else if (!options.keys) {
     throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
