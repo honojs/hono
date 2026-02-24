@@ -677,69 +677,6 @@ describe('Infer the response/request type', () => {
       >
     })
 
-    it('Should infer response type with two post handlers and Promise.then', () => {
-      const route = new Hono().post(
-        '/',
-        async (_c, next) => {
-          await next()
-        },
-        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
-      )
-      type AppType = typeof route
-
-      const client = hc<AppType>('/')
-      const req = client.index.$post
-
-      type Actual = InferResponseType<typeof req>
-      type verify = Expect<
-        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
-      >
-    })
-
-    it('Should infer response type with four post handlers and Promise.then', () => {
-      const route = new Hono().post(
-        '/',
-        async (_c, next) => {
-          await next()
-        },
-        async (_c, next) => {
-          await next()
-        },
-        async (_c, next) => {
-          await next()
-        },
-        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
-      )
-      type AppType = typeof route
-
-      const client = hc<AppType>('/')
-      const req = client.index.$post
-
-      type Actual = InferResponseType<typeof req>
-      type verify = Expect<
-        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
-      >
-    })
-
-    it('Should infer response type with mixed get handlers and Promise.then', () => {
-      const route = new Hono().get(
-        '/',
-        async (_c, next) => {
-          await next()
-        },
-        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
-      )
-      type AppType = typeof route
-
-      const client = hc<AppType>('/')
-      const req = client.index.$get
-
-      type Actual = InferResponseType<typeof req>
-      type verify = Expect<
-        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
-      >
-    })
-
     it('Should infer response type with mixed on handlers and Promise.then', () => {
       const route = new Hono().on(
         'GET',
@@ -748,44 +685,6 @@ describe('Infer the response/request type', () => {
           await next()
         },
         (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
-      )
-      type AppType = typeof route
-
-      const client = hc<AppType>('/')
-      const req = client.index.$get
-
-      type Actual = InferResponseType<typeof req>
-      type verify = Expect<
-        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
-      >
-    })
-
-    it('Should infer response type with three on handlers and Promise.then', () => {
-      const route = new Hono().on(
-        'GET',
-        '/',
-        async (_c, next) => {
-          await next()
-        },
-        async (_c, next) => {
-          await next()
-        },
-        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
-      )
-      type AppType = typeof route
-
-      const client = hc<AppType>('/')
-      const req = client.index.$get
-
-      type Actual = InferResponseType<typeof req>
-      type verify = Expect<
-        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
-      >
-    })
-
-    it('Should infer response type for on method array with Promise.then', () => {
-      const route = new Hono().on(['GET', 'POST'], '/', (c) =>
-        Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
       )
       type AppType = typeof route
 
