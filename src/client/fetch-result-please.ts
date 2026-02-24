@@ -47,19 +47,19 @@ export class DetailedError extends Error {
   /**
    * Additional `message` that will be logged AND returned to client
    */
-  public detail?: any
+  detail?: any
   /**
    * Additional `code` that will be logged AND returned to client
    */
-  public code?: any
+  code?: any
   /**
    * Additional value that will be logged AND NOT returned to client
    */
-  public log?: any
+  log?: any
   /**
    * Optionally set the status code to return, in a web server context
    */
-  public statusCode?: any
+  statusCode?: any
 
   constructor(
     message: string,

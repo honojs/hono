@@ -31,9 +31,9 @@ const createProxy = (callback: Callback, path: string[]) => {
 }
 
 class ClientRequestImpl {
-  private url: string
+  private readonly url: string
   private method: string
-  private buildSearchParams: BuildSearchParamsFn
+  private readonly buildSearchParams: BuildSearchParamsFn
   private queryParams: URLSearchParams | undefined = undefined
   private pathParams: Record<string, string> = {}
   private rBody: BodyInit | undefined
