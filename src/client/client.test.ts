@@ -610,6 +610,20 @@ describe('Infer the response/request type', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
 
+    it('Should infer response type with Promise.then in arrow expression', () => {
+      const route = new Hono().get('/', (c) =>
+        Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferResponseType<typeof req>
+      type Expected = { hello: string }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+
     it('Should infer request type the type correctly', () => {
       const client = hc<AppType>('/')
       const req = client.index.$get

@@ -2361,12 +2361,12 @@ type MergeTypedResponse<T> =
   T extends Promise<void>
     ? T
     : T extends Promise<infer T2>
-      ? T2 extends TypedResponse
-        ? T2
-        : TypedResponse
-      : T extends TypedResponse
-        ? T
-        : TypedResponse
+      ? [ExtractTypedResponseOnly<T2>] extends [never]
+        ? TypedResponse
+        : ExtractTypedResponseOnly<T2>
+      : [ExtractTypedResponseOnly<T>] extends [never]
+        ? TypedResponse
+        : ExtractTypedResponseOnly<T>
 
 type ExtractTypedResponseOnly<T> = T extends TypedResponse ? T : never
 
