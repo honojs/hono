@@ -233,7 +233,7 @@ export const verifyWithJwks = async (
     if (!Array.isArray(data.keys)) {
       throw new Error('invalid JWKS response. "keys" field is not an array')
     }
-    verifyKeys = verifyKeys ?? []
+    verifyKeys ??= []
     verifyKeys.push(...(data.keys as HonoJsonWebKey[]))
   } else if (!verifyKeys) {
     throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
