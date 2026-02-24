@@ -126,13 +126,13 @@ export const validator = <
           }
         }
 
-        const form: BodyData<{ all: true }> = {}
+        const form: BodyData<{ all: true }> = Object.create(null)
         formData.forEach((value, key) => {
           if (key.endsWith('[]')) {
             ;((form[key] ??= []) as unknown[]).push(value)
           } else if (Array.isArray(form[key])) {
             ;(form[key] as unknown[]).push(value)
-          } else if (key in form) {
+          } else if (Object.hasOwn(form, key)) {
             form[key] = [form[key] as string | File, value]
           } else {
             form[key] = value
