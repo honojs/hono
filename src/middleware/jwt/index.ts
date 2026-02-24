@@ -5,5 +5,5 @@ export { AlgorithmTypes } from '../../utils/jwt/jwa'
 import type {} from '../..'
 
 declare module '../..' {
-  interface ContextVariableMap extends JwtVariables {}
+  interface ContextVariableMap extends JwtVariables<unknown> {}
 }
