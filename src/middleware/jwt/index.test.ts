@@ -1,7 +1,8 @@
-import { describe } from 'vitest'
+import { describe, expectTypeOf } from 'vitest'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import { jwt } from '.'
+import type { JwtVariables } from '.'
 
 describe('JWT', () => {
   describe('Credentials in header', () => {
@@ -655,6 +656,34 @@ describe('JWT', () => {
         // @ts-expect-error - intentionally testing without alg option
         jwt({ secret: 'a-secret' })
       }).toThrow('JWT auth middleware requires options for "alg"')
+    })
+  })
+
+  describe('Type tests', () => {
+    it('Should infer correct payload type when JwtVariables<T> is specified', () => {
+      type User = {
+        id: string
+        email: string
+        isAdmin: boolean
+      }
+
+      const app = new Hono<{ Variables: JwtVariables<User> }>()
+
+      app.get('/', (c) => {
+        const payload = c.var.jwtPayload
+        expectTypeOf(payload).toEqualTypeOf<User>()
+        return c.json(payload)
+      })
+    })
+
+    it('Should infer unknown when JwtVariables is used without type parameter in Variables', () => {
+      const app = new Hono<{ Variables: JwtVariables }>()
+
+      app.get('/', (c) => {
+        const payload = c.var.jwtPayload
+        expectTypeOf(payload).toEqualTypeOf<any>()
+        return c.json(payload)
+      })
     })
   })
 })
