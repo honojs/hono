@@ -46,11 +46,9 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result[0].params).toEqual({
         a: '1',
-        b: '"2"',
-
+        b: '2',
         c: "'3'",
-        d: '"semi;colon"',
-        e: '"nested"quoted""',
+        d: 'semi;colon',
       })
     })
 
@@ -106,6 +104,28 @@ describe('parseAccept Comprehensive Tests', () => {
       expect(result.map((x) => x.type)).toEqual(['b', 'a'])
     })
 
+    test('handles comma inside quoted parameter value', () => {
+      const header = 'text/plain;meta="a,b";q=0.8,application/json;q=0.7'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a,b',
+            q: '0.8',
+          },
+          q: 0.8,
+        },
+        {
+          type: 'application/json',
+          params: {
+            q: '0.7',
+          },
+          q: 0.7,
+        },
+      ])
+    })
+
     test('handles escaped quote and semicolon inside quoted parameter', () => {
       const header = 'text/plain;meta="a\\\";b";q=0.5'
       const result = parseAccept(header)
@@ -113,7 +133,7 @@ describe('parseAccept Comprehensive Tests', () => {
         {
           type: 'text/plain',
           params: {
-            meta: '"a\\";b"',
+            meta: 'a";b',
             q: '0.5',
           },
           q: 0.5,
@@ -128,7 +148,7 @@ describe('parseAccept Comprehensive Tests', () => {
         {
           type: 'text/plain',
           params: {
-            meta: '"a\\\\z;c"',
+            meta: 'a\\z;c',
             q: '0.3',
           },
           q: 0.3,

@@ -14,7 +14,10 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
     return []
   }
 
-  const acceptValues = acceptHeader.split(',').map((value, index) => ({ value, index }))
+  const acceptValues = splitByDelimiterOutsideQuotes(acceptHeader, ',').map((value, index) => ({
+    value,
+    index,
+  }))
 
   return acceptValues
     .map(parseAcceptValue)
@@ -23,7 +26,7 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
     .map(({ type, params, q }) => ({ type, params, q }))
 }
 
-const splitBySemicolon = (value: string): string[] => {
+const splitByDelimiterOutsideQuotes = (value: string, delimiter: string): string[] => {
   const parts: string[] = []
   let current = ''
   let inQuotes = false
@@ -50,7 +53,7 @@ const splitBySemicolon = (value: string): string[] => {
       continue
     }
 
-    if (char === ';' && !inQuotes) {
+    if (char === delimiter && !inQuotes) {
       parts.push(current)
       current = ''
       continue
@@ -64,7 +67,7 @@ const splitBySemicolon = (value: string): string[] => {
 }
 
 const parseAcceptValue = ({ value, index }: { value: string; index: number }) => {
-  const parts = splitBySemicolon(value.trim()).map((s) => s.trim())
+  const parts = splitByDelimiterOutsideQuotes(value.trim(), ';').map((s) => s.trim())
   const type = parts[0]
   if (!type) {
     return null
@@ -78,12 +81,60 @@ const parseAcceptValue = ({ value, index }: { value: string; index: number }) =>
 
 const parseParams = (paramParts: string[]): Record<string, string> => {
   return paramParts.reduce<Record<string, string>>((acc, param) => {
-    const [key, val] = param.split('=').map((s) => s.trim())
-    if (key && val) {
+    const separatorIndex = param.indexOf('=')
+    if (separatorIndex <= 0) {
+      return acc
+    }
+
+    const key = param.slice(0, separatorIndex).trim()
+    const rawVal = param.slice(separatorIndex + 1).trim()
+    if (!key || !rawVal) {
+      return acc
+    }
+
+    const val = parseParamValue(rawVal)
+    if (val !== null) {
       acc[key] = val
     }
+
     return acc
   }, {})
+}
+
+const parseParamValue = (value: string): string | null => {
+  if (value[0] !== '"') {
+    return value.includes('=') ? null : value
+  }
+
+  return parseQuotedString(value)
+}
+
+const parseQuotedString = (value: string): string | null => {
+  let unescaped = ''
+  let escaped = false
+
+  for (let i = 1; i < value.length; i++) {
+    const char = value[i]
+
+    if (escaped) {
+      unescaped += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      return value.slice(i + 1).trim() ? null : unescaped
+    }
+
+    unescaped += char
+  }
+
+  return null
 }
 
 const parseQuality = (qVal?: string): number => {
