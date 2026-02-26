@@ -95,6 +95,8 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
+export declare const HonoSchema: unique symbol
+
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -120,6 +122,9 @@ class Hono<
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private _basePath: string = '/'
   #path: string = '/'
+
+  /** @internal */
+  declare readonly [HonoSchema]: S
 
   routes: RouterRoute[] = []
 

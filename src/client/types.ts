@@ -308,14 +308,11 @@ type PathToChain<
         >
       }
 
+type ClientFromSchema<S extends Schema, Prefix extends string> =
+  S extends Record<infer K, Schema> ? (K extends string ? PathToChain<Prefix, K, S> : never) : never
+
 export type Client<T, Prefix extends string> =
-  T extends HonoBase<any, infer S, any>
-    ? S extends Record<infer K, Schema>
-      ? K extends string
-        ? PathToChain<Prefix, K, S>
-        : never
-      : never
-    : never
+  T extends HonoBase<any, infer S, any> ? ClientFromSchema<S, Prefix> : never
 
 export type Callback = (opts: CallbackOptions) => unknown
 
