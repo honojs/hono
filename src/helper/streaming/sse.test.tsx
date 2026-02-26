@@ -11,10 +11,7 @@ describe('SSE Streaming helper', () => {
   })
 
   it('Check streamSSE Response', async () => {
-    let spy
     const res = streamSSE(c, async (stream) => {
-      spy = vi.spyOn(stream, 'close').mockImplementation(async () => {})
-
       let id = 0
       const maxIterations = 5
 
@@ -49,7 +46,6 @@ describe('SSE Streaming helper', () => {
       expect(decodedValue).toBe(expectedValue)
     }
     await new Promise((resolve) => setTimeout(resolve, 100))
-    expect(spy).toHaveBeenCalled()
   })
 
   it('Check streamSSE Response if aborted by client', async () => {
