@@ -881,4 +881,138 @@ d.replaceWith(c.content)
       )
     })
   })
+
+  it('should not throw ERR_INVALID_STATE when reader is cancelled during nested Suspense streaming', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    try {
+      const SubContent = () => {
+        const content = new Promise<HtmlEscapedString>((resolve) =>
+          setTimeout(() => resolve(<h2>World</h2>), 50)
+        )
+        return content
+      }
+
+      const Content = () => {
+        const content = new Promise<HtmlEscapedString>((resolve) =>
+          setTimeout(
+            () =>
+              resolve(
+                <>
+                  <h1>Hello</h1>
+                  <Suspense fallback={<p>Loading sub...</p>}>
+                    <SubContent />
+                  </Suspense>
+                </>
+              ),
+            20
+          )
+        )
+        return content
+      }
+
+      const onError = vi.fn()
+      const stream = renderToReadableStream(
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>,
+        onError
+      )
+
+      const reader = stream.getReader()
+      const firstChunk = await reader.read()
+      expect(firstChunk.done).toBe(false)
+
+      // Simulate client disconnect
+      await reader.cancel()
+
+      // Wait for nested Suspense callbacks to fire against the closed controller
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      expect(unhandled).toHaveLength(0)
+    } finally {
+      process.off('unhandledRejection', onRejection)
+      suspenseCounter++
+    }
+  })
+
+  it('should not call onError when reader is cancelled during a slow callback resolution', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    try {
+      let signalCallbackStarted!: () => void
+      const callbackStarted = new Promise<void>((r) => {
+        signalCallbackStarted = r
+      })
+
+      const Content = () => {
+        return new Promise<HtmlEscapedString>((resolve) => {
+          setTimeout(() => {
+            const html = raw('<p>content</p>', [
+              ((opts: any) => {
+                if (opts.phase === HtmlEscapedCallbackPhase.BeforeStream) {
+                  signalCallbackStarted()
+                  return new Promise<string>((r) => setTimeout(() => r(''), 50))
+                }
+                return undefined
+              }) as any,
+            ])
+            resolve(html as unknown as HtmlEscapedString)
+          }, 10)
+        })
+      }
+
+      const onError = vi.fn()
+      const stream = renderToReadableStream(
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>,
+        onError
+      )
+
+      const reader = stream.getReader()
+      await reader.read()
+
+      await callbackStarted
+      await reader.cancel()
+
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      expect(onError).not.toHaveBeenCalled()
+      expect(unhandled).toHaveLength(0)
+    } finally {
+      process.off('unhandledRejection', onRejection)
+      suspenseCounter++
+    }
+  })
+
+  it('should not throw when cancelled before initial content resolves', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    try {
+      const onError = vi.fn()
+      const stream = renderToReadableStream(
+        new Promise<HtmlEscapedString>((resolve) =>
+          setTimeout(() => resolve(raw('<p>slow content</p>') as HtmlEscapedString), 50)
+        ),
+        onError
+      )
+
+      const reader = stream.getReader()
+      await reader.cancel()
+
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      expect(onError).not.toHaveBeenCalled()
+      expect(unhandled).toHaveLength(0)
+    } finally {
+      process.off('unhandledRejection', onRejection)
+    }
+  })
 })

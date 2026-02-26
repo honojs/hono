@@ -143,6 +143,7 @@ export const renderToReadableStream = (
   content: HtmlEscapedString | JSXNode | Promise<HtmlEscapedString>,
   onError: (e: unknown) => string | void = console.trace
 ): ReadableStream<Uint8Array> => {
+  let cancelled = false
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
@@ -157,6 +158,9 @@ export const renderToReadableStream = (
           true,
           context
         )
+        if (cancelled) {
+          return
+        }
         controller.enqueue(textEncoder.encode(resolved))
 
         let resolvedCount = 0
@@ -182,7 +186,9 @@ export const renderToReadableStream = (
                   .filter<Promise<string>>(Boolean as any)
                   .forEach(then)
                 resolvedCount++
-                controller.enqueue(textEncoder.encode(res))
+                if (!cancelled) {
+                  controller.enqueue(textEncoder.encode(res))
+                }
               })
           )
         }
@@ -199,7 +205,12 @@ export const renderToReadableStream = (
         onError(e)
       }
 
-      controller.close()
+      if (!cancelled) {
+        controller.close()
+      }
+    },
+    cancel() {
+      cancelled = true
     },
   })
   return reader
