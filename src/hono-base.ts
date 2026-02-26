@@ -253,6 +253,23 @@ class Hono<
   }
 
   /**
+   * `.getBasePath()` returns the current base path of the Hono instance.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#base-path}
+   *
+   * @returns {string} the current base path
+   *
+   * @example
+   * ```ts
+   * const app = new Hono().basePath('/api')
+   * app.getBasePath() // returns '/api'
+   * ```
+   */
+  getBasePath(): string {
+    return this._basePath
+  }
+
+  /**
    * `.onError()` handles an error and returns a customized Response.
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
