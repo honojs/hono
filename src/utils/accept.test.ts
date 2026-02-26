@@ -46,11 +46,9 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result[0].params).toEqual({
         a: '1',
-        b: '"2"',
-
+        b: '2',
         c: "'3'",
-        d: '"semi;colon"',
-        e: '"nested"quoted""',
+        d: 'semi;colon',
       })
     })
 
@@ -105,6 +103,58 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result.map((x) => x.type)).toEqual(['b', 'a'])
     })
+
+    test('handles comma inside quoted parameter value', () => {
+      const header = 'text/plain;meta="a,b";q=0.8,application/json;q=0.7'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a,b',
+            q: '0.8',
+          },
+          q: 0.8,
+        },
+        {
+          type: 'application/json',
+          params: {
+            q: '0.7',
+          },
+          q: 0.7,
+        },
+      ])
+    })
+
+    test('handles escaped quote and semicolon inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\";b";q=0.5'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a";b',
+            q: '0.5',
+          },
+          q: 0.5,
+        },
+      ])
+    })
+
+    test('handles escaped character inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\\z;c";q=0.3'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a\\z;c',
+            q: '0.3',
+          },
+          q: 0.3,
+        },
+      ])
+    })
   })
 
   describe('Security Cases', () => {
@@ -119,6 +169,12 @@ describe('parseAccept Comprehensive Tests', () => {
       headers.forEach((header) => {
         expect(() => parseAccept(header)).not.toThrow()
       })
+    })
+
+    test('handles many semicolons with an unbalanced quote', () => {
+      const header = `text/plain;${'a;'.repeat(8000)}"`
+      const result = parseAccept(header)
+      expect(result[0].type).toBe('text/plain')
     })
 
     test('handles extremely large input', () => {
