@@ -219,6 +219,8 @@ export const verifyWithJwks = async (
     throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms)
   }
 
+  let verifyKeys = options.keys ? [...options.keys] : undefined
+
   if (options.jwks_uri) {
     const response = await fetch(options.jwks_uri, init)
     if (!response.ok) {
@@ -231,16 +233,13 @@ export const verifyWithJwks = async (
     if (!Array.isArray(data.keys)) {
       throw new Error('invalid JWKS response. "keys" field is not an array')
     }
-    if (options.keys) {
-      options.keys.push(...data.keys)
-    } else {
-      options.keys = data.keys
-    }
-  } else if (!options.keys) {
+    verifyKeys ??= []
+    verifyKeys.push(...(data.keys as HonoJsonWebKey[]))
+  } else if (!verifyKeys) {
     throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
-  const matchingKey = options.keys.find((key) => key.kid === header.kid)
+  const matchingKey = verifyKeys.find((key) => key.kid === header.kid)
   if (!matchingKey) {
     throw new JwtTokenInvalid(token)
   }
