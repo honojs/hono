@@ -230,6 +230,11 @@
       "import": "./dist/middleware/logger/index.js",
       "require": "./dist/cjs/middleware/logger/index.js"
     },
+    "./method-not-allowed": {
+      "types": "./dist/types/middleware/method-not-allowed/index.d.ts",
+      "import": "./dist/middleware/method-not-allowed/index.js",
+      "require": "./dist/cjs/middleware/method-not-allowed/index.js"
+    },
     "./method-override": {
       "types": "./dist/types/middleware/method-override/index.d.ts",
       "import": "./dist/middleware/method-override/index.js",
@@ -517,6 +522,9 @@
       ],
       "logger": [
         "./dist/types/middleware/logger"
+      ],
+      "method-not-allowed": [
+        "./dist/types/middleware/method-not-allowed"
       ],
       "method-override": [
         "./dist/types/middleware/method-override"
