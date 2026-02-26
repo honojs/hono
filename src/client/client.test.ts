@@ -610,6 +610,93 @@ describe('Infer the response/request type', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
 
+    it('Should infer response type with Promise.then in arrow expression', () => {
+      const route = new Hono().get('/', (c) =>
+        Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferResponseType<typeof req>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
+    })
+
+    it('Should infer response type for post handler with Promise.then', () => {
+      const route = new Hono().post('/', (c) =>
+        Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$post
+
+      type Actual = InferResponseType<typeof req>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
+    })
+
+    it('Should infer response type for on handler with Promise.then', () => {
+      const route = new Hono().on('GET', '/', (c) =>
+        Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferResponseType<typeof req>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
+    })
+
+    it('Should infer response type with mixed handlers and Promise.then', () => {
+      const route = new Hono().post(
+        '/',
+        async (_c, next) => {
+          await next()
+        },
+        async (_c, next) => {
+          await next()
+        },
+        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$post
+
+      type Actual = InferResponseType<typeof req>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
+    })
+
+    it('Should infer response type with mixed on handlers and Promise.then', () => {
+      const route = new Hono().on(
+        'GET',
+        '/',
+        async (_c, next) => {
+          await next()
+        },
+        (c) => Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+      )
+      type AppType = typeof route
+
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferResponseType<typeof req>
+      type verify = Expect<
+        Actual extends { hello: string } ? ({ hello: string } extends Actual ? true : false) : false
+      >
+    })
+
     it('Should infer request type the type correctly', () => {
       const client = hc<AppType>('/')
       const req = client.index.$get
