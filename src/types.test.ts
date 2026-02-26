@@ -1992,6 +1992,31 @@ describe('Env types with validator as first middleware - test only types', () =>
   })
 })
 
+// https://github.com/honojs/hono/issues/4773
+describe('c.req.valid() in non-last handler after validator middleware - test only types', () => {
+  it('Should not throw a type error', () => {
+    const app = new Hono()
+    app.get(
+      '/',
+      validator('query', () => {
+        return {
+          test: 'hello',
+        }
+      }),
+      async (c, next) => {
+        const { test } = c.req.valid('query')
+        expectTypeOf(test).toEqualTypeOf<string>()
+        await next()
+      },
+      async (c) => {
+        const { test } = c.req.valid('query')
+        expectTypeOf(test).toEqualTypeOf<string>()
+        return c.json({ ok: true })
+      }
+    )
+  })
+})
+
 describe('Env types with `use` middleware - test only types', () => {
   const app = new Hono()
 
