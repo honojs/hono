@@ -140,6 +140,6 @@ export const setSignedCookie = async (
 
 export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {
   const deletedCookie = getCookie(c, name, opt?.prefix)
-  setCookie(c, name, '', { ...opt, maxAge: 0 })
+  setCookie(c, name, '', { ...opt, maxAge: 0, expires: new Date(0) })
   return deletedCookie
 }

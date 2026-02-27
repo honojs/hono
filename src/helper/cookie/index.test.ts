@@ -391,7 +391,7 @@ describe('Cookie Middleware', () => {
       const res2 = await app.request('http://localhost/delete-cookie')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0; Path=/')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT')
     })
 
     app.get('/delete-cookie-multiple', (c) => {
@@ -405,7 +405,7 @@ describe('Cookie Middleware', () => {
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
       expect(header2).toBe(
-        'delicious_cookie=; Max-Age=0; Path=/, delicious_cookie2=; Max-Age=0; Path=/'
+        'delicious_cookie=; Max-Age=0; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT, delicious_cookie2=; Max-Age=0; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
       )
     })
 
@@ -422,7 +422,9 @@ describe('Cookie Middleware', () => {
       const res2 = await app.request('http://localhost/delete-cookie-with-options')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+      expect(header2).toBe(
+        'delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure'
+      )
     })
 
     app.get('/delete-cookie-with-deleted-value', (c) => {
