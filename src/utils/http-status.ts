@@ -41,6 +41,8 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
 
 /**
  * `UnofficialStatusCode` can be used to specify an unofficial status code.
+ * Internally this uses a sentinel literal (`-1`) only to force explicit casts
+ * for unofficial numeric status codes such as `520`.
  * @example
  *
  * ```ts
@@ -49,7 +51,8 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
  * })
  * ```
  */
-export type UnofficialStatusCode = -1
+type UnofficialStatusCodeSentinel = -1
+export type UnofficialStatusCode = UnofficialStatusCodeSentinel
 
 /**
  * @deprecated

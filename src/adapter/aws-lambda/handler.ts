@@ -113,6 +113,11 @@ export type APIGatewayProxyResult = {
   isBase64Encoded: boolean
 } & (WithHeaders | WithMultiValueHeaders)
 
+type LambdaResult<E extends LambdaEvent> = APIGatewayProxyResult &
+  (E extends { multiValueHeaders: Record<string, string[]> }
+    ? WithMultiValueHeaders
+    : WithHeaders)
+
 const getRequestContext = (
   event: LambdaEvent
 ):
@@ -242,14 +247,8 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 ): (<L extends LambdaEvent>(
   event: L,
   lambdaContext?: LambdaContext
-) => Promise<
-  APIGatewayProxyResult &
-    (L extends { multiValueHeaders: Record<string, string[]> }
-      ? WithMultiValueHeaders
-      : WithHeaders)
->) => {
-  // @ts-expect-error FIXME: Fix return typing
-  return async (event, lambdaContext?) => {
+) => Promise<LambdaResult<L>>) => {
+  return async <L extends LambdaEvent>(event: L, lambdaContext?: LambdaContext) => {
     const processor = getProcessor(event)
 
     const req = processor.createRequest(event)
@@ -261,7 +260,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return processor.createResult(event, res, { isContentTypeBinary })
+    return (await processor.createResult(event, res, { isContentTypeBinary })) as LambdaResult<L>
   }
 }
 
