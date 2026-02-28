@@ -1822,4 +1822,25 @@ describe('ApplyGlobalResponse Type Helper', () => {
 
     type verify = Expect<Equal<ResponseType, Expected>>
   })
+
+  it('Should keep route() paths when global responses are applied', () => {
+    const users = new Hono().get('/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
+    const app = new Hono().route('/api', users)
+
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      typeof app,
+      {
+        500: { json: { error: string } }
+      }
+    >
+
+    const client = hc<AppWithGlobalErrors>('http://localhost')
+    const req = client.api.users.$get
+
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string }
+
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+
 })
