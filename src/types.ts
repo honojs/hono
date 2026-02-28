@@ -2320,19 +2320,17 @@ type AddDollar<T extends string> = `$${Lowercase<T>}`
 
 export type MergePath<A extends string, B extends string> = B extends ''
   ? MergePath<A, '/'>
-  : A extends ''
+  : A extends '' | '/'
     ? B
-    : A extends '/'
-      ? B
-      : A extends `${infer P}/`
-        ? B extends `/${infer Q}`
-          ? `${P}/${Q}`
-          : `${P}/${B}`
-        : B extends `/${infer Q}`
-          ? Q extends ''
-            ? A
-            : `${A}/${Q}`
-          : `${A}/${B}`
+    : A extends `${infer P}/`
+      ? B extends `/${infer Q}`
+        ? `${P}/${Q}`
+        : `${P}/${B}`
+      : B extends `/${infer Q}`
+        ? Q extends ''
+          ? A
+          : `${A}/${Q}`
+        : `${A}/${B}`
 
 ////////////////////////////////////////
 //////                            //////
