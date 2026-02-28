@@ -17,6 +17,11 @@ describe('parseAccept Comprehensive Tests', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseAccept(null as any)).toEqual([])
     })
+
+    test('handles whitespace-only header', () => {
+      expect(parseAccept('   ')).toEqual([])
+      expect(parseAccept(' \t\n ')).toEqual([])
+    })
   })
 
   describe('Quality Values', () => {
@@ -154,6 +159,48 @@ describe('parseAccept Comprehensive Tests', () => {
           q: 0.3,
         },
       ])
+    })
+
+    test('skips invalid param without swallowing next media type', () => {
+      const header = 'a;foo, b;q=0.5'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: {}, q: 1 },
+        { type: 'b', params: { q: '0.5' }, q: 0.5 },
+      ])
+    })
+
+    test('skips malformed quoted param tail without creating bogus media type', () => {
+      const header = 'a;foo="x"bar,b'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: {}, q: 1 },
+        { type: 'b', params: {}, q: 1 },
+      ])
+    })
+
+    test('parses params after quoted value with trailing whitespace', () => {
+      const header = 'a;foo="x" ;q=0.5,b;q=0.4'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: { foo: 'x', q: '0.5' }, q: 0.5 },
+        { type: 'b', params: { q: '0.4' }, q: 0.4 },
+      ])
+    })
+
+    test('handles quoted param followed immediately by comma', () => {
+      const header = 'a;foo="x",b'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: { foo: 'x' }, q: 1 },
+        { type: 'b', params: {}, q: 1 },
+      ])
+    })
+
+    test('skips empty media type that starts with semicolon', () => {
+      const header = ';q=0.5,b;q=0.4'
+      const result = parseAccept(header)
+      expect(result).toEqual([{ type: 'b', params: { q: '0.4' }, q: 0.4 }])
     })
   })
 
