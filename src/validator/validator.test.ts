@@ -69,8 +69,8 @@ describe('Basic', () => {
       await next()
     },
     validator('query', (value, c) => {
-      type verify = Expect<Equal<Record<string, string | string[]>, typeof value>>
-      if (!value.q) {
+      type verify = Expect<Equal<Record<string, string[]>, typeof value>>
+      if (!value.q || value.q.length === 0) {
         return c.text('Invalid!', 400)
       }
     }),
@@ -684,12 +684,12 @@ describe('Validator middleware with Zod validates query params', () => {
 
   const schema = z.object({
     page: z
-      .string()
+      .array(z.string())
       .refine((v) => {
-        return !isNaN(Number(v))
+        return v.length === 1 && !isNaN(Number(v[0]))
       })
       .transform((v) => {
-        return Number(v)
+        return Number(v[0])
       }),
     tag: z.array(z.string()),
   })
@@ -1003,7 +1003,7 @@ it('`on`', () => {
           }
         } & {
           query: {
-            q: string | string[]
+            q: string[]
           }
         }
         output: {
@@ -1279,7 +1279,7 @@ describe('Transform', () => {
         $get: {
           input: {
             query: {
-              page: string | string[]
+              page: string[]
             }
           }
           output: {
@@ -1326,7 +1326,7 @@ describe('Transform', () => {
         $get: {
           input: {
             query: {
-              page: string | string[]
+              page: string[]
               orderBy: 'asc' | 'desc'
               ordreByWithdefault?: 'asc' | 'desc' | undefined
             }
