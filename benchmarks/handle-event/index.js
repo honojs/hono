@@ -1,4 +1,4 @@
-import Benchmark from 'benchmark'
+import { bench, group, run } from 'mitata'
 import { makeEdgeEnv } from 'edge-mock'
 import { Router as IttyRouter } from 'itty-router'
 import { Request, Response } from 'node-fetch'
@@ -114,7 +114,7 @@ makeEdgeEnv()
 // eslint-disable-next-line no-undef
 const event = new FetchEvent('fetch', { request })
 
-const fn = async () => {
+const prepare = async () => {
   let res = await hono.fetch(event.request)
   console.log(await res.text())
   res = await ittyRouter.handle(event.request)
@@ -124,27 +124,22 @@ const fn = async () => {
   res = await worktopRouter.run(event)
   console.log(await res.text())
 }
-fn()
 
-const suite = new Benchmark.Suite()
+prepare()
 
-suite
-  .add('Hono', async () => {
+group(() => {
+  bench('Hono', async () => {
     await hono.fetch(event.request)
   })
-  .add('itty-router', async () => {
+  bench('itty-router', async () => {
     await ittyRouter.handle(event.request)
   })
-  .add('sunder', async () => {
+  bench('sunder', async () => {
     await sunderApp.handle(event)
   })
-  .add('worktop', async () => {
+  bench('worktop', async () => {
     await worktopRouter.run(event)
   })
-  .on('cycle', (event) => {
-    console.log(String(event.target))
-  })
-  .on('complete', function () {
-    console.log(`Fastest is ${this.filter('fastest').map('name')}`)
-  })
-  .run({ async: true })
+})
+
+run()
