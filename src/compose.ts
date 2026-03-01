@@ -64,7 +64,7 @@ export const compose = <E extends Env = Env>(
         }
       }
 
-      if (res && (context.finalized === false || isError)) {
+      if (res && (context.finalized === false || isError || context.error)) {
         context.res = res
       }
       return context
