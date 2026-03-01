@@ -330,7 +330,7 @@ export class Context<
    * })
    * ```
    */
-  error: Error | undefined
+  error: unknown | undefined
 
   #status: StatusCode | undefined
   #executionCtx: FetchEventLike | ExecutionContext | undefined

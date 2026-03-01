@@ -1,5 +1,5 @@
 import type { Context } from './context'
-import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
+import type { Env, ErrorHandler, UnknownErrorHandler, Next, NotFoundHandler } from './types'
 
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
@@ -15,6 +15,7 @@ import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
 export const compose = <E extends Env = Env>(
   middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
+  onUnknownError?: UnknownErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ): ((context: Context, next?: Next) => Promise<Context>) => {
   return (context, next) => {
@@ -50,9 +51,12 @@ export const compose = <E extends Env = Env>(
         try {
           res = await handler(context, () => dispatch(i + 1))
         } catch (err) {
+          context.error = err
           if (err instanceof Error && onError) {
-            context.error = err
             res = await onError(err, context)
+            isError = true
+          } else if (onUnknownError) {
+            res = await onUnknownError(err, context)
             isError = true
           } else {
             throw err
