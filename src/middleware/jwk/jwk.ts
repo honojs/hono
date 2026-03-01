@@ -17,6 +17,34 @@ import type { VerifyOptions } from '../../utils/jwt/jwt'
 /**
  * JWK Auth Middleware for Hono.
  *
+ * This middleware handles JWT validation using JSON Web Keys (JWKs). Here's what you need to know
+ * about what gets validated automatically and what you'll need to handle in your application code.
+ *
+ * ## What the middleware validates automatically:
+ *
+ * The middleware takes care of these validations out of the box:
+ * - **Token structure** - Makes sure your JWT has the correct format (header.payload.signature)
+ * - **Signature verification** - Validates the cryptographic signature using the JWK that matches the `kid` in the token header
+ * - **Token expiration (`exp`)** - Checks that the token hasn't expired (enabled by default, but you can disable it)
+ * - **Not before (`nbf`)** - Ensures the token isn't being used before it's valid (also on by default)
+ * - **Issued at (`iat`)** - Verifies the token wasn't issued in the future (yep, enabled by default too)
+ * - **Header checks** - Validates that `alg` is supported, `typ` is 'JWT' (when present), and `kid` exists and matches a key
+ *
+ * ## Optional validations (you need to configure these):
+ *
+ * These aren't checked unless you explicitly provide them in the options:
+ * - **Issuer (`iss`)** - Set `verification.iss` to validate who issued the token (can be a string or RegExp)
+ * - **Audience (`aud`)** - Set `verification.aud` to verify the intended recipient (string, array, or RegExp)
+ *
+ * ## What YOU need to validate yourself:
+ *
+ * Important: The middleware only handles authentication (verifying the token is valid). 
+ * Authorization is your responsibility! You'll need to check:
+ * - Custom claims like `roles`, `permissions`, `scope`, `user_id`, etc.
+ * - Whether the user actually has permission to access the resource
+ * - Token revocation status (if your auth system supports it)
+ * - Rate limiting per user/token if needed
+ *
  * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
  *
  * @param {object} options - The options for the JWK middleware.
@@ -28,20 +56,67 @@ import type { VerifyOptions } from '../../utils/jwt/jwt'
  * @param {AsymmetricAlgorithm[]} options.alg - An array of allowed asymmetric algorithms for JWT verification. Only tokens signed with these algorithms will be accepted.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
+ * @param {string|RegExp} [options.verification.iss] - Expected issuer value to validate against the `iss` claim.
+ * @param {string|string[]|RegExp} [options.verification.aud] - Expected audience(s) to validate against the `aud` claim.
+ * @param {boolean} [options.verification.exp=true] - Set to false to skip expiration validation. Default: true
+ * @param {boolean} [options.verification.nbf=true] - Set to false to skip not-before validation. Default: true
+ * @param {boolean} [options.verification.iat=true] - Set to false to skip issued-at validation. Default: true
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
+ * // Basic example - the middleware will validate signature, exp, nbf, and iat
  * const app = new Hono()
  *
- * app.use("/auth/*", jwk({
- *   jwks_uri: (c) => `https://${c.env.authServer}/.well-known/jwks.json`,
- *   headerName: 'x-custom-auth-header', // Optional, default is 'Authorization'
+ * app.use('/auth/*', jwk({
+ *   jwks_uri: 'https://your-auth-server.com/.well-known/jwks.json'
  * }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
  * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Adding issuer and audience validation
+ * app.use('/api/*', jwk({
+ *   jwks_uri: 'https://your-auth-server.com/.well-known/jwks.json',
+ *   verification: {
+ *     iss: 'https://your-auth-server.com',
+ *     aud: 'your-api-identifier'
+ *   }
+ * }))
+ * ```
+ *
+ * @example
+ * ```ts
+ * // How to check custom claims like roles or permissions
+ * app.use('/admin/*', jwk({
+ *   jwks_uri: 'https://your-auth-server.com/.well-known/jwks.json'
+ * }))
+ *
+ * app.get('/admin/dashboard', (c) => {
+ *   const payload = c.get('jwtPayload')
+ *
+ *   // The middleware doesn't validate custom claims - you need to do this yourself
+ *   if (!payload.roles || !payload.roles.includes('admin')) {
+ *     throw new HTTPException(403, { message: 'Forbidden: Admin role required' })
+ *   }
+ *
+ *   return c.json({ message: 'Welcome, admin!' })
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // You can also use dynamic JWKS URIs based on the request context
+ * app.use('/tenant/:tenant/*', jwk({
+ *   jwks_uri: (c) => {
+ *     const tenant = c.req.param('tenant')
+ *     return `https://${tenant}.auth.example.com/.well-known/jwks.json`
+ *   }
+ * }))
  * ```
  */
 
