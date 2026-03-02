@@ -43,7 +43,7 @@ describe('hono testClient', () => {
   // Issue #3170: testClient should consider status codes from middlewares
   it('Should allow testing middleware status codes (Issue #3170)', async () => {
     const app = new Hono()
-    
+
     const myMiddleware = () => {
       return async (c: any, next: Function) => {
         const random = Math.random()
@@ -54,13 +54,13 @@ describe('hono testClient', () => {
         return next()
       }
     }
-    
+
     const route = app.use(myMiddleware()).get('/', async (c) => {
       return c.json({ message: 'Hello, World!' }, 200)
     })
-    
+
     const res = await testClient(route).index.$get()
-    
+
     // Should allow testing both 500 and 200 status codes
     // This test verifies that TypeScript doesn't error on status code 500
     expect([200, 500]).toContain(res.status)
