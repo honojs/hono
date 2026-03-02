@@ -1842,5 +1842,4 @@ describe('ApplyGlobalResponse Type Helper', () => {
 
     type verify = Expect<Equal<ResponseType, Expected>>
   })
-
 })
