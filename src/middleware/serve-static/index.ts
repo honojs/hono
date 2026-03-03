@@ -7,6 +7,7 @@ import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getMimeType } from '../../utils/mime'
+import { tryDecodeURI } from '../../utils/url'
 import { defaultJoin } from './path'
 
 export type ServeStaticOptions<E extends Env = Env> = {
@@ -62,7 +63,7 @@ export const serveStatic = <E extends Env = Env>(
       filename = options.path
     } else {
       try {
-        filename = decodeURIComponent(c.req.path)
+        filename = tryDecodeURI(c.req.path)
         if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
           throw new Error()
         }
