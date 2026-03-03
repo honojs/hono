@@ -101,7 +101,7 @@ export const tryDecode = (str: string, decoder: Decoder): string => {
  * tryDecodeURI('Hello%20World') // 'Hello World'
  * tryDecodeURI('Hello%20World/%A4%A2') // 'Hello World/%A4%A2'
  */
-export const tryDecodeURI = (str: string) => tryDecode(str, decodeURI)
+export const tryDecodeURI = (str: string): string => tryDecode(str, decodeURI)
 
 export const getPath = (request: Request): string => {
   const url = request.url
