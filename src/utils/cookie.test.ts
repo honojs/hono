@@ -270,6 +270,30 @@ describe('Set cookie', () => {
     }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
 
+  it('Should throw Error cookie with domain or path containing ";", "\\r", or "\\n"', () => {
+    // domain
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com;evil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com\revil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com\nevil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+
+    // path
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/;evil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/\revil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/\nevil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+  })
+
   it('Should serialize cookie with lowercase priority values', () => {
     const lowSerialized = serialize('test_cookie', 'value', {
       priority: 'low',

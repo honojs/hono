@@ -161,6 +161,12 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     }
   }
 
+  for (const key of ['domain', 'path'] as (keyof CookieOptions)[]) {
+    if (opt[key] && /[;\r\n]/.test(opt[key] as string)) {
+      throw new Error(`${key} must not contain ";", "\\r", or "\\n"`)
+    }
+  }
+
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     if (opt.maxAge > 34560000) {
       // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
