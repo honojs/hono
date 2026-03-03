@@ -24,6 +24,12 @@ export class SSEStreamingApi extends StreamingApi {
       })
       .join('\n')
 
+    for (const key of ['event', 'id', 'retry'] as (keyof SSEMessage)[]) {
+      if (message[key] && /[\r\n]/.test(message[key] as string)) {
+        throw new Error(`${key} must not contain "\\r" or "\\n"`)
+      }
+    }
+
     const sseData =
       [
         message.event && `event: ${message.event}`,
