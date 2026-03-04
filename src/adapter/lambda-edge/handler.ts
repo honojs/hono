@@ -121,10 +121,7 @@ export const handle = (
   context?: CloudFrontContext,
   callback?: Callback
 ) => Promise<CloudFrontResult>) => {
-  return async (
-    event,
-    ...args: [context?: CloudFrontContext, callback?: Callback]
-  ) => {
+  return async (event, ...args: [context?: CloudFrontContext, callback?: Callback]) => {
     const [context, callback] = args
     const res = await app.fetch(createRequest(event), {
       event,
