@@ -6,7 +6,7 @@ import { getRouterName, inspectRoutes, showRoutes } from '.'
 const namedMiddleware: MiddlewareHandler = (_, next) => next()
 const namedHandler: Handler = (c) => c.text('hi')
 const app = new Hono()
-  .use('*', (c, next) => next())
+  .use('*', (_c, next) => next())
   .get(
     '/',
     (_, next) => next(),

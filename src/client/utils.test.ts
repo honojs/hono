@@ -165,7 +165,7 @@ describe('deepMerge', () => {
 })
 
 describe('parseResponse', async () => {
-  const app = new Hono()
+  const _app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
     .get('/might-error-json', (c) => {
@@ -196,7 +196,7 @@ describe('parseResponse', async () => {
       return c.body(new TextEncoder().encode('hono'))
     })
 
-  const client = hc<typeof app>('http://localhost')
+  const client = hc<typeof _app>('http://localhost')
 
   const server = setupServer(
     http.get('http://localhost/text', () => {

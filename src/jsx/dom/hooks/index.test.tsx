@@ -132,7 +132,7 @@ describe('Hooks', () => {
       const formPromise = new Promise<void>((r) => (formResolve = r))
       const App = () => {
         const [count, setCount] = useState(0)
-        const [optimisticCount, setOptimisticCount] = useOptimistic(count, (c, n: number) => n)
+        const [optimisticCount, setOptimisticCount] = useOptimistic(count, (_c, n: number) => n)
         const action = useCallback(async () => {
           setOptimisticCount(count + 1)
           await formPromise
