@@ -257,36 +257,30 @@ export const verifyWithJwks = async (
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      throw new JwtTokenInvalid(token)
-    }
     const header = decodeJwtPart(parts[0]) as TokenHeader
     const payload = decodeJwtPart(parts[1]) as JWTPayload
     return {
       header,
       payload,
     }
-  } catch (e) {
-    if (e instanceof JwtTokenInvalid) {
-      throw e
-    }
+  } catch {
     throw new JwtTokenInvalid(token)
   }
 }
 
 export const decodeHeader = (token: string): TokenHeader => {
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      throw new JwtTokenInvalid(token)
-    }
     return decodeJwtPart(parts[0]) as TokenHeader
-  } catch (e) {
-    if (e instanceof JwtTokenInvalid) {
-      throw e
-    }
+  } catch {
     throw new JwtTokenInvalid(token)
   }
 }
