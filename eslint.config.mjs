@@ -1,4 +1,5 @@
 import baseConfig from '@hono/eslint-config'
+import { defineConfig, globalIgnores } from 'eslint/config'
 
 // Disable all TypeScript rules that require type information
 const typeCheckedRules = {
@@ -18,6 +19,7 @@ const typeCheckedRules = {
   '@typescript-eslint/no-unnecessary-template-expression': 'off',
   '@typescript-eslint/no-unnecessary-type-arguments': 'off',
   '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+  "@typescript-eslint/no-unnecessary-type-conversion": 'off',
   '@typescript-eslint/no-unsafe-argument': 'off',
   '@typescript-eslint/no-unsafe-assignment': 'off',
   '@typescript-eslint/no-unsafe-call': 'off',
@@ -58,6 +60,7 @@ const typeCheckedRules = {
   '@typescript-eslint/no-non-null-assertion': 'off',
   '@typescript-eslint/no-unnecessary-type-parameters': 'off',
   '@typescript-eslint/no-useless-constructor': 'off',
+  "@typescript-eslint/no-useless-default-assignment": 'off',
   '@typescript-eslint/non-nullable-type-assertion-style': 'off',
   '@typescript-eslint/prefer-for-of': 'off',
   '@typescript-eslint/prefer-function-type': 'off',
@@ -67,9 +70,11 @@ const typeCheckedRules = {
   '@typescript-eslint/no-extraneous-class': 'off',
 }
 
-export default [
-  ...baseConfig,
-  {
-    rules: typeCheckedRules,
+export default defineConfig(globalIgnores(['.wrangler', '**/coverage', '**/dist']), {
+  extends: baseConfig,
+  linterOptions: {
+    reportUnusedDisableDirectives: 'error',
+    reportUnusedInlineConfigs: 'error',
   },
-]
+  rules: typeCheckedRules,
+})

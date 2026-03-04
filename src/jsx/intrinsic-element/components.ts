@@ -83,7 +83,6 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
     return returnWithoutSpecialBehavior(tag, children, props)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let { precedence, blocking, ...restProps } = props
   precedence = sort ? (precedence ?? '') : undefined
   if (sort) {

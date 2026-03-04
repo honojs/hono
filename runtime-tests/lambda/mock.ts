@@ -17,7 +17,7 @@ type StreamifyResponseHandler = (
 const mockStreamifyResponse: StreamifyResponseHandler = (handlerFunc) => {
   return async (event, context) => {
     const mockWritableStream: NodeJS.WritableStream = new (require('stream').Writable)({
-      write(chunk, encoding, callback) {
+      write(chunk, _encoding, callback) {
         console.log('Writing chunk:', chunk.toString())
         callback()
       },

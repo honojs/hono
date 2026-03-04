@@ -371,7 +371,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
     return result
   }
 
-  setCookies(event: E, res: Response, result: APIGatewayProxyResult) {
+  setCookies(_event: E, res: Response, result: APIGatewayProxyResult) {
     if (res.headers.has('set-cookie')) {
       const cookies = res.headers.getSetCookie
         ? res.headers.getSetCookie()

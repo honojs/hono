@@ -149,7 +149,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
 
   it('Should return the Pages response if the middleware does not return a response', async () => {
     const request = new Request('http://localhost/api/foo')
-    const handler = handleMiddleware((c, next) => next())
+    const handler = handleMiddleware((_c, next) => next())
 
     const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
     const eventContext = createEventContext({ request, next })
@@ -179,7 +179,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
 
   it('Should handle an HTTPException thrown by next()', async () => {
     const request = new Request('http://localhost/api/foo')
-    const handler = handleMiddleware((c, next) => next())
+    const handler = handleMiddleware((_c, next) => next())
 
     const next = vi
       .fn()
@@ -194,7 +194,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
 
   it('Should handle an Error thrown by next()', async () => {
     const request = new Request('http://localhost/api/foo')
-    const handler = handleMiddleware((c, next) => next())
+    const handler = handleMiddleware((_c, next) => next())
 
     const next = vi.fn().mockRejectedValue(new Error('Error from next()'))
     const eventContext = createEventContext({ request, next })
@@ -204,7 +204,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
 
   it('Should handle a non-Error thrown by next()', async () => {
     const request = new Request('http://localhost/api/foo')
-    const handler = handleMiddleware((c, next) => next())
+    const handler = handleMiddleware((_c, next) => next())
 
     const next = vi.fn().mockRejectedValue('Error from next()')
     const eventContext = createEventContext({ request, next })

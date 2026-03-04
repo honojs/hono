@@ -18,7 +18,7 @@ const mockStreamifyResponse: StreamifyResponseHandler = (handlerFunc) => {
   return async (event, context) => {
     const chunks = []
     const mockWritableStream = new Writable({
-      write(chunk, encoding, callback) {
+      write(chunk, _encoding, callback) {
         chunks.push(chunk)
         callback()
       },
