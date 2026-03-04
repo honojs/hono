@@ -523,7 +523,7 @@ describe('Test types of Handler', () => {
       const foo = c.get('foo')
       expectTypeOf(foo).toEqualTypeOf<number>()
       const id = c.req.param('id')
-      expectTypeOf(id).toEqualTypeOf<string>()
+      expectTypeOf(id).toEqualTypeOf<string | undefined>()
       return c.text('Hi')
     }
     app.get('/', handler)
