@@ -881,4 +881,108 @@ d.replaceWith(c.content)
       )
     })
   })
+
+  it('should not throw ERR_INVALID_STATE when reader is cancelled during nested Suspense streaming', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    const SubContent = async () => <h2>World</h2>
+    const Content = async () => (
+      <>
+        <h1>Hello</h1>
+        <Suspense fallback={<p>Loading sub...</p>}>
+          <SubContent />
+        </Suspense>
+      </>
+    )
+
+    const onError = vi.fn()
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>,
+      onError
+    )
+
+    const reader = stream.getReader()
+    const firstChunk = await reader.read()
+    expect(firstChunk.done).toBe(false)
+
+    // Simulate client disconnect
+    await reader.cancel()
+
+    // Wait for nested Suspense callbacks to fire against the closed controller
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(unhandled).toHaveLength(0)
+    expect(onError).not.toHaveBeenCalled()
+
+    process.off('unhandledRejection', onRejection)
+  })
+
+  it('should not call onError when reader is cancelled during a slow callback resolution', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    let signalCallbackStarted!: () => void
+    const callbackStarted = new Promise<void>((r) => {
+      signalCallbackStarted = r
+    })
+
+    const Content = async () =>
+      raw('<p>content</p>', [
+        ((opts: any) => {
+          if (opts.phase === HtmlEscapedCallbackPhase.BeforeStream) {
+            signalCallbackStarted()
+            return new Promise<string>((r) => setTimeout(() => r('')))
+          }
+          return undefined
+        }) as any,
+      ])
+
+    const onError = vi.fn()
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>,
+      onError
+    )
+
+    const reader = stream.getReader()
+    await reader.read()
+
+    await callbackStarted
+    await reader.cancel()
+
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(unhandled).toHaveLength(0)
+    expect(onError).not.toHaveBeenCalled()
+
+    process.off('unhandledRejection', onRejection)
+  })
+
+  it('should not throw when cancelled before initial content resolves', async () => {
+    const unhandled: unknown[] = []
+    const onRejection = (e: unknown) => unhandled.push(e)
+    process.on('unhandledRejection', onRejection)
+
+    const onError = vi.fn()
+    const stream = renderToReadableStream(
+      Promise.resolve(raw('<p>slow content</p>') as HtmlEscapedString),
+      onError
+    )
+
+    const reader = stream.getReader()
+    await reader.cancel()
+
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(unhandled).toHaveLength(0)
+    expect(onError).not.toHaveBeenCalled()
+
+    process.off('unhandledRejection', onRejection)
+  })
 })
