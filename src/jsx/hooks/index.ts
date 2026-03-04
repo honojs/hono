@@ -366,7 +366,6 @@ let idCounter = 0
 export const useId = (): string => useMemo(() => `:r${(idCounter++).toString(32)}:`, [])
 
 // Define to avoid errors. This hook currently does nothing.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useDebugValue = (_value: unknown, _formatter?: (value: unknown) => string): void => {}
 
 export const createRef = <T>(): RefObject<T> => {

@@ -3,7 +3,6 @@
  * This module contains some type definitions for the Hono modules.
  */
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from './context'
 import type { HonoBase } from './hono-base'
