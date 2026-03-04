@@ -158,10 +158,9 @@ export const renderToReadableStream = (
           true,
           context
         )
-        if (cancelled) {
-          return
+        if (!cancelled) {
+          controller.enqueue(textEncoder.encode(resolved))
         }
-        controller.enqueue(textEncoder.encode(resolved))
 
         let resolvedCount = 0
         const callbacks: Promise<void>[] = []
