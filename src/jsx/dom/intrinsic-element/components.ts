@@ -76,11 +76,7 @@ const documentMetadataTag = (
   if (deDupeKeys.length > 0) {
     const tags = head.querySelectorAll<HTMLElement>(tag)
     LOOP: for (const e of tags) {
-      if (
-        deDupeKeyMap[tag].every(
-          (key) => e.getAttribute(key) === (props[key] ?? null)
-        )
-      ) {
+      if (deDupeKeyMap[tag].every((key) => e.getAttribute(key) === (props[key] ?? null))) {
         element = e
         break LOOP
       }

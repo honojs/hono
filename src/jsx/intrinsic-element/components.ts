@@ -32,11 +32,7 @@ const insertIntoHead: (
     const deDupeKeys = deDupeKeyMap[tagName]
     if (deDupeKeys.length > 0) {
       LOOP: for (const [, tagProps] of tags) {
-        if (
-          deDupeKeys.every(
-            (key) => (tagProps?.[key] ?? null) === (props?.[key] ?? null)
-          )
-        ) {
+        if (deDupeKeys.every((key) => (tagProps?.[key] ?? null) === (props?.[key] ?? null))) {
           duped = true
           break LOOP
         }
