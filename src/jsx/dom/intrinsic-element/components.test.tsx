@@ -313,6 +313,43 @@ describe('intrinsic element', () => {
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><div>Content</div><button>Show</button></div>')
       })
+
+      it('should not de-dupe link tags with different rel attributes but same href', () => {
+        const App = () => {
+          return (
+            <div>
+              <link rel='alternate' hreflang='en' href='https://example.com/en/about' />
+              <link rel='canonical' href='https://example.com/en/about' />
+              Content
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.querySelectorAll('link').length).toBe(2)
+        const links = document.head.querySelectorAll('link')
+        expect(links[0].getAttribute('rel')).toBe('alternate')
+        expect(links[0].getAttribute('hreflang')).toBe('en')
+        expect(links[1].getAttribute('rel')).toBe('canonical')
+        expect(root.innerHTML).toBe('<div>Content</div>')
+      })
+
+      it('should not de-dupe link tags with different hreflang but same href and rel', () => {
+        const App = () => {
+          return (
+            <div>
+              <link rel='alternate' hreflang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hreflang='ja' href='https://example.com/en/about' />
+              Content
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.querySelectorAll('link').length).toBe(2)
+        const links = document.head.querySelectorAll('link')
+        expect(links[0].getAttribute('hreflang')).toBe('en')
+        expect(links[1].getAttribute('hreflang')).toBe('ja')
+        expect(root.innerHTML).toBe('<div>Content</div>')
+      })
     })
 
     describe('style element', () => {

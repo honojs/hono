@@ -101,6 +101,38 @@ describe('intrinsic element', () => {
         )
       })
 
+      it('should not de-dupe link tags with different rel attributes but same href', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='alternate' hreflang='en' href='https://example.com/en/about' />
+              <link rel='canonical' href='https://example.com/en/about' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="alternate" hreflang="en" href="https://example.com/en/about"/><link rel="canonical" href="https://example.com/en/about"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not de-dupe link tags with different hreflang but same href and rel', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='alternate' hreflang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hreflang='ja' href='https://example.com/en/about' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="alternate" hreflang="en" href="https://example.com/en/about"/><link rel="alternate" hreflang="ja" href="https://example.com/en/about"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
       it('should not be hoisted if has no precedence attribute', () => {
         const template = (
           <html>
