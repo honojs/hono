@@ -459,7 +459,7 @@ describe('intrinsic element', () => {
             [
               sig({ rel: 'stylesheet', href: '/style.css' }),
               sig({ rel: 'stylesheet', href: '/style.css' }),
-            ],
+            ]
           )
         })
 
