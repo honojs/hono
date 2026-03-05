@@ -115,6 +115,193 @@ describe('intrinsic element', () => {
           '<html><head></head><body><link rel="stylesheet" href="style1.css"/><h1>World</h1></body></html>'
         )
       })
+
+      describe('React 19 compatibility', () => {
+        const headContent = (html: string) => html.match(/<head>(.*)<\/head>/)?.[1] ?? ''
+        const bodyContent = (html: string) => html.match(/<body>(.*)<\/body>/)?.[1] ?? ''
+        const renderDocument = (children: unknown) =>
+          (
+            <html>
+              <head></head>
+              <body>{children}</body>
+            </html>
+          ).toString()
+        const assertHeadAndBody = (children: unknown, expectedHead: string, expectedBody = '') => {
+          const output = renderDocument(children)
+          expect(headContent(output)).toBe(expectedHead)
+          expect(bodyContent(output)).toBe(expectedBody)
+        }
+
+        const canonical = () => <link rel='canonical' href='https://example.com/en/about' />
+        const alternateEn = () => (
+          <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+        )
+        const alternateJa = () => (
+          <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+        )
+
+        it('should keep canonical and alternates in source order', () => {
+          assertHeadAndBody(
+            <>
+              {canonical()}
+              {alternateEn()}
+              {alternateJa()}
+            </>,
+            '<link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="alternate" hrefLang="ja" href="https://example.com/ja/about"/>'
+          )
+        })
+
+        it('should keep alternate-canonical-alternate order', () => {
+          assertHeadAndBody(
+            <>
+              {alternateEn()}
+              {canonical()}
+              {alternateJa()}
+            </>,
+            '<link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="ja" href="https://example.com/ja/about"/>'
+          )
+        })
+
+        it('should not de-dupe canonical links', () => {
+          assertHeadAndBody(
+            <>
+              {canonical()}
+              {canonical()}
+            </>,
+            '<link rel="canonical" href="https://example.com/en/about"/><link rel="canonical" href="https://example.com/en/about"/>'
+          )
+        })
+
+        it('should not de-dupe alternate links', () => {
+          assertHeadAndBody(
+            <>
+              {alternateEn()}
+              {alternateEn()}
+            </>,
+            '<link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/>'
+          )
+        })
+
+        it('should de-dupe stylesheet with precedence', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+            </>,
+            '<link rel="stylesheet" href="/style.css" data-precedence="default"/>'
+          )
+        })
+
+        it('should not de-dupe stylesheet against preload with same href', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='preload' href='/style.css' as='style' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+            </>,
+            '<link rel="stylesheet" href="/style.css" data-precedence="default"/><link rel="preload" href="/style.css" as="style"/>'
+          )
+        })
+
+        it('should not hoist stylesheet without precedence', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='stylesheet' href='/style.css' />
+              <link rel='stylesheet' href='/style.css' />
+            </>,
+            '',
+            '<link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="/style.css"/>'
+          )
+        })
+
+        it('should keep different stylesheets with same precedence', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='stylesheet' href='/a.css' precedence='default' />
+              <link rel='stylesheet' href='/b.css' precedence='default' />
+            </>,
+            '<link rel="stylesheet" href="/a.css" data-precedence="default"/><link rel="stylesheet" href="/b.css" data-precedence="default"/>'
+          )
+        })
+
+        it('should not de-dupe preload links', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+            </>,
+            '<link rel="preload" href="/font.woff2" as="font" crossorigin=""/><link rel="preload" href="/font.woff2" as="font" crossorigin=""/>'
+          )
+        })
+
+        it('should not de-dupe modulepreload links', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='modulepreload' href='/module.js' />
+              <link rel='modulepreload' href='/module.js' />
+            </>,
+            '<link rel="modulepreload" href="/module.js"/><link rel="modulepreload" href="/module.js"/>'
+          )
+        })
+
+        it('should keep links from two components', () => {
+          const Head = () => (
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </>
+          )
+          const Body = () => (
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </>
+          )
+          assertHeadAndBody(
+            <>
+              <Head />
+              <Body />
+            </>,
+            '<link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="alternate" hrefLang="ja" href="https://example.com/ja/about"/><link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="alternate" hrefLang="ja" href="https://example.com/ja/about"/>'
+          )
+        })
+
+        it('should hoist from deep nested component and keep duplicates', () => {
+          const Nested = () => (
+            <div>
+              <div>
+                <link rel='canonical' href='https://example.com/en/about' />
+              </div>
+            </div>
+          )
+          assertHeadAndBody(
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <Nested />
+            </>,
+            '<link rel="canonical" href="https://example.com/en/about"/><link rel="canonical" href="https://example.com/en/about"/>',
+            '<div><div></div></div>'
+          )
+        })
+
+        it('should keep mixed links and de-dupe only stylesheet', () => {
+          assertHeadAndBody(
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+            </>,
+            '<link rel="stylesheet" href="/style.css" data-precedence="default"/><link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="preload" href="/font.woff2" as="font" crossorigin=""/><link rel="canonical" href="https://example.com/en/about"/><link rel="alternate" hrefLang="en" href="https://example.com/en/about"/><link rel="preload" href="/font.woff2" as="font" crossorigin=""/>'
+          )
+        })
+      })
     })
 
     describe('meta element', () => {
