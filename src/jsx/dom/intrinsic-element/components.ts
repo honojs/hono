@@ -78,7 +78,7 @@ const documentMetadataTag = (
   let created = false
 
   const deDupeKeys = deDupeKeyMap[tag]
-  const deDupeByKey = shouldDeDupeByKey(tag, props, supportSort)
+  const deDupeByKey = shouldDeDupeByKey(tag, supportSort)
   const isDeDupeCandidateLink = (e: HTMLElement) =>
     e.getAttribute('rel') === 'stylesheet' && e.getAttribute(dataPrecedenceAttr) !== null
   let existingElements: NodeListOf<HTMLElement> | undefined = undefined

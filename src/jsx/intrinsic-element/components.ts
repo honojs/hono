@@ -35,7 +35,7 @@ const insertIntoHead: (
 
     let duped = false
     const deDupeKeys = deDupeKeyMap[tagName]
-    const deDupeByKey = shouldDeDupeByKey(tagName, props, precedence !== undefined)
+    const deDupeByKey = shouldDeDupeByKey(tagName, precedence !== undefined)
     if (deDupeByKey) {
       LOOP: for (const [, tagProps] of tags) {
         if (

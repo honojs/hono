@@ -15,7 +15,7 @@ export const dataPrecedenceAttr = 'data-precedence'
 export const isStylesheetLinkWithPrecedence = (props: Props): boolean =>
   props.rel === 'stylesheet' && 'precedence' in props
 
-export const shouldDeDupeByKey = (tagName: string, props: Props, supportSort: boolean): boolean => {
+export const shouldDeDupeByKey = (tagName: string, supportSort: boolean): boolean => {
   if (tagName === 'link') {
     return supportSort
   }
