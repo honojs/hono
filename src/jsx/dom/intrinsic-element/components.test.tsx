@@ -981,6 +981,42 @@ describe('intrinsic element', () => {
         expect(onError).toBeCalledTimes(1)
       })
 
+      it('should not register load handlers when the tag has no de-duplication key', () => {
+        const addEventListener = vi.fn<HTMLElement['addEventListener']>()
+        const onLoad = vi.fn()
+        const onError = vi.fn()
+
+        const App = () => {
+          return (
+            <div>
+              <title
+                ref={(e: HTMLTitleElement) => {
+                  if (!e) {
+                    return
+                  }
+                  const originalAddEventListener = e.addEventListener.bind(e)
+                  addEventListener.mockImplementation((...args) =>
+                    originalAddEventListener(...args)
+                  )
+                  e.addEventListener = addEventListener
+                }}
+                onLoad={onLoad}
+                onError={onError}
+              >
+                Document Title
+              </title>
+              Content
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('<title>Document Title</title>')
+        expect(root.innerHTML).toBe('<div>Content</div>')
+        expect(addEventListener).not.toBeCalled()
+        expect(onLoad).not.toBeCalled()
+        expect(onError).not.toBeCalled()
+      })
+
       it('should be blocked by blocking attribute', async () => {
         const Component = () => {
           return (
