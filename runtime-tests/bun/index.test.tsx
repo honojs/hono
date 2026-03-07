@@ -9,16 +9,13 @@ import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import type { WSMessageReceive } from '../../src/helper/websocket'
 import { Hono } from '../../src/index'
-import type { PropsWithChildren } from '../../src/jsx';
+import type { PropsWithChildren } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 
 declare module '../../src/index' {
   interface ContextRenderer {
-    (
-      content: string | Promise<string>,
-      head: { title: string }
-    ): Response | Promise<Response>
+    (content: string | Promise<string>, head: { title: string }): Response | Promise<Response>
   }
 }
 

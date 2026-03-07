@@ -453,10 +453,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
     }
   }
 
-  protected getCookies(
-    _event: APIGatewayProxyEvent,
-    _headers: Headers
-  ): void {
+  protected getCookies(_event: APIGatewayProxyEvent, _headers: Headers): void {
     // nop
   }
 
