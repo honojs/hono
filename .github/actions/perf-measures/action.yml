@@ -14,7 +14,9 @@ runs:
     - uses: oven-sh/setup-bun@v2
       with:
         bun-version-file: '.tool-versions'
-    - run: bun install --frozen-lockfile
+    - run: |
+        bun install --frozen-lockfile
+        bun tsc --build
       shell: bash
 
     - name: Performance measurement of type check (tsc)
