@@ -313,6 +313,268 @@ describe('intrinsic element', () => {
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><div>Content</div><button>Show</button></div>')
       })
+
+      describe('React 19 compatibility', () => {
+        type LinkSignatureInput = {
+          rel: string
+          href: string
+          hrefLang?: string
+          type?: string
+          title?: string
+          media?: string
+          as?: string
+          crossOrigin?: string
+          sizes?: string
+          dataPrecedence?: string
+        }
+
+        const sig = (v: LinkSignatureInput) =>
+          [
+            v.rel,
+            v.href,
+            v.hrefLang ?? '',
+            v.type ?? '',
+            v.title ?? '',
+            v.media ?? '',
+            v.as ?? '',
+            v.crossOrigin ?? '',
+            v.sizes ?? '',
+            v.dataPrecedence ?? '',
+          ].join('|')
+
+        const headLinkSignatures = () =>
+          Array.from(document.head.querySelectorAll('link')).map((el) =>
+            sig({
+              rel: el.getAttribute('rel') ?? '',
+              href: el.getAttribute('href') ?? '',
+              hrefLang: el.getAttribute('hreflang') ?? '',
+              type: el.getAttribute('type') ?? '',
+              title: el.getAttribute('title') ?? '',
+              media: el.getAttribute('media') ?? '',
+              as: el.getAttribute('as') ?? '',
+              crossOrigin: el.getAttribute('crossorigin') ?? '',
+              sizes: el.getAttribute('sizes') ?? '',
+              dataPrecedence: el.getAttribute('data-precedence') ?? '',
+            })
+          )
+
+        const assertHeadLinks = (
+          node: unknown,
+          expected: string[],
+          expectedRootInnerHTML?: string
+        ) => {
+          render(node as never, root)
+          expect(headLinkSignatures()).toEqual(expected)
+          if (expectedRootInnerHTML !== undefined) {
+            expect(root.innerHTML).toBe(expectedRootInnerHTML)
+          }
+        }
+
+        it('should keep canonical and alternates in source order', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </div>,
+            [
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'alternate', href: 'https://example.com/ja/about', hrefLang: 'ja' }),
+            ]
+          )
+        })
+
+        it('should keep alternate-canonical-alternate order', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </div>,
+            [
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/ja/about', hrefLang: 'ja' }),
+            ]
+          )
+        })
+
+        it('should not de-duplicate canonical links', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='canonical' href='https://example.com/en/about' />
+            </div>,
+            [
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+            ]
+          )
+        })
+
+        it('should not de-duplicate alternate links', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+            </div>,
+            [
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+            ]
+          )
+        })
+
+        it('should de-duplicate stylesheet with precedence', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+            </div>,
+            [sig({ rel: 'stylesheet', href: '/style.css', dataPrecedence: 'default' })]
+          )
+        })
+
+        it('should not de-duplicate stylesheet against preload with same href', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='preload' href='/style.css' as='style' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+            </div>,
+            [
+              sig({ rel: 'stylesheet', href: '/style.css', dataPrecedence: 'default' }),
+              sig({ rel: 'preload', href: '/style.css', as: 'style' }),
+            ]
+          )
+        })
+
+        it('should keep stylesheet links without precedence in root', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='stylesheet' href='/style.css' />
+              <link rel='stylesheet' href='/style.css' />
+            </div>,
+            [],
+            '<div><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/style.css"></div>'
+          )
+        })
+
+        it('should keep different stylesheets with same precedence', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='stylesheet' href='/a.css' precedence='default' />
+              <link rel='stylesheet' href='/b.css' precedence='default' />
+            </div>,
+            [
+              sig({ rel: 'stylesheet', href: '/a.css', dataPrecedence: 'default' }),
+              sig({ rel: 'stylesheet', href: '/b.css', dataPrecedence: 'default' }),
+            ]
+          )
+        })
+
+        it('should not de-duplicate preload links', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+            </div>,
+            [
+              sig({ rel: 'preload', href: '/font.woff2', as: 'font', crossOrigin: '' }),
+              sig({ rel: 'preload', href: '/font.woff2', as: 'font', crossOrigin: '' }),
+            ]
+          )
+        })
+
+        it('should not de-duplicate modulepreload links', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='modulepreload' href='/module.js' />
+              <link rel='modulepreload' href='/module.js' />
+            </div>,
+            [
+              sig({ rel: 'modulepreload', href: '/module.js' }),
+              sig({ rel: 'modulepreload', href: '/module.js' }),
+            ]
+          )
+        })
+
+        it('should keep links from two components', () => {
+          const Head = () => (
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </>
+          )
+          const Body = () => (
+            <>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='ja' href='https://example.com/ja/about' />
+            </>
+          )
+          assertHeadLinks(
+            <div>
+              <Head />
+              <Body />
+            </div>,
+            [
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'alternate', href: 'https://example.com/ja/about', hrefLang: 'ja' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'alternate', href: 'https://example.com/ja/about', hrefLang: 'ja' }),
+            ]
+          )
+        })
+
+        it('should hoist from deep nested component and keep duplicates', () => {
+          const Nested = () => (
+            <div>
+              <div>
+                <link rel='canonical' href='https://example.com/en/about' />
+              </div>
+            </div>
+          )
+          assertHeadLinks(
+            <div>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <Nested />
+            </div>,
+            [
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+            ]
+          )
+        })
+
+        it('should keep mixed links and de-duplicate only stylesheet', () => {
+          assertHeadLinks(
+            <div>
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+              <link rel='canonical' href='https://example.com/en/about' />
+              <link rel='alternate' hrefLang='en' href='https://example.com/en/about' />
+              <link rel='stylesheet' href='/style.css' precedence='default' />
+              <link rel='preload' href='/font.woff2' as='font' crossOrigin='' />
+            </div>,
+            [
+              sig({ rel: 'stylesheet', href: '/style.css', dataPrecedence: 'default' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'preload', href: '/font.woff2', as: 'font', crossOrigin: '' }),
+              sig({ rel: 'canonical', href: 'https://example.com/en/about' }),
+              sig({ rel: 'alternate', href: 'https://example.com/en/about', hrefLang: 'en' }),
+              sig({ rel: 'preload', href: '/font.woff2', as: 'font', crossOrigin: '' }),
+            ]
+          )
+        })
+      })
     })
 
     describe('style element', () => {
@@ -717,6 +979,42 @@ describe('intrinsic element', () => {
         await new Promise((resolve) => setTimeout(resolve))
         expect(onLoad).not.toBeCalled()
         expect(onError).toBeCalledTimes(1)
+      })
+
+      it('should not register load handlers when the tag has no de-duplication key', () => {
+        const addEventListener = vi.fn<HTMLElement['addEventListener']>()
+        const onLoad = vi.fn()
+        const onError = vi.fn()
+
+        const App = () => {
+          return (
+            <div>
+              <title
+                ref={(e: HTMLTitleElement) => {
+                  if (!e) {
+                    return
+                  }
+                  const originalAddEventListener = e.addEventListener.bind(e)
+                  addEventListener.mockImplementation((...args) =>
+                    originalAddEventListener(...args)
+                  )
+                  e.addEventListener = addEventListener
+                }}
+                onLoad={onLoad}
+                onError={onError}
+              >
+                Document Title
+              </title>
+              Content
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('<title>Document Title</title>')
+        expect(root.innerHTML).toBe('<div>Content</div>')
+        expect(addEventListener).not.toBeCalled()
+        expect(onLoad).not.toBeCalled()
+        expect(onError).not.toBeCalled()
       })
 
       it('should be blocked by blocking attribute', async () => {
