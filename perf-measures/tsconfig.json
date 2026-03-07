@@ -1,10 +1,10 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "module": "esnext",
-    "noEmit": true,
-    "rootDir": "..",
-    "strict": true
+    "noEmit": true
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "references": [
+    { "path": "../tsconfig.build.json" }
+  ]
 }
