@@ -48,7 +48,10 @@ export const compose = <E extends Env = Env>(
 
       if (handler) {
         try {
-          res = await handler(context, () => dispatch(i + 1))
+          res = await handler(context, () => {
+            const routeIndex = context.req.routeIndex
+            return dispatch(i + 1).finally(() => (context.req.routeIndex = routeIndex))
+          })
         } catch (err) {
           if (err instanceof Error && onError) {
             context.error = err
