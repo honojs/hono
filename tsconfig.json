@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.build.json" },
-    { "path": "./perf-measures/tsconfig.json" },
+    { "path": "./perf-measures/type-check/scripts/tsconfig.json" },
     { "path": "./runtime-tests/bun/tsconfig.json" },
     { "path": "./runtime-tests/fastly/tsconfig.json" },
     { "path": "./runtime-tests/lambda/tsconfig.json" },

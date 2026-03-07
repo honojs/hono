@@ -1,7 +1,10 @@
 {
-  "extends": "../tsconfig.json",
-  "include": ["client.ts"],
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "skipLibCheck": true
-  }
+    "noEmit": true
+  },
+  "exclude": ["dist", "scripts"],
+  "references": [
+    { "path": "../../tsconfig.build.json" }
+  ]
 }
