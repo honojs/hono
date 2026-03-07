@@ -407,6 +407,62 @@ d.replaceWith(c.content)
     expect(await res.text()).toBe('<!DOCTYPE html><div>Hi</div>')
   })
 
+  it('Should accept function-based options', async () => {
+    type Env = { Bindings: { HONO_STREAMING?: boolean } }
+    const app = new Hono<Env>()
+
+    const Component = async () => {
+      return <div>Component</div>
+    }
+
+    app.use(
+      '*',
+      jsxRenderer<Env>(
+        ({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        },
+        (c) => {
+          expectTypeOf(c.env?.HONO_STREAMING).toEqualTypeOf<boolean | undefined>()
+          return { docType: true, stream: c.env?.HONO_STREAMING ?? true }
+        }
+      )
+    )
+
+    app.get('/', async (c) => {
+      return c.render(
+        <div>
+          <Suspense fallback={'loading...'}>
+            <Component />
+          </Suspense>
+        </div>,
+        { title: 'Suspense test' }
+      )
+    })
+
+    const resStream = await app.request('/')
+    expect(resStream.status).toBe(200)
+    expect(resStream.headers.get('Transfer-Encoding')).toBe('chunked')
+    const textStream = await resStream.text()
+    expect(textStream).toContain('<template')
+    expect(textStream).toContain('<script')
+    expect(textStream).toContain('loading...')
+
+    const resNotStream = await app.request('/', undefined, { HONO_STREAMING: false })
+    expect(resNotStream.status).toBe(200)
+    expect(resNotStream.headers.get('Transfer-Encoding')).toBeNull()
+    const textNotStream = await resNotStream.text()
+    expect(textNotStream).not.toContain('<template')
+    expect(textNotStream).not.toContain('<script')
+    expect(textNotStream).not.toContain('loading...')
+    expect(textNotStream).toBe(
+      '<!DOCTYPE html><html><body><div><div>Component</div></div></body></html>'
+    )
+  })
+
   describe('keep context status', async () => {
     it('Should keep context status', async () => {
       const app = new Hono()
