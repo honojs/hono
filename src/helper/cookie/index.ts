@@ -98,7 +98,24 @@ export const generateCookie = (name: string, value: string, opt?: CookieOptions)
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
   const cookie = generateCookie(name, value, opt)
-  c.header('Set-Cookie', cookie, { append: true })
+  
+  // Remove existing cookies with the same name to avoid duplicates
+  // This ensures only the latest value is sent
+  const existingCookies = c.res.headers.getSetCookie()
+  const filteredCookies = existingCookies.filter((existingCookie) => {
+    // Parse the existing cookie to get its name
+    const existingName = existingCookie.split('=')[0]?.trim()
+    return existingName !== name
+  })
+  
+  // Clear all Set-Cookie headers and re-add filtered ones
+  c.res.headers.delete('Set-Cookie')
+  for (const existingCookie of filteredCookies) {
+    c.res.headers.append('Set-Cookie', existingCookie)
+  }
+  
+  // Add the new cookie
+  c.res.headers.append('Set-Cookie', cookie)
 }
 
 export const generateSignedCookie = async (
