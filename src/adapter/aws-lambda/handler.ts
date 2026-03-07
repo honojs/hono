@@ -413,17 +413,20 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   protected getHeaders(event: APIGatewayProxyEventV2): Headers {
     const headers = new Headers()
     this.getCookies(event, headers)
-    if (event.headers) {
-      for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
-          headers.set(k, v)
+    const eventHeaders = event.headers
+    if (eventHeaders) {
+      for (const k in eventHeaders) {
+        if (Object.prototype.hasOwnProperty.call(eventHeaders, k)) {
+          const v = eventHeaders[k]
+          if (v) {
+            headers.set(k, v)
+          }
         }
       }
     }
     return headers
   }
 }
-
 const v2Processor: EventV2Processor = new EventV2Processor()
 
 export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
