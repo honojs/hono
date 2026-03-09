@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "types": ["vitest/globals"]
   },
-  "exclude": ["dist", "scripts"],
   "references": [
     { "path": "../../tsconfig.build.json" }
   ]

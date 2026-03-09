@@ -453,12 +453,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
     }
   }
 
-  protected getCookies(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    event: APIGatewayProxyEvent,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    headers: Headers
-  ): void {
+  protected getCookies(_event: APIGatewayProxyEvent, _headers: Headers): void {
     // nop
   }
 

@@ -67,7 +67,7 @@ describe('streamHandle function', () => {
       requestContext: testApiGatewayRequestContextV2,
     }
 
-    const stream = await handler(event)
+    const stream = await handler(event, {} as LambdaContext, vi.fn())
 
     const metadata = JSON.parse(stream.chunks[0].toString())
     expect(metadata.cookies).toEqual(['cookie1=value1', 'cookie2=value2'])
