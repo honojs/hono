@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "noEmit": true,
+    "rootDir": "./src",
     "types": ["vitest/globals"]
   },
-  "references": []
+  "include": ["src", "src/middleware/jwk/keys.test.json"]
 }
