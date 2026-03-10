@@ -160,6 +160,58 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should skip keys starting with __proto__. to prevent prototype pollution', async () => {
+    const data = new FormData()
+    data.append('__proto__.polluted', 'malicious')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({})
+  })
+
+  it('should skip keys containing nested __proto__. to prevent prototype pollution', async () => {
+    const data = new FormData()
+    data.append('a.__proto__.polluted', 'malicious')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({})
+  })
+
+  it('should not pollute Object.prototype via __proto__ keys', async () => {
+    const data = new FormData()
+    data.append('__proto__.injected', 'yes')
+    data.append('a.__proto__.injected', 'yes')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    await parseBody(req, { dot: true })
+
+    expect(({} as Record<string, unknown>).injected).toBeUndefined()
+  })
+
+  it('should parse key ending with __proto__ as a normal value', async () => {
+    const data = new FormData()
+    data.append('a.__proto__', 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    const result = await parseBody(req, { dot: true })
+    expect(result).toHaveProperty('a')
+    expect(Object.getOwnPropertyDescriptor((result as Record<string, Record<string, string>>).a, '__proto__')?.value).toBe('value')
+  })
+
+  it('should parse key containing __proto__ as a substring normally', async () => {
+    const data = new FormData()
+    data.append('data__proto__key.value', 'test')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      data__proto__key: { value: 'test' },
+    })
+  })
+
   it('should parse nested values if `dot` option is true', async () => {
     const data = new FormData()
     data.append('obj.key1', 'value1')
