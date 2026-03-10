@@ -198,7 +198,12 @@ describe('Parse Body Util', () => {
 
     const result = await parseBody(req, { dot: true })
     expect(result).toHaveProperty('a')
-    expect(Object.getOwnPropertyDescriptor((result as Record<string, Record<string, string>>).a, '__proto__')?.value).toBe('value')
+    expect(
+      Object.getOwnPropertyDescriptor(
+        (result as Record<string, Record<string, string>>).a,
+        '__proto__'
+      )?.value
+    ).toBe('value')
   })
 
   it('should parse key containing __proto__ as a substring normally', async () => {
