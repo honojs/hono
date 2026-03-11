@@ -12,7 +12,7 @@ export const getMimeType = (
   if (!match) {
     return
   }
-  let mimeType = mimes[match[1]]
+  let mimeType = mimes[match[1].toLowerCase()]
   if (mimeType && mimeType.startsWith('text')) {
     mimeType += '; charset=utf-8'
   }
