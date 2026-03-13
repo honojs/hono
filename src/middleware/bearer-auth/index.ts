@@ -112,9 +112,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   }
 
   const realm = options.realm?.replace(/"/g, '\\"')
-  const prefixRegexStr = options.prefix === '' ? '' : `${options.prefix} +`
-  const regexp = new RegExp(`^${prefixRegexStr}(${TOKEN_STRINGS}) *$`, 'i')
-  const wwwAuthenticatePrefix = options.prefix === '' ? '' : `${options.prefix} `
+  const prefix = options.prefix
+  const tokenRegexp = new RegExp(`^${TOKEN_STRINGS}$`)
+  const wwwAuthenticatePrefix = prefix === '' ? '' : `${prefix} `
 
   const throwHTTPException = async (
     c: Context,
@@ -164,8 +164,19 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           'Unauthorized'
       )
     } else {
-      const match = regexp.exec(headerToken)
-      if (!match) {
+      let tokenValue: string | undefined
+
+      if (prefix === '') {
+        tokenValue = headerToken
+      } else {
+        const headerLower = headerToken.toLowerCase()
+        const prefixLower = prefix.toLowerCase()
+        if (headerLower.startsWith(prefixLower) && headerToken[prefix.length] === ' ') {
+          tokenValue = headerToken.slice(prefix.length).trimStart()
+        }
+      }
+
+      if (!tokenValue || !tokenRegexp.test(tokenValue)) {
         // Invalid Request
         await throwHTTPException(
           c,
@@ -179,12 +190,12 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
       } else {
         let equal = false
         if ('verifyToken' in options) {
-          equal = await options.verifyToken(match[1], c)
+          equal = await options.verifyToken(tokenValue, c)
         } else if (typeof options.token === 'string') {
-          equal = await timingSafeEqual(options.token, match[1], options.hashFunction)
+          equal = await timingSafeEqual(options.token, tokenValue, options.hashFunction)
         } else if (Array.isArray(options.token) && options.token.length > 0) {
           for (const token of options.token) {
-            if (await timingSafeEqual(token, match[1], options.hashFunction)) {
+            if (await timingSafeEqual(token, tokenValue, options.hashFunction)) {
               equal = true
               break
             }
