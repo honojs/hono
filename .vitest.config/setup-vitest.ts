@@ -24,7 +24,8 @@ class MockCache {
   }
 
   async match(key: Request | string): Promise<Response | null> {
-    return this.store.get(key) || null
+    const stored = this.store.get(key)
+    return stored ? stored.clone() : null
   }
 
   async keys() {

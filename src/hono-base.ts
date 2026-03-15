@@ -95,6 +95,37 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
+/**
+ * Buffer a non-streaming Response so its internal ReadableStream body is fully consumed.
+ * Prevents async-leak detection tools (e.g. vitest --detect-async-leaks)
+ * from flagging the unconsumed stream as a leaked Promise.
+ *
+ * Streaming responses (indicated by Transfer-Encoding header) are left untouched
+ * to preserve chunked delivery.
+ */
+const bufferResponse = (result: Response | Promise<Response>): Response | Promise<Response> => {
+  if (result instanceof Promise) {
+    return result.then(bufferSingleResponse)
+  }
+  return bufferSingleResponse(result)
+}
+
+const bufferSingleResponse = async (res: Response): Promise<Response> => {
+  if (!res.body || res.bodyUsed || res.headers.has('Transfer-Encoding')) {
+    return res
+  }
+  try {
+    const body = await res.arrayBuffer()
+    return new Response(body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: new Headers(res.headers),
+    })
+  } catch {
+    return res
+  }
+}
+
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -497,16 +528,20 @@ class Hono<
     executionCtx?: ExecutionContext
   ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
+      return bufferResponse(
+        this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
+      )
     }
     input = input.toString()
-    return this.fetch(
-      new Request(
-        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
-        requestInit
-      ),
-      Env,
-      executionCtx
+    return bufferResponse(
+      this.fetch(
+        new Request(
+          /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
+          requestInit
+        ),
+        Env,
+        executionCtx
+      )
     )
   }
 
