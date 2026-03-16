@@ -70,6 +70,13 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() with undefined', () => {
+    expect(() => {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      c.json(undefined as any)
+    }).toThrow(TypeError)
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
