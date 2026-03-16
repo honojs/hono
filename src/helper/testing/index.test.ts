@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { testClient } from '.'
+import { testClient, bufferResponse } from '.'
 
 describe('hono testClient', () => {
   it('Should return the correct search result', async () => {
@@ -38,5 +38,42 @@ describe('hono testClient', () => {
     const app = new Hono().get('/ws', (c) => c.text('Fake response of a WebSocket'))
     // @ts-expect-error $ws is not typed correctly
     expect(() => testClient(app).ws.$ws()).not.toThrowError()
+  })
+})
+
+describe('bufferResponse', () => {
+  it('Should buffer text response body', async () => {
+    const app = new Hono().get('/text', (c) => c.text('hello'))
+    const res = await bufferResponse(app.request('/text'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('Should buffer json response body', async () => {
+    const app = new Hono().get('/json', (c) => c.json({ message: 'ok' }))
+    const res = await bufferResponse(app.request('/json'))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ message: 'ok' })
+  })
+
+  it('Should preserve status and headers', async () => {
+    const app = new Hono().get('/custom', (c) => {
+      c.header('X-Custom', 'test')
+      return c.text('created', 201)
+    })
+    const res = await bufferResponse(app.request('/custom'))
+    expect(res.status).toBe(201)
+    expect(res.headers.get('X-Custom')).toBe('test')
+  })
+
+  it('Should handle response with no body', async () => {
+    const app = new Hono().get('/empty', (c) => c.body(null, 204))
+    const res = await bufferResponse(app.request('/empty'))
+    expect(res.status).toBe(204)
+  })
+
+  it('Should accept a plain Response (non-Promise)', async () => {
+    const res = await bufferResponse(new Response('direct'))
+    expect(await res.text()).toBe('direct')
   })
 })
