@@ -12,7 +12,7 @@ import type { HandleOptions } from './handler'
  * This sets up `addEventListener('fetch', handle(app, options))` for the provided app.
  *
  * @param app - The Hono application instance
- * @param options - Options for handling requests (fetch defaults to undefined)
+ * @param options - Options for handling requests. Defaults to the same behavior as handle().
  * @example
  * ```ts
  * import { Hono } from 'hono'
@@ -28,7 +28,9 @@ import type { HandleOptions } from './handler'
 const fire = <E extends Env, S extends Schema, BasePath extends string>(
   app: Hono<E, S, BasePath>,
   options: HandleOptions = {
-    fetch: undefined,
+    // To use `fetch` on a Service Worker correctly, bind it to `globalThis`.
+    // This enables automatic fallback to the default fetch handler for 404 responses.
+    fetch: globalThis.fetch.bind(globalThis),
   }
 ): void => {
   // @ts-expect-error addEventListener is not typed well in ServiceWorker-like contexts, see: https://github.com/microsoft/TypeScript/issues/14877
