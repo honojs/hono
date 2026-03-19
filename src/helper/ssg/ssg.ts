@@ -229,7 +229,7 @@ export const fetchRoutesContent = function* <
           forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
         }
 
-        await pool.run(() => app.fetch(forGetInfoURLRequest))
+        await pool.run(() => app.fetch(forGetInfoURLRequest, { [SSG_CONTEXT]: true }))
 
         if (!forGetInfoURLRequest.ssgParams) {
           if (isDynamicRoute(route.path)) {
