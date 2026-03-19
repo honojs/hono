@@ -432,3 +432,83 @@ describe('Basic Auth with onAuthSuccess', () => {
     expect(await res.text()).toBe('yes')
   })
 })
+
+describe('Basic Auth with passUsername', () => {
+  const username = 'pass-user'
+  const password = 'pass-password'
+
+  it('should pass username to context when passUsername is true', async () => {
+    const app = new Hono()
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        passUsername: true,
+      })
+    )
+    app.get('/', (c) => {
+      const authUsername = c.get('basicAuthUsername')
+      return c.text(authUsername || 'no-username')
+    })
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(username)
+  })
+
+  it('should NOT pass username to context when passUsername is false', async () => {
+    const app = new Hono()
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        passUsername: false,
+      })
+    )
+    app.get('/', (c) => {
+      // basicAuthUsername is available in types due to module augmentation
+      const authUsername = c.get('basicAuthUsername')
+      return c.text(authUsername || 'no-username')
+    })
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('no-username')
+  })
+
+  it('should work with verifyUser and passUsername: true', async () => {
+    const app = new Hono()
+
+    app.use(
+      '/*',
+      basicAuth({
+        verifyUser: (u, p) => u === username && p === password,
+        passUsername: true,
+      })
+    )
+    app.get('/', (c) => {
+      const authUsername = c.get('basicAuthUsername')
+      return c.text(authUsername || 'no-username')
+    })
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(username)
+  })
+})

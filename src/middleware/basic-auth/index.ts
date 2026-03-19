@@ -11,22 +11,40 @@ import { timingSafeEqual } from '../../utils/buffer'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
 
+export type BasicAuthVariables = {
+  basicAuthUsername: string
+}
+
 type BasicAuthOptions =
   | {
-      username: string
-      password: string
-      realm?: string
-      hashFunction?: Function
-      invalidUserMessage?: string | object | MessageFunction
-      onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
-    }
+    username: string
+    password: string
+    realm?: string
+    hashFunction?: Function
+    invalidUserMessage?: string | object | MessageFunction
+    onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
+    /**
+     * Indicates whether to pass the username to the context.
+     * @default false
+     */
+    passUsername?: boolean
+  }
   | {
-      verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
-      realm?: string
-      hashFunction?: Function
-      invalidUserMessage?: string | object | MessageFunction
-      onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
-    }
+    verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
+    realm?: string
+    hashFunction?: Function
+    invalidUserMessage?: string | object | MessageFunction
+    onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
+    /**
+     * Indicates whether to pass the username to the context.
+     * @default false
+     */
+    passUsername?: boolean
+  }
+
+declare module '../../context' {
+  interface ContextVariableMap extends BasicAuthVariables { }
+}
 
 /**
  * Basic Auth Middleware for Hono.
@@ -41,8 +59,28 @@ type BasicAuthOptions =
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @param {Function} [options.onAuthSuccess] - Callback function called on successful authentication.
+ * @param {boolean} [options.passUsername=false] - Whether to pass the username to the context.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(
+ *   '/auth/*',
+ *   basicAuth({
+ *     username: 'hono',
+ *     password: 'ahotproject',
+ *     passUsername: true,
+ *   })
+ * )
+ *
+ * app.get('/auth/page', (c) => {
+ *   const username = c.get('basicAuthUsername')
+ *   return c.text(`You are authorized, ${username}`)
+ * })
+ * ```
  *
  * @example
  * ```ts
@@ -110,6 +148,9 @@ export const basicAuth = (
           if (options.onAuthSuccess) {
             await options.onAuthSuccess(ctx, requestUser.username)
           }
+          if (options.passUsername) {
+            ctx.set('basicAuthUsername', requestUser.username)
+          }
           await next()
           return
         }
@@ -122,6 +163,9 @@ export const basicAuth = (
           if (usernameEqual && passwordEqual) {
             if (options.onAuthSuccess) {
               await options.onAuthSuccess(ctx, requestUser.username)
+            }
+            if (options.passUsername) {
+              ctx.set('basicAuthUsername', requestUser.username)
             }
             await next()
             return
@@ -142,12 +186,12 @@ export const basicAuth = (
       typeof responseMessage === 'string'
         ? new Response(responseMessage, { status, headers })
         : new Response(JSON.stringify(responseMessage), {
-            status,
-            headers: {
-              ...headers,
-              'content-type': 'application/json',
-            },
-          })
+          status,
+          headers: {
+            ...headers,
+            'content-type': 'application/json',
+          },
+        })
     throw new HTTPException(status, { res })
   }
 }
