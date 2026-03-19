@@ -511,4 +511,56 @@ describe('Basic Auth with passUsername', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(username)
   })
+
+  it('should NOT pass username to context when auth fails and passUsername is true', async () => {
+    const app = new Hono()
+    let errorContext: any
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        passUsername: true,
+      })
+    )
+    app.onError((err, c) => {
+      errorContext = c
+      return c.text('unauthorized', 401)
+    })
+    app.get('/', (c) => c.text('ok'))
+
+    const credential = Buffer.from('wrong:wrong').toString('base64')
+    await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(errorContext).toBeDefined()
+    expect(errorContext.get('basicAuthUsername')).toBeUndefined()
+  })
+
+  it('should NOT set basicAuthUsername in context during invalidUserMessage call', async () => {
+    const app = new Hono()
+    let usernameInMessageFunc: string | undefined
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        passUsername: true,
+        invalidUserMessage: (c) => {
+          usernameInMessageFunc = c.get('basicAuthUsername')
+          return 'Unauthorized'
+        },
+      })
+    )
+
+    const credential = Buffer.from('wrong:wrong').toString('base64')
+    await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(usernameInMessageFunc).toBeUndefined()
+  })
 })
