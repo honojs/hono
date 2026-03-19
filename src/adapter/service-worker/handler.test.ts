@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { handle } from './handler'
+import { handle, fire } from '.'
 import type { FetchEvent } from './types'
 
 beforeAll(() => {
@@ -117,5 +117,59 @@ describe('handle', () => {
 
     const json = await response.json()
     expect(json.clientId).toBe('test-client-id')
+  })
+})
+
+describe('fire', () => {
+  beforeEach(() => {
+    vi.stubGlobal('addEventListener', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('Should register fetch event listener and fallback to network (fire)', async () => {
+    const app = new Hono()
+    const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener')
+
+    fire(app)
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith('fetch', expect.any(Function))
+    const registeredHandler = addEventListenerSpy.mock.calls[0][1] as (evt: FetchEvent) => void
+
+    const text = await new Promise<Response>((resolve) => {
+      registeredHandler({
+        request: new Request('http://localhost/fallback'),
+        respondWith(res) {
+          resolve(res)
+        },
+      } as FetchEvent)
+    }).then((res) => res.text())
+
+    expect(text).toBe('hello world')
+    addEventListenerSpy.mockRestore()
+  })
+
+  it('Should NOT fallback to network when explicitly disabled (fire)', async () => {
+    const app = new Hono()
+    const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener')
+
+    fire(app, { fetch: undefined })
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith('fetch', expect.any(Function))
+    const registeredHandler = addEventListenerSpy.mock.calls[0][1] as (evt: FetchEvent) => void
+
+    const result = await new Promise<Response>((resolve) => {
+      registeredHandler({
+        request: new Request('http://localhost/fallback'),
+        respondWith(res) {
+          resolve(res)
+        },
+      } as FetchEvent)
+    })
+
+    expect(result.status).toBe(404)
+    addEventListenerSpy.mockRestore()
   })
 })

@@ -13,7 +13,12 @@ export type HandleOptions = {
 }
 
 /**
- * Adapter for Service Worker
+ * Registers a Hono app to handle fetch events in a service worker.
+ *
+ * @param app - The Hono application instance
+ * @param opts - Options for handling requests.
+ * @param opts.fetch - The fetch function to use for falling back on 404. Defaults to `globalThis.fetch`.
+ * @returns The handler function for the fetch event.
  */
 export const handle = <E extends Env, S extends Schema, BasePath extends string>(
   app: Hono<E, S, BasePath>,
