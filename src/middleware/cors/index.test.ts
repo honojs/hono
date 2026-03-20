@@ -349,4 +349,45 @@ describe('CORS by Middleware', () => {
     expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
+
+  describe('CORS with origin * and credentials', () => {
+    const app = new Hono()
+
+    app.use(
+      '/api/*',
+      cors({
+        credentials: true,
+      })
+    )
+
+    app.get('/api/abc', (c) => c.json({ success: true }))
+
+    it('Should reflect request origin instead of * when credentials is true', async () => {
+      const req = new Request('http://localhost/api/abc', {
+        headers: { origin: 'http://example.com' },
+      })
+      const res = await app.request(req)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+      expect(res.headers.get('Vary')).toContain('Origin')
+    })
+
+    it('Preflight should reflect origin and set Vary when credentials is true', async () => {
+      const req = new Request('http://localhost/api/abc', {
+        method: 'OPTIONS',
+        headers: { origin: 'http://example.com' },
+      })
+      const res = await app.request(req)
+      expect(res.status).toBe(204)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+      expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toContain('Origin')
+    })
+
+    it('Should fall back to * when no Origin header and credentials is true', async () => {
+      const res = await app.request('http://localhost/api/abc')
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    })
+  })
 })
