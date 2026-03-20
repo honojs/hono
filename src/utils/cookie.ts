@@ -303,6 +303,11 @@ export const serializeSigned = async (
   return _serialize(name, value, opt)
 }
 
+/**
+ * Parse encrypted cookies from a cookie header string.
+ * Uses AES-256-GCM decryption with HKDF-SHA256 key derivation.
+ * Returns `false` for cookies that fail decryption (tampered or wrong key).
+ */
 export const parseEncrypted = async (
   cookie: string,
   secret: string | BufferSource,
@@ -319,6 +324,10 @@ export const parseEncrypted = async (
   return parsedCookie
 }
 
+/**
+ * Serialize a cookie value with AES-256-GCM encryption.
+ * The cookie value is encrypted using a random IV and encoded as base64.
+ */
 export const serializeEncrypted = async (
   name: string,
   value: string,

@@ -162,6 +162,17 @@ interface GetEncryptedCookie {
   ): Promise<string | undefined | false>
 }
 
+/**
+ * Get an encrypted cookie value. Returns the decrypted plaintext,
+ * `undefined` if the cookie doesn't exist, or `false` if decryption fails.
+ * @example
+ * ```ts
+ * app.get('/read', async (c) => {
+ *   const value = await getEncryptedCookie(c, secret, 'session')
+ *   // value: string | undefined | false
+ * })
+ * ```
+ */
 export const getEncryptedCookie: GetEncryptedCookie = async (
   c,
   secret,
@@ -190,6 +201,10 @@ export const getEncryptedCookie: GetEncryptedCookie = async (
   return obj as any
 }
 
+/**
+ * Generate an encrypted cookie string without setting it on the response.
+ * Useful for testing or manual header manipulation.
+ */
 export const generateEncryptedCookie = async (
   name: string,
   value: string,
@@ -216,6 +231,16 @@ export const generateEncryptedCookie = async (
   return cookie
 }
 
+/**
+ * Set an encrypted cookie using AES-256-GCM.
+ * The cookie value is encrypted and the plaintext is not visible in the cookie header.
+ * @example
+ * ```ts
+ * app.get('/write', async (c) => {
+ *   await setEncryptedCookie(c, 'session', 'user-data', secret)
+ * })
+ * ```
+ */
 export const setEncryptedCookie = async (
   c: Context,
   name: string,
