@@ -526,6 +526,24 @@ describe('Cookie Middleware', () => {
         expect(await res.text()).toBe('INVALID')
       })
 
+      it('should return false when encrypted value is copied to a different cookie name', async () => {
+        const app2 = new Hono()
+        app2.get('/get', async (c) => {
+          const value = await getEncryptedCookie(c, secret, 'other_cookie')
+          return c.text(value === false ? 'INVALID' : 'UNEXPECTED')
+        })
+
+        const setRes = await app.request('http://localhost/set-encrypted-cookie')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        // take the encrypted value from secret_cookie and assign it to other_cookie
+        const encryptedValue = setCookieHeader!.split(';')[0].split('=').slice(1).join('=')
+
+        const getRes = await app2.request('http://localhost/get', {
+          headers: { Cookie: `other_cookie=${encryptedValue}` },
+        })
+        expect(await getRes.text()).toBe('INVALID')
+      })
+
       it('should return false for wrong secret', async () => {
         const app2 = new Hono()
         app2.get('/get', async (c) => {
