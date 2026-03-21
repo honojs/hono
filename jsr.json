@@ -50,6 +50,7 @@
     "./pretty-json": "./src/middleware/pretty-json/index.ts",
     "./request-id": "./src/middleware/request-id/request-id.ts",
     "./language": "./src/middleware/language/language.ts",
+    "./route-check": "./src/middleware/route-check/index.ts",
     "./secure-headers": "./src/middleware/secure-headers/secure-headers.ts",
     "./combine": "./src/middleware/combine/index.ts",
     "./ssg": "./src/helper/ssg/index.ts",
