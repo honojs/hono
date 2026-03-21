@@ -3658,6 +3658,30 @@ describe('app.basePath() with the internal #clone()', () => {
   })
 })
 
+describe('app.getBasePath()', () => {
+  it('Should return "/" for a fresh Hono instance', () => {
+    const app = new Hono()
+    expect(app.getBasePath()).toBe('/')
+  })
+
+  it('Should return the base path after basePath()', () => {
+    const app = new Hono().basePath('/api')
+    expect(app.getBasePath()).toBe('/api')
+  })
+
+  it('Should return the merged path after chained basePath() calls', () => {
+    const app = new Hono().basePath('/api').basePath('/v1')
+    expect(app.getBasePath()).toBe('/api/v1')
+  })
+
+  it('Should not affect the original instance', () => {
+    const app = new Hono()
+    const based = app.basePath('/api')
+    expect(app.getBasePath()).toBe('/')
+    expect(based.getBasePath()).toBe('/api')
+  })
+})
+
 describe('Catch-all route with empty segment', () => {
   it('Should return empty string for empty catch-all param', async () => {
     const app = new Hono()
