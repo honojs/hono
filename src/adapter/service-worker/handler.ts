@@ -19,6 +19,7 @@ export const handle = <E extends Env, S extends Schema, BasePath extends string>
   app: Hono<E, S, BasePath>,
   opts: HandleOptions = {
     // To use `fetch` on a Service Worker correctly, bind it to `globalThis`.
+    // This enables automatic fallback to the default fetch handler for 404 responses.
     fetch: globalThis.fetch.bind(globalThis),
   }
 ): Handler => {
