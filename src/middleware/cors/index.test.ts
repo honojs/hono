@@ -349,4 +349,52 @@ describe('CORS by Middleware', () => {
     expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
+
+  describe('Wildcard origin with credentials', () => {
+    const credApp = new Hono()
+
+    credApp.use(
+      '/api/*',
+      cors({
+        origin: '*',
+        credentials: true,
+      })
+    )
+
+    credApp.get('/api/abc', (c) => c.json({ success: true }))
+
+    it('reflects request origin instead of wildcard when credentials is true', async () => {
+      const res = await credApp.request('http://localhost/api/abc', {
+        headers: { Origin: 'http://example.com' },
+      })
+
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    })
+
+    it('includes Vary: Origin header when credentials is true with wildcard', async () => {
+      const res = await credApp.request('http://localhost/api/abc', {
+        headers: { Origin: 'http://example.com' },
+      })
+
+      expect(res.headers.get('Vary')).toBe('Origin')
+    })
+
+    it('includes Vary: Origin on preflight when credentials is true with wildcard', async () => {
+      const req = new Request('http://localhost/api/abc', {
+        method: 'OPTIONS',
+        headers: { Origin: 'http://example.com' },
+      })
+      const res = await credApp.request(req)
+
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+      expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
+    })
+
+    it('does not set Allow-Origin when no Origin header is present and credentials is true', async () => {
+      const res = await credApp.request('http://localhost/api/abc')
+
+      expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
+    })
+  })
 })
