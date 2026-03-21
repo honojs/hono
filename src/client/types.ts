@@ -291,17 +291,21 @@ export type FilterClientResponseByStatusCode<
       : never
     : never
 
+// Helper type to strip leading slashes without recursion in PathToChain
+type StripLeadingSlash<T extends string> = T extends `/${infer P}` ? StripLeadingSlash<P> : T
+
 type PathToChain<
   Prefix extends string,
   Path extends string,
   E extends Schema,
   Original extends string = Path,
-> = Path extends `/${infer P}`
-  ? PathToChain<Prefix, P, E, Path>
-  : Path extends `${infer P}/${infer R}`
+> =
+  StripLeadingSlash<Path> extends `${infer P}/${infer R}`
     ? { [K in P]: PathToChain<Prefix, R, E, Original> }
     : {
-        [K in Path extends '' ? 'index' : Path]: ClientRequest<
+        [K in StripLeadingSlash<Path> extends ''
+          ? 'index'
+          : StripLeadingSlash<Path>]: ClientRequest<
           Prefix,
           Original,
           E extends Record<string, unknown> ? E[Original] : never
