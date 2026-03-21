@@ -354,6 +354,48 @@ describe('Body methods with caching', () => {
       expect(async () => await req.blob()).not.toThrow()
     })
 
+    describe('should not break body methods after parseBody() with non-form content-type', () => {
+      const createReq = () =>
+        new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ event: 'push' }),
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+
+      it('text()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.text()).toBe(JSON.stringify({ event: 'push' }))
+      })
+
+      it('json()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.json()).toEqual({ event: 'push' })
+      })
+
+      it('arrayBuffer()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+      })
+
+      it('blob()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.blob()).toBeInstanceOf(Blob)
+      })
+
+      it('formData()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        // application/json is not a valid formData content-type, so this should throw
+        expect(req.formData()).rejects.toThrow()
+      })
+    })
+
     describe('Return type', () => {
       let req: HonoRequest
       beforeEach(() => {

@@ -24,7 +24,7 @@ type Body = {
   blob: Blob
   formData: FormData
 }
-type BodyCache = Partial<Body & { parsedBody: BodyData }>
+type BodyCache = Partial<Body>
 
 type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
@@ -214,7 +214,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ): Promise<T>
   async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
   async parseBody(options?: Partial<ParseBodyOptions>) {
-    return (this.bodyCache.parsedBody ??= await parseBody(this, options))
+    return parseBody(this, options)
   }
 
   #cachedBody = (key: keyof Body) => {
