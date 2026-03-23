@@ -15,6 +15,7 @@ import type {
   InferRequestType,
   InferResponseType,
   ApplyGlobalResponse,
+  PickResponseByStatusCode,
 } from './types'
 
 class SafeBigInt {
@@ -1840,6 +1841,104 @@ describe('ApplyGlobalResponse Type Helper', () => {
     type ResponseType = InferResponseType<typeof req>
     type Expected = { users: string[] } | { error: string }
 
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+})
+
+describe('PickResponseByStatusCode Type Helper', () => {
+  it('Should keep only specified status code responses', () => {
+    const app = new Hono().get('/api/users', (c) => {
+      try {
+        return c.json({ users: ['alice', 'bob'] }, 200)
+      } catch {
+        return c.json({ error: 'Internal Server Error' }, 500)
+      }
+    })
+
+    type AppSuccessOnly = PickResponseByStatusCode<typeof app, 200>
+
+    const client = hc<AppSuccessOnly>('http://localhost')
+    const req = client.api.users.$get
+
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] }
+    type verify = Expect<Equal<ResponseType, Expected>>
+
+    type Res = Awaited<ReturnType<typeof req>>
+    type verifyOk = Expect<Equal<Res['ok'], true>>
+    type verifyStatus = Expect<Equal<Res['status'], 200>>
+  })
+
+  it('Should work with ApplyGlobalResponse', () => {
+    const app = new Hono().get('/api/users', (c) => {
+      try {
+        return c.json({ users: ['alice', 'bob'] }, 200)
+      } catch {
+        return c.json({ error: 'Not Found' }, 404)
+      }
+    })
+
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      typeof app,
+      {
+        401: { json: { error: string; message: string } }
+        500: { json: { error: string; message: string } }
+      }
+    >
+
+    type AppSuccessOnly = PickResponseByStatusCode<AppWithGlobalErrors, 200>
+
+    const client = hc<AppSuccessOnly>('http://localhost')
+    const req = client.api.users.$get
+
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] }
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+
+  it('Should work with route() paths', () => {
+    const users = new Hono().get('/users', (c) => {
+      try {
+        return c.json({ users: ['alice', 'bob'] }, 200)
+      } catch {
+        return c.json({ error: 'error' }, 500)
+      }
+    })
+    const app = new Hono().route('/api', users)
+
+    type AppSuccessOnly = PickResponseByStatusCode<typeof app, 200>
+
+    const client = hc<AppSuccessOnly>('http://localhost')
+    const req = client.api.users.$get
+
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] }
+    type verify = Expect<Equal<ResponseType, Expected>>
+  })
+
+  it('Should pick multiple status codes', () => {
+    const app = new Hono().get('/api/users', (c) => {
+      try {
+        return c.json({ users: ['alice', 'bob'] }, 200)
+      } catch {
+        return c.json({ error: 'Bad Request' }, 400)
+      }
+    })
+
+    type AppWithGlobalErrors = ApplyGlobalResponse<
+      typeof app,
+      {
+        500: { json: { error: string } }
+      }
+    >
+
+    type AppFiltered = PickResponseByStatusCode<AppWithGlobalErrors, 200 | 400>
+
+    const client = hc<AppFiltered>('http://localhost')
+    const req = client.api.users.$get
+
+    type ResponseType = InferResponseType<typeof req>
+    type Expected = { users: string[] } | { error: string }
     type verify = Expect<Equal<ResponseType, Expected>>
   })
 })
