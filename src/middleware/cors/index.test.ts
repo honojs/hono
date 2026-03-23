@@ -397,4 +397,25 @@ describe('CORS by Middleware', () => {
     expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
+
+  it('Reflect different origins correctly for credentials with wildcard', async () => {
+    const res1 = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'http://example.com' },
+    })
+    const res2 = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'http://other.com' },
+    })
+
+    expect(res1.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('http://other.com')
+  })
+
+  it('Handle Origin: null with credentials and wildcard', async () => {
+    const res = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'null' },
+    })
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('null')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
 })
