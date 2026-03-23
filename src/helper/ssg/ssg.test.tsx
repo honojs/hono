@@ -647,6 +647,30 @@ describe('disableSSG/onlySSG middlewares', () => {
   })
 })
 
+describe('isSSGContext with disableSSG', () => {
+  it('Should work correctly when used together', async () => {
+    const app = new Hono()
+
+    app.use('*', async (c, next) => {
+      if (!isSSGContext(c)) {
+        return next()
+      }
+      await next()
+    })
+    app.get('/guarded', disableSSG(), (c) => c.html('<h1>should be skipped</h1>'))
+    app.get('/page', (c) => c.html('<h1>hello</h1>'))
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await expect(toSSG(app, fsMock, { dir: './static' })).resolves.toBeDefined()
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/page.html', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/guarded.html', expect.any(String))
+  })
+})
+
 describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeRequestHook', () => {
   let app: Hono
   let fsMock: FileSystemModule
