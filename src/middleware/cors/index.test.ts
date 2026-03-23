@@ -84,6 +84,14 @@ describe('CORS by Middleware', () => {
     })
   )
 
+  app.use(
+    '/api10/*',
+    cors({
+      origin: '*',
+      credentials: true,
+    })
+  )
+
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
@@ -122,6 +130,10 @@ describe('CORS by Middleware', () => {
 
   app.get('/api7/abc', () => {
     return new Response(JSON.stringify({ success: true }))
+  })
+
+  app.get('/api10/abc', (c) => {
+    return c.json({ success: true })
   })
 
   it('GET default', async () => {
@@ -348,5 +360,62 @@ describe('CORS by Middleware', () => {
     const res2 = await app.request(req2)
     expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
+  })
+
+  it('Reflect request origin when credentials is true with wildcard origin', async () => {
+    const res = await app.request('http://localhost/api10/abc', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    expect(res.headers.get('Vary')).toBe('Origin')
+  })
+
+  it('Preflight: reflect request origin when credentials is true with wildcard origin', async () => {
+    const req = new Request('http://localhost/api10/abc', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://example.com',
+      },
+    })
+    const res = await app.request(req)
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
+  })
+
+  it('Should not set Allow-Origin when no Origin header with credentials and wildcard', async () => {
+    const res = await app.request('http://localhost/api10/abc')
+
+    expect(res.status).toBe(200)
+    expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('Reflect different origins correctly for credentials with wildcard', async () => {
+    const res1 = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'http://example.com' },
+    })
+    const res2 = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'http://other.com' },
+    })
+
+    expect(res1.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('http://other.com')
+  })
+
+  it('Handle Origin: null with credentials and wildcard', async () => {
+    const res = await app.request('http://localhost/api10/abc', {
+      headers: { Origin: 'null' },
+    })
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('null')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
 })
