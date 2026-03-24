@@ -92,11 +92,7 @@ const uint8ArrayToBase64 = (buf: Uint8Array): string => {
   return btoa(binary)
 }
 
-const encrypt = async (
-  value: string,
-  cookieName: string,
-  key: CryptoKey
-): Promise<string> => {
+const encrypt = async (value: string, cookieName: string, key: CryptoKey): Promise<string> => {
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
   const encoded = new TextEncoder().encode(value)
   const aad = new TextEncoder().encode(cookieName)
