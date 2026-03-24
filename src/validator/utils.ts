@@ -34,7 +34,7 @@ type InferInputInner<
       : Target extends 'form'
         ? T | T[]
         : Target extends 'query'
-          ? string | string[]
+          ? string[]
           : Target extends 'param'
             ? string
             : Target extends 'header'
