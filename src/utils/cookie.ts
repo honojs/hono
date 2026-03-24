@@ -7,6 +7,7 @@ import { decodeURIComponent_, tryDecode } from './url'
 
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
+export type EncryptedCookie = Record<string, string | false>
 
 type PartitionedCookieConstraint =
   | { partitioned: true; secure: true }
@@ -60,6 +61,75 @@ const verifySignature = async (
       signature[i] = signatureBinStr.charCodeAt(i)
     }
     return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
+  } catch {
+    return false
+  }
+}
+
+const encryptionAlgorithm = 'AES-GCM'
+const IV_LENGTH = 12
+const TAG_LENGTH_BIT = 128
+const HKDF_SALT = new TextEncoder().encode('hono-encrypted-cookie-salt-v1')
+const HKDF_INFO = new TextEncoder().encode('hono-encrypted-cookie')
+
+const getEncryptionKey = async (secret: string | BufferSource): Promise<CryptoKey> => {
+  const secretBuf = typeof secret === 'string' ? new TextEncoder().encode(secret) : secret
+  const keyMaterial = await crypto.subtle.importKey('raw', secretBuf, 'HKDF', false, ['deriveKey'])
+  return await crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: HKDF_SALT, info: HKDF_INFO },
+    keyMaterial,
+    { name: encryptionAlgorithm, length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+}
+
+const uint8ArrayToBase64 = (buf: Uint8Array): string => {
+  let binary = ''
+  for (let i = 0; i < buf.length; i++) {
+    binary += String.fromCharCode(buf[i])
+  }
+  return btoa(binary)
+}
+
+const encrypt = async (value: string, cookieName: string, key: CryptoKey): Promise<string> => {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
+  const encoded = new TextEncoder().encode(value)
+  const aad = new TextEncoder().encode(cookieName)
+  const cipherBuf = await crypto.subtle.encrypt(
+    { name: encryptionAlgorithm, iv, tagLength: TAG_LENGTH_BIT, additionalData: aad },
+    key,
+    encoded
+  )
+  const combined = new Uint8Array(IV_LENGTH + cipherBuf.byteLength)
+  combined.set(iv, 0)
+  combined.set(new Uint8Array(cipherBuf), IV_LENGTH)
+  return uint8ArrayToBase64(combined)
+}
+
+const decrypt = async (
+  base64Encrypted: string,
+  cookieName: string,
+  key: CryptoKey
+): Promise<string | false> => {
+  try {
+    const binStr = atob(base64Encrypted)
+    const combined = new Uint8Array(binStr.length)
+    for (let i = 0; i < binStr.length; i++) {
+      combined[i] = binStr.charCodeAt(i)
+    }
+    if (combined.length < IV_LENGTH + TAG_LENGTH_BIT / 8) {
+      return false
+    }
+    const iv = combined.slice(0, IV_LENGTH)
+    const ciphertext = combined.slice(IV_LENGTH)
+    const aad = new TextEncoder().encode(cookieName)
+    const decrypted = await crypto.subtle.decrypt(
+      { name: encryptionAlgorithm, iv, tagLength: TAG_LENGTH_BIT, additionalData: aad },
+      key,
+      ciphertext
+    )
+    return new TextDecoder().decode(decrypted)
   } catch {
     return false
   }
@@ -240,5 +310,46 @@ export const serializeSigned = async (
   const signature = await makeSignature(value, secret)
   value = `${value}.${signature}`
   value = encodeURIComponent(value)
+  return _serialize(name, value, opt)
+}
+
+/**
+ * Parse encrypted cookies from a cookie header string.
+ * Uses AES-256-GCM decryption with HKDF-SHA256 key derivation.
+ * Returns `false` for cookies that fail decryption (tampered or wrong key).
+ */
+export const parseEncrypted = async (
+  cookie: string,
+  secret: string | BufferSource,
+  name?: string
+): Promise<EncryptedCookie> => {
+  const parsedCookie: EncryptedCookie = {}
+  const key = await getEncryptionKey(secret)
+
+  for (const [cookieName, value] of Object.entries(parse(cookie, name))) {
+    try {
+      const decoded = decodeURIComponent_(value)
+      parsedCookie[cookieName] = await decrypt(decoded, cookieName, key)
+    } catch {
+      parsedCookie[cookieName] = false
+    }
+  }
+
+  return parsedCookie
+}
+
+/**
+ * Serialize a cookie value with AES-256-GCM encryption.
+ * The cookie value is encrypted using a random IV and encoded as base64.
+ */
+export const serializeEncrypted = async (
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt: CookieOptions = {}
+): Promise<string> => {
+  const key = await getEncryptionKey(secret)
+  const encrypted = await encrypt(value, name, key)
+  value = encodeURIComponent(encrypted)
   return _serialize(name, value, opt)
 }
