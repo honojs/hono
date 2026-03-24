@@ -1,5 +1,6 @@
 import type { Context } from '../../context'
 import { GET_MATCH_RESULT } from '../../request/constants'
+import { METHOD_NAME_ALL } from '../../router'
 import type { RouterRoute } from '../../types'
 import { getPattern, splitRoutingPath } from '../../utils/url'
 
@@ -57,6 +58,41 @@ export const matchedRoutes = (c: Context): RouterRoute[] =>
  */
 export const routePath = (c: Context, index?: number): string =>
   matchedRoutes(c).at(index ?? c.req.routeIndex)?.path ?? ''
+
+/**
+ * Get the route path of the actual handler (non-middleware) that will respond to the request.
+ *
+ * This is useful in middleware when you need the path of the actual route handler,
+ * regardless of how many middleware are registered before or after it.
+ * Unlike `routePath(c, -1)`, this function is not affected by middleware registered
+ * after the handler.
+ *
+ * @param {Context} c - The context object
+ * @returns The route path of the matched handler, or `''` if not found
+ *
+ * @example
+ * ```ts
+ * import { handlerPath } from 'hono/route'
+ *
+ * app.use(async (c, next) => {
+ *   console.log(handlerPath(c)) // '/health' — unaffected by middleware order
+ *   await next()
+ * })
+ *
+ * app.get('/health', (c) => c.json({ status: 'ok' }))
+ *
+ * // Even with middleware registered after the route, handlerPath still returns '/health'
+ * app.use(async (c, next) => {
+ *   await next()
+ * })
+ * ```
+ */
+export const handlerPath = (c: Context): string => {
+  const method = c.req.method
+  const routes = matchedRoutes(c)
+  const handler = routes.find((r) => r.method !== METHOD_NAME_ALL && r.method === method)
+  return handler?.path ?? ''
+}
 
 /**
  * Get the basePath of the as-is route specified by routing.
