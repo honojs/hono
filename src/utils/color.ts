@@ -23,7 +23,21 @@ export function getColorEnabled(): boolean {
           'NO_COLOR' in process?.env
         : false
 
-  return !isNoColor
+  if (isNoColor) {
+    return false
+  }
+
+  if (process?.stdout) {
+    return !!process.stdout.isTTY
+  }
+
+  if (Deno?.stdout) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stdout = Deno.stdout as any
+    return !!(stdout.isTerminal?.() || (Deno.isatty && Deno.isatty(stdout.rid)))
+  }
+
+  return true
 }
 
 /**

@@ -2,6 +2,20 @@ import * as esbuild from 'esbuild'
 import { getColorEnabled, getColorEnabledAsync } from './color'
 
 describe('getColorEnabled() / getColorEnabledAsync() - With colors enabled', () => {
+  beforeEach(() => {
+    vi.stubGlobal('process', {
+      ...globalThis.process,
+      stdout: {
+        ...globalThis.process?.stdout,
+        isTTY: true,
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should return true', async () => {
     expect(getColorEnabled()).toBe(true)
     expect(await getColorEnabledAsync()).toBe(true)
