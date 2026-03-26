@@ -290,6 +290,16 @@ const createResponseInstance = (
   init?: globalThis.ResponseInit
 ): Response => new Response(body, init)
 
+const serializeJSON = (value: unknown): string => {
+  const result = JSON.stringify(value)
+
+  if (result === undefined) {
+    throw new TypeError('Value is not JSON serializable.')
+  }
+
+  return result
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -714,7 +724,7 @@ export class Context<
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     return this.#newResponse(
-      JSON.stringify(object),
+      serializeJSON(object),
       arg,
       setDefaultContentType('application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
