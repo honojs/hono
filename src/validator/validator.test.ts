@@ -27,9 +27,9 @@ type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
       ? PR
       : never
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    R extends Response | TypedResponse<any, any, any>
-    ? R
-    : never
+      R extends Response | TypedResponse<any, any, any>
+      ? R
+      : never
   : never
 
 // Reference implementation for only testing
@@ -37,7 +37,7 @@ const zodValidator = <
   T extends z.ZodSchema,
   E extends {},
   P extends string,
-  Target extends keyof ValidationTargets
+  Target extends keyof ValidationTargets,
 >(
   target: Target,
   schema: T

@@ -138,7 +138,7 @@ const streamToNodeStream = async (
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 >(
   app: Hono<E, S, BasePath>
 ): Handler => {

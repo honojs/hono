@@ -26,7 +26,7 @@ declare type PagesFunction<
   Env = unknown,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Params extends string = any,
-  Data extends Record<string, unknown> = Record<string, unknown>
+  Data extends Record<string, unknown> = Record<string, unknown>,
 > = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
 export const handle =

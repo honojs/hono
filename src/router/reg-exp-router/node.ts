@@ -73,8 +73,8 @@ export class Node {
           ? ['', '', ONLY_WILDCARD_REG_EXP_STR] // '*' matches to all the trailing paths
           : ['', '', LABEL_REG_EXP_STR]
         : token === '/*'
-        ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
-        : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
+          ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
+          : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
 
     let node
     if (pattern) {
@@ -141,8 +141,8 @@ export class Node {
         (typeof c.#varIndex === 'number'
           ? `(${k})@${c.#varIndex}`
           : regExpMetaChars.has(k)
-          ? `\\${k}`
-          : k) + c.buildRegExpStr()
+            ? `\\${k}`
+            : k) + c.buildRegExpStr()
       )
     })
 
