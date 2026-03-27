@@ -87,10 +87,10 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
               ? { param: P; query: Q }
               : { param: P }
             : R extends { query: infer Q }
-              ? { query: Q }
-              : {}
+            ? { query: Q }
+            : {}
           : {})
-      | undefined = undefined,
+      | undefined = undefined
   >(
     arg?: Arg
   ) => HonoURL<Prefix, Path, Arg>
@@ -102,10 +102,10 @@ export type ClientRequest<Prefix extends string, Path extends string, S extends 
               ? { param: P; query: Q }
               : { param: P }
             : R extends { query: infer Q }
-              ? { query: Q }
-              : {}
+            ? { query: Q }
+            : {}
           : {})
-      | undefined = undefined,
+      | undefined = undefined
   >(
     arg?: Arg
   ) => BuildPath<Path, Arg>
@@ -128,15 +128,15 @@ type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
 export interface ClientResponse<
   T,
   U extends number = StatusCode,
-  F extends ResponseFormat = ResponseFormat,
+  F extends ResponseFormat = ResponseFormat
 > {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
   ok: U extends SuccessStatusCode
     ? true
     : U extends Exclude<StatusCode, SuccessStatusCode>
-      ? false
-      : boolean
+    ? false
+    : boolean
   redirected: boolean
   status: U
   statusText: string
@@ -170,21 +170,20 @@ type BuildTypedURL<
   Host extends string,
   Port extends string,
   P extends string,
-  Arg,
+  Arg
 > = TypedURL<`${Protocol}:`, Host, Port, BuildPathname<P, Arg>, BuildSearch<Arg, 'query'>>
 
-type HonoURL<Prefix extends string, Path extends string, Arg> =
-  IsLiteral<Prefix> extends true
-    ? TrimEndSlash<Prefix> extends `${infer Protocol}://${infer Rest}`
-      ? Rest extends `${infer Hostname}/${infer P}`
-        ? ParseHostName<Hostname> extends [infer Host extends string, infer Port extends string]
-          ? BuildTypedURL<Protocol, Host, Port, P, Arg>
-          : never
-        : ParseHostName<Rest> extends [infer Host extends string, infer Port extends string]
-          ? BuildTypedURL<Protocol, Host, Port, Path, Arg>
-          : never
-      : URL
+type HonoURL<Prefix extends string, Path extends string, Arg> = IsLiteral<Prefix> extends true
+  ? TrimEndSlash<Prefix> extends `${infer Protocol}://${infer Rest}`
+    ? Rest extends `${infer Hostname}/${infer P}`
+      ? ParseHostName<Hostname> extends [infer Host extends string, infer Port extends string]
+        ? BuildTypedURL<Protocol, Host, Port, P, Arg>
+        : never
+      : ParseHostName<Rest> extends [infer Host extends string, infer Port extends string]
+      ? BuildTypedURL<Protocol, Host, Port, Path, Arg>
+      : never
     : URL
+  : URL
 type ParseHostName<T extends string> = T extends `${infer Host}:${infer Port}`
   ? [Host, Port]
   : [T, '']
@@ -194,7 +193,7 @@ type IsLiteral<T extends string> = [T] extends [never] ? false : string extends 
 type ApplyParam<
   Path extends string,
   P,
-  Result extends string = '',
+  Result extends string = ''
 > = Path extends `${infer Head}/${infer Rest}`
   ? Head extends `:${infer Param}`
     ? P extends Record<Param, infer Value extends string>
@@ -204,12 +203,12 @@ type ApplyParam<
       : ApplyParam<Rest, P, `${Result}/${Head}`>
     : ApplyParam<Rest, P, `${Result}/${Head}`>
   : Path extends `:${infer Param}`
-    ? P extends Record<Param, infer Value extends string>
-      ? IsLiteral<Value> extends true
-        ? `${Result}/${Value & string}`
-        : `${Result}/${Path}`
+  ? P extends Record<Param, infer Value extends string>
+    ? IsLiteral<Value> extends true
+      ? `${Result}/${Value & string}`
       : `${Result}/${Path}`
     : `${Result}/${Path}`
+  : `${Result}/${Path}`
 type IsEmptyObject<T> = keyof T extends never ? true : false
 
 export interface TypedURL<
@@ -217,7 +216,7 @@ export interface TypedURL<
   Hostname extends string,
   Port extends string,
   Pathname extends string,
-  Search extends string,
+  Search extends string
 > extends URL {
   protocol: Protocol
   hostname: Hostname
@@ -283,39 +282,37 @@ export type InferRequestOptionsType<T> = T extends (
  */
 export type FilterClientResponseByStatusCode<
   T extends ClientResponse<any, any, any>,
-  U extends number = StatusCode,
-> =
-  T extends ClientResponse<infer RT, infer RC, infer RF>
-    ? RC extends U
-      ? ClientResponse<RT, RC, RF>
-      : never
+  U extends number = StatusCode
+> = T extends ClientResponse<infer RT, infer RC, infer RF>
+  ? RC extends U
+    ? ClientResponse<RT, RC, RF>
     : never
+  : never
 
 type PathToChain<
   Prefix extends string,
   Path extends string,
   E extends Schema,
-  Original extends string = Path,
+  Original extends string = Path
 > = Path extends `/${infer P}`
   ? PathToChain<Prefix, P, E, Path>
   : Path extends `${infer P}/${infer R}`
-    ? { [K in P]: PathToChain<Prefix, R, E, Original> }
-    : {
-        [K in Path extends '' ? 'index' : Path]: ClientRequest<
-          Prefix,
-          Original,
-          E extends Record<string, unknown> ? E[Original] : never
-        >
-      }
+  ? { [K in P]: PathToChain<Prefix, R, E, Original> }
+  : {
+      [K in Path extends '' ? 'index' : Path]: ClientRequest<
+        Prefix,
+        Original,
+        E extends Record<string, unknown> ? E[Original] : never
+      >
+    }
 
-export type Client<T, Prefix extends string> =
-  T extends HonoBase<any, infer S, any>
-    ? S extends Record<infer K, Schema>
-      ? K extends string
-        ? PathToChain<Prefix, K, S>
-        : never
+export type Client<T, Prefix extends string> = T extends HonoBase<any, infer S, any>
+  ? S extends Record<infer K, Schema>
+    ? K extends string
+      ? PathToChain<Prefix, K, S>
       : never
     : never
+  : never
 
 export type Callback = (opts: CallbackOptions) => unknown
 
@@ -355,12 +352,15 @@ type ModSchema<D, Def extends GlobalResponseDefinition> = {
   }
 }
 
-export type ApplyGlobalResponse<App, Def extends GlobalResponseDefinition> =
-  App extends HonoBase<infer E, infer _ extends Schema, infer B>
-    ? ModSchema<ExtractSchema<App>, Def> extends infer S extends Schema
-      ? Hono<E, S, B>
-      : never
+export type ApplyGlobalResponse<App, Def extends GlobalResponseDefinition> = App extends HonoBase<
+  infer E,
+  infer _ extends Schema,
+  infer B
+>
+  ? ModSchema<ExtractSchema<App>, Def> extends infer S extends Schema
+    ? Hono<E, S, B>
     : never
+  : never
 
 type PickRoute<R, U extends StatusCode> = R extends Endpoint
   ? R extends { status: U }
@@ -385,9 +385,12 @@ type PickSchema<D, U extends StatusCode> = {
  * const client = hc<AppSuccessOnly>('http://localhost')
  * ```
  */
-export type PickResponseByStatusCode<App, U extends StatusCode> =
-  App extends HonoBase<infer E, infer _ extends Schema, infer B>
-    ? PickSchema<ExtractSchema<App>, U> extends infer S extends Schema
-      ? Hono<E, S, B>
-      : never
+export type PickResponseByStatusCode<App, U extends StatusCode> = App extends HonoBase<
+  infer E,
+  infer _ extends Schema,
+  infer B
+>
+  ? PickSchema<ExtractSchema<App>, U> extends infer S extends Schema
+    ? Hono<E, S, B>
     : never
+  : never

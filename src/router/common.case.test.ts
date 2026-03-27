@@ -43,13 +43,10 @@ export const runTest = ({
           stash
             ? {
                 handler: r[0],
-                params: Object.keys(r[1]).reduce(
-                  (acc, key) => {
-                    acc[key] = stash[(r[1] as ParamIndexMap)[key]]
-                    return acc
-                  },
-                  Object.create(null) as Params
-                ),
+                params: Object.keys(r[1]).reduce((acc, key) => {
+                  acc[key] = stash[(r[1] as ParamIndexMap)[key]]
+                  return acc
+                }, Object.create(null) as Params),
               }
             : { handler: r[0], params: r[1] as Params }
         )

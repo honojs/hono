@@ -43,8 +43,8 @@ const createRenderer =
       typeof options?.docType === 'string'
         ? options.docType
         : options?.docType === false
-          ? ''
-          : '<!DOCTYPE html>'
+        ? ''
+        : '<!DOCTYPE html>'
 
     const currentLayout = component
       ? jsx(
@@ -155,7 +155,7 @@ export const jsxRenderer = <E extends Env = Env>(
 export const useRequestContext = <
   E extends Env = any,
   P extends string = any,
-  I extends Input = {},
+  I extends Input = {}
 >(): Context<E, P, I> => {
   const c = useContext(RequestContext)
   if (!c) {

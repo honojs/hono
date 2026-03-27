@@ -125,19 +125,12 @@ interface BodyRespond {
     status?: U,
     headers?: HeaderRecord
   ): Response & TypedResponse<T, U, 'body'>
-  <T extends Data, U extends ContentfulStatusCode>(
-    data: T,
-    init?: ResponseOrInit<U>
-  ): Response & TypedResponse<T, U, 'body'>
-  <T extends null, U extends StatusCode>(
-    data: T,
-    status?: U,
-    headers?: HeaderRecord
-  ): Response & TypedResponse<null, U, 'body'>
-  <T extends null, U extends StatusCode>(
-    data: T,
-    init?: ResponseOrInit<U>
-  ): Response & TypedResponse<null, U, 'body'>
+  <T extends Data, U extends ContentfulStatusCode>(data: T, init?: ResponseOrInit<U>): Response &
+    TypedResponse<T, U, 'body'>
+  <T extends null, U extends StatusCode>(data: T, status?: U, headers?: HeaderRecord): Response &
+    TypedResponse<null, U, 'body'>
+  <T extends null, U extends StatusCode>(data: T, init?: ResponseOrInit<U>): Response &
+    TypedResponse<null, U, 'body'>
 }
 
 /**
@@ -181,7 +174,7 @@ interface TextRespond {
 interface JSONRespond {
   <
     T extends JSONValue | {} | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode,
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
     status?: U,
@@ -189,7 +182,7 @@ interface JSONRespond {
   ): JSONRespondReturn<T, U>
   <
     T extends JSONValue | {} | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode,
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
     init?: ResponseOrInit<U>
@@ -204,7 +197,7 @@ interface JSONRespond {
  */
 type JSONRespondReturn<
   T extends JSONValue | {} | InvalidJSONValue,
-  U extends ContentfulStatusCode,
+  U extends ContentfulStatusCode
 > = Response & TypedResponse<JSONParsed<T>, U, 'json'>
 
 /**
@@ -295,7 +288,7 @@ export class Context<
   E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
-  I extends Input = {},
+  I extends Input = {}
 > {
   #rawRequest: Request
   #req: HonoRequest<P, I['out']> | undefined
@@ -608,7 +601,7 @@ export class Context<
   ): Response {
     const responseHeaders = this.#res
       ? new Headers(this.#res.headers)
-      : (this.#preparedHeaders ?? new Headers())
+      : this.#preparedHeaders ?? new Headers()
 
     if (typeof arg === 'object' && 'headers' in arg) {
       const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
@@ -634,7 +627,7 @@ export class Context<
       }
     }
 
-    const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
+    const status = typeof arg === 'number' ? arg : arg?.status ?? this.#status
     return createResponseInstance(data, { status, headers: responseHeaders })
   }
 
@@ -707,7 +700,7 @@ export class Context<
    */
   json: JSONRespond = <
     T extends JSONValue | {} | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode,
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
     arg?: U | ResponseOrInit<U>,

@@ -16,8 +16,8 @@ export type IsLiteralUnion<T, Base> = [Exclude<T, undefined>] extends [Base]
 type IsOptionalUnion<T> = [unknown] extends [T]
   ? false // unknown or any
   : undefined extends T
-    ? true
-    : false
+  ? true
+  : false
 
 // Helper to force TypeScript to expand type aliases
 type SimplifyDeep<T> = { [K in keyof T]: T[K] } & {}
@@ -25,23 +25,23 @@ type SimplifyDeep<T> = { [K in keyof T]: T[K] } & {}
 type InferInputInner<
   Output,
   Target extends keyof ValidationTargets,
-  T extends FormValue,
+  T extends FormValue
 > = SimplifyDeep<{
   [K in keyof Output]: IsLiteralUnion<Output[K], string> extends true
     ? Output[K]
     : IsOptionalUnion<Output[K]> extends true
-      ? Output[K]
-      : Target extends 'form'
-        ? T | T[]
-        : Target extends 'query'
-          ? string | string[]
-          : Target extends 'param'
-            ? string
-            : Target extends 'header'
-              ? string
-              : Target extends 'cookie'
-                ? string
-                : unknown
+    ? Output[K]
+    : Target extends 'form'
+    ? T | T[]
+    : Target extends 'query'
+    ? string | string[]
+    : Target extends 'param'
+    ? string
+    : Target extends 'header'
+    ? string
+    : Target extends 'cookie'
+    ? string
+    : unknown
 }>
 
 /**
@@ -59,11 +59,11 @@ type InferInputInner<
 export type InferInput<
   Output,
   Target extends keyof ValidationTargets,
-  T extends FormValue = ParsedFormValue,
+  T extends FormValue = ParsedFormValue
 > = [Exclude<Output, undefined>] extends [never]
   ? {}
   : [Exclude<Output, undefined>] extends [object]
-    ? undefined extends Output
-      ? SimplifyDeep<InferInputInner<Exclude<Output, undefined>, Target, T>> | undefined
-      : SimplifyDeep<InferInputInner<Output, Target, T>>
-    : {}
+  ? undefined extends Output
+    ? SimplifyDeep<InferInputInner<Exclude<Output, undefined>, Target, T>> | undefined
+    : SimplifyDeep<InferInputInner<Output, Target, T>>
+  : {}

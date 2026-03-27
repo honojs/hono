@@ -138,7 +138,7 @@ const streamToNodeStream = async (
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/',
+  BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>
 ): Handler => {
@@ -248,8 +248,15 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       ? WithMultiValueHeaders
       : WithHeaders)
 >) => {
-  // @ts-expect-error FIXME: Fix return typing
-  return async (event, lambdaContext?) => {
+  return async <L extends LambdaEvent>(
+    event: L,
+    lambdaContext?: LambdaContext
+  ): Promise<
+    APIGatewayProxyResult &
+      (L extends { multiValueHeaders: Record<string, string[]> }
+        ? WithMultiValueHeaders
+        : WithHeaders)
+  > => {
     const processor = getProcessor(event)
 
     const req = processor.createRequest(event)
@@ -261,7 +268,12 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return processor.createResult(event, res, { isContentTypeBinary })
+    return processor.createResult(event, res, { isContentTypeBinary }) as Promise<
+      APIGatewayProxyResult &
+        (L extends { multiValueHeaders: Record<string, string[]> }
+          ? WithMultiValueHeaders
+          : WithHeaders)
+    >
   }
 }
 

@@ -132,7 +132,7 @@ describe('parseAccept Comprehensive Tests', () => {
     })
 
     test('handles escaped quote and semicolon inside quoted parameter', () => {
-      const header = 'text/plain;meta="a\\\";b";q=0.5'
+      const header = 'text/plain;meta="a\\";b";q=0.5'
       const result = parseAccept(header)
       expect(result).toEqual([
         {

@@ -121,8 +121,8 @@ export const getPath = (request: Request): string => {
             ? undefined
             : hashIndex
           : hashIndex === -1
-            ? queryIndex
-            : Math.min(queryIndex, hashIndex)
+          ? queryIndex
+          : Math.min(queryIndex, hashIndex)
       const path = url.slice(start, end)
       return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
     } else if (charCode === 63 || charCode === 35) {
