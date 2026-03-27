@@ -814,3 +814,73 @@ describe('Node with initial method and handler', () => {
     expect(res[0][0]).toEqual('hello handler')
   })
 })
+
+describe('Double star wildcard (**)', () => {
+  describe('Basic', () => {
+    const node = new Node()
+    node.insert('get', '/auth/**', 'auth handler')
+    it('/auth/hello', () => {
+      const [res] = node.search('get', '/auth/hello')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('auth handler')
+    })
+    it('/auth/hello/world', () => {
+      const [res] = node.search('get', '/auth/hello/world')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('auth handler')
+    })
+    it('/auth', () => {
+      const [res] = node.search('get', '/auth')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('auth handler')
+    })
+  })
+
+  describe('Should behave the same as single star (*)', () => {
+    const nodeSingle = new Node()
+    nodeSingle.insert('get', '/api/*', 'single star')
+
+    const nodeDouble = new Node()
+    nodeDouble.insert('get', '/api/**', 'double star')
+
+    const paths = ['/api', '/api/users', '/api/users/123']
+    for (const path of paths) {
+      it(`${path} should match both single and double star`, () => {
+        const [resSingle] = nodeSingle.search('get', path)
+        const [resDouble] = nodeDouble.search('get', path)
+        expect(resSingle.length).toBe(resDouble.length)
+      })
+    }
+  })
+
+  describe('With multiple methods', () => {
+    const node = new Node()
+    node.insert('get', '/auth/**', 'get auth')
+    node.insert('post', '/auth/**', 'post auth')
+    it('GET /auth/hello', () => {
+      const [res] = node.search('get', '/auth/hello')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('get auth')
+    })
+    it('POST /auth/hello', () => {
+      const [res] = node.search('post', '/auth/hello')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('post auth')
+    })
+  })
+
+  describe('Top-level double star', () => {
+    const node = new Node()
+    node.insert('get', '**', 'match all')
+    it('/', () => {
+      const [res] = node.search('get', '/')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('match all')
+    })
+    it('/foo/bar', () => {
+      const [res] = node.search('get', '/foo/bar')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('match all')
+    })
+  })
+})
