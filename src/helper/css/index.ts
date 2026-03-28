@@ -7,7 +7,7 @@ import { raw } from '../../helper/html'
 import { DOM_RENDERER } from '../../jsx/constants'
 import { createCssJsxDomObjects } from '../../jsx/dom/css'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
-import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
+import type { ClassNameSlug, CssClassName as CssClassNameCommon, CssVariableType } from './common'
 import {
   CLASS_NAME,
   DEFAULT_STYLE_ID,
@@ -21,6 +21,7 @@ import {
   viewTransitionCommon,
 } from './common'
 export { rawCssString } from './common'
+export type { ClassNameSlug } from './common'
 
 type CssClassName = HtmlEscapedString & CssClassNameCommon
 
@@ -58,7 +59,13 @@ interface StyleType {
  * `createCssContext` is an experimental feature.
  * The API might be changed.
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
+export const createCssContext = ({
+  id,
+  classNameSlug,
+}: {
+  id: Readonly<string>
+  classNameSlug?: ClassNameSlug
+}): DefaultContextType => {
   const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
 
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
@@ -139,7 +146,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   }
 
   const css: CssType = (strings, ...values) => {
-    return newCssClassNameObject(cssCommon(strings, values))
+    return newCssClassNameObject(cssCommon(strings, values, classNameSlug))
   }
 
   const cx: CxType = (...args) => {
