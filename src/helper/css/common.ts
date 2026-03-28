@@ -90,6 +90,16 @@ type CssVariableAsyncType = Promise<CssVariableBasicType>
 type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
 export type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
 
+/**
+ * A function that customizes generated CSS class names.
+ *
+ * @param hash - The default hash-based class name (e.g. `css-1234567890`)
+ * @param label - The comment label extracted from the CSS template, may be empty
+ * @param styleString - The minified CSS style string
+ * @returns The custom class name to use
+ */
+export type ClassNameSlug = (hash: string, label: string, styleString: string) => string
+
 export const buildStyleString = (
   strings: TemplateStringsArray,
   values: CssVariableType[]
@@ -154,14 +164,18 @@ export const buildStyleString = (
 
 export const cssCommon = (
   strings: TemplateStringsArray,
-  values: CssVariableType[]
+  values: CssVariableType[],
+  classNameSlug?: ClassNameSlug
 ): CssClassName => {
   let [label, thisStyleString, selectors, externalClassNames] = buildStyleString(strings, values)
   const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
   if (isPseudoGlobal) {
     thisStyleString = isPseudoGlobal[1]
   }
-  const selector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
+  const hash = toHash(label + thisStyleString)
+  const selector =
+    (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') +
+    (classNameSlug ? classNameSlug(hash, label, thisStyleString) : hash)
   const className = (
     isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
   ).join(' ')
@@ -196,12 +210,15 @@ export const cxCommon = (
 
 export const keyframesCommon = (
   strings: TemplateStringsArray,
-  ...values: CssVariableType[]
+  values: CssVariableType[],
+  classNameSlug?: ClassNameSlug
 ): CssClassName => {
   const [label, styleString] = buildStyleString(strings, values)
+  const hash = toHash(label + styleString)
+  const name = classNameSlug ? classNameSlug(hash, label, styleString) : hash
   return {
     [SELECTOR]: '',
-    [CLASS_NAME]: `@keyframes ${toHash(label + styleString)}`,
+    [CLASS_NAME]: `@keyframes ${name}`,
     [STYLE_STRING]: styleString,
     [SELECTORS]: [],
     [EXTERNAL_CLASS_NAMES]: [],
@@ -209,7 +226,11 @@ export const keyframesCommon = (
 }
 
 type ViewTransitionType = {
-  (strings: TemplateStringsArray, values: CssVariableType[]): CssClassName
+  (
+    strings: TemplateStringsArray,
+    values: CssVariableType[],
+    classNameSlug?: ClassNameSlug
+  ): CssClassName
   (content: CssClassName): CssClassName
   (): CssClassName
 }
@@ -217,19 +238,20 @@ type ViewTransitionType = {
 let viewTransitionNameIndex = 0
 export const viewTransitionCommon: ViewTransitionType = ((
   strings: TemplateStringsArray | CssClassName | undefined,
-  values: CssVariableType[]
+  values: CssVariableType[],
+  classNameSlug?: ClassNameSlug
 ): CssClassName => {
   if (!strings) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     strings = [`/* h-v-t ${viewTransitionNameIndex++} */`] as any
   }
   const content = Array.isArray(strings)
-    ? cssCommon(strings as TemplateStringsArray, values)
+    ? cssCommon(strings as TemplateStringsArray, values, classNameSlug)
     : (strings as CssClassName)
 
   const transitionName = content[CLASS_NAME]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = cssCommon(['view-transition-name:', ''] as any, [transitionName])
+  const res = cssCommon(['view-transition-name:', ''] as any, [transitionName], classNameSlug)
 
   content[CLASS_NAME] = PSEUDO_GLOBAL_SELECTOR + content[CLASS_NAME]
   content[STYLE_STRING] = content[STYLE_STRING].replace(

@@ -86,6 +86,34 @@ describe('Style and css for jsx/dom', () => {
       '<div><style id="hono-css">color:red</style><div class="css-3142110215">red</div></div>'
     )
   })
+
+  it('classNameSlug with createCssContext', async () => {
+    const { css: customCss, Style: CustomStyle } = createCssContext({
+      id: 'custom-dom',
+      classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+    })
+    const App = () => {
+      return (
+        <div>
+          <CustomStyle />
+          <div
+            class={customCss`
+              /* hero */
+              color: blue;
+            `}
+          >
+            blue
+          </div>
+        </div>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe(
+      '<div><style id="custom-dom"></style><div class="h-hero">blue</div></div>'
+    )
+    await Promise.resolve()
+    expect(root.querySelector('style')?.sheet?.cssRules[0].cssText).toBe('.h-hero {color: blue;}')
+  })
 })
 
 describe('render', () => {

@@ -4,7 +4,7 @@
  */
 
 import type { FC, PropsWithChildren } from '../'
-import type { CssClassName, CssVariableType } from '../../helper/css/common'
+import type { ClassNameSlug, CssClassName, CssVariableType } from '../../helper/css/common'
 import {
   CLASS_NAME,
   DEFAULT_STYLE_ID,
@@ -167,8 +167,17 @@ interface DefaultContextType {
  * @experimental
  * `createCssContext` is an experimental feature.
  * The API might be changed.
+ *
+ * @param options.id - The ID for the style element
+ * @param options.classNameSlug - Optional function to customize generated CSS class names
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
+export const createCssContext = ({
+  id,
+  classNameSlug,
+}: {
+  id: Readonly<string>
+  classNameSlug?: ClassNameSlug
+}): DefaultContextType => {
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
@@ -177,7 +186,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   }
 
   const css: CssType = (strings, ...values) => {
-    return newCssClassNameObject(cssCommon(strings, values))
+    return newCssClassNameObject(cssCommon(strings, values, classNameSlug))
   }
 
   const cx: CxType = (...args) => {
@@ -187,14 +196,15 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     return css(Array(args.length).fill('') as any, ...args)
   }
 
-  const keyframes: KeyframesType = keyframesCommon
+  const keyframes: KeyframesType = (strings, ...values) =>
+    keyframesCommon(strings, values, classNameSlug)
 
   const viewTransition: ViewTransitionType = ((
     strings: TemplateStringsArray | string | undefined,
     ...values: CssVariableType[]
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return newCssClassNameObject(viewTransitionCommon(strings as any, values))
+    return newCssClassNameObject(viewTransitionCommon(strings as any, values, classNameSlug))
   }) as ViewTransitionType
 
   return {

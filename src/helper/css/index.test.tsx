@@ -206,6 +206,132 @@ describe('CSS Helper', () => {
     })
   })
 
+  describe('classNameSlug', () => {
+    it('Should use custom classNameSlug function', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'custom-slug',
+        classNameSlug: (hash, _label, _css) => `btn-${hash.split('-')[1]}`,
+      })
+      const btnClass = customCss`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <button class={btnClass}>Click</button>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.btn-')
+      expect(result).not.toContain('.css-')
+    })
+
+    it('Should pass label to classNameSlug', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'label-slug',
+        classNameSlug: (hash, label) => (label ? `h${label.trim()}` : hash),
+      })
+      const headerClass = customCss`
+        /* hero-section */
+        background-color: blue;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <div class={headerClass}>Hero</div>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.hhero-section')
+      expect(result).toContain('background-color:blue')
+    })
+
+    it('Should fall back to hash when label is empty', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'fallback-slug',
+        classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
+      })
+      const noLabelClass = customCss`
+        color: red;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <div class={noLabelClass}>No label</div>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-')
+      expect(result).toContain('color:red')
+    })
+
+    it('Should not affect default context when classNameSlug is not set', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Default</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-2458908649')
+      expect(result).toContain('background-color:blue')
+    })
+
+    it('Should apply classNameSlug to keyframes', async () => {
+      const {
+        css: customCss,
+        keyframes: customKeyframes,
+        Style: customStyle,
+      } = createCssContext({
+        id: 'kf-slug',
+        classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+      })
+      const animation = customKeyframes`
+        /* fade-in */
+        from { opacity: 0; }
+        to { opacity: 1; }
+      `
+      const headerClass = customCss`
+        animation: ${animation} 1s ease-in-out;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('@keyframes h-fade-in')
+      expect(result).toContain('animation:h-fade-in 1s ease-in-out')
+    })
+
+    it('Should apply classNameSlug to viewTransition', async () => {
+      const {
+        css: customCss,
+        viewTransition: customViewTransition,
+        Style: customStyle,
+      } = createCssContext({
+        id: 'vt-slug',
+        classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+      })
+      const transition = customViewTransition(customCss`
+        /* hero */
+        display: flex;
+      `)
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={transition}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('view-transition-name:h-hero')
+    })
+  })
+
   describe('with application', () => {
     const app = new Hono()
 
