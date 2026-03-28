@@ -40,6 +40,8 @@ export const rawCssString = (value: string): CssEscapedString => {
  * https://github.com/cristianbote/goober/blob/master/src/core/to-hash.js
  * MIT License, Copyright (c) 2019 Cristian Bote
  */
+export type ClassNameSlug = (hash: string, label: string, css: string) => string
+
 const toHash = (str: string): string => {
   let i = 0,
     out = 11
@@ -154,14 +156,18 @@ export const buildStyleString = (
 
 export const cssCommon = (
   strings: TemplateStringsArray,
-  values: CssVariableType[]
+  values: CssVariableType[],
+  classNameSlug?: ClassNameSlug
 ): CssClassName => {
   let [label, thisStyleString, selectors, externalClassNames] = buildStyleString(strings, values)
   const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
   if (isPseudoGlobal) {
     thisStyleString = isPseudoGlobal[1]
   }
-  const selector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
+  const hash = toHash(label + thisStyleString)
+  const selector =
+    (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') +
+    (classNameSlug ? classNameSlug(hash, label, thisStyleString) : hash)
   const className = (
     isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
   ).join(' ')
