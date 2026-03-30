@@ -95,20 +95,73 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
+/**
+ * The Hono class is the core of the Hono framework.
+ *
+ * @template E - The environment type.
+ * @template S - The schema type.
+ * @template BasePath - The base path type.
+ * @template CurrentPath - The current path type.
+ */
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/',
   CurrentPath extends string = BasePath,
 > {
+  /**
+   * `.get()` registers a handler for the GET method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   get!: HandlerInterface<E, 'get', S, BasePath, CurrentPath>
+  /**
+   * `.post()` registers a handler for the POST method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   post!: HandlerInterface<E, 'post', S, BasePath, CurrentPath>
+  /**
+   * `.put()` registers a handler for the PUT method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   put!: HandlerInterface<E, 'put', S, BasePath, CurrentPath>
+  /**
+   * `.delete()` registers a handler for the DELETE method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
+  /**
+   * `.options()` registers a handler for the OPTIONS method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
+  /**
+   * `.patch()` registers a handler for the PATCH method.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  /**
+   * `.all()` registers a handler for all HTTP methods.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
+  /**
+   * `.on()` registers a handler for custom HTTP methods and paths.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#http-methods}
+   */
   on: OnHandlerInterface<E, S, BasePath>
+  /**
+   * `.use()` registers a middleware handler.
+   *
+   * @see {@link https://hono.dev/docs/api/routing#middleware}
+   */
   use: MiddlewareHandlerInterface<E, S, BasePath>
 
   /*

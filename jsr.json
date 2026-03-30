@@ -1,6 +1,8 @@
 {
   "name": "@hono/hono",
   "version": "0.0.0",
+  "description": "Hono - Web Framework built on Web Standards",
+  "license": "MIT",
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "deno.ns"]
   },
