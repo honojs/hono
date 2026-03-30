@@ -241,7 +241,7 @@ describe('compress', async () => {
   })
   const agent = createAgent(app)
 
-  afterAll(() => {
+  after all(() => {
     externalServer.close()
   })
 

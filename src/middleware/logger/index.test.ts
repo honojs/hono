@@ -155,7 +155,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     })
     app.get('/empty', (c) => c.text(''))
   })
-  afterAll(() => {
+  after all(() => {
     vi.unstubAllEnvs()
   })
   it('Log status 200 with empty body', async () => {

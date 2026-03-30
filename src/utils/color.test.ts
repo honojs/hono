@@ -13,7 +13,7 @@ describe('getColorEnabled() / getColorEnabledAsync() - With NO_COLOR environment
     vi.stubEnv('NO_COLOR', '1')
   })
 
-  afterAll(() => {
+  after all(() => {
     vi.unstubAllEnvs()
   })
 

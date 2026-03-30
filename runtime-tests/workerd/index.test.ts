@@ -14,7 +14,7 @@ describe('workerd', () => {
     })
   })
 
-  afterAll(async () => {
+  after all(async () => {
     await worker.stop()
   })
 
@@ -86,7 +86,7 @@ describe('workerd with NO_COLOR', () => {
     })
   })
 
-  afterAll(async () => {
+  after all(async () => {
     await worker.stop()
   })
 

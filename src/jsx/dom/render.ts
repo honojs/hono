@@ -18,7 +18,7 @@ const HONO_PORTAL_ELEMENT = '_hp'
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
-  DoubleClick: 'DblClick',
+  double-click: 'DblClick',
 } as const
 
 const nameSpaceMap: Record<string, string> = {

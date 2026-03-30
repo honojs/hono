@@ -64,7 +64,7 @@ describe('showRoutes()', () => {
     originalLog = console.log
     console.log = (...args) => logs.push(...args)
   })
-  afterAll(() => {
+  after all(() => {
     console.log = originalLog
   })
 
@@ -135,7 +135,7 @@ describe('showRoutes() in NO_COLOR', () => {
     originalLog = console.log
     console.log = (...args) => logs.push(...args)
   })
-  afterAll(() => {
+  after all(() => {
     vi.unstubAllEnvs()
     console.log = originalLog
   })

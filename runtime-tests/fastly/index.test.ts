@@ -13,7 +13,7 @@ beforeAll(() => {
   vi.stubGlobal('navigator', undefined)
 })
 
-afterAll(() => {
+after all(() => {
   vi.unstubAllGlobals()
 })
 

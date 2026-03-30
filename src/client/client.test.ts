@@ -121,7 +121,7 @@ describe('Basic - JSON', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const payload = {
     id: 123,
@@ -320,7 +320,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   type AppType = typeof route
 
@@ -469,7 +469,7 @@ describe('Form - Multiple Values', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const client = hc('http://localhost/')
 
@@ -499,7 +499,7 @@ describe('Form - Undefined Values', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const client = hc('http://localhost/')
 
@@ -655,7 +655,7 @@ describe('Merge path with `app.route()`', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   type Env = {
     Bindings: {
@@ -1218,7 +1218,7 @@ describe('Dynamic headers', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   let dynamic = ''
 
@@ -1282,7 +1282,7 @@ describe('RequestInit work as expected', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const client = hc<AppType>('http://localhost', {
     headers: { 'x-hono': 'fire' },
@@ -1368,7 +1368,7 @@ describe('WebSocket URL Protocol Translation', () => {
     vi.clearAllMocks()
     server.resetHandlers()
   })
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   it('Translates HTTP to ws', async () => {
     const client = hc<AppType>('http://localhost')
@@ -1422,7 +1422,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
     vi.clearAllMocks()
     server.resetHandlers()
   })
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   it('Translates HTTP to ws and includes query parameters', async () => {
     const client = hc<AppType>('http://localhost')
@@ -1508,7 +1508,7 @@ describe('Text response', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const app = new Hono().get('/about/me', (c) => c.text(text)).get('/api', (c) => c.json(obj))
   const client = hc<typeof app>('http://localhost/')
@@ -1547,7 +1547,7 @@ describe('Redirect response - only types', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   const condition = () => true
   const app = new Hono().get('/', async (c) => {
@@ -1614,7 +1614,7 @@ describe('WebSocket Provider Integration', () => {
     vi.clearAllMocks()
     server.resetHandlers()
   })
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   it.each([
     {
@@ -1670,7 +1670,7 @@ describe('Custom buildSearchParams', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   // Custom buildSearchParams that uses bracket notation for arrays (key[]=value)
   const customBuildSearchParams = (query: Record<string, string | string[]>) => {
@@ -1739,7 +1739,7 @@ describe('ApplyGlobalResponse Type Helper', () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   it('Should add global error response types to all routes', () => {
     // Use explicit status codes for proper type narrowing

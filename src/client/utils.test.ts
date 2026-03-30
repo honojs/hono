@@ -251,7 +251,7 @@ describe('parseResponse', async () => {
 
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   await Promise.all([
     it('should auto parse the text response - async fetch', async () => {

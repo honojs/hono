@@ -299,7 +299,7 @@ describe('Etag Middleware', () => {
       })
     })
 
-    afterAll(() => {
+    after all(() => {
       Object.defineProperty(globalThis, 'crypto', {
         value: _crypto,
       })

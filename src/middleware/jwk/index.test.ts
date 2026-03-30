@@ -32,7 +32,7 @@ describe('JWK', () => {
   )
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
-  afterAll(() => server.close())
+  after all(() => server.close())
 
   describe('verifyWithJwks', () => {
     it('Should throw error on missing keys/jwks_uri options', async () => {

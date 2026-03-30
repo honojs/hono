@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { after all, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import { stream, streamSSE } from '../..//src/helper/streaming'
@@ -285,7 +285,7 @@ describe('toSSG function', () => {
     expect(result.success).toBeTruthy()
     expect(result.error).toBeUndefined()
     expect(result.files).toBeDefined()
-    afterAll(async () => {
+    after all(async () => {
       await deleteDirectory('./static')
     })
   })

@@ -26,7 +26,7 @@ describe('upgradeWebSocket()', () => {
     // @ts-expect-error patch global
     globalThis.CloseEvent = Event
   })
-  afterAll(() => {
+  after all(() => {
     // @ts-expect-error patch global
     delete globalThis.CloseEvent
   })
