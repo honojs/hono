@@ -904,7 +904,7 @@ describe('DOM', () => {
       it('assign undefined', async () => {
         let setValue: (value: string | undefined) => void = () => {}
         const App = () => {
-          const [value, _setValue] = useState<string | undefined>('a')
+          const [value, _setValue] = useState<string | undefined>('b')
           setValue = _setValue
           return (
             <select value={value}>
@@ -922,6 +922,29 @@ describe('DOM', () => {
         await Promise.resolve()
         const select = root.querySelector('select') as HTMLSelectElement
         expect(select.value).toBe('a') // select the first option
+        expect(select.selectedIndex).toBe(0)
+      })
+
+      it('apply value after options are added', async () => {
+        const App = () => {
+          const [options, setOptions] = useState<string[]>([])
+          useEffect(() => {
+            setOptions(['option1', 'option2', 'option3'])
+          }, [])
+          return (
+            <select value='option2'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        await new Promise((resolve) => setTimeout(resolve))
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option2')
       })
     })
 
