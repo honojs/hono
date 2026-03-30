@@ -418,7 +418,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
 
         applyProps(el as HTMLElement, child.props, child.pP)
         applyNodeObject(child, el as HTMLElement, isNewLocal)
-        if ((el as HTMLElement).nodeName === 'SELECT') {
+        if (child.tag === 'select') {
           applySelectValue(el as HTMLSelectElement, child.props)
         }
       }
