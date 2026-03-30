@@ -145,11 +145,13 @@ const normalizeFormValue = (value: Props['value']) =>
   value === null || value === undefined || value === false ? null : value
 
 const applySelectValue = (select: HTMLSelectElement, props: Props): void => {
-  if ('value' in props) {
-    select.value = normalizeFormValue(props['value'])
-    if (select.selectedIndex === -1) {
-      select.selectedIndex = 0
-    }
+  if (!('value' in props)) {
+    return
+  }
+
+  select.value = normalizeFormValue(props['value'])
+  if (!select.multiple && select.selectedIndex === -1) {
+    select.selectedIndex = 0
   }
 }
 

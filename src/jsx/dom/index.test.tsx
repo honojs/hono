@@ -926,11 +926,10 @@ describe('DOM', () => {
       })
 
       it('apply value after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
         const App = () => {
-          const [options, setOptions] = useState<string[]>([])
-          useEffect(() => {
-            setOptions(['option1', 'option2', 'option3'])
-          }, [])
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
           return (
             <select value='option2'>
               {options.map((opt) => (
@@ -942,9 +941,77 @@ describe('DOM', () => {
           )
         }
         render(<App />, root)
-        await new Promise((resolve) => setTimeout(resolve))
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
         const select = root.querySelector('select') as HTMLSelectElement
         expect(select.value).toBe('option2')
+        expect(select.selectedIndex).toBe(1)
+        expect(select.options[1].selected).toBe(true)
+      })
+
+      it('select the first option when undefined after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select value={undefined}>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option1')
+        expect(select.selectedIndex).toBe(0)
+        expect(select.options[0].selected).toBe(true)
+      })
+
+      it('do not select the first option for invalid multiple value', () => {
+        const App = () => {
+          return (
+            <select multiple value='z'>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
+      })
+
+      it('keep invalid multiple value unselected after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select multiple value='z'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['a', 'b', 'c'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
       })
     })
 
