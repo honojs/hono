@@ -330,6 +330,64 @@ describe('CSS Helper', () => {
       const result = await toString(template)
       expect(result).toContain('view-transition-name:h-hero')
     })
+
+    it('Should sanitize classNameSlug output to safe characters only', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'sanitize-slug',
+        classNameSlug: () => '  bad name{color:red} ',
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.bad-namecolorred{display:flex}')
+      expect(result).toContain('class="bad-namecolorred"')
+      expect(result).not.toContain('bad name{color:red}')
+    })
+
+    it('Should fall back to hash when classNameSlug returns only invalid characters', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'empty-slug',
+        classNameSlug: () => '!!!:::',
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-')
+      expect(result).toContain('display:flex')
+    })
+
+    it('Should fall back to hash when label is empty and classNameSlug returns label', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'empty-label-slug',
+        classNameSlug: (_, label) => label.trim(),
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-')
+      expect(result).toContain('display:flex')
+    })
   })
 
   describe('with application', () => {

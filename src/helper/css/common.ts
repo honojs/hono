@@ -49,6 +49,14 @@ const toHash = (str: string): string => {
   return 'css-' + out
 }
 
+const sanitizeClassName = (name: string, fallback: string): string => {
+  const sanitized = name
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+  return sanitized || fallback
+}
+
 const cssStringReStr: string = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
 
@@ -96,7 +104,9 @@ export type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssV
  * @param hash - The default hash-based class name (e.g. `css-1234567890`)
  * @param label - The comment label extracted from the CSS template, may be empty
  * @param styleString - The minified CSS style string
- * @returns The custom class name to use
+ * @returns The custom class name to use. The returned value will be normalized
+ *   (whitespace trimmed and collapsed to hyphens) and sanitized (only
+ *   `[a-zA-Z0-9_-]` characters are kept) internally.
  */
 export type ClassNameSlug = (hash: string, label: string, styleString: string) => string
 
@@ -175,7 +185,7 @@ export const cssCommon = (
   const hash = toHash(label + thisStyleString)
   const selector =
     (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') +
-    (classNameSlug ? classNameSlug(hash, label, thisStyleString) : hash)
+    sanitizeClassName(classNameSlug ? classNameSlug(hash, label, thisStyleString) : hash, hash)
   const className = (
     isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
   ).join(' ')
@@ -215,7 +225,10 @@ export const keyframesCommon = (
 ): CssClassName => {
   const [label, styleString] = buildStyleString(strings, values)
   const hash = toHash(label + styleString)
-  const name = classNameSlug ? classNameSlug(hash, label, styleString) : hash
+  const name = sanitizeClassName(
+    classNameSlug ? classNameSlug(hash, label, styleString) : hash,
+    hash
+  )
   return {
     [SELECTOR]: '',
     [CLASS_NAME]: `@keyframes ${name}`,
