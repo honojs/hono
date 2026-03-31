@@ -193,6 +193,58 @@ describe('Compress Middleware', () => {
     })
   })
 
+  describe('ETag Handling', () => {
+    const app = new Hono()
+    app.use('*', compress())
+    app.get('/strong-etag', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('ETag', '"strong-etag"')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/weak-etag', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('ETag', 'W/"weak-etag"')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/no-etag', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      return c.text('a'.repeat(1024))
+    })
+
+    it('should convert strong ETag to weak ETag when compressing', async () => {
+      const res = await app.request('/strong-etag', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('ETag')).toBe('W/"strong-etag"')
+    })
+
+    it('should keep strong ETag when not compressing', async () => {
+      const res = await app.request('/strong-etag')
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('ETag')).toBe('"strong-etag"')
+    })
+
+    it('should not modify weak ETag when compressing', async () => {
+      const res = await app.request('/weak-etag', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('ETag')).toBe('W/"weak-etag"')
+    })
+
+    it('should not add ETag when none exists', async () => {
+      const res = await app.request('/no-etag', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('ETag')).toBeNull()
+    })
+  })
+
   describe('Edge Cases', () => {
     it('should not compress responses with Cache-Control: no-transform', async () => {
       await testCompression('/no-transform', 'gzip', null)
