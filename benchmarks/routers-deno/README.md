@@ -18,7 +18,7 @@ For Deno:
 deno run --allow-read --allow-run src/bench.mts
 ```
 
-This project is heavily impaired by [delvedor/router-benchmark](https://github.com/delvedor/router-benchmark)
+This project is heavily inspired by [delvedor/router-benchmark](https://github.com/delvedor/router-benchmark)
 
 ## License
 
