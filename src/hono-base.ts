@@ -460,14 +460,14 @@ class Hono<
   }
 
   /**
-   * `.fetch()` will be entry point of your app.
+   * `.fetch()` will be the entry point of your app.
    *
    * @see {@link https://hono.dev/docs/api/hono#fetch}
    *
-   * @param {Request} request - request Object of request
-   * @param {Env} Env - env Object
-   * @param {ExecutionContext} - context of execution
-   * @returns {Response | Promise<Response>} response of request
+   * @param {Request} request - The Request object.
+   * @param {Env} Env - The environment bindings.
+   * @param {ExecutionContext} executionCtx - The execution context.
+   * @returns {Response | Promise<Response>} The response of the request.
    *
    */
   fetch: (
