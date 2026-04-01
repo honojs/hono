@@ -33,6 +33,13 @@ const defaultTimeoutException = new HTTPException(504, {
  *   await someLongRunningFunction()
  *   return c.text('Completed within time limit')
  * })
+ *
+ * app.use('/user', timeout(5000)) // Set a generic timeout for all user routes
+ *
+ * app.use('/user/export', timeout(30000), async (c, next) => {
+ *   await someLongRunningFunction()
+ *   return c.text('Completed within 30 seconds')
+ * })
  * ```
  */
 export const timeout = (
