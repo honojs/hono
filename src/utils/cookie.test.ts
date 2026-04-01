@@ -73,6 +73,32 @@ describe('Parse cookie', () => {
     expect(cookie['']).toBeUndefined()
   })
 
+  it('Should parse cookie names containing colons', () => {
+    // Colons are used by real-world libraries such as @inlang/paraglide-sveltekit
+    // (e.g. 'paraglide:lang') and AWS Cognito. They are technically outside the
+    // strict RFC 6265 token definition but browsers send them without issue.
+    const cookieString = 'paraglide:lang=en; other_cookie=value; ns:sub:key=deep'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['other_cookie']).toBe('value')
+    expect(cookie['ns:sub:key']).toBe('deep')
+  })
+
+  it('Should parse a single cookie with a colon in its name when specified by name', () => {
+    const cookieString = 'paraglide:lang=en; other_cookie=value'
+    const cookie: Cookie = parse(cookieString, 'paraglide:lang')
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['other_cookie']).toBeUndefined()
+  })
+
+  it('Should parse signed cookies with colon in name', async () => {
+    const secret = 'test-secret'
+    // serializeSigned produces 'name=value.signature' which is also a valid Cookie header
+    const serialized = await serializeSigned('paraglide:lang', 'en', secret)
+    const cookie: SignedCookie = await parseSigned(serialized, secret)
+    expect(cookie['paraglide:lang']).toBe('en')
+  })
+
   it('Should ignore invalid cookie values', () => {
     const cookieString = 'yummy_cookie=choco\\nchip; tasty_cookie=strawberry; best_cookie="sugar'
     const cookie: Cookie = parse(cookieString)

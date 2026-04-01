@@ -65,9 +65,11 @@ const verifySignature = async (
   }
 }
 
-// all alphanumeric chars and all of _!#$%&'*.^`|~+-
-// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
-const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+// When parsing incoming cookies, use a permissive regex that accepts ':' in addition
+// to the strict RFC 6265 token characters. ':' is used in practice by libraries like
+// @inlang/paraglide-sveltekit (e.g. 'paraglide:lang') and AWS Cognito. The hyphen
+// is explicitly escaped to avoid ambiguity in the character class.
+const parseCookieNameRegEx = /^[\w!#$%&'*.^`|~+:\-]+$/
 
 // all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
 // (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
@@ -91,7 +93,7 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
-    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+    if ((name && name !== cookieName) || !parseCookieNameRegEx.test(cookieName)) {
       continue
     }
 
