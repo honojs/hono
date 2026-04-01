@@ -229,10 +229,10 @@ describe('CSS Helper', () => {
     it('Should pass label to classNameSlug', async () => {
       const { css: customCss, Style: customStyle } = createCssContext({
         id: 'label-slug',
-        classNameSlug: (hash, label) => (label ? `h${label.trim()}` : hash),
+        classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
       })
       const headerClass = customCss`
-        /* hero-section */
+        /* hero section */
         background-color: blue;
       `
       const template = (
@@ -242,8 +242,37 @@ describe('CSS Helper', () => {
         </>
       )
       const result = await toString(template)
-      expect(result).toContain('.hhero-section')
+      expect(result).toContain('.h-hero-section')
       expect(result).toContain('background-color:blue')
+    })
+
+    it('Should fall back to different hash values for labels with special characters', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'label-deferent-slug',
+        classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
+      })
+      const headerClass1 = customCss`
+        /* hero section! */
+        background-color: blue;
+      `
+      const headerClass2 = customCss`
+        /* hero section? */
+        background-color: blue;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <div class={headerClass1}>Hero</div>
+          <div class={headerClass2}>Hero</div>
+        </>
+      )
+      const result = await toString(template)
+
+      const classes = new Set<string>()
+      result.match(/class="(.*?)"/g)?.forEach((match) => {
+        classes.add(match)
+      })
+      expect(classes.size).toBe(2)
     })
 
     it('Should fall back to hash when label is empty', async () => {
@@ -287,7 +316,7 @@ describe('CSS Helper', () => {
         Style: customStyle,
       } = createCssContext({
         id: 'kf-slug',
-        classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+        classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
       })
       const animation = customKeyframes`
         /* fade-in */
@@ -315,7 +344,7 @@ describe('CSS Helper', () => {
         Style: customStyle,
       } = createCssContext({
         id: 'vt-slug',
-        classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+        classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
       })
       const transition = customViewTransition(customCss`
         /* hero */
@@ -331,30 +360,10 @@ describe('CSS Helper', () => {
       expect(result).toContain('view-transition-name:h-hero')
     })
 
-    it('Should sanitize classNameSlug output to safe characters only', async () => {
-      const { css: customCss, Style: customStyle } = createCssContext({
-        id: 'sanitize-slug',
-        classNameSlug: () => '  bad name{color:red} ',
-      })
-      const headerClass = customCss`
-        display: flex;
-      `
-      const template = (
-        <>
-          {customStyle()}
-          <h1 class={headerClass}>Hello!</h1>
-        </>
-      )
-      const result = await toString(template)
-      expect(result).toContain('.bad-namecolorred{display:flex}')
-      expect(result).toContain('class="bad-namecolorred"')
-      expect(result).not.toContain('bad name{color:red}')
-    })
-
-    it('Should fall back to hash when classNameSlug returns only invalid characters', async () => {
+    it('Should fall back to hash when classNameSlug returns invalid characters', async () => {
       const { css: customCss, Style: customStyle } = createCssContext({
         id: 'empty-slug',
-        classNameSlug: () => '!!!:::',
+        classNameSlug: () => 'name!',
       })
       const headerClass = customCss`
         display: flex;
@@ -373,7 +382,7 @@ describe('CSS Helper', () => {
     it('Should fall back to hash when label is empty and classNameSlug returns label', async () => {
       const { css: customCss, Style: customStyle } = createCssContext({
         id: 'empty-label-slug',
-        classNameSlug: (_, label) => label.trim(),
+        classNameSlug: (_, label) => label,
       })
       const headerClass = customCss`
         display: flex;
@@ -387,6 +396,100 @@ describe('CSS Helper', () => {
       const result = await toString(template)
       expect(result).toContain('.css-')
       expect(result).toContain('display:flex')
+    })
+
+    it('Should fall back to hash when classNameSlug starts with a number', async () => {
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'numeric-slug',
+        classNameSlug: () => '1hero',
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-')
+      expect(result).toContain('display:flex')
+      expect(result).not.toContain('.1hero')
+    })
+
+    it('Should call onInvalidSlug when classNameSlug returns invalid characters', async () => {
+      let invalidSlug = ''
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'on-invalid-slug',
+        classNameSlug: () => 'name!',
+        onInvalidSlug: (slug) => {
+          invalidSlug = slug
+        },
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('.css-')
+      expect(invalidSlug).toBe('name!')
+    })
+
+    it('Should call onInvalidSlug when keyframes name is a reserved keyword', async () => {
+      let invalidSlug = ''
+      const {
+        css: customCss,
+        keyframes: customKeyframes,
+        Style: customStyle,
+      } = createCssContext({
+        id: 'on-invalid-kf-slug',
+        classNameSlug: () => 'none',
+        onInvalidSlug: (slug) => {
+          invalidSlug = slug
+        },
+      })
+      const animation = customKeyframes`
+        from { opacity: 0; }
+        to { opacity: 1; }
+      `
+      const headerClass = customCss`
+        animation: ${animation} 1s ease-in-out;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const result = await toString(template)
+      expect(result).toContain('@keyframes css-')
+      expect(invalidSlug).toBe('none')
+    })
+
+    it('Should warn when onInvalidSlug is not provided and slug is invalid', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const { css: customCss, Style: customStyle } = createCssContext({
+        id: 'default-warn-slug',
+        classNameSlug: () => 'name!',
+      })
+      const headerClass = customCss`
+        display: flex;
+      `
+      const template = (
+        <>
+          {customStyle()}
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      await toString(template)
+      expect(warnSpy).toHaveBeenCalledWith('Invalid slug: "name!". Falling back to default hash.')
+      warnSpy.mockRestore()
     })
   })
 
