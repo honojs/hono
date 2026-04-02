@@ -53,8 +53,7 @@ const normalizeLabel = (label: string): string => {
   return label.trim().replace(/\s+/g, '-')
 }
 
-const validateClassName = (name: string): string | undefined =>
-  !name || !/^-?[_a-zA-Z][_a-zA-Z0-9-]*$/.test(name) ? undefined : name
+const isValidClassName = (name: string): boolean => /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/.test(name)
 
 // CSS-wide keywords that are invalid as @keyframes names per the spec
 const RESERVED_KEYFRAME_NAMES = new Set([
@@ -66,8 +65,12 @@ const RESERVED_KEYFRAME_NAMES = new Set([
   'revert-layer',
   'unset',
 ])
-const validateKeyframeName = (name: string): string | undefined =>
-  !validateClassName(name) || RESERVED_KEYFRAME_NAMES.has(name.toLowerCase()) ? undefined : name
+const isValidKeyframeName = (name: string): boolean =>
+  isValidClassName(name) && !RESERVED_KEYFRAME_NAMES.has(name.toLowerCase())
+
+const defaultOnInvalidSlug = (slug: string) => {
+  console.warn(`Invalid slug: ${slug}`)
+}
 
 const cssStringReStr: string = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
@@ -117,26 +120,19 @@ export type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssV
  * @param label - The comment label extracted from the CSS template, may be empty.
  *   Whitespace is trimmed and inner spaces are replaced with hyphens.
  * @param styleString - The minified CSS style string
- * @returns The custom class name to use. Must be a valid CSS identifier
- *   (e.g. `^[a-zA-Z_][a-zA-Z0-9-]*$`); reserved keyframe names
- *   ('none', 'initial', 'inherit', 'unset', 'default', 'revert', 'revert-layer')
- *   are disallowed for `@keyframes`. Otherwise, the default hash is used as a fallback.
+ * @returns The custom class name to use. Must be a safe CSS identifier;
+ *   otherwise, the default hash is used as a fallback.
  */
 export type ClassNameSlug = (hash: string, label: string, styleString: string) => string
 
 /**
- * A callback function called when a custom class name or keyframe name is invalid.
+ * A callback function called when an invalid slug is returned from ClassNameSlug.
  *
- * @param slug - The invalid class name or keyframe name
+ * @param slug - The invalid slug
  */
 export type OnInvalidSlug = (slug: string) => void
 
-const defaultOnInvalidSlug: OnInvalidSlug = (slug) => {
-  console.warn(`Invalid slug: "${slug}". Falling back to default hash.`)
-}
-
 export const buildStyleString = (
-  // ... (omitted lines for brevity, but I will provide the full file or enough context)
   strings: TemplateStringsArray,
   values: CssVariableType[]
 ): [string, string, CssClassName[], string[]] => {
@@ -210,14 +206,19 @@ export const cssCommon = (
     thisStyleString = isPseudoGlobal[1]
   }
   const hash = toHash(label + thisStyleString)
+
   let customSlug: string | undefined
   if (classNameSlug) {
     const slug = classNameSlug(hash, normalizeLabel(label), thisStyleString)
-    customSlug = validateClassName(slug)
-    if (slug && !customSlug) {
-      ;(onInvalidSlug || defaultOnInvalidSlug)(slug)
+    if (slug) {
+      if (isValidClassName(slug)) {
+        customSlug = slug
+      } else {
+        ;(onInvalidSlug || defaultOnInvalidSlug)(slug)
+      }
     }
   }
+
   const selector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + (customSlug || hash)
   const className = (
     isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
@@ -259,19 +260,22 @@ export const keyframesCommon = (
 ): CssClassName => {
   const [label, styleString] = buildStyleString(strings, values)
   const hash = toHash(label + styleString)
-  let name: string | undefined
+
+  let customSlug: string | undefined
   if (classNameSlug) {
     const slug = classNameSlug(hash, normalizeLabel(label), styleString)
-    name = validateKeyframeName(slug)
-    if (slug && !name) {
-      ;(onInvalidSlug || defaultOnInvalidSlug)(slug)
+    if (slug) {
+      if (isValidKeyframeName(slug)) {
+        customSlug = slug
+      } else {
+        ;(onInvalidSlug || defaultOnInvalidSlug)(slug)
+      }
     }
   }
-  name ||= hash
 
   return {
     [SELECTOR]: '',
-    [CLASS_NAME]: `@keyframes ${name}`,
+    [CLASS_NAME]: `@keyframes ${customSlug || hash}`,
     [STYLE_STRING]: styleString,
     [SELECTORS]: [],
     [EXTERNAL_CLASS_NAMES]: [],

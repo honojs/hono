@@ -23,7 +23,6 @@ import {
   viewTransitionCommon,
 } from '../../helper/css/common'
 export { rawCssString } from '../../helper/css/common'
-export type { ClassNameSlug, OnInvalidSlug } from '../../helper/css/common'
 
 const splitRule = (rule: string): string[] => {
   const result: string[] = []
@@ -156,12 +155,7 @@ interface KeyframesType {
 }
 
 interface ViewTransitionType {
-  (
-    strings: TemplateStringsArray,
-    values: CssVariableType[],
-    classNameSlug?: ClassNameSlug,
-    onInvalidSlug?: OnInvalidSlug
-  ): string
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): string
   (content: string): string
   (): string
 }
@@ -181,7 +175,7 @@ interface DefaultContextType {
  *
  * @param options.id - The ID for the style element
  * @param options.classNameSlug - Optional function to customize generated CSS class names
- * @param options.onInvalidSlug - Optional callback function called when a custom class name or keyframe name is invalid
+ * @param options.onInvalidSlug - Optional callback function called when an invalid slug is returned from ClassNameSlug
  */
 export const createCssContext = ({
   id,

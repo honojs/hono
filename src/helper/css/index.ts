@@ -66,7 +66,7 @@ interface StyleType {
  *
  * @param options.id - The ID for the style element
  * @param options.classNameSlug - Optional function to customize generated CSS class names
- * @param options.onInvalidSlug - Optional callback function called when a custom class name or keyframe name is invalid
+ * @param options.onInvalidSlug - Optional callback function called when an invalid slug is returned from ClassNameSlug
  */
 export const createCssContext = ({
   id,
