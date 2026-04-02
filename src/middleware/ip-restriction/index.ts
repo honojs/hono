@@ -57,7 +57,7 @@ const buildMatcher = (
         }
 
         const isIPv4 = type === 'IPv4'
-        const prefix = parseInt(separatedRule[1])
+        const prefix = parseInt(separatedRule[1], 10)
 
         if (isIPv4 ? prefix === 32 : prefix === 128) {
           // this rule is a static rule
