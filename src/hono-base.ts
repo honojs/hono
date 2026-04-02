@@ -17,6 +17,7 @@ import type {
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
+  MethodNotAllowedHandler,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
   Next,
@@ -179,11 +180,14 @@ class Hono<
     })
     clone.errorHandler = this.errorHandler
     clone.#notFoundHandler = this.#notFoundHandler
+    clone.#methodNotAllowedHandler = this.#methodNotAllowedHandler
     clone.routes = this.routes
     return clone
   }
 
   #notFoundHandler: NotFoundHandler = notFoundHandler
+  #methodNotAllowedHandler: MethodNotAllowedHandler | null = null
+
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
 
@@ -294,6 +298,28 @@ class Hono<
   }
 
   /**
+   * `.methodNotAllowed()` allows you to customize a Method Not Allowed Response.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#method-not-allowed}
+   *
+   * @param {MethodNotAllowedHandler} handler - request handler for method-not-allowed
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.methodNotAllowed((c, allowedMethods) => {
+   *   return c.text(`Method not allowed. Allowed: ${allowedMethods.join(', ')}`, 405, {
+   *     Allow: allowedMethods.join(', ').toUpperCase()
+   *   })
+   * })
+   * ```
+   */
+  methodNotAllowed = (handler: MethodNotAllowedHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+    this.#methodNotAllowedHandler = handler
+    return this
+  }
+
+  /**
    * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
    * @see {@link https://hono.dev/docs/api/hono#mount}
@@ -390,6 +416,24 @@ class Hono<
     this.routes.push(r)
   }
 
+  #findAllowedMethods(path: string): string[] {
+    const allowedMethods = new Set<string>()
+    const allMethods = METHODS.map((m) => m.toUpperCase())
+
+    for (const method of allMethods) {
+      const matchResult = this.router.match(method, path)
+      // Check if there are any method-specific routes (excluding METHOD_NAME_ALL middleware)
+      const hasMethodSpecificRoute = matchResult[0].some(
+        (match: [[H, RouterRoute], unknown]) => match[0][1].method !== METHOD_NAME_ALL
+      )
+      if (hasMethodSpecificRoute) {
+        allowedMethods.add(method)
+      }
+    }
+
+    return Array.from(allowedMethods)
+  }
+
   #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
@@ -419,6 +463,19 @@ class Hono<
       executionCtx,
       notFoundHandler: this.#notFoundHandler,
     })
+
+    // Check if there are any method-specific routes (excluding METHOD_NAME_ALL middleware)
+    const hasMethodSpecificRoute = matchResult[0].some(
+      (match: [[H, RouterRoute], unknown]) => match[0][1].method !== METHOD_NAME_ALL
+    )
+
+    // Check for method not allowed if no method-specific match found and handler is set
+    if (!hasMethodSpecificRoute && this.#methodNotAllowedHandler) {
+      const allowedMethods = this.#findAllowedMethods(path)
+      if (allowedMethods.length > 0) {
+        return this.#methodNotAllowedHandler(c, allowedMethods)
+      }
+    }
 
     // Do not `compose` if it has only one handler
     if (matchResult[0].length === 1) {
