@@ -90,7 +90,7 @@ describe('Style and css for jsx/dom', () => {
   it('classNameSlug with createCssContext', async () => {
     const { css: customCss, Style: CustomStyle } = createCssContext({
       id: 'custom-dom',
-      classNameSlug: (hash, label) => (label.trim() ? `h-${label.trim()}` : hash),
+      classNameSlug: (hash, label) => (label ? `h-${label}` : hash),
     })
     const App = () => {
       return (
