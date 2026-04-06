@@ -255,6 +255,63 @@ describe('Resolve trailing slash', () => {
     })
   })
 
+  describe('appendTrailingSlash middleware with skip option', () => {
+    const hasExtension = (path: string): boolean => /\.\w+$/.test(path.split('/').at(-1) ?? '')
+    const app = new Hono({ strict: true })
+    app.use('*', appendTrailingSlash({ skip: hasExtension }))
+
+    app.get('/page/', (c) => c.text('ok'))
+
+    it('should not redirect paths with file extensions', async () => {
+      const resp = await app.request('/foo.html')
+
+      expect(resp.status).toBe(404)
+    })
+
+    it('should redirect paths without file extensions', async () => {
+      const resp = await app.request('/page')
+
+      expect(resp.status).toBe(301)
+      const loc = new URL(resp.headers.get('location')!)
+      expect(loc.pathname).toBe('/page/')
+    })
+  })
+
+  describe('appendTrailingSlash middleware with alwaysRedirect and skip options', () => {
+    const hasExtension = (path: string): boolean => /\.\w+$/.test(path.split('/').at(-1) ?? '')
+    const app = new Hono()
+    app.use('*', appendTrailingSlash({ alwaysRedirect: true, skip: hasExtension }))
+
+    app.get('/', (c) => c.text('ok'))
+    app.get('/my-path/*', (c) => c.text('wildcard'))
+
+    it('should redirect paths without extensions', async () => {
+      const resp = await app.request('/my-path/something')
+      const loc = new URL(resp.headers.get('location')!)
+
+      expect(resp.status).toBe(301)
+      expect(loc.pathname).toBe('/my-path/something/')
+    })
+
+    it('should not redirect paths with file extensions', async () => {
+      const resp = await app.request('/my-path/style.css')
+
+      expect(resp.status).toBe(200)
+    })
+
+    it('should not redirect paths with extensions like .html', async () => {
+      const resp = await app.request('/my-path/page.html')
+
+      expect(resp.status).toBe(200)
+    })
+
+    it('should handle HEAD request for paths with extensions', async () => {
+      const resp = await app.request('/my-path/script.js', { method: 'HEAD' })
+
+      expect(resp.status).toBe(200)
+    })
+  })
+
   describe('appendTrailingSlash middleware with alwaysRedirect option', () => {
     const app = new Hono()
     app.use('*', appendTrailingSlash({ alwaysRedirect: true }))
