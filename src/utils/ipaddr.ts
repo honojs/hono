@@ -94,14 +94,27 @@ export const convertIPv4BinaryToString = (ipV4: bigint): string => {
 }
 
 /**
+ * Check if a binary IPv6 address is an IPv4-mapped IPv6 address (::ffff:x.x.x.x)
+ * @param ipv6binary binary IPv6 Address
+ * @return true if the address is an IPv4-mapped IPv6 address
+ */
+export const isIPv4MappedIPv6 = (ipv6binary: bigint): boolean => ipv6binary >> 32n === 0xffffn
+
+/**
+ * Extract the IPv4 portion from an IPv4-mapped IPv6 address
+ * @param ipv6binary binary IPv4-mapped IPv6 Address
+ * @return binary IPv4 Address
+ */
+export const convertIPv4MappedIPv6ToIPv4 = (ipv6binary: bigint): bigint => ipv6binary & 0xffffffffn
+
+/**
  * Convert a binary representation of an IPv6 address to a string.
  * @param ipV6 binary IPv6 Address
  * @return normalized IPv6 Address in string
  */
 export const convertIPv6BinaryToString = (ipV6: bigint): string => {
-  // IPv6-mapped IPv4 address
-  if (ipV6 >> 32n === 0xffffn) {
-    return `::ffff:${convertIPv4BinaryToString(ipV6 & 0xffffffffn)}`
+  if (isIPv4MappedIPv6(ipV6)) {
+    return `::ffff:${convertIPv4BinaryToString(convertIPv4MappedIPv6ToIPv4(ipV6))}`
   }
 
   const sections = []

@@ -7,10 +7,12 @@ import type { Context, MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { HTTPException } from '../../http-exception'
 import {
+  convertIPv4MappedIPv6ToIPv4,
   convertIPv4ToBinary,
   convertIPv6BinaryToString,
   convertIPv6ToBinary,
   distinctRemoteAddr,
+  isIPv4MappedIPv6,
 } from '../../utils/ipaddr'
 
 /**
@@ -56,14 +58,20 @@ const buildMatcher = (
           throw new TypeError(`Invalid rule: ${rule}`)
         }
 
-        const isIPv4 = type === 'IPv4'
-        const prefix = parseInt(separatedRule[1])
+        let isIPv4 = type === 'IPv4'
+        let prefix = parseInt(separatedRule[1])
 
         if (isIPv4 ? prefix === 32 : prefix === 128) {
           // this rule is a static rule
           rule = addrStr
         } else {
-          const addr = (isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary)(addrStr)
+          let addr = (isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary)(addrStr)
+          if (type === 'IPv6' && isIPv4MappedIPv6(addr) && prefix >= 96) {
+            isIPv4 = true
+            addr = convertIPv4MappedIPv6ToIPv4(addr)
+            prefix -= 96
+          }
+
           const mask = ((1n << BigInt(prefix)) - 1n) << BigInt((isIPv4 ? 32 : 128) - prefix)
 
           cidrRules.push([isIPv4, addr & mask, mask] as [boolean, bigint, bigint])
@@ -75,11 +83,17 @@ const buildMatcher = (
       if (type === undefined) {
         throw new TypeError(`Invalid rule: ${rule}`)
       }
-      staticRules.add(
-        type === 'IPv4'
-          ? rule // IPv4 address is already normalized, so it is registered as is.
-          : convertIPv6BinaryToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
-      )
+      if (type === 'IPv4') {
+        staticRules.add(rule)
+        staticRules.add(`::ffff:${rule}`)
+      } else {
+        const ipv6binary = convertIPv6ToBinary(rule)
+        const ipv6Addr = convertIPv6BinaryToString(ipv6binary)
+        staticRules.add(ipv6Addr)
+        if (isIPv4MappedIPv6(ipv6binary)) {
+          staticRules.add(ipv6Addr.substring(7)) // remove ::ffff: prefix
+        }
+      }
     }
   }
 
@@ -92,13 +106,28 @@ const buildMatcher = (
     if (staticRules.has(remote.addr)) {
       return true
     }
+    const remoteAddr = (remote.binaryAddr ||= (
+      remote.isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary
+    )(remote.addr))
+    const remoteIPv4Addr =
+      remote.isIPv4 || isIPv4MappedIPv6(remoteAddr)
+        ? remote.isIPv4
+          ? remoteAddr
+          : convertIPv4MappedIPv6ToIPv4(remoteAddr)
+        : undefined
     for (const [isIPv4, addr, mask] of cidrRules) {
-      if (isIPv4 !== remote.isIPv4) {
+      if (isIPv4) {
+        if (remoteIPv4Addr === undefined) {
+          continue
+        }
+        if ((remoteIPv4Addr & mask) === addr) {
+          return true
+        }
         continue
       }
-      const remoteAddr = (remote.binaryAddr ||= (
-        isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary
-      )(remote.addr))
+      if (remote.isIPv4) {
+        continue
+      }
       if ((remoteAddr & mask) === addr) {
         return true
       }
