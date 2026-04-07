@@ -139,6 +139,10 @@ export const parseSigned = async (
 }
 
 const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+  if (!validCookieNameRegEx.test(name)) {
+    throw new Error('Invalid cookie name')
+  }
+
   let cookie = `${name}=${value}`
 
   if (name.startsWith('__Secure-') && !opt.secure) {

@@ -294,6 +294,18 @@ describe('Set cookie', () => {
     }).toThrowError('path must not contain ";", "\\r", or "\\n"')
   })
 
+  it('Should throw Error for invalid cookie name', () => {
+    expect(() => {
+      serialize('legit\r\nX-Injected: evil', 'value')
+    }).toThrowError('Invalid cookie name')
+    expect(() => {
+      serialize('bad;name', 'value')
+    }).toThrowError('Invalid cookie name')
+    expect(() => {
+      serialize('bad=name', 'value')
+    }).toThrowError('Invalid cookie name')
+  })
+
   it('Should serialize cookie with lowercase priority values', () => {
     const lowSerialized = serialize('test_cookie', 'value', {
       priority: 'low',
