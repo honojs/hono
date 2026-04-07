@@ -563,6 +563,40 @@ describe('saveContentToFile function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
   })
+
+  it('should reject writing files outside outDir via path traversal', async () => {
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/../pwned',
+          content: 'owned',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('Path traversal detected')
+
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('should reject paths that only partially match outDir name', async () => {
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/../static-evil/pwned',
+          content: 'owned',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('Path traversal detected')
+
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
 })
 
 describe('Dynamic route handling', () => {

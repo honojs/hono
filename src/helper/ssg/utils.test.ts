@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dirname, joinPaths } from './utils'
+import { dirname, ensureWithinOutDir, joinPaths } from './utils'
 
 describe('joinPath', () => {
   it('Should joined path is valid.', () => {
@@ -27,9 +27,34 @@ describe('joinPath', () => {
     expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
   })
 })
+
 describe('dirname', () => {
   it('Should dirname is valid.', () => {
     expect(dirname('parent/child')).toBe('parent')
     expect(dirname('windows\\test.txt')).toBe('windows')
+  })
+})
+
+describe('ensureWithinOutDir', () => {
+  it('Should not throw for paths within outDir', () => {
+    expect(() => ensureWithinOutDir('./static', 'static/index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('./static', 'static/sub/page.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('/out', '/out/index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('./static', 'static/a/../b.html')).not.toThrow()
+  })
+
+  it('Should throw for paths outside outDir via traversal', () => {
+    expect(() => ensureWithinOutDir('./static', 'pwned.txt')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('./static', '../pwned.txt')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('./out', 'pwned.txt')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('./static', 'static/../../pwned.txt')).toThrow(
+      'Path traversal detected'
+    )
+  })
+
+  it('Should throw for paths that partially match outDir name', () => {
+    expect(() => ensureWithinOutDir('./static', 'static-evil/pwned.html')).toThrow(
+      'Path traversal detected'
+    )
   })
 })

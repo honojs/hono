@@ -73,3 +73,15 @@ export const filterStaticGenerateRoutes = <E extends Env>(
 export const isDynamicRoute = (path: string): boolean => {
   return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
 }
+
+export const ensureWithinOutDir = (outDir: string, filePath: string): void => {
+  const normalizedOutDir = joinPaths('/', outDir)
+  const normalizedFilePath = joinPaths('/', filePath)
+
+  if (
+    normalizedFilePath !== normalizedOutDir &&
+    !normalizedFilePath.startsWith(`${normalizedOutDir}/`)
+  ) {
+    throw new Error(`Path traversal detected: "${filePath}" is outside the output directory`)
+  }
+}
