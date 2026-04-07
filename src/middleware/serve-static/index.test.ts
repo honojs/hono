@@ -264,7 +264,7 @@ describe('Serve Static Middleware', () => {
       })
       app.get('*', serveStatic)
 
-      const res = await app.request('///etc/passwd')
+      const res = await app.request('/etc/passwd')
       expect(await res.text()).toBe('Hello in etc/passwd')
     })
 
@@ -289,6 +289,9 @@ describe('Serve Static Middleware', () => {
       const res2 = await app.request('/admin%2Fsecret.txt')
       expect(res2.headers.get('X-Authorized')).toBeNull()
       expect(await res2.text()).toBe('Hello in admin%2Fsecret.txt')
+
+      const res3 = await app.request('//admin/secret.txt')
+      expect(res3.status).toBe(404)
     })
   })
 })
