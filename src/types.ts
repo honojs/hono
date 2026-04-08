@@ -1790,7 +1790,7 @@ export interface OnHandlerInterface<
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<HandlerResponse<any>>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<R>>,
     BasePath,
     MergePath<BasePath, P>
   >
@@ -2095,7 +2095,7 @@ export interface OnHandlerInterface<
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponse<HandlerResponse<any>>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponse<R>>,
     BasePath,
     MergePath<BasePath, P>
   >
@@ -2143,7 +2143,7 @@ export interface OnHandlerInterface<
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<HandlerResponse<any>>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<R>>,
     BasePath,
     MergePath<BasePath, P>
   >

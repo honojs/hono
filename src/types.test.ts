@@ -401,6 +401,53 @@ describe('OnHandlerInterface', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('app.on(method, path, ...10 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on('GET', '/x10', noop, noop, noop, noop, noop, noop, noop, noop, noop, (c) =>
+      c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x10']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method[], path, ...9 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on(['GET'], '/x9-arr', noop, noop, noop, noop, noop, noop, noop, noop, (c) =>
+      c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x9-arr']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method[], path, ...10 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on(
+      ['GET'],
+      '/x10-arr',
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      (c) => c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x10-arr']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
 
 describe('TypedResponse', () => {
