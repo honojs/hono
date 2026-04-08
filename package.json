@@ -677,7 +677,7 @@
     "pkg-pr-new": "^0.0.53",
     "prettier": "3.7.4",
     "publint": "0.3.15",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.0",
     "undici": "^6.21.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^3.2.4",
