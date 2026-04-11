@@ -403,18 +403,31 @@ describe('Cache Middleware', () => {
     expect(res.headers.get('cache-control')).not.toBe('max-age=10')
   })
 
-  it('Should not be enabled if caches is not defined', async () => {
+  it('Should not be enabled if caches is not defined and should log only once', async () => {
     vi.stubGlobal('caches', undefined)
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
     const app = new Hono()
     app.use(cache({ cacheName: 'my-app-v1', cacheControl: 'max-age=10' }))
+    cache({ cacheName: 'extra-1' })
+    cache({ cacheName: 'extra-2' })
     app.get('/', (c) => {
       return c.text('cached')
     })
+
     expect(caches).toBeUndefined()
     const res = await app.request('/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe(null)
+
+    const logCalls = spy.mock.calls.filter(
+      (args) => args[0] === 'Cache Middleware is not enabled because caches is not defined.'
+    )
+    expect(logCalls).toHaveLength(1)
+
+    spy.mockRestore()
+    vi.unstubAllGlobals()
   })
 })
 

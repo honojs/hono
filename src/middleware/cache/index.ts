@@ -59,6 +59,8 @@ const shouldSkipCache = (res: Response) => {
  * )
  * ```
  */
+let cacheNotDefinedLogged = false
+
 export const cache = (options: {
   cacheName: string | ((c: Context) => Promise<string> | string)
   wait?: boolean
@@ -68,7 +70,10 @@ export const cache = (options: {
   cacheableStatusCodes?: StatusCode[]
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    console.log('Cache Middleware is not enabled because caches is not defined.')
+    if (!cacheNotDefinedLogged) {
+      console.log('Cache Middleware is not enabled because caches is not defined.')
+      cacheNotDefinedLogged = true
+    }
     return async (_c, next) => await next()
   }
 
