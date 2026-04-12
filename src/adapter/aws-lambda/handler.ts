@@ -197,16 +197,23 @@ type HandleOptions = {
 }
 
 type LambdaHandlerFunction = {
-  (event: APIGatewayProxyEvent, lambdaContext?: LambdaContext): Promise<APIGatewayProxyResult>
   (
     event: APIGatewayProxyEventV2,
     lambdaContext?: LambdaContext
   ): Promise<APIGatewayProxyResult & WithHeaders>
-  (event: ALBProxyEvent, lambdaContext?: LambdaContext): Promise<APIGatewayProxyResult>
   (
     event: LatticeProxyEventV2,
     lambdaContext?: LambdaContext
   ): Promise<APIGatewayProxyResult & WithHeaders>
+  (
+    event: LambdaEvent & { multiValueHeaders: Record<string, string[]> },
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithMultiValueHeaders>
+  (
+    event: LambdaEvent & { multiValueHeaders?: undefined },
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithHeaders>
+  (event: LambdaEvent, lambdaContext?: LambdaContext): Promise<APIGatewayProxyResult>
 }
 
 /**
