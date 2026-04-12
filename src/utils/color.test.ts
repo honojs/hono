@@ -1,7 +1,34 @@
 import * as esbuild from 'esbuild'
 import { getColorEnabled, getColorEnabledAsync } from './color'
 
+const originalStdoutDescriptor = Object.getOwnPropertyDescriptor(process, 'stdout')
+
+const mockStdoutTTY = (isTTY: boolean) => {
+  Object.defineProperty(process, 'stdout', {
+    configurable: true,
+    enumerable: true,
+    get: () =>
+      ({
+        isTTY,
+      }) as typeof process.stdout,
+  })
+}
+
+const restoreStdout = () => {
+  if (originalStdoutDescriptor) {
+    Object.defineProperty(process, 'stdout', originalStdoutDescriptor)
+  }
+}
+
 describe('getColorEnabled() / getColorEnabledAsync() - With colors enabled', () => {
+  beforeAll(() => {
+    mockStdoutTTY(true)
+  })
+
+  afterAll(() => {
+    restoreStdout()
+  })
+
   it('should return true', async () => {
     expect(getColorEnabled()).toBe(true)
     expect(await getColorEnabledAsync()).toBe(true)
@@ -10,10 +37,12 @@ describe('getColorEnabled() / getColorEnabledAsync() - With colors enabled', () 
 
 describe('getColorEnabled() / getColorEnabledAsync() - With NO_COLOR environment variable set', () => {
   beforeAll(() => {
+    mockStdoutTTY(true)
     vi.stubEnv('NO_COLOR', '1')
   })
 
   afterAll(() => {
+    restoreStdout()
     vi.unstubAllEnvs()
   })
 

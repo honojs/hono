@@ -25,8 +25,21 @@ const time = (start: number) => {
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
+const stdoutIsTTY = (): boolean => {
+  // Non-interactive runtimes like Workers and log collectors should not emit
+  // ANSI escape sequences.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { process, Deno } = globalThis as any
+
+  if (typeof Deno?.stdout?.isTerminal === 'function') {
+    return Deno.stdout.isTerminal()
+  }
+
+  return process?.stdout?.isTTY === true
+}
+
 const colorStatus = async (status: number) => {
-  const colorEnabled = await getColorEnabledAsync()
+  const colorEnabled = (await getColorEnabledAsync()) && stdoutIsTTY()
   if (colorEnabled) {
     switch ((status / 100) | 0) {
       case 5: // red = error

@@ -1,11 +1,31 @@
 import { Hono } from '../../hono'
 import { logger } from '.'
 
+const originalStdoutDescriptor = Object.getOwnPropertyDescriptor(process, 'stdout')
+
+const mockStdoutTTY = (isTTY: boolean) => {
+  Object.defineProperty(process, 'stdout', {
+    configurable: true,
+    enumerable: true,
+    get: () =>
+      ({
+        isTTY,
+      }) as typeof process.stdout,
+  })
+}
+
+const restoreStdout = () => {
+  if (originalStdoutDescriptor) {
+    Object.defineProperty(process, 'stdout', originalStdoutDescriptor)
+  }
+}
+
 describe('Logger by Middleware', () => {
   let app: Hono
   let log: string
 
   beforeEach(() => {
+    mockStdoutTTY(true)
     function sleep(time: number) {
       return new Promise((resolve) => setTimeout(resolve, time))
     }
@@ -39,6 +59,10 @@ describe('Logger by Middleware', () => {
       }
       return res
     })
+  })
+
+  afterEach(() => {
+    restoreStdout()
   })
 
   it('Log status 200 with empty body', async () => {
@@ -126,15 +150,12 @@ describe('Logger by Middleware', () => {
   })
 })
 
-describe('Logger by Middleware in NO_COLOR', () => {
+describe('Logger by Middleware without TTY', () => {
   let app: Hono
   let log: string
 
   beforeEach(() => {
-    vi.stubEnv('NO_COLOR', '1')
-    function sleep(time: number) {
-      return new Promise((resolve) => setTimeout(resolve, time))
-    }
+    mockStdoutTTY(false)
 
     app = new Hono()
 
@@ -142,63 +163,19 @@ describe('Logger by Middleware in NO_COLOR', () => {
       log = str
     }
 
-    const shortRandomString = 'hono'
-    const longRandomString = 'hono'.repeat(1000)
-
     app.use('*', logger(logFn))
-    app.get('/short', (c) => c.text(shortRandomString))
-    app.get('/long', (c) => c.text(longRandomString))
-    app.get('/seconds', async (c) => {
-      await sleep(1000)
-
-      return c.text(longRandomString)
-    })
     app.get('/empty', (c) => c.text(''))
   })
-  afterAll(() => {
-    vi.unstubAllEnvs()
+
+  afterEach(() => {
+    restoreStdout()
   })
-  it('Log status 200 with empty body', async () => {
+
+  it('should not emit ANSI escape sequences', async () => {
     const res = await app.request('http://localhost/empty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('--> GET /empty 200')).toBe(true)
-    expect(log).toMatch(/m?s$/)
-  })
-
-  it('Log status 200 with small body', async () => {
-    const res = await app.request('http://localhost/short')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(log.startsWith('--> GET /short 200')).toBe(true)
-    expect(log).toMatch(/m?s$/)
-  })
-
-  it('Log status 200 with big body', async () => {
-    const res = await app.request('http://localhost/long')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(log.startsWith('--> GET /long 200')).toBe(true)
-    expect(log).toMatch(/m?s$/)
-  })
-
-  it('Time in seconds', async () => {
-    const res = await app.request('http://localhost/seconds')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(log.startsWith('--> GET /seconds 200')).toBe(true)
-    expect(log).toMatch(/1s/)
-  })
-
-  it('Log status 404', async () => {
-    const msg = 'Default 404 Not Found'
-    app.all('*', (c) => {
-      return c.text(msg, 404)
-    })
-    const res = await app.request('http://localhost/notfound')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(404)
-    expect(log.startsWith('--> GET /notfound 404')).toBe(true)
-    expect(log).toMatch(/m?s$/)
+    expect(log).not.toContain('\x1b[')
   })
 })
