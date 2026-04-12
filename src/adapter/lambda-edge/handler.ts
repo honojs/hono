@@ -138,7 +138,9 @@ export const handle = (
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  const isBase64Encoded =
+    isContentTypeBinary(res.headers.get('content-type') || '') ||
+    isContentEncodingBinary(res.headers.get('content-encoding'))
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
   return {
@@ -193,4 +195,8 @@ export const isContentTypeBinary = (contentType: string): boolean => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
+}
+
+export const isContentEncodingBinary = (contentEncoding: string | null): boolean => {
+  return !!contentEncoding && contentEncoding !== 'identity'
 }

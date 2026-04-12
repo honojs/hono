@@ -1,9 +1,10 @@
-import { describe } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
-import { encodeBase64 } from '../../utils/encode'
+import { compress } from '../../middleware/compress'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
 import type { Callback, CloudFrontEdgeEvent } from './handler'
-import { createBody, handle, isContentTypeBinary } from './handler'
+import { createBody, handle, isContentEncodingBinary, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
@@ -18,6 +19,16 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
+  })
+})
+
+describe('isContentEncodingBinary', () => {
+  it('Should determine whether the content encoding is binary', () => {
+    expect(isContentEncodingBinary(null)).toBe(false)
+    expect(isContentEncodingBinary('')).toBe(false)
+    expect(isContentEncodingBinary('identity')).toBe(false)
+    expect(isContentEncodingBinary('gzip')).toBe(true)
+    expect(isContentEncodingBinary('br')).toBe(true)
   })
 })
 
@@ -120,6 +131,50 @@ describe('handle', () => {
         'x-test': [{ key: 'x-test', value: 'ok' }],
       },
     })
+  })
+
+  it('Should base64 encode compressed responses', async () => {
+    const app = new Hono()
+    app.use('*', compress())
+    app.get('/test-path', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      return c.text('a'.repeat(1024))
+    })
+    const handler = handle(app)
+    const compressedEvent = {
+      ...cloudFrontEdgeEvent,
+      Records: [
+        {
+          ...cloudFrontEdgeEvent.Records[0],
+          cf: {
+            ...cloudFrontEdgeEvent.Records[0].cf,
+            request: {
+              ...cloudFrontEdgeEvent.Records[0].cf.request,
+              headers: {
+                ...cloudFrontEdgeEvent.Records[0].cf.request.headers,
+                'accept-encoding': [
+                  {
+                    key: 'accept-encoding',
+                    value: 'gzip',
+                  },
+                ],
+              },
+              uri: '/test-path',
+            },
+          },
+        },
+      ],
+    }
+
+    const res = await handler(compressedEvent)
+
+    expect(res.bodyEncoding).toBe('base64')
+    const compressedResponse = new Response(decodeBase64(res.body!))
+    const decompressed = await new Response(
+      compressedResponse.body!.pipeThrough(new DecompressionStream('gzip'))
+    ).text()
+    expect(decompressed).toBe('a'.repeat(1024))
   })
 
   it('Should support multiple cookies', async () => {
