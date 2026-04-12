@@ -70,6 +70,12 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() should throw for undefined', () => {
+    const json = () => c.json(undefined)
+    expect(json).toThrow(TypeError)
+    expect(json).toThrow('Value is not JSON serializable.')
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
