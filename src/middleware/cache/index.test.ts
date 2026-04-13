@@ -416,6 +416,37 @@ describe('Cache Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe(null)
   })
+
+  it('Should call onCacheNotAvailable when caches is not defined', async () => {
+    vi.stubGlobal('caches', undefined)
+    const spy = vi.fn()
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: spy }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(spy).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('Should suppress default log when onCacheNotAvailable is false', async () => {
+    vi.stubGlobal('caches', undefined)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: false }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(logSpy).not.toHaveBeenCalledWith(
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
+    logSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
 })
 
 describe('Cache Skipping Logic', () => {
