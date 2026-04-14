@@ -861,6 +861,24 @@ export const runTest = ({
       })
     })
 
+    describe('Double wildcard **', () => {
+      beforeEach(() => {
+        router.add('GET', '/auth/**', 'double wildcard')
+      })
+
+      it('GET /auth/login should match /auth/**', async () => {
+        const res = match('GET', '/auth/login')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('double wildcard')
+      })
+
+      it('GET /auth/a/b/c should match /auth/**', async () => {
+        const res = match('GET', '/auth/a/b/c')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('double wildcard')
+      })
+    })
+
     describe('Unknown method', () => {
       beforeEach(() => {
         router.add('GET', '/', 'index')

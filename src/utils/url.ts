@@ -57,6 +57,10 @@ export const getPattern = (label: string, next?: string): Pattern | null => {
     return '*'
   }
 
+  if (label === '**') {
+    return '*'
+  }
+
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
     const cacheKey = `${label}#${next}`
