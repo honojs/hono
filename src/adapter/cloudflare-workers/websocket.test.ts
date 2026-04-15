@@ -142,7 +142,6 @@ describe('upgradeWebSocketForDO', () => {
       webSocket: WebSocket | undefined
       constructor(_body: BodyInit | null, init?: ResponseInit & { webSocket?: WebSocket }) {
         this.status = init?.status ?? 200
-        // @ts-expect-error Cloudflare-specific property
         this.webSocket = init?.webSocket
       }
     } as unknown as typeof Response
