@@ -45,6 +45,7 @@ const shouldSkipCache = (res: Response) => {
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
  * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
+ * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked when `globalThis.caches` is not available. By default, a message is logged to the console. Set to `false` to suppress the log, or provide a custom function.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
@@ -66,9 +67,16 @@ export const cache = (options: {
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
   cacheableStatusCodes?: StatusCode[]
+  onCacheNotAvailable?: (() => void) | false
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    console.log('Cache Middleware is not enabled because caches is not defined.')
+    if (options.onCacheNotAvailable === false) {
+      // suppress log
+    } else if (options.onCacheNotAvailable) {
+      options.onCacheNotAvailable()
+    } else {
+      console.log('Cache Middleware is not enabled because caches is not defined.')
+    }
     return async (_c, next) => await next()
   }
 
