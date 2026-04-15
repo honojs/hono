@@ -1,3 +1,4 @@
+import { Hono } from '../../hono'
 import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
 import {
   getProcessor,
@@ -5,7 +6,6 @@ import {
   isContentEncodingBinary,
   defaultIsContentTypeBinary,
 } from './handler'
-import { Hono } from '../../hono'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
