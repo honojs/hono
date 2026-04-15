@@ -1,5 +1,11 @@
+import { Hono } from '../../hono'
 import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
-import { getProcessor, isContentEncodingBinary, defaultIsContentTypeBinary } from './handler'
+import {
+  getProcessor,
+  handle,
+  isContentEncodingBinary,
+  defaultIsContentTypeBinary,
+} from './handler'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
@@ -358,5 +364,55 @@ describe('EventProcessor.createRequest', () => {
       const xCity = request.headers.get('x-city') ?? ''
       expect(decodeURIComponent(xCity)).toBe('炎')
     })
+  })
+})
+
+describe('handle', () => {
+  it('Should return 400 when request contains invalid header names (v2)', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      headers: {
+        'valid-header': 'value',
+        'a"a': 'invalid header name',
+      },
+      requestContext: {
+        ...baseV2Event.requestContext,
+        http: {
+          method: 'GET',
+          path: '/my/path',
+          protocol: 'HTTP/1.1',
+          sourceIp: '192.0.2.1',
+          userAgent: 'agent',
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(400)
+    expect(result.body).toBe('Invalid request')
+  })
+
+  it('Should return 400 when request contains invalid header names (v1)', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      headers: {
+        'a"a': 'invalid header name',
+      },
+      multiValueHeaders: {
+        'a"a': ['invalid header name'],
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(400)
+    expect(result.body).toBe('Invalid request')
   })
 })
