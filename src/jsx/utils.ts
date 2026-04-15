@@ -11,6 +11,33 @@ const normalizeElementKeyMap: Map<string, string> = new Map([
 export const normalizeIntrinsicElementKey = (key: string): string =>
   normalizeElementKeyMap.get(key) || key
 
+// eslint-disable-next-line no-control-regex
+const invalidAttributeNameCharRe = /[\s"'<>/=`\\\x00-\x1f\x7f-\x9f]/
+export const isValidAttributeName = (name: string): boolean => {
+  const len = name.length
+  if (len === 0) {
+    return false
+  }
+  for (let i = 0; i < len; i++) {
+    const c = name.charCodeAt(i)
+    if (
+      !(
+        (c >= 0x61 && c <= 0x7a) || // a-z
+        (c >= 0x41 && c <= 0x5a) || // A-Z
+        (c >= 0x30 && c <= 0x39) || // 0-9
+        c === 0x2d || // -
+        c === 0x5f || // _
+        c === 0x2e || // .
+        c === 0x3a // :
+      )
+    ) {
+      // non-fast-path character found — fall back to regex for the full name
+      return !invalidAttributeNameCharRe.test(name)
+    }
+  }
+  return true
+}
+
 export const styleObjectForEach = (
   style: Record<string, string | number>,
   fn: (key: string, value: string | null) => void

@@ -10,7 +10,7 @@ import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
-import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+import { isValidAttributeName, normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -182,6 +182,9 @@ export class JSXNode implements HtmlEscaped {
         : (key) => normalizeIntrinsicElementKey(key)
     for (let [key, v] of Object.entries(props)) {
       key = normalizeKey(key)
+      if (!isValidAttributeName(key)) {
+        continue
+      }
       if (key === 'children') {
         // skip children
       } else if (key === 'style' && typeof v === 'object') {

@@ -478,6 +478,76 @@ describe('render to string', () => {
     })
   })
 
+  describe('XSS prevention for attribute keys', () => {
+    it('Should skip attribute keys containing double quotes', () => {
+      const props: Record<string, string> = { ['" onfocus="alert(1)']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing >', () => {
+      const props: Record<string, string> = { ['"><script>alert(1)</script><x x="']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing <', () => {
+      const props: Record<string, string> = { ['foo<bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing backslashes', () => {
+      const props: Record<string, string> = { ['foo\\bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing backticks', () => {
+      const props: Record<string, string> = { ['foo`bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing spaces', () => {
+      const props: Record<string, string> = { ['foo bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should still render valid attributes alongside invalid ones', () => {
+      const props: Record<string, string> = {
+        id: 'safe',
+        ['" onfocus="alert(1)']: 'x',
+        class: 'test',
+      }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div id="safe" class="test">Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before style serialization', () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: { fontSize: 10 } }}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before function prop validation', () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: () => 'x' }}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before dangerouslySetInnerHTML handling', () => {
+      const template = (
+        <div {...{ ['" onfocus="alert(1)']: { __html: '<strong>Injected</strong>' } }}>Hello</div>
+      )
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys with Promise values', async () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: Promise.resolve('x') }}>Hello</div>
+      expect(await template.toString()).toBe('<div>Hello</div>')
+    })
+  })
+
   describe('head', () => {
     it('Simple head elements should be rendered as is', () => {
       const template = (
@@ -665,6 +735,15 @@ describe('SVG', () => {
     expect(template.toString()).toBe(
       '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
     )
+  })
+
+  it('should skip invalid attribute keys in SVG while preserving valid ones', () => {
+    const template = (
+      <svg>
+        <g {...{ ['" onload="alert(1)']: 'x', viewBox: '0 0 10 10' }} />
+      </svg>
+    )
+    expect(template.toString()).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
   })
 
   describe('attribute', () => {

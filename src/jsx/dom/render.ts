@@ -155,6 +155,12 @@ const applySelectValue = (select: HTMLSelectElement, props: Props): void => {
   }
 }
 
+// Unlike SSR (which uses isValidAttributeName for upfront validation),
+// the DOM renderer relies on try/catch for performance—invalid attribute
+// names are rare at runtime, so avoiding the per-attribute regex check is faster.
+const isIgnorableAttributeError = (error: unknown): boolean =>
+  error instanceof DOMException && error.name === 'InvalidCharacterError'
+
 const applyProps = (
   container: SupportedElement,
   attributes: Props,
@@ -223,14 +229,20 @@ const applyProps = (
 
         const k = toAttributeName(container, key)
 
-        if (value === null || value === undefined || value === false) {
-          container.removeAttribute(k)
-        } else if (value === true) {
-          container.setAttribute(k, '')
-        } else if (typeof value === 'string' || typeof value === 'number') {
-          container.setAttribute(k, value as string)
-        } else {
-          container.setAttribute(k, value.toString())
+        try {
+          if (value === null || value === undefined || value === false) {
+            container.removeAttribute(k)
+          } else if (value === true) {
+            container.setAttribute(k, '')
+          } else if (typeof value === 'string' || typeof value === 'number') {
+            container.setAttribute(k, value as string)
+          } else {
+            container.setAttribute(k, value.toString())
+          }
+        } catch (e) {
+          if (!isIgnorableAttributeError(e)) {
+            throw e
+          }
         }
       }
     }
@@ -246,7 +258,13 @@ const applyProps = (
         } else if (key === 'ref') {
           refCleanupMap.get(container)?.()
         } else {
-          container.removeAttribute(toAttributeName(container, key))
+          try {
+            container.removeAttribute(toAttributeName(container, key))
+          } catch (e) {
+            if (!isIgnorableAttributeError(e)) {
+              throw e
+            }
+          }
         }
       }
     }

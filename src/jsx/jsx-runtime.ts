@@ -9,7 +9,7 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer, HtmlEscaped } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { styleObjectForEach } from './utils'
+import { isValidAttributeName, styleObjectForEach } from './utils'
 
 export { html as jsxTemplate }
 
@@ -17,6 +17,9 @@ export const jsxAttr = (
   key: string,
   v: string | Promise<string> | Record<string, string | number | null | undefined | boolean>
 ): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  if (!isValidAttributeName(key)) {
+    return raw('')
+  }
   const buffer: StringBuffer = [`${key}="`] as StringBuffer
   if (key === 'style' && typeof v === 'object') {
     // object to style strings

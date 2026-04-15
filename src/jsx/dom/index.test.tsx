@@ -96,6 +96,7 @@ describe('DOM', () => {
     global.HTMLElement = dom.window.HTMLElement
     global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
+    global.DOMException = dom.window.DOMException
     root = document.getElementById('root') as HTMLElement
   })
 
@@ -192,6 +193,69 @@ describe('DOM', () => {
       const App = () => <div x-value={{ toString: () => 'value' }} />
       render(<App />, root)
       expect(root.innerHTML).toBe('<div x-value="value"></div>')
+    })
+
+    it('ignores invalid attribute keys without interrupting updates', async () => {
+      const invalidKey = '" onfocus="alert(1)'
+
+      const App = () => {
+        const [includeInvalid, setIncludeInvalid] = useState(true)
+        return includeInvalid ? (
+          <div id='safe' {...{ [invalidKey]: 'x' }} onClick={() => setIncludeInvalid(false)}>
+            Hello
+          </div>
+        ) : (
+          <div class='updated'>Hello</div>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id="safe">Hello</div>')
+
+      root.querySelector('div')?.click()
+      await Promise.resolve()
+
+      expect(root.innerHTML).toBe('<div class="updated">Hello</div>')
+    })
+
+    it('rethrows unexpected errors while setting attributes', () => {
+      const error = new Error('boom')
+      const originalSetAttribute = dom.window.Element.prototype.setAttribute
+      const setAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'setAttribute')
+        .mockImplementation(function (this: Element, key: string, value: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalSetAttribute.call(this, key, value)
+        })
+
+      try {
+        expect(() => render(<div data-boom='x'>Hello</div>, root)).toThrow(error)
+      } finally {
+        setAttributeSpy.mockRestore()
+      }
+    })
+
+    it('rethrows unexpected errors while removing attributes', () => {
+      render(<div data-boom='x'>Hello</div>, root)
+
+      const error = new Error('boom')
+      const originalRemoveAttribute = dom.window.Element.prototype.removeAttribute
+      const removeAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'removeAttribute')
+        .mockImplementation(function (this: Element, key: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalRemoveAttribute.call(this, key)
+        })
+
+      try {
+        expect(() => render(<div data-boom={undefined}>Hello</div>, root)).toThrow(error)
+      } finally {
+        removeAttributeSpy.mockRestore()
+      }
     })
 
     it('ref', () => {
@@ -2580,6 +2644,18 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+
+    it('skips invalid attribute keys in SVG while preserving valid ones', () => {
+      const App = () => {
+        return (
+          <svg>
+            <g {...{ ['" onload="alert(1)']: 'x', viewBox: '0 0 10 10' }} />
+          </svg>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
     })
 
     describe('attribute', () => {

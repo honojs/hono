@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic **/
 /** @jsxImportSource . **/
 import { Hono } from '../hono'
+import { jsxAttr } from './jsx-runtime'
 
 describe('jsx-runtime', () => {
   let app: Hono
@@ -17,6 +18,29 @@ describe('jsx-runtime', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<h1>Hello</h1>')
+  })
+
+  it('Should skip invalid attribute keys in jsxAttr()', () => {
+    expect(String(jsxAttr('" onfocus="alert(1)', 'x'))).toBe('')
+    expect(String(jsxAttr('foo<bar', 'x'))).toBe('')
+    expect(String(jsxAttr('foo\\bar', 'x'))).toBe('')
+    expect(String(jsxAttr('foo`bar', 'x'))).toBe('')
+  })
+
+  it('Should skip invalid non-string attribute values in jsxAttr()', async () => {
+    const invalidKey = '" onfocus="alert(1)'
+
+    expect(String(jsxAttr(invalidKey, { fontSize: 10 }))).toBe('')
+    expect(String(await jsxAttr(invalidKey, Promise.resolve('/docs?q=1&lang=en')))).toBe('')
+  })
+
+  it('Should render valid attribute values in jsxAttr()', async () => {
+    expect(String(jsxAttr('style', { fontSize: 10, color: 'red' }))).toBe(
+      'style="font-size:10px;color:red"'
+    )
+    expect(String(await jsxAttr('href', Promise.resolve('/docs?q=1&lang=en')))).toBe(
+      'href="/docs?q=1&amp;lang=en"'
+    )
   })
 
   // https://en.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored
