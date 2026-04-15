@@ -196,6 +196,26 @@ type HandleOptions = {
   isContentTypeBinary: ((contentType: string) => boolean) | undefined
 }
 
+type LambdaHandlerFunction = {
+  (
+    event: APIGatewayProxyEventV2,
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithHeaders>
+  (
+    event: LatticeProxyEventV2,
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithHeaders>
+  (
+    event: LambdaEvent & { multiValueHeaders: Record<string, string[]> },
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithMultiValueHeaders>
+  (
+    event: LambdaEvent & { multiValueHeaders?: undefined },
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult & WithHeaders>
+  (event: LambdaEvent, lambdaContext?: LambdaContext): Promise<APIGatewayProxyResult>
+}
+
 /**
  * Converts a Hono application to an AWS Lambda handler.
  *
@@ -239,17 +259,11 @@ type HandleOptions = {
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>,
   { isContentTypeBinary }: HandleOptions = { isContentTypeBinary: undefined }
-): (<L extends LambdaEvent>(
-  event: L,
-  lambdaContext?: LambdaContext
-) => Promise<
-  APIGatewayProxyResult &
-    (L extends { multiValueHeaders: Record<string, string[]> }
-      ? WithMultiValueHeaders
-      : WithHeaders)
->) => {
-  // @ts-expect-error FIXME: Fix return typing
-  return async (event, lambdaContext?) => {
+): LambdaHandlerFunction => {
+  const impl = async (
+    event: LambdaEvent,
+    lambdaContext?: LambdaContext
+  ): Promise<APIGatewayProxyResult> => {
     const processor = getProcessor(event)
 
     const req = processor.createRequest(event)
@@ -263,6 +277,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 
     return processor.createResult(event, res, { isContentTypeBinary })
   }
+  return impl as LambdaHandlerFunction
 }
 
 export abstract class EventProcessor<E extends LambdaEvent> {
