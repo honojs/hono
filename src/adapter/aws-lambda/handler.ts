@@ -252,8 +252,18 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
-    const req = processor.createRequest(event)
-    const requestContext = getRequestContext(event)
+    let req, requestContext
+    try {
+      req = processor.createRequest(event)
+      requestContext = getRequestContext(event)
+    } catch (error) {
+      console.error('Error processing request:', error)
+      const errorResponse =
+        error instanceof TypeError
+          ? new Response('Invalid request', { status: 400 })
+          : new Response('Internal Server Error', { status: 500 })
+      return processor.createResult(event, errorResponse, { isContentTypeBinary })
+    }
 
     const res = await app.fetch(req, {
       event,
