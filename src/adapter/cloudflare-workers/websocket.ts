@@ -51,3 +51,86 @@ export const upgradeWebSocket: UpgradeWebSocket<
     webSocket: client,
   })
 })
+
+/**
+ * Create a WSContext from a raw Cloudflare WebSocket.
+ * Use in Durable Object Hibernation API handlers.
+ *
+ * @example
+ * ```ts
+ * import { createWSContext } from 'hono/cloudflare-workers'
+ *
+ * export class ChatRoom extends DurableObject {
+ *   webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
+ *     const wsCtx = createWSContext(ws)
+ *     wsCtx.send(`Echo: ${message}`)
+ *   }
+ * }
+ * ```
+ */
+export const createWSContext = (ws: WebSocket): WSContext<WebSocket> => {
+  return new WSContext<WebSocket>({
+    close: (code, reason) => ws.close(code, reason),
+    get protocol() {
+      return ws.protocol
+    },
+    raw: ws,
+    get readyState() {
+      return ws.readyState as WSReadyState
+    },
+    url: ws.url ? new URL(ws.url) : null,
+    send: (source) => ws.send(source),
+  })
+}
+
+/**
+ * Options for upgradeWebSocketForDO
+ */
+export interface UpgradeWebSocketForDOOptions {
+  /** Optional tags for the WebSocket (used with getWebSockets(tag)) */
+  tags?: string[]
+}
+
+/**
+ * Upgrade WebSocket in a Durable Object using Hibernation API.
+ * Handles WebSocketPair creation and acceptWebSocket.
+ *
+ * @param ctx - The Durable Object's state context (this.ctx)
+ * @param options - Optional configuration (tags)
+ * @returns Response with status 101 and the client WebSocket attached
+ *
+ * @example
+ * ```ts
+ * import { upgradeWebSocketForDO } from 'hono/cloudflare-workers'
+ *
+ * export class ChatRoom extends DurableObject {
+ *   app = new Hono()
+ *
+ *   constructor(ctx: DurableObjectState, env: Env) {
+ *     super(ctx, env)
+ *     this.app.get('/ws', (c) => upgradeWebSocketForDO(this.ctx))
+ *   }
+ *
+ *   fetch(request: Request) {
+ *     return this.app.fetch(request)
+ *   }
+ * }
+ * ```
+ */
+export const upgradeWebSocketForDO = (
+  ctx: { acceptWebSocket(ws: WebSocket, tags?: string[]): void },
+  options?: UpgradeWebSocketForDOOptions
+): Response => {
+  // @ts-expect-error WebSocketPair is not typed
+  const webSocketPair = new WebSocketPair()
+  const client: WebSocket = webSocketPair[0]
+  const server: WebSocket = webSocketPair[1]
+
+  ctx.acceptWebSocket(server, options?.tags)
+
+  return new Response(null, {
+    status: 101,
+    // @ts-expect-error webSocket is not typed
+    webSocket: client,
+  })
+}
