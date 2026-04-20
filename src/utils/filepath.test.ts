@@ -43,6 +43,15 @@ describe('getFilePathWithoutDefaultDocument', () => {
     expect(
       getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo../bar.txt') })
     ).toBe('..foo../bar.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./foo/bar/baz.txt') })
+    ).toBe('foo/bar/baz.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({
+        filename: slashToBackslash('./foo/bar/baz.txt'),
+        root: 'public',
+      })
+    ).toBe('public/foo/bar/baz.txt')
   })
 })
 

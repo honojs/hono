@@ -43,7 +43,7 @@ export const getFilePathWithoutDefaultDocument = (
   filename = filename.replace(/^\.?[\/\\]/, '')
 
   // foo\bar.txt => foo/bar.txt
-  filename = filename.replace(/\\/, '/')
+  filename = filename.replace(/\\/g, '/')
 
   // assets/ => assets
   root = root.replace(/\/$/, '')
