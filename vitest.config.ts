@@ -8,7 +8,7 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reportsDirectory: './coverage/raw/default',
-      reporter: ['json', 'text', 'html'],
+      reporter: ['json', 'text', '@canyonjs/report'],
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
         'benchmarks',

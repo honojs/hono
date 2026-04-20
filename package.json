@@ -656,6 +656,7 @@
     "nodejs"
   ],
   "devDependencies": {
+    "@canyonjs/report": "^1.0.28",
     "@hono/eslint-config": "^2.1.0",
     "@hono/node-server": "^1.13.5",
     "@types/glob": "^9.0.0",
