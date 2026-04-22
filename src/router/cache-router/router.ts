@@ -1,20 +1,37 @@
 import { METHOD_NAME_ALL } from '../../router'
 import type { Result, Router } from '../../router'
-
-type CacheId = `${string}__${string}` // `${method}__${path}` e.g. `GET__/hello`
-
+/**
+ * Cache Id Format
+ *
+ * Structure: `${method}__${path}` e.g. `"GET__/hello"`
+ */
+type CacheId = `${string}__${string}`
+/**
+ * Cache routing result.
+ * @template T - The type of the handler
+ */
 export class CacheRouter<T> implements Router<T> {
   name: string = 'CacheRouter'
   #router: Router<T>
   #maxCacheEntries: number
   #cache: Map<CacheId, Result<T>>
   #checkDiffOnAdd: boolean
+  /**
+   * @param init
+   * @param init.router - The underlying router in CacheRouter internal.
+   * @param init.maxCacheEntries - Maximum number of cache entries. Must be positive number. the default is `100`.
+   * @param init.checkDiffOnAdd - Strategy for cache invalidation when `add()` method is called:
+   * - `true`: Remove only cache entries matching `method`. This is O(n) operation by cache amount and may impact performance
+   * - `false`: Remove all cache. This is O(1).
+   * the default value is `false`.
+   * @throws {TypeError} - `init.maxCacheEntries` is less than 1
+   */
   constructor(init: { router: Router<T>; maxCacheEntries?: number; checkDiffOnAdd?: boolean }) {
     this.#router = init.router
     init.maxCacheEntries ??= 100
-    if (init.maxCacheEntries <= 0) {
+    if (init.maxCacheEntries < 1) {
       throw new TypeError(
-        'maxCacheEnries must be positive. if you want to cache infinity,use `Infinity`.'
+        'maxCacheEntries must be more or equal to 1. If you want unlimited caching,use `Infinity`.'
       )
     }
     this.#maxCacheEntries = init.maxCacheEntries
@@ -41,14 +58,20 @@ export class CacheRouter<T> implements Router<T> {
   }
   match(method: string, path: string): Result<T> {
     const id: CacheId = `${method}__${path}`
-    const cacheOrUndefind = this.#cache.get(id)
-    if (cacheOrUndefind) {
-      return cacheOrUndefind
+    const cachedResult = this.#cache.get(id)
+    if (cachedResult) {
+      // case: found cache.
+
+      // move the cache to map tail for LRU(defer its eviction)
+      this.#cache.delete(id)
+      this.#cache.set(id, cachedResult)
+      return cachedResult
     }
     // case: not found cache.
     const result = this.#router.match(method, path)
     if (this.#cache.size >= this.#maxCacheEntries) {
-      this.#cache.delete(this.#cache.keys().next().value!) // delete first(old) cache
+      // Evict the least recently used entry (LRU policy)
+      this.#cache.delete(this.#cache.keys().next().value!)
     }
     this.#cache.set(id, result)
     return result
