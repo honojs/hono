@@ -18,12 +18,12 @@ export class CacheRouter<T> implements Router<T> {
   #checkDiffOnAdd: boolean
   /**
    * @param init
-   * @param init.router - The underlying router in CacheRouter internal.
-   * @param init.maxCacheEntries - Maximum number of cache entries. Must be positive number. the default is `100`.
+   * @param init.router - The underlying router used internally by CacheRouter.
+   * @param init.maxCacheEntries - Maximum number of cache entries. Must be a positive number. The default is `100`.
    * @param init.checkDiffOnAdd - Strategy for cache invalidation when `add()` method is called:
-   * - `true`: Remove only cache entries matching `method`. This is O(n) operation by cache amount and may impact performance
+   * - `true`: Remove only cache entries matching `method`. This is an O(n) operation and may impact performance
    * - `false`: Remove all cache. This is O(1).
-   * the default value is `false`.
+   * The default value is `false`.
    * @throws {TypeError} - `init.maxCacheEntries` is less than 1
    */
   constructor(init: { router: Router<T>; maxCacheEntries?: number; checkDiffOnAdd?: boolean }) {
@@ -31,7 +31,7 @@ export class CacheRouter<T> implements Router<T> {
     init.maxCacheEntries ??= 100
     if (init.maxCacheEntries < 1) {
       throw new TypeError(
-        'maxCacheEntries must be more or equal to 1. If you want unlimited caching,use `Infinity`.'
+        'maxCacheEntries must be greater than or equal to 1. If you want unlimited caching, use `Infinity`.'
       )
     }
     this.#maxCacheEntries = init.maxCacheEntries
@@ -60,14 +60,14 @@ export class CacheRouter<T> implements Router<T> {
     const id: CacheId = `${method}__${path}`
     const cachedResult = this.#cache.get(id)
     if (cachedResult) {
-      // case: found cache.
+      // Cache hit
 
       // move the cache to map tail for LRU(defer its eviction)
       this.#cache.delete(id)
       this.#cache.set(id, cachedResult)
       return cachedResult
     }
-    // case: not found cache.
+    // Cache miss
     const result = this.#router.match(method, path)
     if (this.#cache.size >= this.#maxCacheEntries) {
       // Evict the least recently used entry (LRU policy)
