@@ -1573,3 +1573,55 @@ describe('JWT decode token format validation', () => {
     expect(header.typ).toBe('JWT')
   })
 })
+
+describe('PEM parsing', async () => {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+    },
+    true,
+    ['sign', 'verify']
+  )
+
+  const exported = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+  const base64Key = Buffer.from(exported).toString('base64')
+  const privateKey = `-----BEGIN PRIVATE KEY-----\n${base64Key}\n-----END PRIVATE KEY-----`
+
+  it('should sign with a normal private PEM key', async () => {
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, privateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+
+  it('should verify with a normal private PEM key', async () => {
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, privateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+
+  it('should sign with a single-line private PEM key', async () => {
+    const singleLinePrivateKey = privateKey.replace(/\n/g, '')
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, singleLinePrivateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+
+  it('should verify with a single-line private PEM key', async () => {
+    const singleLinePrivateKey = privateKey.replace(/\n/g, '')
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, privateKey, 'EdDSA')
+    const verified = await JWT.verify(token, singleLinePrivateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+})
