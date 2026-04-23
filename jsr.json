@@ -16,6 +16,7 @@
     "./basic-auth": "./src/middleware/basic-auth/index.ts",
     "./bearer-auth": "./src/middleware/bearer-auth/index.ts",
     "./body-limit": "./src/middleware/body-limit/index.ts",
+    "./rate-limiter": "./src/middleware/rate-limiter/index.ts",
     "./ip-restriction": "./src/middleware/ip-restriction/index.ts",
     "./cache": "./src/middleware/cache/index.ts",
     "./route": "./src/helper/route/index.ts",

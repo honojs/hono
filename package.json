@@ -85,6 +85,11 @@
       "import": "./dist/middleware/body-limit/index.js",
       "require": "./dist/cjs/middleware/body-limit/index.js"
     },
+    "./rate-limiter": {
+      "types": "./dist/types/middleware/rate-limiter/index.d.ts",
+      "import": "./dist/middleware/rate-limiter/index.js",
+      "require": "./dist/cjs/middleware/rate-limiter/index.js"
+    },
     "./ip-restriction": {
       "types": "./dist/types/middleware/ip-restriction/index.d.ts",
       "import": "./dist/middleware/ip-restriction/index.js",
