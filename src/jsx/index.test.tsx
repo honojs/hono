@@ -746,6 +746,13 @@ describe('SVG', () => {
     expect(template.toString()).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
   })
 
+  it('should normalize kebab-case attributes on the <svg> root element', () => {
+    const template = <svg {...{ strokeWidth: '1.5', strokeLinecap: 'round' }} viewBox='0 0 16 16' />
+    expect(template.toString()).toBe(
+      '<svg stroke-width="1.5" stroke-linecap="round" viewBox="0 0 16 16"></svg>'
+    )
+  })
+
   describe('attribute', () => {
     describe('camelCase', () => {
       test.each`
