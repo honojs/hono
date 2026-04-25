@@ -95,6 +95,23 @@ describe('Method Override Middleware', () => {
         expect(data.contentType).toBe('application/x-www-form-urlencoded')
       })
 
+      it('Should override POST to DELETE - with charset in Content-Type', async () => {
+        const params = new URLSearchParams()
+        params.append('message', 'Hello')
+        params.append('_method', 'DELETE')
+        const res = await app.request('/posts', {
+          body: params,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.method).toBe('DELETE')
+        expect(data.message).toBe('Hello')
+      })
+
       it('Should override POST to PATCH - not found', async () => {
         const form = new FormData()
         form.append('message', 'Hello')
