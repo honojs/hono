@@ -335,7 +335,20 @@ export const jsxFn = (
       props,
       children
     )
-  } else if (tag === 'svg' || tag === 'head') {
+  } else if (tag === 'svg') {
+    nameSpaceContext ||= createContext('')
+    return new JSXFunctionNode(
+      nameSpaceContext,
+      {
+        value: tag,
+        // The `<svg>` element itself belongs to the SVG namespace it
+        // establishes, so its own attributes must render inside the provider.
+        // Otherwise SSR skips kebab-case normalization on e.g. `<svg strokeWidth>`.
+        children: new JSXNode(tag, props, children),
+      },
+      []
+    )
+  } else if (tag === 'head') {
     nameSpaceContext ||= createContext('')
     return new JSXNode(tag, props, [
       new JSXFunctionNode(
