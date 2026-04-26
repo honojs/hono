@@ -18,6 +18,7 @@ describe('Timeout API', () => {
   const exception500: HTTPExceptionFunction = (context: Context) =>
     new HTTPException(500, { message: `Internal Server Error at ${context.req.path}` })
   app.use('/slow-endpoint/error', timeout(1200, exception500))
+  app.use('/slow-endpoint/override', timeout(1300))
   app.use('/normal-endpoint', timeout(1000))
 
   app.get('/slow-endpoint', async (c) => {
@@ -32,6 +33,11 @@ describe('Timeout API', () => {
 
   app.get('/slow-endpoint/error', async (c) => {
     await new Promise((resolve) => setTimeout(resolve, 1300))
+    return c.text('This should not show up')
+  })
+
+  app.get('/slow-endpoint/override', timeout(1100), async (c) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200))
     return c.text('This should not show up')
   })
 
@@ -59,6 +65,13 @@ describe('Timeout API', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(500)
     expect(await res.text()).toContain('Internal Server Error at /slow-endpoint/error')
+  })
+
+  it('Old timeout should be overriden', async () => {
+    const res = await app.request('http://localhost/slow-endpoint/override')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(504)
+    expect(await res.text()).toContain('Gateway Timeout')
   })
 
   it('No Timeout should pass', async () => {
