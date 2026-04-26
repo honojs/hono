@@ -13,7 +13,7 @@ describe('Adapter for Next.js', () => {
     })
     const handler = handle(app)
     const req = new Request('http://localhost/api/author/hono')
-    const res = await handler(req)
+    const res = (await handler(req)) as Response
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       path: '/api/author/:name',
