@@ -70,6 +70,17 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() throws TypeError for non-serializable values', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => c.json(undefined as any)).toThrow(TypeError)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => c.json(undefined as any)).toThrow('Value is not JSON serializable')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => c.json(Symbol('s') as any)).toThrow(TypeError)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(() => c.json((() => {}) as any)).toThrow(TypeError)
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
