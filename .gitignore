@@ -4,6 +4,7 @@ sandbox
 # Cloudflare Workers
 worker
 .wrangler
+.cursor 
 
 # Logs
 logs
