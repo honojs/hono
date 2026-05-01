@@ -6,40 +6,11 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import type { StatusCode } from '../../utils/http-status'
+import { cacheApi as buildCacheApiStore } from './adapters/cache-api'
 import type { CacheOptions, KVLike } from './types'
 import { parseDirectiveList, parseHeaderList, shouldNotStore } from './utils'
 
 const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
-
-/**
- * Build the inline CacheApi-backed store. Phase 3 moves this to
- * adapters/cache-api.ts; the shape is identical.
- */
-
-const buildInlineCacheApiStore = (
-  cacheNameOpt: string | ((c: Context) => Promise<string> | string)
-): ((c: Context) => Promise<KVLike>) => {
-  return async (c) => {
-    const name = typeof cacheNameOpt === 'function' ? await cacheNameOpt(c) : cacheNameOpt
-    const cache = await caches.open(name)
-    return {
-      async get(key) {
-        const r = await cache.match(key)
-        return r ?? null
-      },
-      async set(key, env) {
-        const res = new Response(env.body, {
-          status: env.status,
-          headers: env.headers,
-        })
-        await cache.put(key, res)
-      },
-      async delete(key) {
-        await cache.delete(key)
-      },
-    }
-  }
-}
 
 /**
  * Cache Middleware for Hono.
@@ -85,7 +56,7 @@ export const cache = (options: CacheOptions): MiddlewareHandler => {
 
   const getStore: (c: Context) => Promise<KVLike> = options.store
     ? async () => options.store as KVLike
-    : buildInlineCacheApiStore(options.cacheName!)
+    : buildCacheApiStore({ cacheName: options.cacheName! })
 
   // Response header writing (preserves existing behavior exactly)
   const addHeader = (c: Context) => {
@@ -167,3 +138,17 @@ export const cache = (options: CacheOptions): MiddlewareHandler => {
     }
   }
 }
+
+export { cacheApi } from './adapters/cache-api'
+export { memoryStore } from './adapters/memory'
+export type { CacheApiOptions } from './adapters/cache-api'
+export type { MemoryStoreOptions } from './adapters/memory'
+export type {
+  CacheOptions,
+  Envelope,
+  KVLike,
+  SetOptions,
+  StoreErrorHook,
+  StoreOp,
+  WriteStrategy,
+} from './types'

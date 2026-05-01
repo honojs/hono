@@ -34,6 +34,10 @@ class MockCache {
   async put(key: Request | string, response: Response): Promise<void> {
     this.store.set(key, response)
   }
+
+  async delete(key: Request | string): Promise<boolean> {
+    return this.store.delete(key)
+  }
 }
 
 const globalStore: Map<string | Request, Response> = new Map()
