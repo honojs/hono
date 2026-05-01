@@ -34,3 +34,13 @@ describe('cloneElement', () => {
     expect(element.toString()).toBe('<hr/>')
   })
 })
+
+describe('createElement', () => {
+  it('should preserve the SVG element shape', () => {
+    const ref = { current: null }
+    const element = jsx('svg', { ref }) as unknown as JSXNode
+    expect(element.tag).toBe('svg')
+    expect(element.type).toBe('svg')
+    expect(element.ref).toBe(ref)
+  })
+})
