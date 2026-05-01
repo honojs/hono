@@ -495,16 +495,28 @@ describe('Cache Skipping Logic', () => {
     expect(putSpy).not.toHaveBeenCalled()
   })
 
-  it('Should NOT cache response if Cache-Control contains no-cache="Set-Cookie"', async () => {
+  it('Should cache response when Cache-Control uses field-list no-cache="Set-Cookie" (RFC 7234)', async () => {
     const app = new Hono()
     app.use('*', cache({ cacheName: 'skip-test', wait: true }))
     app.get('/', (c) => {
-      c.header('Cache-Control', 'no-cache="Set-Cookie"')
+      c.header('Cache-Control', 'no-cache="Set-Cookie", max-age=10')
       return c.text('response')
     })
 
     await app.request('/')
-    expect(putSpy).not.toHaveBeenCalled()
+    expect(putSpy).toHaveBeenCalled()
+  })
+
+  it('Should cache response when Cache-Control uses field-list private="X-Auth"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'private="X-Auth", max-age=10')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).toHaveBeenCalled()
   })
 
   it('Should NOT cache response if Set-Cookie header is present', async () => {

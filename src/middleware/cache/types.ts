@@ -14,7 +14,7 @@ import type { StatusCode } from '../../utils/http-status'
 export interface Envelope {
   status: number
   headers: Record<string, string>
-  body: Uint8Array
+  body: Uint8Array<ArrayBuffer>
 }
 
 export type StoreOp = 'get' | 'set' | 'delete'
