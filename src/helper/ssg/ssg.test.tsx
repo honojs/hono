@@ -541,6 +541,18 @@ describe('saveContentToFile function', () => {
       mimeType: htmlMimeType,
     }
 
+    const atomData = {
+      routePath: '/atom',
+      content: yamlContent,
+      mimeType: 'application/atom+xml',
+    }
+
+    const rssData = {
+      routePath: '/rss',
+      content: yamlContent,
+      mimeType: 'application/rss+xml',
+    }
+
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
@@ -557,11 +569,15 @@ describe('saveContentToFile function', () => {
       ...defaultExtensionMap,
       ...extensionMap,
     })
+    await saveContentToFile(Promise.resolve(atomData), fsMock, './static')
+    await saveContentToFile(Promise.resolve(rssData), fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/atom.xml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/rss.xml', yamlContent)
   })
 
   it('should reject writing files outside outDir via path traversal', async () => {

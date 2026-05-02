@@ -91,6 +91,8 @@ export const defaultExtensionMap: Record<string, string> = {
   'text/html': 'html',
   'text/xml': 'xml',
   'application/xml': 'xml',
+  'application/atom+xml': 'xml',
+  'application/rss+xml': 'xml',
   'application/yaml': 'yaml',
 }
 
