@@ -509,9 +509,10 @@ describe('EventProcessor.createRequest', () => {
       const processor = getProcessor(event)
       const request = processor.createRequest(event)
 
-      const url = new URL(request.url)
-      expect(url.searchParams.get('key1')).toBe('value1')
-      expect(url.searchParams.get('key2')).toBe('value2')
+      // Assert on the raw URL so encoding behavior in getQueryString is observable
+      expect(request.url).toBe(
+        'https://my-alb-1234567890.us-east-1.elb.amazonaws.com/my/path?key1=value1&key2=value2'
+      )
     })
 
     it('Should handle ALB multiValueQueryStringParameters', () => {
@@ -526,9 +527,9 @@ describe('EventProcessor.createRequest', () => {
       const processor = getProcessor(event)
       const request = processor.createRequest(event)
 
-      const url = new URL(request.url)
-      expect(url.searchParams.getAll('select')).toEqual(['amount', 'currency'])
-      expect(url.searchParams.getAll('filter')).toEqual(['active'])
+      expect(request.url).toBe(
+        'https://my-alb-1234567890.us-east-1.elb.amazonaws.com/my/path?select=amount&select=currency&filter=active'
+      )
     })
 
     it('Should prioritize multiValueQueryStringParameters over queryStringParameters for ALB', () => {
@@ -546,8 +547,9 @@ describe('EventProcessor.createRequest', () => {
       const processor = getProcessor(event)
       const request = processor.createRequest(event)
 
-      const url = new URL(request.url)
-      expect(url.searchParams.getAll('select')).toEqual(['amount', 'currency'])
+      expect(request.url).toBe(
+        'https://my-alb-1234567890.us-east-1.elb.amazonaws.com/my/path?select=amount&select=currency'
+      )
     })
 
     it('Should handle ALB cookies from single-value headers', () => {
@@ -835,7 +837,7 @@ describe('EventProcessor.createResult', () => {
 
     expect(result.cookies).toEqual(['session=abc; Path=/', 'token=xyz; Path=/'])
     // set-cookie should be removed from headers after being moved to cookies
-    expect(result.headers!['set-cookie']).toBeUndefined()
+    expect(result.headers).not.toHaveProperty('set-cookie')
   })
 
   it('Should handle set-cookie for V1 events using multiValueHeaders', async () => {
@@ -919,21 +921,35 @@ describe('EventProcessor.createResult', () => {
 })
 
 describe('LatticeV2Processor', () => {
-  it('Should always return empty string for getQueryString', () => {
-    // Lattice events carry query params in the path itself, getQueryString returns ''
+  it('Should ignore queryStringParameters and rely on the path', () => {
+    // Lattice events carry query params in the path; getQueryString returns ''
+    // and queryStringParameters is not appended.
     const event: LatticeProxyEventV2 = {
       ...baseLatticeEvent,
-      path: '/my/path?key=value',
+      path: '/my/path',
       queryStringParameters: {
-        key: ['value'],
+        ignored: ['this-should-not-appear'],
       },
     }
 
     const processor = getProcessor(event)
     const request = processor.createRequest(event)
 
-    // The query string comes from the path, not from getQueryString
-    expect(request.url).toContain('?key=value')
+    // queryStringParameters must not be reflected in the URL
+    expect(request.url).toBe('https://my-service.us-east-1.on.aws/my/path')
+    expect(request.url).not.toContain('ignored')
+  })
+
+  it('Should preserve the query string carried inside the path', () => {
+    const event: LatticeProxyEventV2 = {
+      ...baseLatticeEvent,
+      path: '/my/path?key=value',
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.url).toBe('https://my-service.us-east-1.on.aws/my/path?key=value')
   })
 
   it('Should handle set-cookie for Lattice events', async () => {
