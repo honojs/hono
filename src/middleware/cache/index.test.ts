@@ -379,6 +379,24 @@ describe('Cache Middleware', () => {
 })
 
 describe('Cache Skipping Logic', () => {
+  const stubStoreBackedCache = () => {
+    const store = new Map<string | Request, Response>()
+    const mockCache = {
+      match: vi.fn((key: string | Request) => Promise.resolve(store.get(key)?.clone())),
+      put: vi.fn((key: string | Request, response: Response) => {
+        store.set(key, response.clone())
+        return Promise.resolve()
+      }),
+      keys: vi.fn(() => Promise.resolve(Array.from(store.keys()))),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn().mockResolvedValue(mockCache),
+    })
+
+    return { mockCache }
+  }
+
   let putSpy: ReturnType<typeof vi.fn>
   let matchSpy: ReturnType<typeof vi.fn>
 
@@ -477,7 +495,8 @@ describe('Cache Skipping Logic', () => {
     }
   )
 
-  it('Should set configured Vary header but not cache the response', async () => {
+  it('Should set configured Vary header and cache by the configured request header value', async () => {
+    const { mockCache } = stubStoreBackedCache()
     const app = new Hono()
     let count = 0
     app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept' }))
@@ -490,7 +509,170 @@ describe('Cache Skipping Logic', () => {
     await app.request('/')
     const res = await app.request('/')
     expect(res.headers.get('Vary')).toBe('accept')
-    expect(res.headers.get('X-Count')).toBe('2')
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should store separate variants for different Accept-Language request values', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'vary-language-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(c.req.header('Accept-Language') ?? 'missing')
+    })
+
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    const en = await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'ja',
+      },
+    })
+    const ja = await app.request('/', {
+      headers: {
+        'Accept-Language': 'ja',
+      },
+    })
+
+    expect(await en.text()).toBe('en')
+    expect(en.headers.get('X-Count')).toBe('1')
+    expect(await ja.text()).toBe('ja')
+    expect(ja.headers.get('X-Count')).toBe('2')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should keep missing and present Vary request header values in separate variants', async () => {
+    stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'vary-missing-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(c.req.header('Accept-Language') ?? 'missing')
+    })
+
+    await app.request('/')
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    const missing = await app.request('/')
+    const present = await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+
+    expect(await missing.text()).toBe('missing')
+    expect(missing.headers.get('X-Count')).toBe('1')
+    expect(await present.text()).toBe('en')
+    expect(present.headers.get('X-Count')).toBe('2')
+  })
+
+  it('Should store separate variants using multiple configured request headers', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use(
+      '*',
+      cache({ cacheName: 'vary-multiple-test', wait: true, vary: ['Accept', 'Accept-Encoding'] })
+    )
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(`${c.req.header('Accept')}:${c.req.header('Accept-Encoding')}`)
+    })
+
+    await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    const same = await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    const differentAccept = await app.request('/', {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'br',
+      },
+    })
+    const differentEncoding = await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'br',
+      },
+    })
+
+    expect(same.headers.get('X-Count')).toBe('1')
+    expect(differentAccept.headers.get('X-Count')).toBe('2')
+    expect(differentEncoding.headers.get('X-Count')).toBe('3')
+    expect(mockCache.put).toHaveBeenCalledTimes(3)
+  })
+
+  it('Should store when the handler Vary header is covered by configured Vary headers', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'vary-covered-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', 'Accept-Language')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should not store when the handler adds Vary headers not covered by configured Vary headers', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', 'Accept-Language, Cookie')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should not store Vary: * responses even when Vary headers are configured', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', '*')
+      return c.text('response')
+    })
+
+    await app.request('/')
     expect(putSpy).not.toHaveBeenCalled()
   })
 
