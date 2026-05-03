@@ -306,8 +306,9 @@ describe('EventProcessor.createRequest', () => {
   it('Should return valid Request object from version 2.0 Lattice event', async () => {
     const event: LatticeProxyEventV2 = {
       version: '2.0',
-      // query string parameters from the path take precedence over the explicit notation below
-      path: '/my/path?parameter1=value1&parameter1=value2&parameter2=value',
+      // Per AWS docs, Lattice delivers `path` and `queryStringParameters` as
+      // separate fields — `path` does not contain a query string.
+      path: '/my/path',
       method: 'POST',
       headers: {
         cookie: ['cookie1=value1; cookie2=value2'],
@@ -414,5 +415,80 @@ describe('handle', () => {
     const result = await handler(event)
     expect(result.statusCode).toBe(400)
     expect(result.body).toBe('Invalid request')
+  })
+})
+
+describe('LatticeV2Processor query string handling', () => {
+  const baseLatticeEvent: LatticeProxyEventV2 = {
+    version: '2.0',
+    path: '/items',
+    method: 'GET',
+    headers: { host: ['my-service.us-east-1.on.aws'] },
+    queryStringParameters: {},
+    body: null,
+    isBase64Encoded: false,
+    requestContext: {
+      serviceNetworkArn: 'arn:aws:vpc-lattice:us-east-1:123456789012:servicenetwork/sn-abc',
+      serviceArn: 'arn:aws:vpc-lattice:us-east-1:123456789012:service/svc-abc',
+      targetGroupArn: 'arn:aws:vpc-lattice:us-east-1:123456789012:targetgroup/tg-abc',
+      region: 'us-east-1',
+      timeEpoch: '1583348638390123',
+      identity: {},
+    },
+  }
+
+  it('Should expose Lattice queryStringParameters via c.req.query()', async () => {
+    const app = new Hono()
+    app.get('/items', (c) =>
+      c.json({
+        q: c.req.query('q'),
+        page: c.req.query('page'),
+      })
+    )
+    const handler = handle(app)
+
+    const event: LatticeProxyEventV2 = {
+      ...baseLatticeEvent,
+      queryStringParameters: {
+        q: ['hello'],
+        page: ['2'],
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(JSON.parse(result.body)).toEqual({ q: 'hello', page: '2' })
+  })
+
+  it('Should preserve repeated values in Lattice queryStringParameters', async () => {
+    const app = new Hono()
+    app.get('/items', (c) => c.json({ tags: c.req.queries('tag') }))
+    const handler = handle(app)
+
+    const event: LatticeProxyEventV2 = {
+      ...baseLatticeEvent,
+      queryStringParameters: {
+        tag: ['red', 'blue'],
+      },
+    }
+
+    const result = await handler(event)
+    expect(JSON.parse(result.body)).toEqual({ tags: ['red', 'blue'] })
+  })
+
+  it('Should percent-encode special characters in Lattice query parameters', async () => {
+    const app = new Hono()
+    app.get('/items', (c) => c.json({ name: c.req.query('name') }))
+    const handler = handle(app)
+
+    const event: LatticeProxyEventV2 = {
+      ...baseLatticeEvent,
+      queryStringParameters: {
+        name: ['John Doe'],
+      },
+    }
+
+    const result = await handler(event)
+    expect(JSON.parse(result.body)).toEqual({ name: 'John Doe' })
   })
 })
