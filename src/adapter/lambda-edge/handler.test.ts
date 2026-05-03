@@ -17,7 +17,29 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('text/javascript')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+    expect(isContentTypeBinary('application/atom+xml')).toBe(false)
+  })
+
+  it('Should classify ZIP-based document subtypes as binary', () => {
+    // OOXML formats (.docx/.xlsx/.pptx) are ZIP archives; the previous regex
+    // matched the substring "xml" inside "openxmlformats" and incorrectly
+    // returned non-binary, causing CloudFront to receive corrupted bodies.
+    expect(
+      isContentTypeBinary('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    ).toBe(true)
+    expect(
+      isContentTypeBinary('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    ).toBe(true)
+    expect(
+      isContentTypeBinary(
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      )
+    ).toBe(true)
+    expect(isContentTypeBinary('application/epub+zip')).toBe(true)
+    expect(isContentTypeBinary('application/vnd.oasis.opendocument.text')).toBe(true)
+    expect(isContentTypeBinary('application/msword')).toBe(true)
+    expect(isContentTypeBinary('application/octet-stream')).toBe(true)
+    expect(isContentTypeBinary('application/pdf')).toBe(true)
   })
 })
 
