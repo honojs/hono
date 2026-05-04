@@ -418,4 +418,22 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('null')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
+
+  it('Options without origin fall back to wildcard default', async () => {
+    const subApp = new Hono()
+    subApp.use('/api/*', cors({ allowMethods: ['GET', 'POST'] }))
+    subApp.get('/api/abc', (c) => c.json({ ok: true }))
+
+    const res = await subApp.request('http://localhost/api/abc')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+
+    const preflight = await subApp.request(
+      new Request('http://localhost/api/abc', { method: 'OPTIONS' })
+    )
+    expect(preflight.headers.get('Access-Control-Allow-Methods')?.split(/\s*,\s*/)).toEqual([
+      'GET',
+      'POST',
+    ])
+  })
 })

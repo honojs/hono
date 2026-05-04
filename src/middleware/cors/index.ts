@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 type CORSOptions = {
-  origin:
+  origin?:
     | string
     | string[]
     | ((
