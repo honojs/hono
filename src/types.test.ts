@@ -3498,6 +3498,282 @@ describe('RPC supports Middleware responses', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
   })
+
+  describe('Merge responses from app.on handlers, single method', () => {
+    test('merge responses from 1 middleware', async () => {
+      const middleware = createMiddleware(async (c) => c.json({ '400': true }, 400))
+
+      const app = new Hono().on('GET', '/test', middleware, (c) => c.json({ '200': true }, 200))
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+    })
+
+    test('merge responses from 2 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+
+      const app = new Hono().on('GET', '/test', middleware1, middleware2, (c) =>
+        c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+    })
+
+    test('merge responses from 5 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+
+      const app = new Hono().on(
+        'GET',
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+    })
+
+    test('merge responses from 9 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+      const middleware6 = createMiddleware(async (c) => c.json({ '201': true }, 201))
+      const middleware7 = createMiddleware(async (c) => c.json({ '202': true }, 202))
+      const middleware8 = createMiddleware(async (c) => c.json({ '203': true }, 203))
+      const middleware9 = createMiddleware(async (c) => c.json({ '301': true }, 301))
+
+      const app = new Hono().on(
+        'GET',
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        middleware6,
+        middleware7,
+        middleware8,
+        middleware9,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+      if (res.status === 201) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
+      }
+      if (res.status === 202) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
+      }
+      if (res.status === 203) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
+      }
+      if (res.status === 301) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 301: true }>()
+      }
+    })
+  })
+
+  describe('Merge responses from app.on handlers, method[]', () => {
+    test('merge responses from 1 middleware', async () => {
+      const middleware = createMiddleware(async (c) => c.json({ '400': true }, 400))
+
+      const app = new Hono().on(['GET'], '/test', middleware, (c) => c.json({ '200': true }, 200))
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+    })
+
+    test('merge responses from 2 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+
+      const app = new Hono().on(['GET'], '/test', middleware1, middleware2, (c) =>
+        c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+    })
+
+    test('merge responses from 5 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+
+      const app = new Hono().on(
+        ['GET'],
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+    })
+
+    test('merge responses from 9 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+      const middleware6 = createMiddleware(async (c) => c.json({ '201': true }, 201))
+      const middleware7 = createMiddleware(async (c) => c.json({ '202': true }, 202))
+      const middleware8 = createMiddleware(async (c) => c.json({ '203': true }, 203))
+      const middleware9 = createMiddleware(async (c) => c.json({ '301': true }, 301))
+
+      const app = new Hono().on(
+        ['GET'],
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        middleware6,
+        middleware7,
+        middleware8,
+        middleware9,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+      if (res.status === 201) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
+      }
+      if (res.status === 202) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
+      }
+      if (res.status === 203) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
+      }
+      if (res.status === 301) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 301: true }>()
+      }
+    })
+  })
 })
 
 describe('Handlers returning Promise<void>', () => {
