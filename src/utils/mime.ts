@@ -13,7 +13,8 @@ export const getMimeType = (
     return
   }
   let mimeType = mimes[match[1].toLowerCase()]
-  if (mimeType && mimeType.startsWith('text')) {
+  // text/: RFC 2046; +xml suffix: RFC 6839; application/xml: RFC 7303 §8.5
+  if (mimeType && (mimeType.startsWith('text/') || mimeType.endsWith('+xml') || mimeType === 'application/xml')) {
     mimeType += '; charset=utf-8'
   }
   return mimeType

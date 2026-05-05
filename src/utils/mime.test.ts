@@ -16,6 +16,9 @@ describe('mime', () => {
     expect(getMimeType('goodmorninghellogif')).toBeUndefined()
     expect(getMimeType('indexjs.abcd')).toBeUndefined()
     expect(getMimeType('IMAGE.JPG')).toBe('image/jpeg')
+    expect(getMimeType('logo.svg')).toBe('image/svg+xml; charset=utf-8')
+    expect(getMimeType('page.xhtml')).toBe('application/xhtml+xml; charset=utf-8')
+    expect(getMimeType('feed.xml')).toBe('application/xml; charset=utf-8')
   })
 
   it('getMimeType with custom mime', () => {
