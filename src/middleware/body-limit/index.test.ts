@@ -198,4 +198,76 @@ describe('Body Limit Middleware', () => {
       expect(await res.text()).toBe(content)
     })
   })
+
+  describe('chunked body bypass scenarios', () => {
+    const handler = vi.fn()
+
+    const buildOversizedRequestInit = (): RequestInit & { duplex: 'half' } => ({
+      method: 'POST',
+      headers: { 'Transfer-Encoding': 'chunked' },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('1234'))
+          controller.enqueue(new TextEncoder().encode('5678901234567890'))
+          controller.close()
+        },
+      }),
+      duplex: 'half',
+    })
+
+    beforeEach(() => {
+      handler.mockReset()
+      app = new Hono()
+      app.use('*', bodyLimit({ maxSize: 8 }))
+      app.post('/no-read', (c) => {
+        handler()
+        return c.text('NO-READ-OK')
+      })
+      app.post('/partial-read', async (c) => {
+        handler()
+        const reader = c.req.raw.body?.getReader()
+        const chunk = reader ? await reader.read() : { value: undefined }
+        return c.text(new TextDecoder().decode(chunk.value))
+      })
+      app.post('/swallow-error', async (c) => {
+        handler()
+        const body = c.req.raw.body
+        if (!body) {
+          return c.text('no body')
+        }
+        const reader = body.getReader()
+        let seen = ''
+        try {
+          for (;;) {
+            const { done, value } = await reader.read()
+            if (done) {
+              break
+            }
+            seen += new TextDecoder().decode(value)
+          }
+        } catch {
+          // intentionally swallow read errors
+        }
+        return c.text(`processed:${seen}`)
+      })
+    })
+
+    it('should reject when handler does not read the body', async () => {
+      const res = await app.request('/no-read', buildOversizedRequestInit())
+      expect(res.status).toBe(413)
+      expect(handler).not.toHaveBeenCalled()
+    })
+
+    it('should reject when handler reads only the first chunk', async () => {
+      const res = await app.request('/partial-read', buildOversizedRequestInit())
+      expect(res.status).toBe(413)
+      expect(handler).not.toHaveBeenCalled()
+    })
+
+    it('should reject when handler swallows body read errors', async () => {
+      const res = await app.request('/swallow-error', buildOversizedRequestInit())
+      expect(res.status).toBe(413)
+      expect(handler).not.toHaveBeenCalled()
+    })
+  })
 })

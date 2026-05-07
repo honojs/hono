@@ -1,3 +1,5 @@
+import type { Props } from '../base'
+
 export const deDupeKeyMap: Record<string, string[]> = {
   title: [],
   script: ['src'],
@@ -9,3 +11,13 @@ export const deDupeKeyMap: Record<string, string[]> = {
 export const domRenderers: Record<string, Function> = {}
 
 export const dataPrecedenceAttr = 'data-precedence'
+
+export const isStylesheetLinkWithPrecedence = (props: Props): boolean =>
+  props.rel === 'stylesheet' && 'precedence' in props
+
+export const shouldDeDupeByKey = (tagName: string, supportSort: boolean): boolean => {
+  if (tagName === 'link') {
+    return supportSort
+  }
+  return deDupeKeyMap[tagName].length > 0
+}

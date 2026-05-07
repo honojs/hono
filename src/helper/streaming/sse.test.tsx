@@ -238,4 +238,161 @@ describe('SSE Streaming helper', () => {
     const decodedValue = decoder.decode(value)
     expect(decodedValue).toBe('data: <div>Error</div>\n\n')
   })
+
+  it('Check streamSSE handles \\r (CR) line ending correctly', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'Line1\rLine2',
+        event: 'test-cr',
+      })
+    })
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    expect(decodedValue).toBe('event: test-cr\ndata: Line1\ndata: Line2\n\n')
+  })
+
+  it('Check streamSSE handles \\r\\n (CRLF) line ending correctly', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'Line1\r\nLine2',
+        event: 'test-crlf',
+      })
+    })
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    expect(decodedValue).toBe('event: test-crlf\ndata: Line1\ndata: Line2\n\n')
+  })
+
+  it('Check streamSSE handles mixed line endings correctly', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'A\nB\rC\r\nD',
+        event: 'test-mixed',
+      })
+    })
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    expect(decodedValue).toBe('event: test-mixed\ndata: A\ndata: B\ndata: C\ndata: D\n\n')
+  })
+
+  it('Should throw error if event contains \\n', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({ data: 'test', event: 'test\nevent' })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(onError).toBeCalledTimes(1)
+  })
+
+  it('Should throw error if event contains \\r', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({ data: 'test', event: 'test\revent' })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(onError).toBeCalledTimes(1)
+  })
+
+  it('Should throw error if id contains \\n', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({ data: 'test', id: 'test\nid' })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(onError).toBeCalledTimes(1)
+  })
+
+  it('Should throw error if id contains \\r', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({ data: 'test', id: 'test\rid' })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(onError).toBeCalledTimes(1)
+  })
+
+  it('Check streamSSE handles consecutive \\r correctly', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'Left\r\rRight',
+        event: 'test-double-cr',
+      })
+    })
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    // Two \r should produce an empty line in between
+    expect(decodedValue).toBe('event: test-double-cr\ndata: Left\ndata: \ndata: Right\n\n')
+  })
 })

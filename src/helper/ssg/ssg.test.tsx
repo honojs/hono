@@ -9,13 +9,7 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import {
-  defaultExtensionMap,
-  fetchRoutesContent,
-  saveContentToFile,
-  toSSG,
-  defaultPlugin,
-} from './ssg'
+import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
 import type {
   AfterGenerateHook,
   AfterResponseHook,
@@ -547,6 +541,18 @@ describe('saveContentToFile function', () => {
       mimeType: htmlMimeType,
     }
 
+    const atomData = {
+      routePath: '/atom',
+      content: yamlContent,
+      mimeType: 'application/atom+xml',
+    }
+
+    const rssData = {
+      routePath: '/rss',
+      content: yamlContent,
+      mimeType: 'application/rss+xml',
+    }
+
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
@@ -563,11 +569,49 @@ describe('saveContentToFile function', () => {
       ...defaultExtensionMap,
       ...extensionMap,
     })
+    await saveContentToFile(Promise.resolve(atomData), fsMock, './static')
+    await saveContentToFile(Promise.resolve(rssData), fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/atom.xml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/rss.xml', yamlContent)
+  })
+
+  it('should reject writing files outside outDir via path traversal', async () => {
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/../pwned',
+          content: 'owned',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('Path traversal detected')
+
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('should reject paths that only partially match outDir name', async () => {
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/../static-evil/pwned',
+          content: 'owned',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('Path traversal detected')
+
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
   })
 })
 
@@ -650,6 +694,30 @@ describe('disableSSG/onlySSG middlewares', () => {
   it('Should return 404 response if onlySSG() is set', async () => {
     const res = await app.request('/static-page')
     expect(res.status).toBe(404)
+  })
+})
+
+describe('isSSGContext with disableSSG', () => {
+  it('Should work correctly when used together', async () => {
+    const app = new Hono()
+
+    app.use('*', async (c, next) => {
+      if (!isSSGContext(c)) {
+        return next()
+      }
+      await next()
+    })
+    app.get('/guarded', disableSSG(), (c) => c.html('<h1>should be skipped</h1>'))
+    app.get('/page', (c) => c.html('<h1>hello</h1>'))
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await expect(toSSG(app, fsMock, { dir: './static' })).resolves.toBeDefined()
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/page.html', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/guarded.html', expect.any(String))
   })
 })
 
@@ -841,30 +909,6 @@ describe('SSG Plugin System', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-  })
-
-  it('should use defaultPlugin when plugins option is omitted', async () => {
-    // @ts-expect-error defaultPlugin has afterResponseHook
-    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
-    await toSSG(app, fsMock, { dir: './static' })
-    expect(defaultPluginSpy).toHaveBeenCalled()
-    defaultPluginSpy.mockRestore()
-  })
-
-  it('should skip non-200 responses with defaultPlugin', async () => {
-    const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/created.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/redirect.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/notfound.txt', expect.any(String))
-    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/error.txt', expect.any(String))
-    expect(result.files.some((f) => f.includes('created'))).toBe(false)
-    expect(result.files.some((f) => f.includes('redirect'))).toBe(false)
-    expect(result.files.some((f) => f.includes('notfound'))).toBe(false)
-    expect(result.files.some((f) => f.includes('error'))).toBe(false)
-    expect(result.success).toBe(true)
   })
 
   it('should correctly apply plugins with beforeRequestHook', async () => {

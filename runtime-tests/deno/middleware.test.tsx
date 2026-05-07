@@ -163,7 +163,7 @@ Deno.test('JWT Authentication middleware', async () => {
     await next()
     c.header('x-foo', c.get('x-foo') || '')
   })
-  app.use('/auth/*', jwt({ secret: 'a-secret' }))
+  app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
   app.get('/auth/*', (c) => {
     c.set('x-foo', 'bar')
     return new Response('auth')

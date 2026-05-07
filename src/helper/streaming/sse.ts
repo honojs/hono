@@ -18,11 +18,17 @@ export class SSEStreamingApi extends StreamingApi {
   async writeSSE(message: SSEMessage) {
     const data = await resolveCallback(message.data, HtmlEscapedCallbackPhase.Stringify, false, {})
     const dataLines = (data as string)
-      .split('\n')
+      .split(/\r\n|\r|\n/)
       .map((line) => {
         return `data: ${line}`
       })
       .join('\n')
+
+    for (const key of ['event', 'id', 'retry'] as (keyof SSEMessage)[]) {
+      if (message[key] && /[\r\n]/.test(message[key] as string)) {
+        throw new Error(`${key} must not contain "\\r" or "\\n"`)
+      }
+    }
 
     const sseData =
       [

@@ -18,12 +18,14 @@ type BasicAuthOptions =
       realm?: string
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
+      onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
   | {
       verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
       realm?: string
       hashFunction?: Function
       invalidUserMessage?: string | object | MessageFunction
+      onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
 
 /**
@@ -38,6 +40,7 @@ type BasicAuthOptions =
  * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
+ * @param {Function} [options.onAuthSuccess] - Callback function called on successful authentication.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
@@ -56,6 +59,22 @@ type BasicAuthOptions =
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
  * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With onAuthSuccess callback
+ * app.use(
+ *   '/auth/*',
+ *   basicAuth({
+ *     username: 'hono',
+ *     password: 'ahotproject',
+ *     onAuthSuccess: (c, username) => {
+ *       c.set('user', { name: username, role: 'admin' })
+ *       console.log(`User ${username} authenticated`)
+ *     },
+ *   })
+ * )
  * ```
  */
 export const basicAuth = (
@@ -88,6 +107,9 @@ export const basicAuth = (
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
+          if (options.onAuthSuccess) {
+            await options.onAuthSuccess(ctx, requestUser.username)
+          }
           await next()
           return
         }
@@ -98,6 +120,9 @@ export const basicAuth = (
             timingSafeEqual(user.password, requestUser.password, options.hashFunction),
           ])
           if (usernameEqual && passwordEqual) {
+            if (options.onAuthSuccess) {
+              await options.onAuthSuccess(ctx, requestUser.username)
+            }
             await next()
             return
           }

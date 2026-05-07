@@ -64,6 +64,9 @@ class ClientRequestImpl {
       if (args.form) {
         const form = new FormData()
         for (const [k, v] of Object.entries(args.form)) {
+          if (v === undefined) {
+            continue
+          }
           if (Array.isArray(v)) {
             for (const v2 of v) {
               form.append(k, v2)
@@ -165,7 +168,7 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
 
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
-    if (method === 'url') {
+    if (method === 'url' || method === 'path') {
       let result = url
       if (opts.args[0]) {
         if (opts.args[0].param) {
@@ -176,7 +179,10 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
         }
       }
       result = removeIndexString(result)
-      return new URL(result)
+      if (method === 'url') {
+        return new URL(result)
+      }
+      return result.slice(baseUrl.replace(/\/+$/, '').length).replace(/^\/?/, '/')
     }
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(

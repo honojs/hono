@@ -319,3 +319,116 @@ describe('Basic Auth by Middleware', () => {
     expect(await res.text()).toBe('{"message":"Custom unauthorized message as function object"}')
   })
 })
+
+describe('Basic Auth with onAuthSuccess', () => {
+  const username = 'callback-user'
+  const password = 'callback-pass'
+
+  it('should call onAuthSuccess callback on successful auth', async () => {
+    type Env = { Variables: { custom: string } }
+    const app = new Hono<Env>()
+    let callbackCalled = false
+    let callbackUsername = ''
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        onAuthSuccess: (c, u) => {
+          callbackCalled = true
+          callbackUsername = u
+          c.set('custom', 'value')
+        },
+      })
+    )
+    app.get('/', (c) => c.text(c.get('custom') || 'no-custom'))
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(callbackCalled).toBe(true)
+    expect(callbackUsername).toBe(username)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('value')
+  })
+
+  it('should support async onAuthSuccess callback', async () => {
+    type Env = { Variables: { asyncValue: string } }
+    const app = new Hono<Env>()
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        onAuthSuccess: async (c) => {
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          c.set('asyncValue', 'done')
+        },
+      })
+    )
+    app.get('/', (c) => c.text(c.get('asyncValue') || 'not-done'))
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('done')
+  })
+
+  it('should not call onAuthSuccess on failed auth', async () => {
+    const app = new Hono()
+    let callbackCalled = false
+
+    app.use(
+      '/*',
+      basicAuth({
+        username,
+        password,
+        onAuthSuccess: () => {
+          callbackCalled = true
+        },
+      })
+    )
+    app.get('/', (c) => c.text('ok'))
+
+    const credential = Buffer.from('wrong:wrong').toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(callbackCalled).toBe(false)
+    expect(res.status).toBe(401)
+  })
+
+  it('should work with verifyUser mode', async () => {
+    type Env = { Variables: { verified: string } }
+    const app = new Hono<Env>()
+    let callbackUsername = ''
+
+    app.use(
+      '/*',
+      basicAuth({
+        verifyUser: (u, p) => u === username && p === password,
+        onAuthSuccess: (c, u) => {
+          callbackUsername = u
+          c.set('verified', 'yes')
+        },
+      })
+    )
+    app.get('/', (c) => c.text(c.get('verified') || 'no'))
+
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await app.request('/', {
+      headers: { Authorization: `Basic ${credential}` },
+    })
+
+    expect(callbackUsername).toBe(username)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('yes')
+  })
+})

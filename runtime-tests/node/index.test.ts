@@ -81,7 +81,7 @@ describe('Basic Auth Middleware', () => {
 describe('JWT Auth Middleware', () => {
   const app = new Hono()
 
-  app.use('/jwt/*', jwt({ secret: 'a-secret' }))
+  app.use('/jwt/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
   app.get('/jwt/a', (c) => c.text('auth'))
 
   const agent = createAgent(app)

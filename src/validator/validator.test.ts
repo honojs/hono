@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { ZodSchema } from 'zod'
-import { z } from 'zod'
+import * as z from 'zod'
 import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
@@ -35,7 +34,7 @@ type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
 
 // Reference implementation for only testing
 const zodValidator = <
-  T extends ZodSchema,
+  T extends z.ZodSchema,
   E extends {},
   P extends string,
   Target extends keyof ValidationTargets,
@@ -1417,5 +1416,25 @@ describe('Raw Request cloning after validation', () => {
     expect(result.clonedReferrerPolicy).toBe(result.originalReferrerPolicy)
     expect(result.cloned).toBe(true)
     expect(result.payload).toMatchObject(testData)
+  })
+})
+
+describe('Form validator prototype pollution prevention', () => {
+  it('should store __proto__ as data and not misdetect inherited keys', async () => {
+    const app = new Hono()
+    app.post(
+      '/form',
+      validator('form', (value) => value),
+      (c) => c.json(c.req.valid('form'))
+    )
+
+    const form = new FormData()
+    form.append('__proto__', 'evil')
+    form.append('toString', 'hello')
+
+    const res = await app.request('/form', { method: 'POST', body: form })
+    const result = await res.json()
+    expect(result['__proto__']).toBe('evil')
+    expect(result['toString']).toBe('hello')
   })
 })

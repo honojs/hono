@@ -491,7 +491,7 @@ class Hono<
    * @see https://hono.dev/docs/api/hono#request
    */
   request = (
-    input: RequestInfo | URL,
+    input: Request | string | URL,
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext

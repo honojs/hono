@@ -129,7 +129,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 At the next major version, Validator Middleware will be changed with "breaking changes". Therefore, the current Validator Middleware will be deprecated; please use 3rd-party Validator libraries such as [Zod](https://zod.dev) or [TypeBox](https://github.com/sinclairzx81/typebox).
 
 ```ts
-import { z } from 'zod'
+import * as z from 'zod'
 
 //...
 

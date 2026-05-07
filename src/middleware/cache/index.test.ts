@@ -170,47 +170,6 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
-  let varyWildcardOnlyCount = 0
-  app.use('/vary-wildcard/*', cache({ cacheName: 'vary-wildcard-test', wait: true }))
-  app.get('/vary-wildcard/only', (c) => {
-    varyWildcardOnlyCount++
-    c.header('X-Count', `${varyWildcardOnlyCount}`)
-    c.header('Vary', '*')
-    return c.text('response')
-  })
-
-  let varyWildcardFirstCount = 0
-  app.get('/vary-wildcard/first', (c) => {
-    varyWildcardFirstCount++
-    c.header('X-Count', `${varyWildcardFirstCount}`)
-    c.header('Vary', '*, Accept')
-    return c.text('response')
-  })
-
-  let varyWildcardMiddleCount = 0
-  app.get('/vary-wildcard/middle', (c) => {
-    varyWildcardMiddleCount++
-    c.header('X-Count', `${varyWildcardMiddleCount}`)
-    c.header('Vary', 'Accept, *')
-    return c.text('response')
-  })
-
-  let varyWildcardComplexCount = 0
-  app.get('/vary-wildcard/complex', (c) => {
-    varyWildcardComplexCount++
-    c.header('X-Count', `${varyWildcardComplexCount}`)
-    c.header('Vary', 'Accept, *, Accept-Encoding')
-    return c.text('response')
-  })
-
-  let varyWildcardSpacesCount = 0
-  app.get('/vary-wildcard/spaces', (c) => {
-    varyWildcardSpacesCount++
-    c.header('X-Count', `${varyWildcardSpacesCount}`)
-    c.header('Vary', ' * ')
-    return c.text('response')
-  })
-
   app.use('/default/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
   app.all('/default/:code/', (c) => {
     const code = parseInt(c.req.param('code'))
@@ -333,36 +292,6 @@ describe('Cache Middleware', () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
-  it('Should not cache response when Vary: * is set', async () => {
-    await app.request('http://localhost/vary-wildcard/only')
-    const res = await app.request('http://localhost/vary-wildcard/only')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: *, Accept is set', async () => {
-    await app.request('http://localhost/vary-wildcard/first')
-    const res = await app.request('http://localhost/vary-wildcard/first')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: Accept, * is set', async () => {
-    await app.request('http://localhost/vary-wildcard/middle')
-    const res = await app.request('http://localhost/vary-wildcard/middle')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: Accept, *, Accept-Encoding is set', async () => {
-    await app.request('http://localhost/vary-wildcard/complex')
-    const res = await app.request('http://localhost/vary-wildcard/complex')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary contains * with extra spaces', async () => {
-    await app.request('http://localhost/vary-wildcard/spaces')
-    const res = await app.request('http://localhost/vary-wildcard/spaces')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
   it.each([200])('Should cache %i in default cacheable status codes', async (code) => {
     await app.request(`http://localhost/default/${code}/`)
     const res = await app.request(`http://localhost/default/${code}/`)
@@ -415,5 +344,195 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe(null)
+  })
+
+  it('Should call onCacheNotAvailable when caches is not defined', async () => {
+    vi.stubGlobal('caches', undefined)
+    const spy = vi.fn()
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: spy }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(spy).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('Should suppress default log when onCacheNotAvailable is false', async () => {
+    vi.stubGlobal('caches', undefined)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: false }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(logSpy).not.toHaveBeenCalledWith(
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
+    logSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('Cache Skipping Logic', () => {
+  let putSpy: ReturnType<typeof vi.fn>
+  let matchSpy: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    matchSpy = vi.fn().mockResolvedValue(undefined)
+    putSpy = vi.fn()
+    const mockCache = {
+      match: matchSpy, // Always miss unless a test overrides it
+      put: putSpy, // We spy on this
+      keys: vi.fn().mockResolvedValue([]),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn().mockResolvedValue(mockCache),
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('Should NOT cache response if Cache-Control contains "private"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'private, max-age=3600')
+      return c.text('response')
+    })
+
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    // IMPORTANT: put() should NOT be called
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Cache-Control contains "no-store"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'no-store')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Cache-Control contains no-cache="Set-Cookie"', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Cache-Control', 'no-cache="Set-Cookie"')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should NOT cache response if Set-Cookie header is present', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      c.header('Set-Cookie', 'session=secret')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should cache normal responses (Control Test)', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+    app.get('/', (c) => {
+      return c.text('response')
+    })
+
+    await app.request('/')
+    // IMPORTANT: put() SHOULD be called for normal responses
+    expect(putSpy).toHaveBeenCalled()
+  })
+
+  it.each(['Accept-Language', 'Authorization', 'X-Tenant'])(
+    'Should NOT cache response if Vary: %s is set',
+    async (vary) => {
+      const app = new Hono()
+      app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+      app.get('/', (c) => {
+        c.header('Vary', vary)
+        return c.text('response')
+      })
+
+      await app.request('/')
+      expect(putSpy).not.toHaveBeenCalled()
+    }
+  )
+
+  it('Should set configured Vary header but not cache the response', async () => {
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text('response')
+    })
+
+    await app.request('/')
+    const res = await app.request('/')
+    expect(res.headers.get('Vary')).toBe('accept')
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should bypass cache for Authorization requests', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, cacheControl: 'max-age=10' }))
+    app.get('/', (c) => {
+      return c.text('fresh')
+    })
+
+    const res = await app.request('/', {
+      headers: {
+        Authorization: 'Bearer token',
+      },
+    })
+    expect(await res.text()).toBe('fresh')
+    expect(caches.open).not.toHaveBeenCalled()
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should not use or store cache for POST requests', async () => {
+    const app = new Hono()
+    let postCount = 0
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, cacheControl: 'max-age=10' }))
+    app.get('/resource', (c) => {
+      return c.text('get response')
+    })
+    app.post('/resource', (c) => {
+      postCount++
+      c.header('X-Count', `${postCount}`)
+      return c.text('post response')
+    })
+
+    await app.request('/resource')
+    putSpy.mockClear()
+    matchSpy.mockClear()
+
+    await app.request('/resource', { method: 'POST' })
+    const res = await app.request('/resource', { method: 'POST' })
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(res.headers.get('Cache-Control')).toBeNull()
+    expect(matchSpy).not.toHaveBeenCalled()
+    expect(putSpy).not.toHaveBeenCalled()
   })
 })

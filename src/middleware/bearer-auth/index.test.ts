@@ -450,6 +450,18 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('x-custom')).toBe('foo')
   })
 
+  it.each([['bearer'], ['BEARER'], ['BeArEr']])(
+    'Should authorize - prefix is case-insensitive: %s',
+    async (prefix) => {
+      const req = new Request('http://localhost/auth/a')
+      req.headers.set('Authorization', `${prefix} ${token}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    }
+  )
+
   it('Should not authorize - no authorization header', async () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
@@ -479,6 +491,15 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
     expect(res.headers.get('x-custom')).toBeNull()
+  })
+
+  it('Should not authorize - token is case-sensitive', async () => {
+    const req = new Request('http://localhost/auth/a')
+    req.headers.set('Authorization', `Bearer ${token.toUpperCase()}`)
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
   })
 
   it('Should authorize', async () => {
@@ -900,5 +921,64 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
+  })
+})
+
+describe('Bearer Auth with prefix containing regex metacharacters', () => {
+  let app: Hono
+  let handlerExecuted: boolean
+  const token = 'testtoken123'
+
+  beforeEach(() => {
+    app = new Hono()
+    handlerExecuted = false
+  })
+
+  it('Should not throw when prefix contains regex metacharacters', () => {
+    expect(() => {
+      bearerAuth({ token, prefix: 'Bearer (v2)' })
+    }).not.toThrow()
+  })
+
+  it('Should authorize with prefix containing parentheses', async () => {
+    app.use('/*', bearerAuth({ token, prefix: 'Bearer(v2)' }))
+    app.get('/*', (c) => {
+      handlerExecuted = true
+      return c.text('ok')
+    })
+
+    const req = new Request('http://localhost/')
+    req.headers.set('Authorization', `Bearer(v2) ${token}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+  })
+
+  it('Should authorize with prefix containing dots and plus signs', async () => {
+    app.use('/*', bearerAuth({ token, prefix: 'X.Auth+v2' }))
+    app.get('/*', (c) => {
+      handlerExecuted = true
+      return c.text('ok')
+    })
+
+    const req = new Request('http://localhost/')
+    req.headers.set('Authorization', `X.Auth+v2 ${token}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+  })
+
+  it('Should not match when prefix metacharacters are interpreted as regex', async () => {
+    app.use('/*', bearerAuth({ token, prefix: 'X.Y' }))
+    app.get('/*', (c) => {
+      handlerExecuted = true
+      return c.text('ok')
+    })
+
+    const req = new Request('http://localhost/')
+    req.headers.set('Authorization', `XZY ${token}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
   })
 })

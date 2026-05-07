@@ -15,6 +15,7 @@ describe('mime', () => {
     expect(getMimeType('site.webmanifest')).toBe('application/manifest+json')
     expect(getMimeType('goodmorninghellogif')).toBeUndefined()
     expect(getMimeType('indexjs.abcd')).toBeUndefined()
+    expect(getMimeType('IMAGE.JPG')).toBe('image/jpeg')
   })
 
   it('getMimeType with custom mime', () => {

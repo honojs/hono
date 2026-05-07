@@ -2,7 +2,7 @@ import { describe } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { encodeBase64 } from '../../utils/encode'
-import type { CloudFrontEdgeEvent } from './handler'
+import type { Callback, CloudFrontEdgeEvent } from './handler'
 import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
@@ -87,6 +87,39 @@ describe('handle', () => {
     const res = await handler(cloudFrontEdgeEvent)
 
     expect(res.body).toBe('https://hono.dev/test-path')
+  })
+
+  it('Should expose async handler arity compatible with NODEJS_24_X', () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    expect(handler.length).toBeLessThanOrEqual(2)
+  })
+
+  it('Should preserve positional callback compatibility', async () => {
+    type Env = { Bindings: { callback: Callback } }
+    const app = new Hono<Env>()
+    const callback = vi.fn()
+
+    app.get('/test-path', (c) => {
+      c.env.callback?.(null, {
+        status: '200',
+        headers: {
+          'x-test': [{ key: 'x-test', value: 'ok' }],
+        },
+      })
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+    await handler(cloudFrontEdgeEvent, undefined, callback)
+
+    expect(callback).toHaveBeenCalledWith(null, {
+      status: '200',
+      headers: {
+        'x-test': [{ key: 'x-test', value: 'ok' }],
+      },
+    })
   })
 
   it('Should support multiple cookies', async () => {

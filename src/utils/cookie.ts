@@ -76,26 +76,48 @@ const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
 // (see: https://github.com/golang/go/issues/7243)
 const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
 
+const trimCookieWhitespace = (value: string): string => {
+  let start = 0
+  let end = value.length
+
+  while (start < end) {
+    const charCode = value.charCodeAt(start)
+    if (charCode !== 0x20 && charCode !== 0x09) {
+      break
+    }
+    start++
+  }
+
+  while (end > start) {
+    const charCode = value.charCodeAt(end - 1)
+    if (charCode !== 0x20 && charCode !== 0x09) {
+      break
+    }
+    end--
+  }
+
+  return start === 0 && end === value.length ? value : value.slice(start, end)
+}
+
 export const parse = (cookie: string, name?: string): Cookie => {
   if (name && cookie.indexOf(name) === -1) {
     // Fast-path: return immediately if the demanded-key is not in the cookie string
     return {}
   }
-  const pairs = cookie.trim().split(';')
+  const pairs = cookie.split(';')
   const parsedCookie: Cookie = {}
-  for (let pairStr of pairs) {
-    pairStr = pairStr.trim()
+  for (const pairStr of pairs) {
     const valueStartPos = pairStr.indexOf('=')
     if (valueStartPos === -1) {
       continue
     }
 
-    const cookieName = pairStr.substring(0, valueStartPos).trim()
+    const cookieName = trimCookieWhitespace(pairStr.substring(0, valueStartPos))
     if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
       continue
     }
 
-    let cookieValue = pairStr.substring(valueStartPos + 1).trim()
+    let cookieValue = trimCookieWhitespace(pairStr.substring(valueStartPos + 1))
     if (cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
       cookieValue = cookieValue.slice(1, -1)
     }
@@ -139,6 +161,10 @@ export const parseSigned = async (
 }
 
 const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+  if (!validCookieNameRegEx.test(name)) {
+    throw new Error('Invalid cookie name')
+  }
+
   let cookie = `${name}=${value}`
 
   if (name.startsWith('__Secure-') && !opt.secure) {
@@ -158,6 +184,12 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
     if (opt.domain) {
       throw new Error('__Host- Cookie must not have Domain attributes')
+    }
+  }
+
+  for (const key of ['domain', 'path'] as (keyof CookieOptions)[]) {
+    if (opt[key] && /[;\r\n]/.test(opt[key] as string)) {
+      throw new Error(`${key} must not contain ";", "\\r", or "\\n"`)
     }
   }
 

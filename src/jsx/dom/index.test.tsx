@@ -96,6 +96,7 @@ describe('DOM', () => {
     global.HTMLElement = dom.window.HTMLElement
     global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
+    global.DOMException = dom.window.DOMException
     root = document.getElementById('root') as HTMLElement
   })
 
@@ -192,6 +193,69 @@ describe('DOM', () => {
       const App = () => <div x-value={{ toString: () => 'value' }} />
       render(<App />, root)
       expect(root.innerHTML).toBe('<div x-value="value"></div>')
+    })
+
+    it('ignores invalid attribute keys without interrupting updates', async () => {
+      const invalidKey = '" onfocus="alert(1)'
+
+      const App = () => {
+        const [includeInvalid, setIncludeInvalid] = useState(true)
+        return includeInvalid ? (
+          <div id='safe' {...{ [invalidKey]: 'x' }} onClick={() => setIncludeInvalid(false)}>
+            Hello
+          </div>
+        ) : (
+          <div class='updated'>Hello</div>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id="safe">Hello</div>')
+
+      root.querySelector('div')?.click()
+      await Promise.resolve()
+
+      expect(root.innerHTML).toBe('<div class="updated">Hello</div>')
+    })
+
+    it('rethrows unexpected errors while setting attributes', () => {
+      const error = new Error('boom')
+      const originalSetAttribute = dom.window.Element.prototype.setAttribute
+      const setAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'setAttribute')
+        .mockImplementation(function (this: Element, key: string, value: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalSetAttribute.call(this, key, value)
+        })
+
+      try {
+        expect(() => render(<div data-boom='x'>Hello</div>, root)).toThrow(error)
+      } finally {
+        setAttributeSpy.mockRestore()
+      }
+    })
+
+    it('rethrows unexpected errors while removing attributes', () => {
+      render(<div data-boom='x'>Hello</div>, root)
+
+      const error = new Error('boom')
+      const originalRemoveAttribute = dom.window.Element.prototype.removeAttribute
+      const removeAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'removeAttribute')
+        .mockImplementation(function (this: Element, key: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalRemoveAttribute.call(this, key)
+        })
+
+      try {
+        expect(() => render(<div data-boom={undefined}>Hello</div>, root)).toThrow(error)
+      } finally {
+        removeAttributeSpy.mockRestore()
+      }
     })
 
     it('ref', () => {
@@ -308,6 +372,157 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>2</div><div>1</div><button>+</button>')
       expect(Child).toBeCalledTimes(3)
+    })
+
+    it('multiple children', async () => {
+      const Child = ({ name }: { name: string }) => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>
+              {name} {count}
+            </div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>parent {count}</div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <div>
+              <Child name='child 1' />
+              <Child name='child 2' />
+              <Child name='child 3' />
+            </div>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 0</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      const [parentButton, child1Button, child2Button, child3Button] =
+        root.querySelectorAll('button')
+      parentButton?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child2Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child1Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div></div></div>'
+      )
+      child3Button?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div>parent 1</div><button>+</button><div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 1</div><button>+</button></div></div></div>'
+      )
+    })
+
+    it('keeps sibling order when a null sibling exists after parent update', async () => {
+      const Empty = () => null
+      const Child = () => {
+        const [count, setCount] = useState(0)
+        return count === 0 ? (
+          <>
+            <div>A0</div>
+            <button id='child' onClick={() => setCount(1)}>
+              child+
+            </button>
+          </>
+        ) : (
+          <>
+            <span>A1</span>
+            <span>A2</span>
+          </>
+        )
+      }
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <>
+            <Child />
+            <Empty />
+            <div id='tail'>T{count}</div>
+            <button id='parent' onClick={() => setCount(count + 1)}>
+              parent+
+            </button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div>A0</div><button id="child">child+</button><div id="tail">T0</div><button id="parent">parent+</button>'
+      )
+      root.querySelector<HTMLButtonElement>('#parent')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div>A0</div><button id="child">child+</button><div id="tail">T1</div><button id="parent">parent+</button>'
+      )
+      root.querySelector<HTMLButtonElement>('#child')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<span>A1</span><span>A2</span><div id="tail">T1</div><button id="parent">parent+</button>'
+      )
+    })
+
+    it('multiple children with dynamic addition and rerender', async () => {
+      const Child = ({ name }: { name: string }) => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <div>
+              {name} {count}
+            </div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const App = () => {
+        const [showThird, setShowThird] = useState(false)
+        return (
+          <div>
+            <Child name='child 1' />
+            <Child name='child 2' />
+            {showThird && <Child name='child 3' />}
+            <button onClick={() => setShowThird(true)}>add</button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // add child 3
+      let buttons = root.querySelectorAll('button')
+      buttons[2]?.click() // add
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 0</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // click child 1
+      buttons = root.querySelectorAll('button')
+      buttons[0]?.click() // child 1
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 0</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
+      // click child 2 - verify child 2 and child 3 do not swap positions
+      buttons = root.querySelectorAll('button')
+      buttons[1]?.click() // child 2
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div><div>child 1 1</div><button>+</button></div><div><div>child 2 1</div><button>+</button></div><div><div>child 3 0</div><button>+</button></div><button>add</button></div>'
+      )
     })
   })
 
@@ -506,6 +721,79 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><span>1</span><span>2</span></div>')
     })
 
+    it('empty array and non-empty array', async () => {
+      const App = () => (
+        <div>
+          {[]}
+          {[<span>1</span>]}
+        </div>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>1</span></div>')
+    })
+
+    it('nested array', async () => {
+      const nestedChildren: Child = [[[<span>1</span>], <span>2</span>]]
+      const App = () => <div>{nestedChildren}</div>
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>1</span><span>2</span></div>')
+    })
+
+    it('sparse array with nested child', async () => {
+      const sparseChildren: Child[] = []
+      sparseChildren[1] = [<span>1</span>]
+      const App = () => <div>{sparseChildren}</div>
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>1</span></div>')
+    })
+
+    it('toggle empty array and non-empty array on update', async () => {
+      let setVisible: (value: boolean) => void = () => {}
+      const App = () => {
+        const [visible, _setVisible] = useState(false)
+        setVisible = _setVisible
+        return (
+          <div>
+            {visible ? [] : [<span key='a'>A</span>]}
+            {visible ? [<span key='b'>B</span>] : []}
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>A</span></div>')
+
+      setVisible(true)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><span>B</span></div>')
+
+      setVisible(false)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><span>A</span></div>')
+    })
+
+    it('reshape nested array on update', async () => {
+      let setPattern: (value: number) => void = () => {}
+      const App = () => {
+        const [pattern, _setPattern] = useState(0)
+        setPattern = _setPattern
+        const children: Child =
+          pattern === 0
+            ? [[<span key='a'>A</span>], <span key='b'>B</span>]
+            : [<span key='a'>A</span>, [<span key='b'>B</span>]]
+        return <div>{children}</div>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>A</span><span>B</span></div>')
+
+      setPattern(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><span>A</span><span>B</span></div>')
+
+      setPattern(0)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><span>A</span><span>B</span></div>')
+    })
+
     it('use the same children multiple times', async () => {
       const MultiChildren = ({ children }: { children: Child }) => (
         <>
@@ -680,7 +968,7 @@ describe('DOM', () => {
       it('assign undefined', async () => {
         let setValue: (value: string | undefined) => void = () => {}
         const App = () => {
-          const [value, _setValue] = useState<string | undefined>('a')
+          const [value, _setValue] = useState<string | undefined>('b')
           setValue = _setValue
           return (
             <select value={value}>
@@ -698,6 +986,96 @@ describe('DOM', () => {
         await Promise.resolve()
         const select = root.querySelector('select') as HTMLSelectElement
         expect(select.value).toBe('a') // select the first option
+        expect(select.selectedIndex).toBe(0)
+      })
+
+      it('apply value after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select value='option2'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option2')
+        expect(select.selectedIndex).toBe(1)
+        expect(select.options[1].selected).toBe(true)
+      })
+
+      it('select the first option when undefined after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select value={undefined}>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option1')
+        expect(select.selectedIndex).toBe(0)
+        expect(select.options[0].selected).toBe(true)
+      })
+
+      it('do not select the first option for invalid multiple value', () => {
+        const App = () => {
+          return (
+            <select multiple value='z'>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
+      })
+
+      it('keep invalid multiple value unselected after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select multiple value='z'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['a', 'b', 'c'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
       })
     })
 
@@ -2266,6 +2644,18 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+
+    it('skips invalid attribute keys in SVG while preserving valid ones', () => {
+      const App = () => {
+        return (
+          <svg>
+            <g {...{ ['" onload="alert(1)']: 'x', viewBox: '0 0 10 10' }} />
+          </svg>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
     })
 
     describe('attribute', () => {

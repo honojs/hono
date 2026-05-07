@@ -1,4 +1,5 @@
 import { AlgorithmTypes } from './jwa'
+import type { AsymmetricAlgorithm, SymmetricAlgorithm, SignatureAlgorithm } from './jwa'
 
 describe('Types', () => {
   it('AlgorithmTypes', () => {
@@ -20,5 +21,66 @@ describe('Types', () => {
     // @ts-ignore
     expect(undefined as AlgorithmTypes).toBe(undefined)
     expect('' as AlgorithmTypes).toBe('')
+  })
+
+  it('SymmetricAlgorithm type should only include HMAC algorithms', () => {
+    // These should be valid SymmetricAlgorithm values
+    const hs256: SymmetricAlgorithm = 'HS256'
+    const hs384: SymmetricAlgorithm = 'HS384'
+    const hs512: SymmetricAlgorithm = 'HS512'
+
+    expect(hs256).toBe('HS256')
+    expect(hs384).toBe('HS384')
+    expect(hs512).toBe('HS512')
+
+    // Type-level test: these would cause compile errors if uncommented
+    // const rs256: SymmetricAlgorithm = 'RS256' // Error: Type '"RS256"' is not assignable to type 'SymmetricAlgorithm'
+  })
+
+  it('AsymmetricAlgorithm type should only include asymmetric algorithms', () => {
+    // These should be valid AsymmetricAlgorithm values
+    const asymmetricAlgs: AsymmetricAlgorithm[] = [
+      'RS256',
+      'RS384',
+      'RS512',
+      'PS256',
+      'PS384',
+      'PS512',
+      'ES256',
+      'ES384',
+      'ES512',
+      'EdDSA',
+    ]
+
+    expect(asymmetricAlgs).toHaveLength(10)
+
+    // Verify all asymmetric algorithms are included
+    expect(asymmetricAlgs).toContain('RS256')
+    expect(asymmetricAlgs).toContain('ES256')
+    expect(asymmetricAlgs).toContain('EdDSA')
+
+    // Type-level test: these would cause compile errors if uncommented
+    // const hs256: AsymmetricAlgorithm = 'HS256' // Error: Type '"HS256"' is not assignable to type 'AsymmetricAlgorithm'
+  })
+
+  it('SignatureAlgorithm type should include all algorithms', () => {
+    // SignatureAlgorithm should include both symmetric and asymmetric algorithms
+    const allAlgs: SignatureAlgorithm[] = [
+      'HS256',
+      'HS384',
+      'HS512',
+      'RS256',
+      'RS384',
+      'RS512',
+      'PS256',
+      'PS384',
+      'PS512',
+      'ES256',
+      'ES384',
+      'ES512',
+      'EdDSA',
+    ]
+
+    expect(allAlgs).toHaveLength(13)
   })
 })

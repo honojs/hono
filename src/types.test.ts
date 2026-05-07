@@ -401,6 +401,53 @@ describe('OnHandlerInterface', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('app.on(method, path, ...10 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on('GET', '/x10', noop, noop, noop, noop, noop, noop, noop, noop, noop, (c) =>
+      c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x10']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method[], path, ...9 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on(['GET'], '/x9-arr', noop, noop, noop, noop, noop, noop, noop, noop, (c) =>
+      c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x9-arr']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method[], path, ...10 handlers) - last handler response type should be inferred', () => {
+    const noop: MiddlewareHandler = async (_c, next) => {
+      await next()
+    }
+    const route = app.on(
+      ['GET'],
+      '/x10-arr',
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      noop,
+      (c) => c.json({ success: true })
+    )
+    type Actual = ExtractSchema<typeof route>['/x10-arr']['$get']['output']
+    type Expected = { success: true }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
 
 describe('TypedResponse', () => {
@@ -523,7 +570,7 @@ describe('Test types of Handler', () => {
       const foo = c.get('foo')
       expectTypeOf(foo).toEqualTypeOf<number>()
       const id = c.req.param('id')
-      expectTypeOf(id).toEqualTypeOf<string>()
+      expectTypeOf(id).toEqualTypeOf<string | undefined>()
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -1992,6 +2039,31 @@ describe('Env types with validator as first middleware - test only types', () =>
   })
 })
 
+// https://github.com/honojs/hono/issues/4773
+describe('c.req.valid() in non-last handler after validator middleware - test only types', () => {
+  it('Should not throw a type error', () => {
+    const app = new Hono()
+    app.get(
+      '/',
+      validator('query', () => {
+        return {
+          test: 'hello',
+        }
+      }),
+      async (c, next) => {
+        const { test } = c.req.valid('query')
+        expectTypeOf(test).toEqualTypeOf<string>()
+        await next()
+      },
+      async (c) => {
+        const { test } = c.req.valid('query')
+        expectTypeOf(test).toEqualTypeOf<string>()
+        return c.json({ ok: true })
+      }
+    )
+  })
+})
+
 describe('Env types with `use` middleware - test only types', () => {
   const app = new Hono()
 
@@ -3426,6 +3498,282 @@ describe('RPC supports Middleware responses', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
   })
+
+  describe('Merge responses from app.on handlers, single method', () => {
+    test('merge responses from 1 middleware', async () => {
+      const middleware = createMiddleware(async (c) => c.json({ '400': true }, 400))
+
+      const app = new Hono().on('GET', '/test', middleware, (c) => c.json({ '200': true }, 200))
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+    })
+
+    test('merge responses from 2 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+
+      const app = new Hono().on('GET', '/test', middleware1, middleware2, (c) =>
+        c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+    })
+
+    test('merge responses from 5 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+
+      const app = new Hono().on(
+        'GET',
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+    })
+
+    test('merge responses from 9 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+      const middleware6 = createMiddleware(async (c) => c.json({ '201': true }, 201))
+      const middleware7 = createMiddleware(async (c) => c.json({ '202': true }, 202))
+      const middleware8 = createMiddleware(async (c) => c.json({ '203': true }, 203))
+      const middleware9 = createMiddleware(async (c) => c.json({ '301': true }, 301))
+
+      const app = new Hono().on(
+        'GET',
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        middleware6,
+        middleware7,
+        middleware8,
+        middleware9,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+      if (res.status === 201) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
+      }
+      if (res.status === 202) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
+      }
+      if (res.status === 203) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
+      }
+      if (res.status === 301) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 301: true }>()
+      }
+    })
+  })
+
+  describe('Merge responses from app.on handlers, method[]', () => {
+    test('merge responses from 1 middleware', async () => {
+      const middleware = createMiddleware(async (c) => c.json({ '400': true }, 400))
+
+      const app = new Hono().on(['GET'], '/test', middleware, (c) => c.json({ '200': true }, 200))
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+    })
+
+    test('merge responses from 2 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+
+      const app = new Hono().on(['GET'], '/test', middleware1, middleware2, (c) =>
+        c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+    })
+
+    test('merge responses from 5 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+
+      const app = new Hono().on(
+        ['GET'],
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+    })
+
+    test('merge responses from 9 middlewares', async () => {
+      const middleware1 = createMiddleware(async (c) => c.json({ '400': true }, 400))
+      const middleware2 = createMiddleware(async (c) => c.json({ '401': true }, 401))
+      const middleware3 = createMiddleware(async (c) => c.json({ '403': true }, 403))
+      const middleware4 = createMiddleware(async (c) => c.json({ '404': true }, 404))
+      const middleware5 = createMiddleware(async (c) => c.json({ '300': true }, 300))
+      const middleware6 = createMiddleware(async (c) => c.json({ '201': true }, 201))
+      const middleware7 = createMiddleware(async (c) => c.json({ '202': true }, 202))
+      const middleware8 = createMiddleware(async (c) => c.json({ '203': true }, 203))
+      const middleware9 = createMiddleware(async (c) => c.json({ '301': true }, 301))
+
+      const app = new Hono().on(
+        ['GET'],
+        '/test',
+        middleware1,
+        middleware2,
+        middleware3,
+        middleware4,
+        middleware5,
+        middleware6,
+        middleware7,
+        middleware8,
+        middleware9,
+        (c) => c.json({ '200': true }, 200)
+      )
+      const client = hc<typeof app>('http://localhost', { fetch: app.request })
+      const res = await client.test.$get()
+
+      if (res.status === 200) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+      }
+      if (res.status === 400) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+      }
+      if (res.status === 401) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+      }
+      if (res.status === 403) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+      }
+      if (res.status === 404) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+      }
+      if (res.status === 300) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+      }
+      if (res.status === 201) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
+      }
+      if (res.status === 202) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
+      }
+      if (res.status === 203) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
+      }
+      if (res.status === 301) {
+        expectTypeOf(await res.json()).toEqualTypeOf<{ 301: true }>()
+      }
+    })
+  })
 })
 
 describe('Handlers returning Promise<void>', () => {
@@ -3674,6 +4022,113 @@ describe('Handlers returning Promise<void>', () => {
         $post: {
           input: {}
           output: 'after'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+// Regression tests for #4388: routes before .use() with explicit paths should not be dropped
+describe('Routes before .use() with explicit paths (#4388)', () => {
+  it('should preserve explicit-path .get() before .use() with path', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('Hello from /'))
+      .use('/noop', async (c, next) => {
+        await next()
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'Hello from /'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should preserve .get() route and infer .post() under .use() path', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('Hello from /'))
+      .use('/:slug', async (c, next) => {
+        await next()
+      })
+      .post((c) => c.text('posted'))
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'Hello from /'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/:slug': {
+        $post: {
+          input: {
+            param: {
+              slug: string
+            }
+          }
+          output: 'posted'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('should preserve routes through .route() wrapping', () => {
+    const inner = new Hono()
+      .get('/', (c) => c.text('index'))
+      .use('/:slug', async (c, next) => {
+        await next()
+      })
+      .post((c) => c.text('posted'))
+
+    const app = new Hono().route('/api', inner)
+
+    const client = hc<typeof app>('http://localhost')
+    // '/api' $get should exist (from inner .get('/'))
+    expectTypeOf(client.api.$get).toBeFunction()
+    // '/api/:slug' $post should exist (from inner .post() after .use('/:slug'))
+    expectTypeOf(client.api[':slug'].$post).toBeFunction()
+  })
+
+  it('should preserve multiple explicit-path routes before .use()', () => {
+    const app = new Hono()
+      .get('/', (c) => c.text('home'))
+      .get('/about', (c) => c.text('about'))
+      .use('/mw', async (c, next) => {
+        await next()
+      })
+
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: 'home'
+          outputFormat: 'text'
+          status: ContentfulStatusCode
+        }
+      }
+    } & {
+      '/about': {
+        $get: {
+          input: {}
+          output: 'about'
           outputFormat: 'text'
           status: ContentfulStatusCode
         }

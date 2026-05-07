@@ -2,12 +2,17 @@
 import { vi } from 'vitest'
 import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
+import type { HonoJsonWebKey } from './jws'
 import { signing } from './jws'
 import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
 import {
+  JwtAlgorithmMismatch,
+  JwtAlgorithmNotAllowed,
   JwtAlgorithmNotImplemented,
+  JwtAlgorithmRequired,
   JwtPayloadRequiresAud,
+  JwtSymmetricAlgorithmNotAllowed,
   JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
@@ -103,6 +108,53 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  describe('JwtTokenNotBefore with malformed nbf claim', () => {
+    it('rejects token with nbf as a non-numeric string', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (nbf must be number)
+        { message: 'hello', nbf: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenNotBefore(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with nbf = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","nbf":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenNotBefore(tok))
+      expect(authorized).toBeUndefined()
+    })
+  })
+
   it('JwtTokenExpired', async () => {
     const tok =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MzMwNDYxMDAsImV4cCI6MTYzMzA0NjQwMH0.H-OI1TWAbmK8RonvcpPaQcNvOKS9sxinEOsgKwjoiVo'
@@ -116,6 +168,90 @@ describe('JWT', () => {
     }
     expect(err).toEqual(new JwtTokenExpired(tok))
     expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenExpired after Y2038', async () => {
+    const postY2038 = 2147483648 // 2038-01-19 03:14:08 UTC
+    vi.useFakeTimers().setSystemTime(new Date(postY2038 * 1000))
+
+    const expIn2025 = 1735689600 // 2025-01-01 00:00:00 UTC
+    const payload = { message: 'hello', exp: expIn2025 }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenExpired(tok))
+    expect(authorized).toBeUndefined()
+
+    vi.useRealTimers()
+  })
+
+  describe('JwtTokenExpired with malformed exp claim', () => {
+    it('rejects token with exp = 0 (epoch zero)', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign({ message: 'hello', exp: 0 }, secret, AlgorithmTypes.HS256)
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with exp as a non-numeric string', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (exp must be number)
+        { message: 'hello', exp: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with exp = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","exp":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
   })
 
   it('JwtTokenIssuedAt', async () => {
@@ -136,6 +272,63 @@ describe('JWT', () => {
     }
     expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
     expect(authorized).toBeUndefined()
+  })
+
+  describe('JwtTokenIssuedAt with malformed iat claim', () => {
+    it('rejects token with iat as a non-numeric string', async () => {
+      const now = 1633046400
+      vi.useFakeTimers().setSystemTime(new Date(now * 1000))
+
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (iat must be number)
+        { message: 'hello', iat: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenIssuedAt(now, 'tomorrow' as unknown as number))
+      expect(authorized).toBeUndefined()
+
+      vi.useRealTimers()
+    })
+
+    it('rejects token with iat = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const now = 1633046400
+      vi.useFakeTimers().setSystemTime(new Date(now * 1000))
+
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","iat":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenIssuedAt(now, Infinity))
+      expect(authorized).toBeUndefined()
+
+      vi.useRealTimers()
+    })
   })
 
   it('JwtTokenIssuer (none)', async () => {
@@ -563,7 +756,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS512)
     } catch (e) {
       err = e
     }
@@ -582,7 +775,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS384)
     } catch (e) {
       err = e
     }
@@ -610,7 +803,7 @@ describe('JWT', () => {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.qunGhchNXH_unqWXN6hB0Elhzr5SykSXVhklLti1aFI'
     expect(tok).toEqual(expected)
 
-    const verifiedPayload = await JWT.verify(tok, secret)
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
     expect(verifiedPayload).not.toBeUndefined()
     expect(verifiedPayload).toEqual(payload)
 
@@ -624,7 +817,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, invalidSecret)
+      authorized = await JWT.verify(tok, invalidSecret, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
@@ -831,43 +1024,498 @@ describe('JWT', () => {
 
 describe('verifyWithJwks header.alg fallback', () => {
   it('Should use header.alg as fallback when matchingKey.alg is missing', async () => {
-    // Setup: Create a JWT signed with HS384 (different from default HS256)
+    // Setup: Create a JWT signed with RS256 (asymmetric algorithm)
     const payload = { message: 'hello world' }
-    const headerAlg = 'HS384' // Non-default value
-    const secret = 'secret'
+    const headerAlg = 'RS256'
     const kid = 'dummy'
 
-    // Create JWT (signed with HS384)
+    // Generate RSA key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    // Create JWT (signed with RS256)
     const header = { alg: headerAlg, typ: 'JWT', kid }
     const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
-    // Use signing function from jws.ts instead of createHmac directly
-    const signatureBuffer = await signing(secret, headerAlg, utf8Encoder.encode(signingInput))
+    // Sign with private key
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      headerAlg,
+      utf8Encoder.encode(signingInput)
+    )
     const signature = encodeBase64Url(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
-    // Create a key without alg property
+    // Export public key as JWK without alg property
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+    const keyWithoutAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+    }
+    delete keyWithoutAlg.alg // intentionally omit alg
+
+    const keys = [keyWithoutAlg]
+
+    // Execute: Verify the JWT token signed with RS256 with allowedAlgorithms required
+    const result = await verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })
+
+    // If verification succeeds, it means header.alg was used
+    expect(result).toEqual(payload)
+  })
+})
+
+describe('verifyWithJwks security', () => {
+  it('Should reject symmetric algorithm HS256', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'secret'
+    const kid = 'dummy'
+
+    // Create JWT (signed with HS256)
+    const header = { alg: 'HS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
     const keys = [
       {
         kty: 'oct',
         kid,
         k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
         use: 'sig',
-        // alg is intentionally omitted
+        alg: 'HS256',
       },
     ]
 
-    // Execute: Verify the JWT token signed with HS384
-    const result = await verifyWithJwks(token, { keys })
+    // HS256 is rejected before allowedAlgorithms check (symmetric algorithm rejection)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtSymmetricAlgorithmNotAllowed
+    )
+  })
 
-    // If verification succeeds, it means header.alg was used
+  it('Should reject symmetric algorithm HS384', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'secret'
+    const kid = 'dummy'
+
+    const header = { alg: 'HS384', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(secret, 'HS384', utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const keys = [
+      {
+        kty: 'oct',
+        kid,
+        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        use: 'sig',
+        alg: 'HS384',
+      },
+    ]
+
+    // HS384 is rejected before allowedAlgorithms check (symmetric algorithm rejection)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtSymmetricAlgorithmNotAllowed
+    )
+  })
+
+  it('Should reject symmetric algorithm HS512', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'secret'
+    const kid = 'dummy'
+
+    const header = { alg: 'HS512', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(secret, 'HS512', utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const keys = [
+      {
+        kty: 'oct',
+        kid,
+        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        use: 'sig',
+        alg: 'HS512',
+      },
+    ]
+
+    // HS512 is rejected before allowedAlgorithms check (symmetric algorithm rejection)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtSymmetricAlgorithmNotAllowed
+    )
+  })
+
+  it('Should reject algorithm mismatch between JWK and JWT header', async () => {
+    const payload = { message: 'hello world' }
+    const kid = 'dummy'
+
+    // Generate RS256 key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    // Create JWT with RS384 in header (mismatch with RS256 key)
+    const header = { alg: 'RS384', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    // Sign with RS256 key (but header says RS384)
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    // Export public key as JWK with RS256 alg
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+    const keyWithAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+      alg: 'RS256', // JWK says RS256, but header says RS384
+    }
+
+    const keys = [keyWithAlg]
+
+    // RS384 in header doesn't match RS256 in JWK alg field
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS384'] })).rejects.toThrow(
+      JwtAlgorithmMismatch
+    )
+  })
+
+  it('Should allow asymmetric algorithm RS256 with matching alg', async () => {
+    const payload = { message: 'hello world' }
+    const kid = 'dummy'
+
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+    const keyWithAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+      alg: 'RS256',
+    }
+
+    const keys = [keyWithAlg]
+
+    const result = await verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })
     expect(result).toEqual(payload)
   })
+
+  it('Should reject algorithm confusion attack (HS256 with RSA public key)', async () => {
+    // This test simulates the algorithm confusion attack where an attacker
+    // tries to use HS256 with a public RSA key as the HMAC secret
+    const payload = { message: 'hello world' }
+    const kid = 'dummy'
+
+    // Generate RSA key pair (normally used for RS256)
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    // Attacker creates a JWT with HS256 in header
+    const header = { alg: 'HS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    // Export public key as JWK (which would be used in a real attack)
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+
+    // Attacker would sign with the public key bytes as HMAC secret
+    // We don't need to actually sign for this test - just verify rejection
+    const signatureBuffer = await signing('fake-secret', 'HS256', utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    // JWK has RS256 alg, but JWT header has HS256 (confusion attack)
+    const keyWithAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+      alg: 'RS256',
+    }
+
+    const keys = [keyWithAlg]
+
+    // Should reject because HS256 is a symmetric algorithm (checked before allowedAlgorithms)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtSymmetricAlgorithmNotAllowed
+    )
+  })
 })
+
+describe('verifyWithJwks algorithm whitelist', () => {
+  it('Should reject algorithm not in whitelist', async () => {
+    const payload = { message: 'hello world' }
+    const kid = 'dummy'
+
+    // Generate RS256 key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    // Create JWT with RS256
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+    const keyWithAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+      alg: 'RS256',
+    }
+
+    const keys = [keyWithAlg]
+
+    // RS256 is not in the whitelist (only ES256 is allowed)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['ES256'] })).rejects.toThrow(
+      JwtAlgorithmNotAllowed
+    )
+  })
+
+  it('Should accept algorithm in whitelist', async () => {
+    const payload = { message: 'hello world' }
+    const kid = 'dummy'
+
+    // Generate RS256 key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    // Create JWT with RS256
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+    const keyWithAlg = {
+      ...jwk,
+      kid,
+      use: 'sig',
+      alg: 'RS256',
+    }
+
+    const keys = [keyWithAlg]
+
+    // RS256 is in the whitelist
+    const result = await verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256', 'ES256'] })
+    expect(result).toEqual(payload)
+  })
+
+  // Note: Tests for "whitelist not specified" and "empty whitelist" were removed
+  // because allowedAlgorithms is now required (not optional).
+  // This is a breaking change that enforces explicit algorithm specification for security.
+
+  it('Should reject symmetric algorithm (HS256) in JWT header', async () => {
+    // This test verifies that symmetric algorithms are rejected even when
+    // using verifyWithJwks with asymmetric algorithm whitelist.
+    // Note: HS256 cannot be added to allowedAlgorithms due to type constraints (AsymmetricAlgorithm[])
+    const payload = { message: 'hello world' }
+    const secret = 'secret'
+    const kid = 'dummy'
+
+    // Create JWT with HS256
+    const header = { alg: 'HS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    const keys = [
+      {
+        kty: 'oct',
+        kid,
+        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        use: 'sig',
+        alg: 'HS256',
+      },
+    ]
+
+    // HS256 in JWT header should be rejected as symmetric algorithm
+    // (symmetric algorithm check happens before allowedAlgorithms check)
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtSymmetricAlgorithmNotAllowed
+    )
+  })
+})
+
+describe('verifyWithJwks key handling', () => {
+  it('Should not mutate provided keys when JWKS is fetched repeatedly', async () => {
+    const localKeys: HonoJsonWebKey[] = [
+      {
+        kty: 'RSA',
+        kid: 'local-key',
+        alg: 'RS256',
+        e: 'AQAB',
+        n: 'sXchAZo4YqB7f1_g8U9RVcdpShUMHbOWcZHhGXLiCFYI8aAizI0s5momkMumZ5qX6Ch12yvDqOiiMHDLecxB2S7RMyCV2wAPOQgpdnXl16rDpD6PEw24kTx5cDIeEJD7BqXc9Ejo4kKDAdAm8YGtS-wGGyRyvE4s46HoPazTA7k',
+        use: 'sig',
+      },
+    ]
+
+    const originalKeys = structuredClone(localKeys)
+    const originalFetch = globalThis.fetch
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' })
+    ).toString('base64url')
+    const payload = Buffer.from(JSON.stringify({})).toString('base64url')
+    const token = `${header}.${payload}.x`
+
+    try {
+      globalThis.fetch = (async () => {
+        return new Response(
+          JSON.stringify({
+            keys: [
+              { ...localKeys[0], kid: 'remote-key' },
+              { ...localKeys[0], kid: 'remote-key' },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }) as typeof globalThis.fetch
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(localKeys).toEqual(originalKeys)
+  })
+})
+
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('pkcs8', key)
   const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
@@ -931,3 +1579,196 @@ async function generateEd25519Key(): Promise<CryptoKeyPair> {
     ['sign', 'verify']
   )
 }
+
+describe('Security: Algorithm Confusion Attack Prevention', () => {
+  it('Should throw JwtAlgorithmRequired error when alg is not specified in verify()', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err: JwtAlgorithmRequired | undefined
+    let authorized
+    try {
+      // @ts-expect-error - intentionally testing without alg parameter
+      authorized = await JWT.verify(tok, secret)
+    } catch (e) {
+      err = e as JwtAlgorithmRequired
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+    expect(err?.message).toBe('JWT verification requires "alg" option to be specified')
+    expect(authorized).toBeUndefined()
+  })
+
+  it('Should throw JwtAlgorithmRequired error when alg is undefined in options object', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err: JwtAlgorithmRequired | undefined
+    let authorized
+    try {
+      // @ts-expect-error - intentionally testing with undefined alg
+      authorized = await JWT.verify(tok, secret, { alg: undefined })
+    } catch (e) {
+      err = e as JwtAlgorithmRequired
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+    expect(authorized).toBeUndefined()
+  })
+
+  it('Should prevent algorithm confusion attack (RS256 token verified with HS256 using public key)', async () => {
+    // Generate RSA key pair
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+
+    const payload = { message: 'hello world' }
+
+    // Sign token with RS256 using private key
+    const tok = await JWT.sign(payload, keyPair.privateKey, AlgorithmTypes.RS256)
+
+    // Verify should succeed with RS256 and public key
+    const verified = await JWT.verify(tok, keyPair.publicKey, AlgorithmTypes.RS256)
+    expect(verified).toEqual(payload)
+
+    // Attempting to verify with HS256 using the public key should fail with algorithm mismatch
+    // This simulates the algorithm confusion attack scenario
+    let err: Error | undefined
+    let maliciousResult
+    try {
+      maliciousResult = await JWT.verify(tok, keyPair.publicKey, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as Error
+    }
+    // The verification should fail because the header.alg (RS256) doesn't match options.alg (HS256)
+    expect(maliciousResult).toBeUndefined()
+    expect(err).toBeInstanceOf(JwtAlgorithmMismatch)
+  })
+
+  it('Should throw JwtAlgorithmMismatch when header.alg does not match options.alg', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+
+    // Sign with HS512
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS512)
+
+    // Try to verify with HS256 (wrong algorithm)
+    let err: Error | undefined
+    let result
+    try {
+      result = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as Error
+    }
+
+    expect(result).toBeUndefined()
+    expect(err).toBeInstanceOf(JwtAlgorithmMismatch)
+  })
+
+  it('Should require explicit alg specification to prevent default fallback attack', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+
+    // Create a token with HS256
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    // Verify with explicit HS256 should work
+    const verified = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    expect(verified).toEqual(payload)
+
+    // Verify without alg should throw error (no default fallback)
+    let err: Error | undefined
+    try {
+      // @ts-expect-error - intentionally testing without alg parameter
+      await JWT.verify(tok, secret)
+    } catch (e) {
+      err = e as Error
+    }
+    expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+  })
+})
+
+describe('JWT decode token format validation', () => {
+  it('decode should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decode(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 1 part', () => {
+    expect(() => JWT.decode('eyJhbGciOiJIUzI1NiJ9')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 4 parts', () => {
+    const fourParts = 'a.b.c.d'
+    expect(() => JWT.decode(fourParts)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decode('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decodeHeader(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decodeHeader('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const decoded = JWT.decode(tok)
+    expect(decoded.header.alg).toBe('HS256')
+    expect(decoded.payload).toEqual({ message: 'hello' })
+  })
+
+  it('decodeHeader should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const header = JWT.decodeHeader(tok)
+    expect(header.alg).toBe('HS256')
+    expect(header.typ).toBe('JWT')
+  })
+})
+
+describe('PEM parsing', async () => {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+    },
+    true,
+    ['sign', 'verify']
+  )
+
+  const exported = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+  const base64Key = Buffer.from(exported).toString('base64')
+  const privateKey = `-----BEGIN PRIVATE KEY-----\n${base64Key}\n-----END PRIVATE KEY-----`
+
+  it('should sign & verify with a normal private PEM key', async () => {
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, privateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+
+  it('should sign & verify with a single-line private PEM key', async () => {
+    const singleLinePrivateKey = privateKey.replace(/\n/g, '')
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, singleLinePrivateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+})

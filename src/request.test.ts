@@ -106,6 +106,27 @@ describe('Param', () => {
     ])
     expect(req.param()).toEqual({ remaining: '' })
   })
+
+  describe('Type', () => {
+    it('param() returns string | undefined when P is any (middleware context)', () => {
+      // When middleware uses Context without an explicit path type, P defaults to any.
+      // param(key) should return string | undefined, not string.
+      const rawRequest = new Request('http://localhost/users/123')
+      const req = new HonoRequest<any>(rawRequest, '/users/123', [
+        [[[undefined, {} as RouterRoute], { id: '123' }]],
+      ])
+      expectTypeOf(req.param('id')).toEqualTypeOf<string | undefined>()
+    })
+
+    it('param() returns string when P is a known route string', () => {
+      // When P is a concrete route, named params should still return string (non-optional).
+      const rawRequest = new Request('http://localhost/123')
+      const req = new HonoRequest<'/:id'>(rawRequest, '/123', [
+        [[[undefined, {} as RouterRoute], { id: '123' }]],
+      ])
+      expectTypeOf(req.param('id')).toEqualTypeOf<string>()
+    })
+  })
 })
 
 describe('matchedRoutes', () => {
@@ -331,6 +352,48 @@ describe('Body methods with caching', () => {
       expect(async () => await req.text()).not.toThrow()
       expect(async () => await req.arrayBuffer()).not.toThrow()
       expect(async () => await req.blob()).not.toThrow()
+    })
+
+    describe('should not break body methods after parseBody() with non-form content-type', () => {
+      const createReq = () =>
+        new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ event: 'push' }),
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+
+      it('text()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.text()).toBe(JSON.stringify({ event: 'push' }))
+      })
+
+      it('json()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.json()).toEqual({ event: 'push' })
+      })
+
+      it('arrayBuffer()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+      })
+
+      it('blob()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.blob()).toBeInstanceOf(Blob)
+      })
+
+      it('formData()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        // application/json is not a valid formData content-type, so this should throw
+        expect(req.formData()).rejects.toThrow()
+      })
     })
 
     describe('Return type', () => {

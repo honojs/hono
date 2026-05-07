@@ -63,6 +63,12 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
+
+    // Convert strong ETag to weak ETag since compressed content is not byte-identical
+    const etag = ctx.res.headers.get('ETag')
+    if (etag && !etag.startsWith('W/')) {
+      ctx.res.headers.set('ETag', `W/${etag}`)
+    }
   }
 }
 

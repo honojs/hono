@@ -24,13 +24,17 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
             : props.children
           ).toString()
         : ''
-    } finally {
+    } catch (e) {
       values.pop()
+      throw e
     }
 
     if (string instanceof Promise) {
-      return string.then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
+      return string
+        .finally(() => values.pop())
+        .then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
     } else {
+      values.pop()
       return raw(string)
     }
   }) as Context<T>

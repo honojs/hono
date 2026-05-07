@@ -89,7 +89,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
         }
       }
       // Content-Type is `application/x-www-form-urlencoded`
-      if (contentType === 'application/x-www-form-urlencoded') {
+      if (contentType?.startsWith('application/x-www-form-urlencoded')) {
         const params = await parseBody<Record<string, string>>(clonedRequest)
         const method = params[methodFormName]
         if (method) {

@@ -9,6 +9,13 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBe('strawberry')
   })
 
+  it('Should trim only SP and HTAB around cookie pairs', () => {
+    const cookieString = '\tyummy_cookie=choco;\t tasty_cookie = strawberry \t'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+  })
+
   it('Should parse quoted cookie values', () => {
     const cookieString =
       'yummy_cookie="choco"; tasty_cookie = " strawberry " ; best_cookie="%20sugar%20";'
@@ -79,6 +86,19 @@ describe('Parse cookie', () => {
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe('strawberry')
     expect(cookie['best_cookie\\']).toBeUndefined()
+  })
+
+  it('Should ignore NBSP-prefixed cookie names when parsing one cookie by name', () => {
+    const cookieString = '\u00a0dummy-cookie=evil; dummy-cookie=victim'
+    const cookie: Cookie = parse(cookieString, 'dummy-cookie')
+    expect(cookie['dummy-cookie']).toBe('victim')
+  })
+
+  it('Should not collapse NBSP-prefixed cookie names when parsing all cookies', () => {
+    const cookieString = 'dummy-cookie=victim; \u00a0dummy-cookie=evil'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['dummy-cookie']).toBe('victim')
+    expect(cookie['\u00a0dummy-cookie']).toBeUndefined()
   })
 
   it('Should parse signed cookies', async () => {
@@ -158,6 +178,14 @@ describe('Parse cookie', () => {
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe('strawberry')
     expect(cookie['great_cookie']).toBeUndefined()
+  })
+
+  it('Should ignore NBSP-prefixed signed cookie names when parsing one cookie by name', async () => {
+    const secret = 'secret ingredient'
+    const cookieString =
+      '\u00a0dummy-cookie=evil.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; dummy-cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret, 'dummy-cookie')
+    expect(cookie['dummy-cookie']).toBe('choco')
   })
 })
 
@@ -268,6 +296,42 @@ describe('Set cookie', () => {
         partitioned: true,
       })
     }).toThrowError('Partitioned Cookie must have Secure attributes')
+  })
+
+  it('Should throw Error cookie with domain or path containing ";", "\\r", or "\\n"', () => {
+    // domain
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com;evil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com\revil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { domain: 'example.com\nevil' })
+    }).toThrowError('domain must not contain ";", "\\r", or "\\n"')
+
+    // path
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/;evil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/\revil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { path: '/\nevil' })
+    }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+  })
+
+  it('Should throw Error for invalid cookie name', () => {
+    expect(() => {
+      serialize('legit\r\nX-Injected: evil', 'value')
+    }).toThrowError('Invalid cookie name')
+    expect(() => {
+      serialize('bad;name', 'value')
+    }).toThrowError('Invalid cookie name')
+    expect(() => {
+      serialize('bad=name', 'value')
+    }).toThrowError('Invalid cookie name')
   })
 
   it('Should serialize cookie with lowercase priority values', () => {

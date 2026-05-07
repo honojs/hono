@@ -13,11 +13,23 @@ import type { StatusCode } from '../../utils/http-status'
 const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
 
 const shouldSkipCache = (res: Response) => {
-  const vary = res.headers.get('Vary')
-  // Don't cache for Vary: *
-  // https://www.rfc-editor.org/rfc/rfc9111#section-4.1
-  // Also note that some runtimes throw a TypeError for it.
-  return vary && vary.includes('*')
+  if (res.headers.has('Vary')) {
+    return true
+  }
+
+  const cacheControl = res.headers.get('Cache-Control')
+  if (
+    cacheControl &&
+    /(?:^|,\s*)(?:private|no-(?:store|cache))(?:\s*(?:=|,|$))/i.test(cacheControl)
+  ) {
+    return true
+  }
+
+  if (res.headers.has('Set-Cookie')) {
+    return true
+  }
+
+  return false
 }
 
 /**
@@ -32,6 +44,7 @@ const shouldSkipCache = (res: Response) => {
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
  * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
+ * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked when `globalThis.caches` is not available. By default, a message is logged to the console. Set to `false` to suppress the log, or provide a custom function.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
@@ -53,9 +66,16 @@ export const cache = (options: {
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
   cacheableStatusCodes?: StatusCode[]
+  onCacheNotAvailable?: (() => void) | false
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    console.log('Cache Middleware is not enabled because caches is not defined.')
+    if (options.onCacheNotAvailable === false) {
+      // suppress log
+    } else if (options.onCacheNotAvailable) {
+      options.onCacheNotAvailable()
+    } else {
+      console.log('Cache Middleware is not enabled because caches is not defined.')
+    }
     return async (_c, next) => await next()
   }
 
@@ -119,6 +139,11 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
+    if (c.req.method !== 'GET' || c.req.raw.headers.has('Authorization')) {
+      await next()
+      return
+    }
+
     let key = c.req.url
     if (options.keyGenerator) {
       key = await options.keyGenerator(c)

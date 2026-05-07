@@ -15,13 +15,6 @@ type BodyLimitOptions = {
   onError?: OnError
 }
 
-class BodyLimitError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'BodyLimitError'
-  }
-}
-
 /**
  * Body Limit Middleware for Hono.
  *
@@ -74,52 +67,45 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
     const hasTransferEncoding = c.req.raw.headers.has('transfer-encoding')
     const hasContentLength = c.req.raw.headers.has('content-length')
 
-    // RFC 7230: If both Transfer-Encoding and Content-Length are present,
-    // Transfer-Encoding takes precedence and Content-Length should be ignored
-    if (hasTransferEncoding && hasContentLength) {
-      // Both headers present - follow RFC 7230 and ignore Content-Length
-      // This might indicate request smuggling attempt
-    }
-
     if (hasContentLength && !hasTransferEncoding) {
       // Only Content-Length present - we can trust it
       const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
       return contentLength > maxSize ? onError(c) : next()
     }
 
-    // Transfer-Encoding present (chunked) or no length headers
-
+    // Transfer-Encoding present (chunked) or no length headers.
+    // Per RFC 7230, when both are present Transfer-Encoding takes precedence
+    // and Content-Length is ignored. Read the body up-front so the size check
+    // is final before the handler runs, regardless of how (or whether) the
+    // handler reads the body.
     let size = 0
+    const chunks: Uint8Array[] = []
     const rawReader = c.req.raw.body.getReader()
-    const reader = new ReadableStream({
-      async start(controller) {
-        try {
-          for (;;) {
-            const { done, value } = await rawReader.read()
-            if (done) {
-              break
-            }
-            size += value.length
-            if (size > maxSize) {
-              controller.error(new BodyLimitError(ERROR_MESSAGE))
-              break
-            }
+    for (;;) {
+      const { done, value } = await rawReader.read()
+      if (done) {
+        break
+      }
+      size += value.length
+      if (size > maxSize) {
+        return onError(c)
+      }
+      chunks.push(value)
+    }
 
-            controller.enqueue(value)
+    const requestInit: RequestInit & { duplex: 'half' } = {
+      body: new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) {
+            controller.enqueue(chunk)
           }
-        } finally {
           controller.close()
-        }
-      },
-    })
-
-    const requestInit: RequestInit & { duplex: 'half' } = { body: reader, duplex: 'half' }
+        },
+      }),
+      duplex: 'half',
+    }
     c.req.raw = new Request(c.req.raw, requestInit as RequestInit)
 
-    await next()
-
-    if (c.error instanceof BodyLimitError) {
-      c.res = await onError(c)
-    }
+    return next()
   }
 }

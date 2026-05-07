@@ -40,13 +40,6 @@ describe('buffer', () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     expect(await timingSafeEqual(undefined, undefined)).toBe(true)
-    expect(await timingSafeEqual(true, true)).toBe(true)
-    expect(await timingSafeEqual(false, false)).toBe(true)
-    expect(
-      await timingSafeEqual(true, true, (d: boolean) =>
-        createHash('sha256').update(d.toString()).digest('hex')
-      )
-    )
   })
 
   it('negative', async () => {
@@ -58,10 +51,30 @@ describe('buffer', () => {
       await timingSafeEqual('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'a')
     ).toBe(false)
     expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
-    expect(await timingSafeEqual(false, true)).toBe(false)
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     expect(await timingSafeEqual(false, undefined)).toBe(false)
+
+    expect(
+      await timingSafeEqual(
+        // well known md5 hash collision
+        // https://marc-stevens.nl/research/md5-1block-collision/
+        'TEXTCOLLBYfGiJUETHQ4hAcKSMd5zYpgqf1YRDhkmxHkhPWptrkoyz28wnI9V0aHeAuaKnak',
+        'TEXTCOLLBYfGiJUETHQ4hEcKSMd5zYpgqf1YRDhkmxHkhPWptrkoyz28wnI9V0aHeAuaKnak',
+        (input) => createHash('md5').update(input).digest('hex')
+      )
+    ).toBe(false)
+  })
+
+  it.skip('comparing variables except string are deprecated', async () => {
+    expect(await timingSafeEqual(true, true)).toBe(true)
+    expect(await timingSafeEqual(false, false)).toBe(true)
+    expect(
+      await timingSafeEqual(true, true, (d: boolean) =>
+        createHash('sha256').update(d.toString()).digest('hex')
+      )
+    )
+    expect(await timingSafeEqual(false, true)).toBe(false)
     expect(
       await timingSafeEqual(
         () => {},

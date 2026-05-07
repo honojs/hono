@@ -96,6 +96,24 @@ describe('isMatchForRule', () => {
     expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.2/32')).toBeFalsy()
 
     expect(await isMatch({ addr: '::0', type: 'IPv6' }, '::0/1')).toBeTruthy()
+    expect(await isMatch({ addr: '::1', type: 'IPv6' }, '0.0.0.0/24')).toBeFalsy()
+    expect(await isMatch({ addr: '::abcd:1', type: 'IPv6' }, '127.0.0.0/8')).toBeFalsy()
+    expect(await isMatch({ addr: '::1', type: 'IPv6' }, '::ffff:1.0.0.0/96')).toBeFalsy()
+
+    expect(
+      await isMatch({ addr: '::ffff:192.168.1.1', type: 'IPv6' }, '::ffff:192.168.1.0/120')
+    ).toBeTruthy()
+    expect(
+      await isMatch({ addr: '192.168.1.1', type: 'IPv4' }, '::ffff:192.168.1.0/120')
+    ).toBeTruthy()
+    expect(
+      await isMatch({ addr: '::ffff:192.168.1.1', type: 'IPv6' }, '192.168.1.0/24')
+    ).toBeTruthy()
+    expect(await isMatch({ addr: '::ffff:10.0.0.1', type: 'IPv6' }, '192.168.1.0/24')).toBeFalsy()
+    expect(await isMatch({ addr: '::ffff:192.168.1.1', type: 'IPv6' }, '::/0')).toBeTruthy()
+    expect(
+      await isMatch({ addr: '::ffff:192.168.1.1', type: 'IPv6' }, '::ffff:0:0/95')
+    ).toBeTruthy()
   })
   it('Static Rules', async () => {
     expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.1')).toBeTruthy()
@@ -104,6 +122,14 @@ describe('isMatchForRule', () => {
       await isMatch({ addr: '::ffff:127.0.0.1', type: 'IPv6' }, '::ffff:127.0.0.1')
     ).toBeTruthy()
     expect(await isMatch({ addr: '::ffff:127.0.0.1', type: 'IPv6' }, '::ffff:7f00:1')).toBeTruthy()
+    expect(await isMatch({ addr: '127.0.0.1', type: 'IPv4' }, '::ffff:127.0.0.1')).toBeTruthy()
+    // IPv4-mapped IPv6 addresses are canonicalized to IPv4
+    expect(await isMatch({ addr: '::ffff:127.0.0.1', type: 'IPv6' }, '127.0.0.1')).toBeTruthy()
+    expect(await isMatch({ addr: '::ffff:127.0.0.1', type: 'IPv6' }, '127.0.0.2')).toBeFalsy()
+    // non-dotted IPv4-mapped forms are not canonicalized (treated as IPv6)
+    expect(await isMatch({ addr: '::ffff:7f00:1', type: 'IPv6' }, '127.0.0.1')).toBeFalsy()
+    // regular IPv6 is not affected
+    expect(await isMatch({ addr: '::1', type: 'IPv6' }, '::1')).toBeTruthy()
   })
   it('Function Rules', async () => {
     expect(await isMatch({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()

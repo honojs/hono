@@ -20,7 +20,7 @@ import type {
   LambdaContext,
 } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
-import { streamSSE } from '../../src/helper/streaming'
+import { streamSSE, streamText } from '../../src/helper/streaming'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import './mock'
@@ -923,7 +923,7 @@ describe('streamHandle function', () => {
   })
 
   app.get('/stream/text', async (c) => {
-    return c.streamText(async (stream) => {
+    return streamText(c, async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.writeln(`${i}`)
         await stream.sleep(1)
@@ -969,7 +969,8 @@ describe('streamHandle function', () => {
     mockReadableStream.push('3\n')
     mockReadableStream.push(null) // EOF
 
-    await handler(event, mockReadableStream)
+    // @ts-expect-error should this be a ReadbleStream?
+    await handler(event, mockReadableStream, vi.fn())
 
     const chunks = []
     for await (const chunk of mockReadableStream) {
@@ -1013,7 +1014,8 @@ describe('streamHandle function', () => {
     mockReadableStream.push('data: Message\ndata: It is 1\n\n')
     mockReadableStream.push(null) // EOF
 
-    await handler(event, mockReadableStream)
+    // @ts-expect-error should this be a ReadbleStream?
+    await handler(event, mockReadableStream, vi.fn())
 
     const chunks = []
     for await (const chunk of mockReadableStream) {

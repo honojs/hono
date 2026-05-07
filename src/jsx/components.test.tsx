@@ -86,6 +86,67 @@ describe('ErrorBoundary', () => {
       errorBoundaryCounter--
       suspenseCounter--
     })
+
+    it('string content', async () => {
+      const html = <ErrorBoundary fallback={<Fallback />}>{'< ok >'}</ErrorBoundary>
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; ok &gt;')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
+
+    it('error: string content', async () => {
+      const html = (
+        <ErrorBoundary fallback={'< error >'}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
+
+    it('error: Promise<string> from fallback', async () => {
+      const html = (
+        <ErrorBoundary fallback={Promise.resolve('< error >')}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
+
+    it('error: string content from fallbackRender', async () => {
+      const html = (
+        <ErrorBoundary fallbackRender={() => '< error >'}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
+
+    it('error: Promise<string> from fallbackRender', async () => {
+      const html = (
+        <ErrorBoundary fallbackRender={() => Promise.resolve('< error >')}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
   })
 
   describe('async', async () => {
@@ -120,6 +181,54 @@ describe('ErrorBoundary', () => {
       expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div>Out Of Service</div>'
       )
+
+      suspenseCounter--
+    })
+
+    it('error: string content', async () => {
+      const html = (
+        <ErrorBoundary fallback={'< error >'}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      suspenseCounter--
+    })
+
+    it('error: Promise<string> from fallback', async () => {
+      const html = (
+        <ErrorBoundary fallback={Promise.resolve('< error >')}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      suspenseCounter--
+    })
+
+    it('error: string content from fallbackRender', async () => {
+      const html = (
+        <ErrorBoundary fallbackRender={() => '< error >'}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
+
+      suspenseCounter--
+    })
+
+    it('error: Promise<string> from fallbackRender', async () => {
+      const html = (
+        <ErrorBoundary fallbackRender={() => Promise.resolve('< error >')}>
+          <Component error={true} />
+        </ErrorBoundary>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('&lt; error &gt;')
 
       suspenseCounter--
     })
