@@ -5,7 +5,7 @@
 
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
-import type { MiddlewareHandler } from '../../types'
+import type { Env, MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import type { ContentfulStatusCode } from '../../utils/http-status'
 
@@ -19,7 +19,7 @@ type CustomizedErrorResponseOptions = {
   message?: string | object | MessageFunction
 }
 
-type BearerAuthOptions =
+type BearerAuthOptions<E extends Env = Env> =
   | {
       token: string | string[]
       realm?: string
@@ -46,7 +46,7 @@ type BearerAuthOptions =
       realm?: string
       prefix?: string
       headerName?: string
-      verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
+      verifyToken: (token: string, c: Context<E>) => boolean | Promise<boolean>
       hashFunction?: Function
       /**
        * @deprecated Use noAuthenticationHeader.message instead
@@ -100,7 +100,9 @@ type BearerAuthOptions =
  * })
  * ```
  */
-export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
+export const bearerAuth = <E extends Env = Env>(
+  options: BearerAuthOptions<E>
+): MiddlewareHandler<E> => {
   if (!('token' in options || 'verifyToken' in options)) {
     throw new Error('bearer auth middleware requires options for "token"')
   }
