@@ -1,4 +1,6 @@
+import { expectTypeOf } from 'vitest'
 import { Hono } from '../../hono'
+import type { Context, MiddlewareHandler } from '../../index'
 import { bearerAuth } from '.'
 
 describe('Bearer Auth by Middleware', () => {
@@ -980,5 +982,28 @@ describe('Bearer Auth with prefix containing regex metacharacters', () => {
     const res = await app.request(req)
     expect(res.status).toBe(400)
     expect(handlerExecuted).toBeFalsy()
+  })
+})
+
+describe('Bearer Auth types', () => {
+  interface TestEnv {
+    Bindings: { API_KEY: string }
+  }
+
+  it('returns MiddlewareHandler<E> with explicit generic', () => {
+    const middleware = bearerAuth<TestEnv>({
+      verifyToken: (token, ctx) => {
+        expectTypeOf(ctx.env.API_KEY).toEqualTypeOf<string>()
+        return token === ctx.env.API_KEY
+      },
+    })
+    expectTypeOf(middleware).toEqualTypeOf<MiddlewareHandler<TestEnv>>()
+  })
+
+  it('infers E from ctx annotation', () => {
+    const middleware = bearerAuth({
+      verifyToken: (token, ctx: Context<TestEnv>) => token === ctx.env.API_KEY,
+    })
+    expectTypeOf(middleware).toEqualTypeOf<MiddlewareHandler<TestEnv>>()
   })
 })
