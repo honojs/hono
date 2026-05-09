@@ -102,10 +102,6 @@ export const parse = (cookie: string, name?: string): Cookie => {
     if (validCookieValueRegEx.test(cookieValue)) {
       parsedCookie[cookieName] =
         cookieValue.indexOf('%') !== -1 ? tryDecode(cookieValue, decodeURIComponent_) : cookieValue
-      if (name) {
-        // Fast-path: return only the demanded-key immediately. Other keys are not needed.
-        break
-      }
     }
   }
   return parsedCookie

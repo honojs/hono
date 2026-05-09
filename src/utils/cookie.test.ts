@@ -44,6 +44,15 @@ describe('Parse cookie', () => {
     expect(cookie['no_such_cookie']).toBeUndefined()
   })
 
+  it('Should return last value for duplicate cookie names with name param (last-wins)', () => {
+    const cookieString = 'a=first; a=last'
+    const byName: Cookie = parse(cookieString, 'a')
+    const bulk: Cookie = parse(cookieString)
+    expect(byName['a']).toBe('last')
+    expect(bulk['a']).toBe('last')
+    expect(byName['a']).toBe(bulk['a'])
+  })
+
   it('Should parse cookies with no value', () => {
     const cookieString = 'yummy_cookie=; tasty_cookie = ; best_cookie= ; last_cookie=""'
     const cookie: Cookie = parse(cookieString)
