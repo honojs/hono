@@ -29,7 +29,7 @@ export const compose = <E extends Env = Env>(
      *
      * @returns {Promise<Context>} - A promise that resolves to the context.
      */
-    async function dispatch(i: number): Promise<Context> {
+    async function dispatch(i: number, rethrow: boolean = false): Promise<Context> {
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
@@ -48,9 +48,9 @@ export const compose = <E extends Env = Env>(
 
       if (handler) {
         try {
-          res = await handler(context, () => dispatch(i + 1))
+          res = await handler(context, (options?: {rethrow?: boolean}) => dispatch(i + 1, options?.rethrow))
         } catch (err) {
-          if (err instanceof Error && onError) {
+          if (err instanceof Error && onError && !rethrow) {
             context.error = err
             res = await onError(err, context)
             isError = true

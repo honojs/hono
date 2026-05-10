@@ -748,4 +748,33 @@ describe('Compose', function () {
     expect(ctx.get('middleware')).toEqual(1)
     expect(ctx.get('next')).toEqual(1)
   })
+
+})
+describe('compose with rethrow option', () => {
+  it('should rethrow error to middleware when next({ rethrow: true }) is called', async () => {
+    const middleware: MiddlewareTuple[] = []
+    let middlewareCaughtError = false
+
+    const mHandler = async (_c: Context, next: Next) => {
+      try {
+        await next({ rethrow: true })
+      } catch {
+        middlewareCaughtError = true
+      }
+    }
+
+    const handler = () => {
+      throw new Error('downstream error')
+    }
+
+    const onError = (_err: Error, c: Context) => c.text('onError', 500)
+
+    middleware.push(buildMiddlewareTuple(mHandler))
+    middleware.push(buildMiddlewareTuple(handler))
+
+    const composed = compose(middleware, onError)
+    await composed(new Context(new Request('http://localhost/')))
+
+    expect(middlewareCaughtError).toBe(true)
+  })
 })
