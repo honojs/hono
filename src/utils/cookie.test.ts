@@ -118,6 +118,26 @@ describe('Parse cookie', () => {
     expect(parse(cookieString)['session']).toBe(parse(cookieString, 'session')['session'])
   })
 
+  it('Should parse cookies whose names collide with Object.prototype properties', () => {
+    const cookieString = 'toString=foo; hasOwnProperty=bar; constructor=baz'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['toString']).toBe('foo')
+    expect(cookie['hasOwnProperty']).toBe('bar')
+    expect(cookie['constructor']).toBe('baz')
+  })
+
+  it('Should parse a cookie whose name collides with Object.prototype when parsed by name', () => {
+    const cookieString = 'toString=foo'
+    const cookie: Cookie = parse(cookieString, 'toString')
+    expect(cookie['toString']).toBe('foo')
+  })
+
+  it('Should keep first-wins behavior for cookies whose names collide with Object.prototype', () => {
+    const cookieString = 'toString=first; toString=last'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['toString']).toBe('first')
+  })
+
   it('Should parse signed cookies', async () => {
     const secret = 'secret ingredient'
     const cookieString =
@@ -211,6 +231,13 @@ describe('Parse cookie', () => {
       'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; yummy_cookie=strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
+  })
+
+  it('Should parse signed cookies whose names collide with Object.prototype properties', async () => {
+    const secret = 'secret ingredient'
+    const cookieString = 'toString=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['toString']).toBe('choco')
   })
 })
 
