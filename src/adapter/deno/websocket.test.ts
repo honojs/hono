@@ -76,6 +76,62 @@ describe('WebSockets', () => {
       )
     expect(await messagePromise).toBe(data)
   })
+
+  it('Should pass first requested protocol to Deno.upgradeWebSocket', async () => {
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({}))
+    )
+    const socket = new EventTarget() as WebSocket
+    let upgradeOptions: Deno.UpgradeWebSocketOptions | undefined
+    Deno.upgradeWebSocket = (_request, options) => {
+      upgradeOptions = options
+      return {
+        response: new Response(),
+        socket,
+      }
+    }
+
+    await app.request('/ws', {
+      headers: {
+        upgrade: 'websocket',
+        'sec-websocket-protocol': 'chat, superchat',
+      },
+    })
+
+    expect(upgradeOptions).toEqual({
+      protocol: 'chat',
+    })
+  })
+
+  it('Should not override protocol provided in options', async () => {
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({}), { protocol: 'superchat', idleTimeout: 5000 })
+    )
+    const socket = new EventTarget() as WebSocket
+    let upgradeOptions: Deno.UpgradeWebSocketOptions | undefined
+    Deno.upgradeWebSocket = (_request, options) => {
+      upgradeOptions = options
+      return {
+        response: new Response(),
+        socket,
+      }
+    }
+
+    await app.request('/ws', {
+      headers: {
+        upgrade: 'websocket',
+        'sec-websocket-protocol': 'chat',
+      },
+    })
+
+    expect(upgradeOptions).toEqual({
+      idleTimeout: 5000,
+      protocol: 'superchat',
+    })
+  })
+
   it('Should call next() when header does not have upgrade', async () => {
     const next = vi.fn()
     await upgradeWebSocket(() => ({}))(
