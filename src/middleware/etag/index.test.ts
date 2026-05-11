@@ -130,6 +130,35 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should return the same etag for the same stream bytes split into different chunks', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+
+    const streamFrom = (chunks: number[][]) =>
+      new ReadableStream<Uint8Array<ArrayBuffer>>({
+        start(controller) {
+          for (const chunk of chunks) {
+            controller.enqueue(new Uint8Array(chunk))
+          }
+          controller.close()
+        },
+      })
+
+    app.get('/etag/rs-chunked-one', (c) => {
+      return c.body(streamFrom([[1], [2, 3], [4]]))
+    })
+    app.get('/etag/rs-chunked-two', (c) => {
+      return c.body(streamFrom([[1, 2], [3], [4]]))
+    })
+
+    let res = await app.request('http://localhost/etag/rs-chunked-one')
+    const hash = res.headers.get('ETag')
+    expect(hash).not.toBeFalsy()
+
+    res = await app.request('http://localhost/etag/rs-chunked-two')
+    expect(res.headers.get('ETag')).toBe(hash)
+  })
+
   it('Should not return etag header when the stream is empty', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
