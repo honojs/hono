@@ -375,9 +375,9 @@ describe('event and executionCtx', () => {
     expect(waitUntil).toHaveBeenCalled()
   })
 
-  it('Should throw an error if accessing c.executionCtx', () => {
+  it('Should return undefined if accessing c.executionCtx without value', () => {
     const c = new Context(req)
-    expect(() => c.executionCtx).toThrowError()
+    expect(c.executionCtx).toBeUndefined()
   })
 })
 
