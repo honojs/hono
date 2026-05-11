@@ -113,7 +113,11 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
 
     const cookieName = trimCookieWhitespace(pairStr.substring(0, valueStartPos))
-    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+    if (
+      (name && name !== cookieName) ||
+      !validCookieNameRegEx.test(cookieName) ||
+      cookieName in parsedCookie
+    ) {
       continue
     }
 
