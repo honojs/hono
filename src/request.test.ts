@@ -253,6 +253,7 @@ describe('Body methods with caching', () => {
     expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
     expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.bytes()).toEqual(new Uint8Array(buffer))
     expect(await req.blob()).toEqual(
       new Blob([text], {
         type: 'text/plain;charset=utf-8',
@@ -270,6 +271,7 @@ describe('Body methods with caching', () => {
     expect(await req.json()).toEqual(json)
     expect(await req.text()).toEqual(text)
     expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.bytes()).toEqual(new Uint8Array(buffer))
     expect(await req.blob()).toEqual(
       new Blob([text], {
         type: 'text/plain;charset=utf-8',
@@ -300,6 +302,28 @@ describe('Body methods with caching', () => {
     expect(await req.arrayBuffer()).toEqual(buffer)
     expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
+    expect(await req.bytes()).toEqual(new Uint8Array(buffer))
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: '',
+      })
+    )
+  })
+
+  test('req.bytes()', async () => {
+    const bytes = new TextEncoder().encode('{"foo":"bar"}')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: bytes,
+      })
+    )
+    const result = await req.bytes()
+    expect(result).toBeInstanceOf(Uint8Array)
+    expect(result).toEqual(bytes)
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.arrayBuffer()).toEqual(buffer)
     expect(await req.blob()).toEqual(
       new Blob([text], {
         type: '',
@@ -321,6 +345,7 @@ describe('Body methods with caching', () => {
     expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
     expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.bytes()).toEqual(new Uint8Array(buffer))
   })
 
   test('req.formData()', async () => {
@@ -335,6 +360,7 @@ describe('Body methods with caching', () => {
     expect((await req.formData()).get('foo')).toBe('bar')
     expect(async () => await req.text()).not.toThrow()
     expect(async () => await req.arrayBuffer()).not.toThrow()
+    expect(async () => await req.bytes()).not.toThrow()
     expect(async () => await req.blob()).not.toThrow()
   })
 
@@ -351,6 +377,7 @@ describe('Body methods with caching', () => {
       expect((await req.parseBody())['foo']).toBe('bar')
       expect(async () => await req.text()).not.toThrow()
       expect(async () => await req.arrayBuffer()).not.toThrow()
+      expect(async () => await req.bytes()).not.toThrow()
       expect(async () => await req.blob()).not.toThrow()
     })
 
@@ -380,6 +407,12 @@ describe('Body methods with caching', () => {
         const req = createReq()
         await req.parseBody()
         expect(await req.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+      })
+
+      it('bytes()', async () => {
+        const req = createReq()
+        await req.parseBody()
+        expect(await req.bytes()).toBeInstanceOf(Uint8Array)
       })
 
       it('blob()', async () => {

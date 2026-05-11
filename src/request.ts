@@ -287,6 +287,22 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
+   * `.bytes()` parses the request body as a `Uint8Array`.
+   *
+   * @see {@link https://hono.dev/docs/api/request#bytes}
+   *
+   * @example
+   * ```ts
+   * app.post('/entry', async (c) => {
+   *   const body = await c.req.bytes()
+   * })
+   * ```
+   */
+  bytes(): Promise<Uint8Array> {
+    return this.#cachedBody('arrayBuffer').then((buffer: ArrayBuffer) => new Uint8Array(buffer))
+  }
+
+  /**
    * Parses the request body as a `Blob`.
    * @example
    * ```ts
