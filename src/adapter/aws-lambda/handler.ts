@@ -442,7 +442,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
   }
 
   protected getMethod(event: APIGatewayProxyEvent): string {
-    return event.httpMethod
+    return event.httpMethod || 'POST'
   }
 
   protected getQueryString(event: APIGatewayProxyEvent): string {

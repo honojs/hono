@@ -264,6 +264,20 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  it('Should default method to POST when httpMethod is missing on version 1.0 events', async () => {
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      httpMethod: undefined as unknown as string,
+      body: '{"message":"hello"}',
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.method).toEqual('POST')
+    expect(await request.text()).toEqual('{"message":"hello"}')
+  })
+
   it('Should return valid Request object from version 2.0 API Gateway event', () => {
     const event: LambdaEvent = {
       ...baseV2Event,
