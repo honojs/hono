@@ -52,6 +52,9 @@ export interface APIGatewayProxyEventV2 {
   queryStringParameters?: {
     [name: string]: string | undefined
   }
+  multiValueQueryStringParameters?: {
+    [parameterKey: string]: string[]
+  }
   pathParameters?: {
     [name: string]: string | undefined
   }
@@ -407,7 +410,21 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   }
 
   protected getQueryString(event: APIGatewayProxyEventV2): string {
-    return event.rawQueryString
+    if (event.multiValueQueryStringParameters) {
+      return Object.entries(event.multiValueQueryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, values]) => values.map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&'))
+        .join('&')
+    }
+
+    if (event.rawQueryString) {
+      return event.rawQueryString
+    }
+
+    return Object.entries(event.queryStringParameters || {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
+      .join('&')
   }
 
   protected getCookies(event: APIGatewayProxyEventV2, headers: Headers): void {

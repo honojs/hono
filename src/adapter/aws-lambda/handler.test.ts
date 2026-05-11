@@ -303,6 +303,29 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  it('Should return multi-value query params for version 2.0 API Gateway event when rawQueryString is unavailable', () => {
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      rawQueryString: '',
+      multiValueQueryStringParameters: {
+        parameter1: ['value1', 'value2'],
+        parameter2: ['value'],
+      },
+      queryStringParameters: {
+        parameter1: 'value2',
+        parameter2: 'value',
+      },
+      body: 'Hello from Lambda',
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.url).toEqual(
+      'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter1=value1&parameter1=value2&parameter2=value'
+    )
+  })
+
   it('Should return valid Request object from version 2.0 Lattice event', async () => {
     const event: LatticeProxyEventV2 = {
       version: '2.0',
