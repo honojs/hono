@@ -713,8 +713,12 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
+    const stringified = JSON.stringify(object)
+    if (stringified === undefined) {
+      throw new TypeError('Cannot serialize undefined value to JSON. Use null instead.')
+    }
     return this.#newResponse(
-      JSON.stringify(object),
+      stringified,
       arg,
       setDefaultContentType('application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
