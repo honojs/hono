@@ -385,15 +385,12 @@ export class Context<
   /**
    * @see {@link https://hono.dev/docs/api/context#executionctx}
    * The ExecutionContext associated with the current request.
-   *
-   * @throws Will throw an error if the context does not have an ExecutionContext.
    */
-  get executionCtx(): ExecutionContext {
+  get executionCtx(): ExecutionContext | undefined {
     if (this.#executionCtx) {
       return this.#executionCtx as ExecutionContext
-    } else {
-      throw Error('This context has no ExecutionContext')
     }
+    return undefined
   }
 
   /**

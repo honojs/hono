@@ -171,7 +171,7 @@ export const cache = (options: {
     if (options.wait) {
       await cache.put(key, res)
     } else {
-      c.executionCtx.waitUntil(cache.put(key, res))
+      c.executionCtx!.waitUntil(cache.put(key, res))
     }
   }
 }
