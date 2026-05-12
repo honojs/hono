@@ -70,6 +70,16 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() should throw for undefined', () => {
+    expect(() => c.json(undefined)).toThrow(new TypeError('Value is not JSON serializable.'))
+  })
+
+  it('c.json() should stringify null', async () => {
+    const res = c.json(null)
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
+    expect(await res.text()).toBe('null')
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
