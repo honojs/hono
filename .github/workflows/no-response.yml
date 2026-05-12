@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close stale issues with "not bug" label
-        uses: actions/stale@v8
+        uses: actions/stale@1160a2240286f5da8ec72b1c0816ce2481aabf84 # v8
         with:
           days-before-stale: 7
           days-before-close: 2

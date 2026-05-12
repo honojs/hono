@@ -19,14 +19,14 @@ jobs:
     if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version-file: '.tool-versions'
       - run: bun install --frozen-lockfile
       - run: bun run format:fix
       - run: bun run lint:fix
       - name: Apply fixes
-        uses: autofix-ci/action@v1
+        uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1
         with:
           commit-message: 'ci: apply automated fixes'
