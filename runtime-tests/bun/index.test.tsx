@@ -174,6 +174,18 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toMatch(/^Bun!(\r?\n)?$/)
     expect(onNotFound).not.toHaveBeenCalled()
   })
+
+  it('Should accept no arguments (#4911)', async () => {
+    const app = new Hono()
+    app.get('/no-options/*', serveStatic())
+    app.get('*', (c) => c.text('fallback'))
+
+    const res = await app.request('http://localhost/no-options/missing-file')
+    // Default root is the current working directory; the file does not exist,
+    // so the middleware should fall through to the next handler.
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('fallback')
+  })
 })
 
 // Bun support WebCrypto since v0.2.2

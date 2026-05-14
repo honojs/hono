@@ -6,7 +6,7 @@ import type { ServeStaticOptions } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
 
 export const serveStatic = <E extends Env = Env>(
-  options: ServeStaticOptions<E>
+  options: ServeStaticOptions<E> = {}
 ): MiddlewareHandler => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {

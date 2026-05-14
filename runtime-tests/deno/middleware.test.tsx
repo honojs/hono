@@ -157,6 +157,18 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(await res.text(), '404 Not Found')
 })
 
+Deno.test('Serve Static middleware - no options (#4911)', async () => {
+  const app = new Hono()
+  app.get('/no-options/*', serveStatic())
+  app.get('*', (c) => c.text('fallback'))
+
+  // Default root is the current working directory; the file does not exist,
+  // so the middleware should fall through to the next handler.
+  const res = await app.request('http://localhost/no-options/missing-file')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'fallback')
+})
+
 Deno.test('JWT Authentication middleware', async () => {
   const app = new Hono<{ Variables: { 'x-foo': string } }>()
   app.use('/*', async (c, next) => {
