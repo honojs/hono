@@ -6,7 +6,7 @@ import { getContentFromKVAsset } from './utils'
 export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> & {
   // namespace is KVNamespace
   namespace?: unknown
-  manifest: object | string
+  manifest?: object | string
 }
 
 /**
