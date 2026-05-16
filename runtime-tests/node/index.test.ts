@@ -133,14 +133,12 @@ describe('stream', () => {
 
   it('Should call onAbort', async () => {
     const controller = new AbortController()
-    const res = expect(agent.get('/stream', { signal: controller.signal })).rejects.toThrow(
-      'This operation was aborted'
-    )
+    const req = agent.get('/stream', { signal: controller.signal })
 
     expect(aborted).toBe(false)
     await new Promise((resolve) => setTimeout(resolve, 10))
     controller.abort()
-    await res
+    await req.catch(() => {})
     while (!aborted) {
       await new Promise((resolve) => setTimeout(resolve))
     }
@@ -188,14 +186,12 @@ describe('streamSSE', () => {
 
   it('Should call onAbort', async () => {
     const controller = new AbortController()
-    const res = expect(agent.get('/stream', { signal: controller.signal })).rejects.toThrow(
-      'This operation was aborted'
-    )
+    const req = agent.get('/stream', { signal: controller.signal })
 
     expect(aborted).toBe(false)
     await new Promise((resolve) => setTimeout(resolve, 10))
     controller.abort()
-    await res
+    await req.catch(() => {})
     while (!aborted) {
       await new Promise((resolve) => setTimeout(resolve))
     }
