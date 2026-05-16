@@ -1,4 +1,5 @@
 import { Context } from '../../context'
+import { Hono } from '../../hono'
 import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
 
 const defaultContextOptions = {
@@ -188,6 +189,26 @@ describe('basePath', () => {
     })
 
     expect(basePath(c)).toBe('/sub-app-path/foo/app')
+  })
+
+  it('should return the fully expanded basePath for nested route() apps', async () => {
+    const app = new Hono()
+    const sub1 = new Hono()
+    const sub2 = new Hono()
+    const sub3 = new Hono()
+
+    sub3.get('/assets/*', (c) => c.json({ baseRoutePath: baseRoutePath(c), basePath: basePath(c) }))
+    sub2.route('/:app/sub3/assets', sub3)
+    sub1.route('/:app/sub2/assets', sub2)
+    app.route('/:app/sub1/assets', sub1)
+
+    const res = await app.request(
+      '/s1/sub1/assets/ss2/sub2/assets/sss3/sub3/assets/assets/file-hoge/assets-kage.js'
+    )
+    expect(await res.json()).toEqual({
+      baseRoutePath: '/:app/sub1/assets/:app/sub2/assets/:app/sub3/assets',
+      basePath: '/s1/sub1/assets/ss2/sub2/assets/sss3/sub3/assets',
+    })
   })
 
   it('should return basePath with custom regex pattern', () => {
