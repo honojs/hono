@@ -409,6 +409,11 @@
       "types": "./dist/types/helper/proxy/index.d.ts",
       "import": "./dist/helper/proxy/index.js",
       "require": "./dist/cjs/helper/proxy/index.js"
+    },
+    "./websocket-proxy": {
+      "types": "./dist/types/helper/websocket-proxy/index.d.ts",
+      "import": "./dist/helper/websocket-proxy/index.js",
+      "require": "./dist/cjs/helper/websocket-proxy/index.js"
     }
   },
   "typesVersions": {
@@ -625,6 +630,9 @@
       ],
       "proxy": [
         "./dist/types/helper/proxy"
+      ],
+      "websocket-proxy": [
+        "./dist/types/helper/websocket-proxy"
       ]
     }
   },
