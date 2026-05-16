@@ -5,7 +5,7 @@
 
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
-import type { MiddlewareHandler } from '../../types'
+import type { Env, MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import type { ContentfulStatusCode } from '../../utils/http-status'
 
@@ -19,7 +19,7 @@ type CustomizedErrorResponseOptions = {
   message?: string | object | MessageFunction
 }
 
-type BearerAuthOptions =
+type BearerAuthOptions<E extends Env = Env> =
   | {
       token: string | string[]
       realm?: string
@@ -46,7 +46,7 @@ type BearerAuthOptions =
       realm?: string
       prefix?: string
       headerName?: string
-      verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
+      verifyToken: (token: string, c: Context<E>) => boolean | Promise<boolean>
       hashFunction?: Function
       /**
        * @deprecated Use noAuthenticationHeader.message instead
@@ -70,6 +70,7 @@ type BearerAuthOptions =
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/bearer-auth}
  *
+ * @template E - The environment type.
  * @param {BearerAuthOptions} options - The options for the bearer authentication middleware.
  * @param {string | string[]} [options.token] - The string or array of strings to validate the incoming bearer token against.
  * @param {Function} [options.verifyToken] - The function to verify the token.
@@ -83,7 +84,7 @@ type BearerAuthOptions =
  * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The response header value for the WWW-Authenticate header when authentication header is invalid.
  * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
  * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The response header value for the WWW-Authenticate header when token is invalid.
- * @returns {MiddlewareHandler} The middleware handler function.
+ * @returns {MiddlewareHandler<E>} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
  *
@@ -100,7 +101,9 @@ type BearerAuthOptions =
  * })
  * ```
  */
-export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
+export const bearerAuth = <E extends Env = Env>(
+  options: BearerAuthOptions<E>
+): MiddlewareHandler<E> => {
   if (!('token' in options || 'verifyToken' in options)) {
     throw new Error('bearer auth middleware requires options for "token"')
   }
