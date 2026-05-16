@@ -1,5 +1,5 @@
 import { Context } from '../../context'
-import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
+import { matchedRoutes, routePath, baseRoutePath, basePath, handlerPath } from '.'
 
 const defaultContextOptions = {
   executionCtx: {
@@ -215,5 +215,89 @@ describe('basePath', () => {
     })
 
     expect(basePath(c)).toBe('/sub-app-path/foo')
+  })
+})
+
+describe('handlerPath', () => {
+  it('should return the path of the actual handler, ignoring middleware', () => {
+    const middlewareA = () => {}
+    const handler = () => {}
+    const middlewareB = () => {}
+    const rawRequest = new Request('http://localhost/health', { method: 'GET' })
+    const c = new Context(rawRequest, {
+      path: '/health',
+      matchResult: [
+        [
+          [
+            [middlewareA, { basePath: '/', handler: middlewareA, method: 'ALL', path: '/*' }],
+            {},
+          ],
+          [
+            [handler, { basePath: '/', handler: handler, method: 'GET', path: '/health' }],
+            {},
+          ],
+          [
+            [middlewareB, { basePath: '/', handler: middlewareB, method: 'ALL', path: '/*' }],
+            {},
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    // Should return the GET handler path, not the middleware path
+    expect(handlerPath(c)).toBe('/health')
+  })
+
+  it('should return empty string when no handler matches', () => {
+    const middlewareA = () => {}
+    const rawRequest = new Request('http://localhost/health', { method: 'GET' })
+    const c = new Context(rawRequest, {
+      path: '/health',
+      matchResult: [
+        [
+          [
+            [middlewareA, { basePath: '/', handler: middlewareA, method: 'ALL', path: '/*' }],
+            {},
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    expect(handlerPath(c)).toBe('')
+  })
+
+  it('should work correctly regardless of middleware registration order', () => {
+    const middlewareA = () => {}
+    const handler = () => {}
+    const middlewareB = () => {}
+    const rawRequest = new Request('http://localhost/users/123', { method: 'GET' })
+    const c = new Context(rawRequest, {
+      path: '/users/123',
+      matchResult: [
+        [
+          [
+            [middlewareA, { basePath: '/', handler: middlewareA, method: 'ALL', path: '/*' }],
+            {},
+          ],
+          [
+            [
+              handler,
+              { basePath: '/', handler: handler, method: 'GET', path: '/users/:id' },
+            ],
+            { id: '123' },
+          ],
+          [
+            [middlewareB, { basePath: '/', handler: middlewareB, method: 'ALL', path: '/*' }],
+            {},
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    // routePath(c, -1) would return '/*' (from middlewareB), but handlerPath returns the real handler
+    expect(handlerPath(c)).toBe('/users/:id')
   })
 })
