@@ -294,7 +294,7 @@ export class JSXFragmentNode extends JSXNode {
 export const jsx = (
   tag: string | Function,
   props: Props | null,
-  ...children: (string | number | HtmlEscapedString)[]
+  ...children: Child[]
 ): JSXNode => {
   props ??= {}
   if (children.length) {
@@ -313,7 +313,7 @@ let initDomRenderer = false
 export const jsxFn = (
   tag: string | Function,
   props: Props,
-  children: (string | number | HtmlEscapedString)[]
+  children: Child[]
 ): JSXNode => {
   if (!initDomRenderer) {
     for (const k in domRenderers) {
