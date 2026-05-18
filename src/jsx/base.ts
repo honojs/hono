@@ -302,11 +302,7 @@ export class JSXFragmentNode extends JSXNode {
   }
 }
 
-export const jsx = (
-  tag: string | Function,
-  props: Props | null,
-  ...children: (string | number | HtmlEscapedString)[]
-): JSXNode => {
+export const jsx = (tag: string | Function, props: Props | null, ...children: Child[]): JSXNode => {
   props ??= {}
   if (children.length) {
     props.children = children.length === 1 ? children[0] : children
@@ -321,11 +317,7 @@ export const jsx = (
 }
 
 let initDomRenderer = false
-export const jsxFn = (
-  tag: string | Function,
-  props: Props,
-  children: (string | number | HtmlEscapedString)[]
-): JSXNode => {
+export const jsxFn = (tag: string | Function, props: Props, children: Child[]): JSXNode => {
   if (!initDomRenderer) {
     for (const k in domRenderers) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
