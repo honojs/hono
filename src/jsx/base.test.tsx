@@ -1,6 +1,6 @@
 /** @jsxImportSource ./ */
 
-import type { JSXNode } from './base'
+import type { Child, JSXNode } from './base'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cloneElement, jsx, Fragment } from './base'
 
@@ -42,5 +42,16 @@ describe('createElement', () => {
     expect(element.tag).toBe('svg')
     expect(element.type).toBe('svg')
     expect(element.ref).toBe(ref)
+  })
+
+  it('should accept a Child-typed value as children (regression: jsx/jsxFn signature)', () => {
+    // The jsx/jsxFn factories must accept the same children types that the
+    // JSXNode constructor and the Child type itself allow. Before the
+    // signature was widened, passing a Child-typed value to jsx() raised
+    // TS2345 even though the underlying node accepted it at runtime.
+    const child: Child = 'hello'
+    const element = jsx('div', null, child) as unknown as JSXNode
+    expect(element.tag).toBe('div')
+    expect(element.toString()).toBe('<div>hello</div>')
   })
 })
