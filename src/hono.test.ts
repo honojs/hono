@@ -2685,6 +2685,40 @@ describe('app.mount()', () => {
     })
   })
 
+  describe('With encoded paths', () => {
+    const anotherApp = (req: Request) => new Response(getPath(req))
+
+    it('Should strip a decoded non-ASCII mount prefix', async () => {
+      const app = new Hono()
+      app.mount('/api/é', anotherApp)
+
+      const res = await app.request('/api/%C3%A9/hello')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/hello')
+    })
+
+    it('Should preserve an encoded slash as a literal path segment after stripping the prefix', async () => {
+      const app = new Hono()
+      app.mount('/api/v1', anotherApp)
+
+      const res = await app.request('/api/v1/admin%2Fsecret')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/admin%2Fsecret')
+    })
+
+    it('Should preserve encoded percent characters after stripping the prefix', async () => {
+      const app = new Hono()
+      app.mount('/api', anotherApp)
+
+      const res = await app.request('/api/foo%252Fbar')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/foo%252Fbar')
+    })
+  })
+
   describe('With fetch', () => {
     const anotherApp = async (req: Request, env: {}, executionContext: ExecutionContext) => {
       const path = getPath(req)

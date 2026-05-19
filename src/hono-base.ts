@@ -364,7 +364,7 @@ class Hono<
       const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
       return (request) => {
         const url = new URL(request.url)
-        url.pathname = url.pathname.slice(pathPrefixLength) || '/'
+        url.pathname = this.getPath(request).slice(pathPrefixLength) || '/'
         return new Request(url, request)
       }
     })()
