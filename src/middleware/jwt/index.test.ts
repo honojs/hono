@@ -58,12 +58,12 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize Unicode', async () => {
+    it('Should authorize with lowercase bearer scheme', async () => {
       const credential =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
       const req = new Request('http://localhost/auth-unicode/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -71,13 +71,42 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize Unicode', async () => {
+    it('Should authorize with mixed-case Bearer scheme', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const req = new Request('http://localhost/auth-unicode/a')
+      req.headers.set('Authorization', `bEaReR ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize with non-Bearer scheme', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize invalid token with Bearer scheme', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
       const url = 'http://localhost/auth-unicode/a'
       const req = new Request(url)
-      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      req.headers.set('Authorization', `Bearer ${invalidToken}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -194,12 +223,12 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize Unicode', async () => {
+    it('Should authorize with lowercase bearer scheme', async () => {
       const credential =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
       const req = new Request('http://localhost/auth-unicode/a')
-      req.headers.set('x-custom-auth-header', `Basic ${credential}`)
+      req.headers.set('x-custom-auth-header', `bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -207,13 +236,42 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize Unicode', async () => {
+    it('Should authorize with mixed-case Bearer scheme in custom header', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const req = new Request('http://localhost/auth-unicode/a')
+      req.headers.set('x-custom-auth-header', `bEaReR ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize with non-Bearer scheme in custom header', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-unicode/a'
+      const req = new Request(url)
+      req.headers.set('x-custom-auth-header', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize invalid token with Bearer scheme in custom header', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
       const url = 'http://localhost/auth-unicode/a'
       const req = new Request(url)
-      req.headers.set('x-custom-auth-header', `Basic ${invalidToken}`)
+      req.headers.set('x-custom-auth-header', `Bearer ${invalidToken}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)

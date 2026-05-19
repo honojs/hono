@@ -80,12 +80,26 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize if bad token is present', async () => {
+    it('Should not authorize if a non-Bearer scheme is present', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const url = 'http://localhost/backend-auth-or-anon/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize if an invalid Bearer token is present', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
       const url = 'http://localhost/backend-auth-or-anon/a'
       const req = new Request(url)
-      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      req.headers.set('Authorization', `Bearer ${invalidToken}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -226,7 +240,7 @@ describe('JWK', () => {
     it('Should return a server error if options.jwks_uri returns a 404', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-404-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(500)
@@ -235,7 +249,7 @@ describe('JWK', () => {
     it('Should return a server error if the remotely fetched keys from options.jwks_uri are missing', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-missing-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(500)
@@ -244,7 +258,7 @@ describe('JWK', () => {
     it('Should return a server error if the remotely fetched keys from options.jwks_uri are malformed', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-bad-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(500)
@@ -352,7 +366,18 @@ describe('JWK', () => {
     it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-unicode/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize with mixed-case Bearer scheme', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-unicode/a')
+      req.headers.set('Authorization', `bEaReR ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -363,7 +388,7 @@ describe('JWK', () => {
     it('Should authorize from a function passed to options.keys', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-fn/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -374,7 +399,7 @@ describe('JWK', () => {
     it('Should authorize from keys remotely fetched from options.jwks_uri', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -385,7 +410,7 @@ describe('JWK', () => {
     it('Should authorize from keys and hard-coded and remotely fetched from options.jwks_uri', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-and-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -393,12 +418,27 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize requests with invalid Unicode payload in header', async () => {
-      const invalidToken =
-        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+    it('Should not authorize requests with non-Bearer scheme in header', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const url = 'http://localhost/auth-with-keys-unicode/a'
       const req = new Request(url)
-      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize requests with invalid token in Bearer header', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-with-keys-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${invalidToken}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -494,6 +534,49 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize with mixed-case Bearer scheme in custom header', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
+
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('x-custom-auth-header', `bEaReR ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize with non-Bearer scheme in custom header', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
+      const url = 'http://localhost/auth-with-keys/a'
+
+      const req = new Request(url)
+      req.headers.set('x-custom-auth-header', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize invalid token with Bearer scheme in custom header', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const url = 'http://localhost/auth-with-keys/a'
+
+      const req = new Request(url)
+      req.headers.set('x-custom-auth-header', `Bearer ${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
     })
   })
 
@@ -811,7 +894,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-default/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -825,7 +908,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-default/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -838,7 +921,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-default/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -851,7 +934,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-default/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -864,7 +947,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -878,7 +961,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
@@ -891,7 +974,7 @@ describe('JWK', () => {
       }
       const credential = await Jwt.sign(payload, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
