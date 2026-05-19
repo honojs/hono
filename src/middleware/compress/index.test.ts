@@ -216,6 +216,48 @@ describe('Compress Middleware', () => {
   })
 })
 
+describe('shouldCompress option', () => {
+  it('should compress custom content types when shouldCompress returns true', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      compress({
+        shouldCompress: (res) => {
+          const type = res.headers.get('Content-Type') ?? ''
+          return type.startsWith('application/vnd.msgpack')
+        },
+      })
+    )
+    app.get('/msgpack', (c) => {
+      c.header('Content-Type', 'application/vnd.msgpack')
+      c.header('Content-Length', '1024')
+      return c.body(new Uint8Array(1024))
+    })
+
+    const req = new Request('http://localhost/msgpack', {
+      headers: { 'Accept-Encoding': 'gzip' },
+    })
+    const res = await app.request(req)
+    expect(res.headers.get('Content-Encoding')).toBe('gzip')
+  })
+
+  it('should not compress when shouldCompress returns false', async () => {
+    const app = new Hono()
+    app.use('*', compress({ shouldCompress: () => false }))
+    app.get('/large', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      return c.text('a'.repeat(1024))
+    })
+
+    const req = new Request('http://localhost/large', {
+      headers: { 'Accept-Encoding': 'gzip' },
+    })
+    const res = await app.request(req)
+    expect(res.headers.get('Content-Encoding')).toBeNull()
+  })
+})
+
 async function decompressResponse(res: Response): Promise<string> {
   const decompressedStream = res.body!.pipeThrough(new DecompressionStream('gzip'))
   const decompressedResponse = new Response(decompressedStream)

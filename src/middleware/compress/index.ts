@@ -12,6 +12,12 @@ const cacheControlNoTransformRegExp = /(?:^|,)\s*?no-transform\s*?(?:,|$)/i
 interface CompressionOptions {
   encoding?: (typeof ENCODING_TYPES)[number]
   threshold?: number
+  /**
+   * A custom function to determine whether a response should be compressed.
+   * When provided, it replaces the default content-type check.
+   * Receives the response object; return `true` to compress, `false` to skip.
+   */
+  shouldCompress?: (res: Response) => boolean
 }
 
 /**
@@ -22,6 +28,7 @@ interface CompressionOptions {
  * @param {CompressionOptions} [options] - The options for the compress middleware.
  * @param {'gzip' | 'deflate'} [options.encoding] - The compression scheme to allow for response compression. Either 'gzip' or 'deflate'. If not defined, both are allowed and will be used based on the Accept-Encoding header. 'gzip' is prioritized if this option is not provided and the client provides both in the Accept-Encoding header.
  * @param {number} [options.threshold=1024] - The minimum size in bytes to compress. Defaults to 1024 bytes.
+ * @param {Function} [options.shouldCompress] - A custom function to determine whether a response should be compressed. When provided, replaces the built-in content-type check. Return `true` to compress, `false` to skip.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -30,9 +37,21 @@ interface CompressionOptions {
  *
  * app.use(compress())
  * ```
+ *
+ * @example
+ * ```ts
+ * // Compress custom content types in addition to the defaults
+ * app.use(compress({
+ *   shouldCompress: (res) => {
+ *     const type = res.headers.get('Content-Type') ?? ''
+ *     return COMPRESSIBLE_CONTENT_TYPE_REGEX.test(type) || type.startsWith('application/vnd.msgpack')
+ *   }
+ * }))
+ * ```
  */
 export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   const threshold = options?.threshold ?? 1024
+  const compressCheck = options?.shouldCompress ?? defaultShouldCompress
 
   return async function compress(ctx, next) {
     await next()
@@ -45,7 +64,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       ctx.res.headers.has('Transfer-Encoding') || // already encoded or chunked
       ctx.req.method === 'HEAD' || // HEAD request
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
-      !shouldCompress(ctx.res) || // not compressible type
+      !compressCheck(ctx.res) || // not compressible type
       !shouldTransform(ctx.res) // cache-control: no-transform
     ) {
       return
@@ -66,9 +85,11 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   }
 }
 
-const shouldCompress = (res: Response) => {
+export { COMPRESSIBLE_CONTENT_TYPE_REGEX }
+
+const defaultShouldCompress = (res: Response) => {
   const type = res.headers.get('Content-Type')
-  return type && COMPRESSIBLE_CONTENT_TYPE_REGEX.test(type)
+  return type ? COMPRESSIBLE_CONTENT_TYPE_REGEX.test(type) : false
 }
 
 const shouldTransform = (res: Response) => {
