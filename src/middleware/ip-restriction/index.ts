@@ -6,6 +6,7 @@
 import type { Context, MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { HTTPException } from '../../http-exception'
+import type { InvalidIPAddressError } from '../../utils/ipaddr'
 import {
   convertIPv4MappedIPv6ToIPv4,
   convertIPv4ToBinary,
@@ -13,6 +14,7 @@ import {
   convertIPv6ToBinary,
   distinctRemoteAddr,
   isIPv4MappedIPv6,
+  INVALID_IP_ADDRESS_ERROR_CODE,
 } from '../../utils/ipaddr'
 
 /**
@@ -35,13 +37,47 @@ type GetIPAddr = GetConnInfo | ((c: Context) => string)
 type IPRestrictionRuleFunction = (addr: { addr: string; type: AddressType }) => boolean
 export type IPRestrictionRule = string | ((addr: { addr: string; type: AddressType }) => boolean)
 
-const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
+const IS_CIDR_NOTATION_REGEX = /\/[^/]*$/
+const parseCidrPrefix = (rule: string, prefix: string, max: number): number => {
+  if (!/^[0-9]{1,3}$/.test(prefix)) {
+    throw new TypeError(`Invalid rule: ${rule}`)
+  }
+  const parsedPrefix = parseInt(prefix)
+  if (parsedPrefix > max) {
+    throw new TypeError(`Invalid rule: ${rule}`)
+  }
+  return parsedPrefix
+}
 const buildMatcher = (
   rules: IPRestrictionRule[]
 ): ((addr: { addr: string; type: AddressType; isIPv4: boolean }) => boolean) => {
   const functionRules: IPRestrictionRuleFunction[] = []
   const staticRules: Set<string> = new Set()
+  const staticIPv4Rules: Set<bigint> = new Set()
+  const staticIPv6Rules: Set<bigint> = new Set()
   const cidrRules: [boolean, bigint, bigint][] = []
+  const registerStaticRule = (rule: string): void => {
+    const type = distinctRemoteAddr(rule)
+    if (type === undefined) {
+      throw new TypeError(`Invalid rule: ${rule}`)
+    }
+    if (type === 'IPv4') {
+      const ipv4binary = convertIPv4ToBinary(rule)
+      staticRules.add(rule)
+      staticRules.add(`::ffff:${rule}`)
+      staticIPv4Rules.add(ipv4binary)
+      staticIPv6Rules.add((0xffffn << 32n) | ipv4binary)
+    } else {
+      const ipv6binary = convertIPv6ToBinary(rule)
+      const ipv6Addr = convertIPv6BinaryToString(ipv6binary)
+      staticRules.add(ipv6Addr)
+      staticIPv6Rules.add(ipv6binary)
+      if (isIPv4MappedIPv6(ipv6binary)) {
+        staticRules.add(ipv6Addr.substring(7)) // remove ::ffff: prefix
+        staticIPv4Rules.add(convertIPv4MappedIPv6ToIPv4(ipv6binary))
+      }
+    }
+  }
 
   for (let rule of rules) {
     if (rule === '*') {
@@ -59,7 +95,7 @@ const buildMatcher = (
         }
 
         let isIPv4 = type === 'IPv4'
-        let prefix = parseInt(separatedRule[1])
+        let prefix = parseCidrPrefix(rule, separatedRule[1], isIPv4 ? 32 : 128)
 
         if (isIPv4 ? prefix === 32 : prefix === 128) {
           // this rule is a static rule
@@ -79,21 +115,7 @@ const buildMatcher = (
         }
       }
 
-      const type = distinctRemoteAddr(rule)
-      if (type === undefined) {
-        throw new TypeError(`Invalid rule: ${rule}`)
-      }
-      if (type === 'IPv4') {
-        staticRules.add(rule)
-        staticRules.add(`::ffff:${rule}`)
-      } else {
-        const ipv6binary = convertIPv6ToBinary(rule)
-        const ipv6Addr = convertIPv6BinaryToString(ipv6binary)
-        staticRules.add(ipv6Addr)
-        if (isIPv4MappedIPv6(ipv6binary)) {
-          staticRules.add(ipv6Addr.substring(7)) // remove ::ffff: prefix
-        }
-      }
+      registerStaticRule(rule)
     }
   }
 
@@ -115,6 +137,9 @@ const buildMatcher = (
           ? remoteAddr
           : convertIPv4MappedIPv6ToIPv4(remoteAddr)
         : undefined
+    if ((remote.isIPv4 ? staticIPv4Rules : staticIPv6Rules).has(remoteAddr)) {
+      return true
+    }
     for (const [isIPv4, addr, mask] of cidrRules) {
       if (isIPv4) {
         if (remoteIPv4Addr === undefined) {
@@ -221,14 +246,25 @@ export const ipRestriction = (
 
     const remoteData = { addr, type, isIPv4: type === 'IPv4' }
 
-    if (denyMatcher(remoteData)) {
-      if (onError) {
-        return onError({ addr, type }, c)
+    try {
+      if (denyMatcher(remoteData)) {
+        if (onError) {
+          return onError({ addr, type }, c)
+        }
+        throw blockError(c)
       }
-      throw blockError(c)
-    }
-    if (allowMatcher(remoteData)) {
-      return await next()
+      if (allowMatcher(remoteData)) {
+        return await next()
+      }
+    } catch (e) {
+      if (
+        e instanceof TypeError &&
+        (e as InvalidIPAddressError).code === INVALID_IP_ADDRESS_ERROR_CODE
+      ) {
+        // If an invalid IP address is specified, treat it as if no IP address was specified
+        throw blockError(c)
+      }
+      throw e
     }
 
     if (allowLength === 0) {
