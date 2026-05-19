@@ -191,7 +191,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     }
   }
 
-  for (const key of ['domain', 'path'] as (keyof CookieOptions)[]) {
+  for (const key of ['domain', 'path', 'sameSite', 'priority'] as (keyof CookieOptions)[]) {
     if (opt[key] && /[;\r\n]/.test(opt[key] as string)) {
       throw new Error(`${key} must not contain ";", "\\r", or "\\n"`)
     }

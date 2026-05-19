@@ -350,7 +350,7 @@ describe('Set cookie', () => {
     }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
 
-  it('Should throw Error cookie with domain or path containing ";", "\\r", or "\\n"', () => {
+  it('Should throw Error cookie with domain, path, sameSite, or priority containing ";", "\\r", or "\\n"', () => {
     // domain
     expect(() => {
       serialize('great_cookie', 'banana', { domain: 'example.com;evil' })
@@ -372,6 +372,28 @@ describe('Set cookie', () => {
     expect(() => {
       serialize('great_cookie', 'banana', { path: '/\nevil' })
     }).toThrowError('path must not contain ";", "\\r", or "\\n"')
+
+    // sameSite
+    expect(() => {
+      serialize('great_cookie', 'banana', { sameSite: 'Strict;evil' as 'Strict' })
+    }).toThrowError('sameSite must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { sameSite: 'Strict\revil' as 'Strict' })
+    }).toThrowError('sameSite must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { sameSite: 'Strict\nevil' as 'Strict' })
+    }).toThrowError('sameSite must not contain ";", "\\r", or "\\n"')
+
+    // priority
+    expect(() => {
+      serialize('great_cookie', 'banana', { priority: 'High;evil' as 'High' })
+    }).toThrowError('priority must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { priority: 'High\revil' as 'High' })
+    }).toThrowError('priority must not contain ";", "\\r", or "\\n"')
+    expect(() => {
+      serialize('great_cookie', 'banana', { priority: 'High\nevil' as 'High' })
+    }).toThrowError('priority must not contain ";", "\\r", or "\\n"')
   })
 
   it('Should throw Error for invalid cookie name', () => {
