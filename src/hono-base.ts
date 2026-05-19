@@ -226,7 +226,7 @@ class Hono<
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
-      subApp.#addRoute(r.method, r.path, handler)
+      subApp.#addRoute(r.method, r.path, handler, r.basePath)
     })
     return this
   }
@@ -382,10 +382,16 @@ class Hono<
     return this
   }
 
-  #addRoute(method: string, path: string, handler: H): void {
+  #addRoute(method: string, path: string, handler: H, baseRoutePath?: string): void {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { basePath: this._basePath, path, method, handler }
+    const r: RouterRoute = {
+      basePath:
+        baseRoutePath !== undefined ? mergePath(this._basePath, baseRoutePath) : this._basePath,
+      path,
+      method,
+      handler,
+    }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
