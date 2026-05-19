@@ -1,6 +1,6 @@
 /** @jsxImportSource ./ */
 
-import type { JSXNode } from './base'
+import type { Child, JSXNode } from './base'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cloneElement, jsx, Fragment } from './base'
 
@@ -42,5 +42,11 @@ describe('createElement', () => {
     expect(element.tag).toBe('svg')
     expect(element.type).toBe('svg')
     expect(element.ref).toBe(ref)
+  })
+
+  it('should accept a Child-typed value as a child', () => {
+    const child: Child = <span>inner</span>
+    const element = jsx('div', null, child) as unknown as JSXNode
+    expect(element.toString()).toBe('<div><span>inner</span></div>')
   })
 })
