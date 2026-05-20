@@ -266,6 +266,41 @@ describe('Compress Middleware', () => {
       expect(decompressed).toBe('Custom NotFound')
     })
   })
+
+  describe('Encoding Option', () => {
+    const buildApp = (encoding: 'gzip' | 'deflate') => {
+      const app = new Hono()
+      app.use('*', compress({ encoding }))
+      app.get('/large', (c) => {
+        c.header('Content-Type', 'text/plain')
+        c.header('Content-Length', '1024')
+        return c.text('a'.repeat(1024))
+      })
+      return app
+    }
+
+    it('should compress when configured encoding is accepted by the client', async () => {
+      const app = buildApp('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+    })
+
+    it('should not compress when configured encoding is not in Accept-Encoding', async () => {
+      const app = buildApp('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'deflate' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+    })
+
+    it('should not compress when Accept-Encoding header is absent', async () => {
+      const app = buildApp('gzip')
+      const res = await app.request('/large')
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+    })
+  })
 })
 
 async function decompressResponse(res: Response): Promise<string> {
