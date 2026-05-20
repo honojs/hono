@@ -1,9 +1,18 @@
 import { configDefaults, defineConfig } from 'vitest/config'
 
+const honoJsx = {
+  oxc: {
+    jsx: {
+      runtime: 'automatic',
+      importSource: './src/jsx',
+    },
+  },
+  extends: true,
+} as const
+
 export default defineConfig({
   test: {
     globals: true,
-    setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
@@ -26,11 +35,7 @@ export default defineConfig({
     projects: [
       './runtime-tests/*/vitest.config.ts',
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx',
-        },
-        extends: true,
+        ...honoJsx,
         test: {
           exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.*'],
           include: [
@@ -42,22 +47,14 @@ export default defineConfig({
         },
       },
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx',
-        },
-        extends: true,
+        ...honoJsx,
         test: {
           include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
           name: 'jsx-runtime-default',
         },
       },
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx/dom',
-        },
-        extends: true,
+        ...honoJsx,
         test: {
           include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
           name: 'jsx-runtime-dom',
