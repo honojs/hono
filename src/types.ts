@@ -32,7 +32,11 @@ export type Env = {
   Variables?: Variables
 }
 
-export type Next = () => Promise<void>
+export type NextOptions = {
+  rethrow?: boolean
+}
+
+export type Next = (options?: NextOptions) => Promise<void>
 
 export type ExtractInput<I extends Input | Input['in']> = I extends Input
   ? unknown extends I['in']

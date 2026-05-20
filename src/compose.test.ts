@@ -1,7 +1,7 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { Params } from './router'
-import type { Next } from './types'
+import type { ErrorHandler, Next } from './types'
 
 type MiddlewareTuple = [[Function, unknown], Params]
 
@@ -48,6 +48,7 @@ describe('compose', () => {
     expect(context.get('log')).toBe('log message')
     expect(context.get('xxx')).toBe('yyy')
   })
+
   it('Response', async () => {
     const composed = compose(middleware)
     const context = await composed(new Context(new Request('http://localhost/')))
@@ -298,6 +299,7 @@ describe('compose with Context - 500 error', () => {
     expect(stack).toEqual([0, 1, 2])
   })
 })
+
 describe('compose with Context - not finalized', () => {
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
@@ -333,6 +335,7 @@ describe('compose with Context - not finalized', () => {
     expect(context.finalized).toBe(false)
   })
 })
+
 describe('compose with Context - next', () => {
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
@@ -594,6 +597,92 @@ describe('Compose', function () {
 
     await compose(stack)(new Context(new Request('http://localhost/')))
     expect(arr).toEqual([1, 6, 4, 2, 3])
+  })
+
+  it('should keep default next() behavior with onError', async () => {
+    const stack = []
+
+    stack.push(
+      buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
+        try {
+          await next()
+        } catch {
+          return new Response('caught by middleware', { status: 200 })
+        }
+      })
+    )
+
+    stack.push(
+      buildMiddlewareTuple(() => {
+        throw new Error('boom')
+      })
+    )
+
+    const onError: ErrorHandler = (err) => {
+      return new Response(`onError: ${err.message}`, { status: 500 })
+    }
+
+    const composed = compose(stack, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError: boom')
+  })
+
+  it('should allow middleware to catch downstream errors with next({ rethrow: true })', async () => {
+    const stack = []
+
+    stack.push(
+      buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
+        try {
+          await next({ rethrow: true })
+        } catch (err) {
+          return new Response(`caught: ${(err as Error).message}`, { status: 200 })
+        }
+      })
+    )
+
+    stack.push(
+      buildMiddlewareTuple(() => {
+        throw new Error('boom')
+      })
+    )
+
+    const onError: ErrorHandler = (err) => {
+      return new Response(`onError: ${err.message}`, { status: 500 })
+    }
+
+    const composed = compose(stack, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(context.res.status).toBe(200)
+    expect(await context.res.text()).toBe('caught: boom')
+  })
+
+  it('should call onError when rethrown error is not handled by middleware', async () => {
+    const stack = []
+
+    stack.push(
+      buildMiddlewareTuple(async (_ctx: Context, next: Next) => {
+        await next({ rethrow: true })
+      })
+    )
+
+    stack.push(
+      buildMiddlewareTuple(() => {
+        throw new Error('boom')
+      })
+    )
+
+    const onError: ErrorHandler = (err) => {
+      return new Response(`onError: ${err.message}`, { status: 500 })
+    }
+
+    const composed = compose(stack, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError: boom')
   })
 
   it('should compose w/ next', async () => {

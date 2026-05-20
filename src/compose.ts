@@ -1,5 +1,5 @@
 import type { Context } from './context'
-import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
+import type { Env, ErrorHandler, Next, NextOptions, NotFoundHandler } from './types'
 
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
@@ -26,10 +26,11 @@ export const compose = <E extends Env = Env>(
      * Dispatch the middleware functions.
      *
      * @param {number} i - The current index in the middleware array.
+     * @param {NextOptions} [options] - Options passed to next().
      *
      * @returns {Promise<Context>} - A promise that resolves to the context.
      */
-    async function dispatch(i: number): Promise<Context> {
+    async function dispatch(i: number, options?: NextOptions): Promise<Context> {
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
@@ -48,8 +49,12 @@ export const compose = <E extends Env = Env>(
 
       if (handler) {
         try {
-          res = await handler(context, () => dispatch(i + 1))
+          res = await handler(context, (nextOptions?: NextOptions) => dispatch(i + 1, nextOptions))
         } catch (err) {
+          if (options?.rethrow) {
+            throw err
+          }
+
           if (err instanceof Error && onError) {
             context.error = err
             res = await onError(err, context)
