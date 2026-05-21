@@ -29,7 +29,9 @@ const selectEncoding = (
   for (const enc of candidates) {
     const explicit = accepts.find((a) => a.type.toLowerCase() === enc)
     const q = explicit ? explicit.q : (wildcardQ ?? 0)
-    if (q > 0 && (!best || q > best.q)) {
+    if (q === 1) {
+      return enc
+    } else if (q > 0 && (!best || q > best.q)) {
       best = { encoding: enc, q }
     }
   }
