@@ -4,7 +4,40 @@
  * @link https://www.npmjs.com/package/fetch-result-please
  */
 
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from '../utils/http-status'
+import type { ClientResponse, InferResponseType } from './types'
+
 const nullBodyResponses = new Set([101, 204, 205, 304])
+
+type ErrorStatusCode = ClientErrorStatusCode | ServerErrorStatusCode
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyClientMethod = (...args: any[]) => Promise<ClientResponse<any, any, any>>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseDetailedErrorData = any
+
+type UnknownIfNever<T> = [T] extends [never] ? unknown : T
+
+type InferDetailedErrorData<T> = T extends AnyClientMethod
+  ? UnknownIfNever<InferResponseType<T, ErrorStatusCode>>
+  : LooseDetailedErrorData
+
+type InferDetailedErrorStatusCode<T> = T extends AnyClientMethod
+  ? UnknownIfNever<
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Awaited<ReturnType<T>> extends ClientResponse<any, infer Status, any>
+        ? Status extends ErrorStatusCode
+          ? Status
+          : never
+        : never
+    >
+  : number
+
+type DetailedErrorDetail<T> = {
+  data: InferDetailedErrorData<T>
+  statusText: string
+}
 
 /**
  * Smartly parses and return the consumable result from a fetch `Response`.
@@ -43,11 +76,19 @@ export async function fetchRP(fetchRes: Response | Promise<Response>): Promise<a
   return _fetchRes._data
 }
 
-export class DetailedError extends Error {
+/**
+ * A structured error thrown by {@link fetchRP} when a response is not `ok`.
+ *
+ * @template T - An RPC client method type, such as `typeof client.foo.$get`.
+ * When provided, `detail.data` and `statusCode` are inferred from the route's
+ * 4xx / 5xx response definitions.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class DetailedError<T = any> extends Error {
   /**
    * Additional `message` that will be logged AND returned to client
    */
-  public detail?: any
+  public detail?: DetailedErrorDetail<T>
   /**
    * Additional `code` that will be logged AND returned to client
    */
@@ -59,11 +100,16 @@ export class DetailedError extends Error {
   /**
    * Optionally set the status code to return, in a web server context
    */
-  public statusCode?: any
+  public statusCode?: InferDetailedErrorStatusCode<T>
 
   constructor(
     message: string,
-    options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}
+    options: {
+      detail?: DetailedErrorDetail<T>
+      code?: any
+      statusCode?: InferDetailedErrorStatusCode<T>
+      log?: any
+    } = {}
   ) {
     super(message)
     this.name = 'DetailedError'

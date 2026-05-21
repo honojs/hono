@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 import { Hono } from '../hono'
 import type { Expect, Equal } from '../utils/types'
 import { hc } from './client'
+import type { DetailedError } from './utils'
 import {
   buildSearchParams,
   deepMerge,
@@ -333,6 +334,28 @@ describe('parseResponse', async () => {
         >
       >
       type _verify = Expect<Equal<ResultType, { message: string }>>
+    }),
+    it('(type-only) should infer DetailedError data from a json error response', async () => {
+      type Error = DetailedError<(typeof client)['might-error-json']['$get']>
+      type _verifyData = Expect<Equal<NonNullable<Error['detail']>['data'], { error: string }>>
+      type _verifyStatus = Expect<Equal<Error['statusCode'], 500 | undefined>>
+    }),
+    it('(type-only) should infer DetailedError data from a text error response', async () => {
+      type Error = DetailedError<(typeof client)['404']['$get']>
+      type _verifyData = Expect<Equal<NonNullable<Error['detail']>['data'], '404 Not Found'>>
+      type _verifyStatus = Expect<Equal<Error['statusCode'], 404 | undefined>>
+    }),
+    it('(type-only) should keep DetailedError data any-like when generic is omitted', async () => {
+      type IsAny<T> = 0 extends 1 & T ? true : false
+      type Error = DetailedError
+      type _verifyData = Expect<Equal<IsAny<NonNullable<Error['detail']>['data']>, true>>
+      type _verifyStatus = Expect<Equal<IsAny<Exclude<Error['statusCode'], undefined>>, true>>
+    }),
+    it('(type-only) should fall back when DetailedError generic is not a client method', async () => {
+      type IsAny<T> = 0 extends 1 & T ? true : false
+      type Error = DetailedError<{ not: 'a client method' }>
+      type _verifyData = Expect<Equal<IsAny<NonNullable<Error['detail']>['data']>, true>>
+      type _verifyStatus = Expect<Equal<Error['statusCode'], number | undefined>>
     }),
   ])
 
