@@ -1,15 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config'
 
-const honoJsx = {
-  oxc: {
-    jsx: {
-      runtime: 'automatic',
-      importSource: './src/jsx',
-    },
-  },
-  extends: true,
-} as const
-
 export default defineConfig({
   test: {
     globals: true,
@@ -35,7 +25,13 @@ export default defineConfig({
     projects: [
       './runtime-tests/*/vitest.config.ts',
       {
-        ...honoJsx,
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx',
+          },
+        },
+        extends: true,
         test: {
           exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.*'],
           include: [
@@ -47,14 +43,26 @@ export default defineConfig({
         },
       },
       {
-        ...honoJsx,
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx',
+          },
+        },
+        extends: true,
         test: {
           include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
           name: 'jsx-runtime-default',
         },
       },
       {
-        ...honoJsx,
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx/dom',
+          },
+        },
+        extends: true,
         test: {
           include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
           name: 'jsx-runtime-dom',
