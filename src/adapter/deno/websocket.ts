@@ -7,7 +7,15 @@ export const upgradeWebSocket: UpgradeWebSocket<WebSocket, Deno.UpgradeWebSocket
       return
     }
 
-    const { response, socket } = Deno.upgradeWebSocket(c.req.raw, options ?? {})
+    // Echo the negotiated subprotocol back to the client. Browsers (e.g. Chrome)
+    // reject the connection when a subprotocol was requested but the response is
+    // missing the `Sec-WebSocket-Protocol` header.
+    const subprotocol = c.req.header('sec-websocket-protocol')?.split(',')[0]?.trim()
+
+    const { response, socket } = Deno.upgradeWebSocket(c.req.raw, {
+      ...(subprotocol ? { protocol: subprotocol } : {}),
+      ...options,
+    })
 
     const wsContext: WSContext<WebSocket> = new WSContext({
       close: (code, reason) => socket.close(code, reason),

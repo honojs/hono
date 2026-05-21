@@ -76,6 +76,51 @@ describe('WebSockets', () => {
       )
     expect(await messagePromise).toBe(data)
   })
+  it('Should pass the first Sec-WebSocket-Protocol value as the protocol option', async () => {
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({}))
+    )
+    const socket = new EventTarget() as WebSocket
+    let passedOptions: Deno.UpgradeWebSocketOptions | undefined
+    Deno.upgradeWebSocket = (_req, options) => {
+      passedOptions = options
+      return {
+        response: new Response(),
+        socket,
+      }
+    }
+    await app.request('/ws', {
+      headers: {
+        upgrade: 'websocket',
+        'sec-websocket-protocol': 'rivet, rivet_target.actor, rivet_actor.19c4f9038947cdcb',
+      },
+    })
+    expect(passedOptions?.protocol).toBe('rivet')
+  })
+
+  it('Should not set the protocol option when Sec-WebSocket-Protocol is absent', async () => {
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({}))
+    )
+    const socket = new EventTarget() as WebSocket
+    let passedOptions: Deno.UpgradeWebSocketOptions | undefined
+    Deno.upgradeWebSocket = (_req, options) => {
+      passedOptions = options
+      return {
+        response: new Response(),
+        socket,
+      }
+    }
+    await app.request('/ws', {
+      headers: {
+        upgrade: 'websocket',
+      },
+    })
+    expect(passedOptions?.protocol).toBeUndefined()
+  })
+
   it('Should call next() when header does not have upgrade', async () => {
     const next = vi.fn()
     await upgradeWebSocket(() => ({}))(
