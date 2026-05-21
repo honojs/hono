@@ -76,6 +76,7 @@ describe('WebSockets', () => {
       )
     expect(await messagePromise).toBe(data)
   })
+
   it('Should pass the first Sec-WebSocket-Protocol value as the protocol option', async () => {
     app.get(
       '/ws',
@@ -119,6 +120,29 @@ describe('WebSockets', () => {
       },
     })
     expect(passedOptions?.protocol).toBeUndefined()
+  })
+
+  it('Should let an explicit protocol option take precedence over the request header', async () => {
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({}), { protocol: 'user-chosen' })
+    )
+    const socket = new EventTarget() as WebSocket
+    let passedOptions: Deno.UpgradeWebSocketOptions | undefined
+    Deno.upgradeWebSocket = (_req, options) => {
+      passedOptions = options
+      return {
+        response: new Response(),
+        socket,
+      }
+    }
+    await app.request('/ws', {
+      headers: {
+        upgrade: 'websocket',
+        'sec-websocket-protocol': 'header-value',
+      },
+    })
+    expect(passedOptions?.protocol).toBe('user-chosen')
   })
 
   it('Should call next() when header does not have upgrade', async () => {
