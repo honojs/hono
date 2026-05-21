@@ -301,6 +301,86 @@ describe('Compress Middleware', () => {
       expect(res.headers.get('Content-Encoding')).toBeNull()
     })
   })
+
+  describe('Accept-Encoding parsing', () => {
+    const buildAppDefault = () => {
+      const app = new Hono()
+      app.use('*', compress())
+      app.get('/large', (c) => {
+        c.header('Content-Type', 'text/plain')
+        c.header('Content-Length', '1024')
+        return c.text('a'.repeat(1024))
+      })
+      return app
+    }
+
+    const buildAppWithEncoding = (encoding: 'gzip' | 'deflate') => {
+      const app = new Hono()
+      app.use('*', compress({ encoding }))
+      app.get('/large', (c) => {
+        c.header('Content-Type', 'text/plain')
+        c.header('Content-Length', '1024')
+        return c.text('a'.repeat(1024))
+      })
+      return app
+    }
+
+    it('should not compress when configured encoding has q=0', async () => {
+      const app = buildAppWithEncoding('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'gzip;q=0' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+    })
+
+    it('should fall back to another encoding when the preferred one has q=0', async () => {
+      const app = buildAppDefault()
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'gzip;q=0, deflate' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('deflate')
+    })
+
+    it('should compress when Accept-Encoding is the wildcard *', async () => {
+      const app = buildAppWithEncoding('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': '*' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+    })
+
+    it('should compress when Accept-Encoding token differs only in case', async () => {
+      const app = buildAppWithEncoding('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'GZIP' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+    })
+
+    it('should not treat x-gzip as gzip', async () => {
+      const app = buildAppWithEncoding('gzip')
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'x-gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+    })
+
+    it('should pick the encoding with the highest q value', async () => {
+      const app = buildAppDefault()
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'gzip;q=0.5, deflate;q=0.9' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('deflate')
+    })
+
+    it('should prefer gzip over deflate when q values are equal', async () => {
+      const app = buildAppDefault()
+      const res = await app.request('/large', {
+        headers: { 'Accept-Encoding': 'gzip;q=0.5, deflate;q=0.5' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+    })
+  })
 })
 
 async function decompressResponse(res: Response): Promise<string> {
