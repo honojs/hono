@@ -4,14 +4,38 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
+import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 
 const ENCODING_TYPES = ['gzip', 'deflate'] as const
+type Encoding = (typeof ENCODING_TYPES)[number]
 const cacheControlNoTransformRegExp = /(?:^|,)\s*?no-transform\s*?(?:,|$)/i
 
 interface CompressionOptions {
-  encoding?: (typeof ENCODING_TYPES)[number]
+  encoding?: Encoding
   threshold?: number
+}
+
+const selectEncoding = (
+  header: string | undefined,
+  candidates: readonly Encoding[]
+): Encoding | undefined => {
+  if (header === undefined) {
+    return undefined
+  }
+  const accepts = parseAccept(header)
+  const wildcardQ = accepts.find((a) => a.type === '*')?.q
+  let best: { encoding: Encoding; q: number } | undefined
+  for (const enc of candidates) {
+    const explicit = accepts.find((a) => a.type.toLowerCase() === enc)
+    const q = explicit ? explicit.q : (wildcardQ ?? 0)
+    if (q === 1) {
+      return enc
+    } else if (q > 0 && (!best || q > best.q)) {
+      best = { encoding: enc, q }
+    }
+  }
+  return best?.encoding
 }
 
 /**
@@ -33,6 +57,7 @@ interface CompressionOptions {
  */
 export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   const threshold = options?.threshold ?? 1024
+  const candidates: readonly Encoding[] = options?.encoding ? [options.encoding] : ENCODING_TYPES
 
   return async function compress(ctx, next) {
     await next()
@@ -52,8 +77,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     }
 
     const accepted = ctx.req.header('Accept-Encoding')
-    const encoding =
-      options?.encoding ?? ENCODING_TYPES.find((encoding) => accepted?.includes(encoding))
+    const encoding = selectEncoding(accepted, candidates)
     if (!encoding || !ctx.res.body) {
       return
     }
