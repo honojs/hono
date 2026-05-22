@@ -3,7 +3,6 @@ import { configDefaults, defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
-    setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
@@ -26,9 +25,11 @@ export default defineConfig({
     projects: [
       './runtime-tests/*/vitest.config.ts',
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx',
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx',
+          },
         },
         extends: true,
         test: {
@@ -42,9 +43,11 @@ export default defineConfig({
         },
       },
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx',
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx',
+          },
         },
         extends: true,
         test: {
@@ -53,9 +56,11 @@ export default defineConfig({
         },
       },
       {
-        esbuild: {
-          jsx: 'automatic',
-          jsxImportSource: './src/jsx/dom',
+        oxc: {
+          jsx: {
+            runtime: 'automatic',
+            importSource: './src/jsx/dom',
+          },
         },
         extends: true,
         test: {
