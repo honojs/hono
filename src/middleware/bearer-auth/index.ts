@@ -121,9 +121,11 @@ export const bearerAuth = <E extends Env = Env>(
 
   const throwHTTPException = async (
     c: Context,
-    status: ContentfulStatusCode,
-    wwwAuthenticateHeader: string | object | MessageFunction,
-    messageOption: string | object | MessageFunction
+    { status, wwwAuthenticateHeader, message }: {
+      status: ContentfulStatusCode
+      wwwAuthenticateHeader: string | object | MessageFunction
+      message: string | object | MessageFunction
+    }
   ): Promise<Response> => {
     const wwwAuthenticateHeaderValue: string | object =
       typeof wwwAuthenticateHeader === 'function'
@@ -138,8 +140,7 @@ export const bearerAuth = <E extends Env = Env>(
               .map(([key, value]) => `${key}="${value}"`)
               .join(',')}`,
     }
-    const responseMessage =
-      typeof messageOption === 'function' ? await messageOption(c) : messageOption
+    const responseMessage = typeof message === 'function' ? await message(c) : message
     const res =
       typeof responseMessage === 'string'
         ? new Response(responseMessage, { status, headers })
@@ -157,15 +158,16 @@ export const bearerAuth = <E extends Env = Env>(
     const headerToken = c.req.header(options.headerName || HEADER)
     if (!headerToken) {
       // No Authorization header
-      await throwHTTPException(
-        c,
-        401,
-        options.noAuthenticationHeader?.wwwAuthenticateHeader ||
+      await throwHTTPException(c, {
+        status: 401,
+        wwwAuthenticateHeader:
+          options.noAuthenticationHeader?.wwwAuthenticateHeader ||
           `${wwwAuthenticatePrefix}realm="${realm}"`,
-        options.noAuthenticationHeader?.message ||
+        message:
+          options.noAuthenticationHeader?.message ||
           options.noAuthenticationHeaderMessage ||
-          'Unauthorized'
-      )
+          'Unauthorized',
+      })
     } else {
       let tokenValue: string | undefined
 
@@ -181,15 +183,16 @@ export const bearerAuth = <E extends Env = Env>(
 
       if (!tokenValue || !tokenRegexp.test(tokenValue)) {
         // Invalid Request
-        await throwHTTPException(
-          c,
-          400,
-          options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
+        await throwHTTPException(c, {
+          status: 400,
+          wwwAuthenticateHeader:
+            options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
             `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeader?.message ||
+          message:
+            options.invalidAuthenticationHeader?.message ||
             options.invalidAuthenticationHeaderMessage ||
-            'Bad Request'
-        )
+            'Bad Request',
+        })
       } else {
         let equal = false
         if ('verifyToken' in options) {
@@ -206,13 +209,13 @@ export const bearerAuth = <E extends Env = Env>(
         }
         if (!equal) {
           // Invalid Token
-          await throwHTTPException(
-            c,
-            401,
-            options.invalidToken?.wwwAuthenticateHeader ||
+          await throwHTTPException(c, {
+            status: 401,
+            wwwAuthenticateHeader:
+              options.invalidToken?.wwwAuthenticateHeader ||
               `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
-          )
+            message: options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized',
+          })
         }
       }
     }
