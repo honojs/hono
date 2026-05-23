@@ -43,6 +43,17 @@ describe('getFilePathWithoutDefaultDocument', () => {
     expect(
       getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo../bar.txt') })
     ).toBe('..foo../bar.txt')
+
+    // Multiple path segments: every backslash must be normalized, not just the first
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('foo/bar/baz.txt') })
+    ).toBe('foo/bar/baz.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({
+        filename: slashToBackslash('foo/bar/baz.txt'),
+        root: 'assets',
+      })
+    ).toBe('assets/foo/bar/baz.txt')
   })
 })
 
