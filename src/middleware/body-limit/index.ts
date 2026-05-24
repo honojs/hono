@@ -88,6 +88,9 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       }
       size += value.length
       if (size > maxSize) {
+        // Release the reader lock and signal the source to stop sending the
+        // (now-rejected) body, instead of abandoning a locked, half-read stream.
+        await rawReader.cancel()
         return onError(c)
       }
       chunks.push(value)

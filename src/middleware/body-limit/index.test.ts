@@ -91,6 +91,7 @@ describe('Body Limit Middleware', () => {
         const stream = new ReadableStream()
         vi.spyOn(stream, 'getReader').mockReturnValue({
           read: readSpy,
+          cancel: vi.fn().mockResolvedValue(undefined),
         } as unknown as ReadableStreamDefaultReader)
         const res = await app.request('/body-limit-15byte', buildRequestInit({ body: stream }))
 
@@ -166,6 +167,32 @@ describe('Body Limit Middleware', () => {
 
       // Should reject based on actual chunked content size, not Content-Length
       expect(res.status).toBe(413)
+    })
+
+    it('should cancel the underlying reader when the chunked body exceeds the limit', async () => {
+      let cancelled = false
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('12345'))
+          controller.enqueue(new TextEncoder().encode('67890ABCDE')) // size now 15 > maxSize 10
+          // deliberately left open — a real oversized upload keeps streaming
+        },
+        cancel() {
+          cancelled = true
+        },
+      })
+
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: { 'Transfer-Encoding': 'chunked' },
+        body: stream,
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(413)
+      // Without cancelling, the reader keeps the stream locked and the source is never
+      // told to stop sending the (rejected) body.
+      expect(cancelled).toBe(true)
     })
 
     it('should handle only Content-Length header correctly', async () => {
