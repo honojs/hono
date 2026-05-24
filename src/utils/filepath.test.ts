@@ -44,6 +44,16 @@ describe('getFilePathWithoutDefaultDocument', () => {
       getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo../bar.txt') })
     ).toBe('..foo../bar.txt')
   })
+
+  it('Should normalize every backslash to a slash, not only the first one', async () => {
+    expect(getFilePathWithoutDefaultDocument({ filename: 'foo\\bar\\baz.txt' })).toBe(
+      'foo/bar/baz.txt'
+    )
+    expect(getFilePathWithoutDefaultDocument({ filename: 'a\\b\\c\\d.txt' })).toBe('a/b/c/d.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: 'dir\\sub\\file.txt', root: 'root' })
+    ).toBe('root/dir/sub/file.txt')
+  })
 })
 
 describe('getFilePath', () => {
