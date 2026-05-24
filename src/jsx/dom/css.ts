@@ -105,7 +105,7 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
       addedStyles.add(className)
       ;(className.startsWith(PSEUDO_GLOBAL_SELECTOR)
         ? splitRule(styleString)
-        : [`${className[0] === '@' ? '' : '.'}${className}{${styleString}}`]
+        : [`${className.startsWith('@') ? '' : '.'}${className}{${styleString}}`]
       ).forEach((rule) => {
         sheet.insertRule(rule, sheet.cssRules.length)
       })

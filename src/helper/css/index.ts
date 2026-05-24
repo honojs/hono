@@ -98,7 +98,7 @@ export const createCssContext = ({
         added[className] = true
         stylesStr += className.startsWith(PSEUDO_GLOBAL_SELECTOR)
           ? toAdd[className]
-          : `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
+          : `${className.startsWith('@') ? '' : '.'}${className}{${toAdd[className]}}`
       })
       contextMap.set(context, [{}, added])
 

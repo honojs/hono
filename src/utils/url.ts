@@ -63,7 +63,7 @@ export const getPattern = (label: string, next?: string): Pattern | null => {
     if (!patternCache[cacheKey]) {
       if (match[2]) {
         patternCache[cacheKey] =
-          next && next[0] !== ':' && next[0] !== '*'
+          next && !next.startsWith(':') && !next.startsWith('*')
             ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
             : [label, match[1], new RegExp(`^${match[2]}$`)]
       } else {
@@ -163,8 +163,8 @@ export const mergePath: (...paths: string[]) => string = (
   if (rest.length) {
     sub = mergePath(sub as string, ...rest)
   }
-  return `${base?.[0] === '/' ? '' : '/'}${base}${
-    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.[0] === '/' ? sub.slice(1) : sub}`
+  return `${base?.startsWith('/') ? '' : '/'}${base}${
+    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.startsWith('/') ? sub.slice(1) : sub}`
   }`
 }
 

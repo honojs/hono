@@ -51,7 +51,7 @@ export const joinPaths = (...paths: string[]): string => {
   paths = paths.map(normalizePath)
   const resultPaths: string[] = []
   handleSegments(paths.join('/').split('/'), resultPaths)
-  return (paths[0][0] === '/' ? '/' : '') + resultPaths.join('/')
+  return (paths[0].startsWith('/') ? '/' : '') + resultPaths.join('/')
 }
 
 interface FilterStaticGenerateRouteData {

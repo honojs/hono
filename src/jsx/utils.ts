@@ -172,7 +172,7 @@ export const styleObjectForEach = (
 ): void => {
   for (const [k, v] of Object.entries(style)) {
     const key =
-      k[0] === '-' || !/[A-Z]/.test(k)
+      k.startsWith('-') || !/[A-Z]/.test(k)
         ? k // a CSS variable or a lowercase only property
         : k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`) // a camelCase property. convert to kebab-case
     if (!isValidStylePropertyName(key)) {
