@@ -38,17 +38,23 @@ export const createPool = ({
     }
     const marker = {}
     pool.add(marker)
-    const result = await fn()
-    if (interval) {
-      setTimeout(() => pool.delete(marker), interval)
-    } else {
-      pool.delete(marker)
-    }
-    if (resolve) {
-      resolve(result)
-      return promise as Promise<T>
-    } else {
-      return result
+    try {
+      const result = await fn()
+      if (resolve) {
+        resolve(result)
+        return promise as Promise<T>
+      } else {
+        return result
+      }
+    } finally {
+      // Release the slot even when `fn` throws. Without this, a rejected task
+      // leaks its marker permanently; once `concurrency` tasks have thrown the
+      // pool is full forever and every later task queues via setTimeout endlessly.
+      if (interval) {
+        setTimeout(() => pool.delete(marker), interval)
+      } else {
+        pool.delete(marker)
+      }
     }
   }
   return { run }

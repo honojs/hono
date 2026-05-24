@@ -37,6 +37,23 @@ describe('concurrent execution', () => {
     expect(results).toEqual(expectedResults)
   })
 
+  test('releases the slot when a task rejects (no permanent leak)', async () => {
+    const pool = createPool({ concurrency: 1 })
+
+    // A rejected task must still free its pool slot.
+    await expect(pool.run(() => Promise.reject(new Error('boom')))).rejects.toThrow('boom')
+
+    // Before the fix the slot was never released, so this second task queued forever.
+    // Race against a timeout so the failure is a clean assertion, not a hung suite.
+    const result = await Promise.race([
+      pool.run(() => Promise.resolve('ok')),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('pool slot leaked — task never ran')), 1000)
+      ),
+    ])
+    expect(result).toBe('ok')
+  })
+
   describe('with interval', () => {
     test.each`
       concurrency | interval
