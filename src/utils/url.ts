@@ -164,7 +164,9 @@ export const mergePath: (...paths: string[]) => string = (
     sub = mergePath(sub as string, ...rest)
   }
   return `${base?.startsWith('/') ? '' : '/'}${base}${
-    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.startsWith('/') ? sub.slice(1) : sub}`
+    sub === '/'
+      ? ''
+      : `${base?.at(-1) === '/' ? '' : '/'}${sub?.startsWith('/') ? sub.slice(1) : sub}`
   }`
 }
 
