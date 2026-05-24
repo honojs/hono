@@ -355,7 +355,7 @@ export const convertIPv6BinaryToString = (ipV6: bigint): string => {
       maxZeroEnd = 8
     }
   }
-  // RFC 5952 4.2.2: "::" MUST NOT be used to shorten just one 16-bit 0 field.
+  // RFC 5952 4.2.2: compress only zero runs of at least two 16-bit fields.
   if (maxZeroStart !== -1 && maxZeroEnd - maxZeroStart > 1) {
     sections.splice(maxZeroStart, maxZeroEnd - maxZeroStart, ':')
   }
