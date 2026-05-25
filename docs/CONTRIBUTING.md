@@ -22,10 +22,7 @@ Hono is tested well, polished by the contributors, and used by many developers. 
 
 You may use AI to contribute, but it must never waste a maintainer's time or make their work unpleasant.
 
-To enforce this, and regardless of whether AI was actually used, a maintainer may:
-
-- Close your PR without notice and block your account.
-- Close a non-compliant account's PR and use its contents freely. That account retains no rights to them.
+To enforce this, and regardless of whether AI was actually used, a maintainer may close your PR without notice and block your account.
 
 ## Installing dependencies
 
