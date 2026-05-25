@@ -245,6 +245,50 @@ describe('Compress Middleware', () => {
     })
   })
 
+  describe('contentTypeFilter', () => {
+    describe('RegExp', () => {
+      const app = new Hono()
+      app.use('*', compress({ contentTypeFilter: /^application\/json/, threshold: 0 }))
+      app.get('/json', (c) => c.json({ data: 'a'.repeat(1024) }))
+      app.get('/text', (c) => c.text('a'.repeat(1024)))
+
+      it('should compress when Content-Type matches', async () => {
+        const res = await app.request('/json', {
+          headers: { 'Accept-Encoding': 'gzip' },
+        })
+        expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      })
+
+      it('should not compress when Content-Type does not match', async () => {
+        const res = await app.request('/text', {
+          headers: { 'Accept-Encoding': 'gzip' },
+        })
+        expect(res.headers.get('Content-Encoding')).toBeNull()
+      })
+    })
+
+    describe('function', () => {
+      const app = new Hono()
+      app.use('*', compress({ contentTypeFilter: (type) => type.includes('json'), threshold: 0 }))
+      app.get('/json', (c) => c.json({ data: 'a'.repeat(1024) }))
+      app.get('/text', (c) => c.text('a'.repeat(1024)))
+
+      it('should compress when Content-Type matches', async () => {
+        const res = await app.request('/json', {
+          headers: { 'Accept-Encoding': 'gzip' },
+        })
+        expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      })
+
+      it('should not compress when Content-Type does not match', async () => {
+        const res = await app.request('/text', {
+          headers: { 'Accept-Encoding': 'gzip' },
+        })
+        expect(res.headers.get('Content-Encoding')).toBeNull()
+      })
+    })
+  })
+
   describe('Edge Cases', () => {
     it('should not compress responses with Cache-Control: no-transform', async () => {
       await testCompression('/no-transform', 'gzip', null)
