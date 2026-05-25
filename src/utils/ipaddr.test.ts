@@ -125,6 +125,10 @@ describe('convertIPv6ToString', () => {
     ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}
     ${'::ffff:127.0.0.1'}                        | ${'::ffff:127.0.0.1'}
     ${'fe80::1%eth0'}                            | ${'fe80::1'}
+    ${'1:0:2:3:4:5:6:7'}                         | ${'1:0:2:3:4:5:6:7'}
+    ${'0:1:2:3:4:5:6:7'}                         | ${'0:1:2:3:4:5:6:7'}
+    ${'1:2:3:4:5:6:7:0'}                         | ${'1:2:3:4:5:6:7:0'}
+    ${'1:0:0:2:3:4:5:6'}                         | ${'1::2:3:4:5:6'}
   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
     expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)
   })
