@@ -26,7 +26,10 @@ export const expandIPv6 = (ipV6: string): string => {
     if (node !== '') {
       sections[i] = node.padStart(4, '0')
     } else {
-      sections[i + 1] === '' && sections.splice(i + 1, 1)
+      // Keep a single empty slot for `::` zero expansion.
+      while (sections[i + 1] === '') {
+        sections.splice(i + 1, 1)
+      }
       sections[i] = new Array(8 - sections.length + 1).fill('0000').join(':')
     }
   }
