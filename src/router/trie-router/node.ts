@@ -54,7 +54,7 @@ export class Node<T> {
       const p: string = parts[i]
       const nextP = parts[i + 1]
       const pattern = getPattern(p, nextP)
-      const key = Array.isArray(pattern) ? pattern[0] : p
+      const key = pattern === '*' ? '*' : Array.isArray(pattern) ? pattern[0] : p
 
       if (key in curNode.#children) {
         curNode = curNode.#children[key]

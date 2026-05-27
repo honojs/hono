@@ -89,6 +89,16 @@ describe('url', () => {
       const res = getPattern('*', 'next')
       expect(res).toBe('*')
     })
+
+    it('double wildcard', () => {
+      const res = getPattern('**')
+      expect(res).toBe('*')
+    })
+
+    it('double wildcard with next', () => {
+      const res = getPattern('**', 'next')
+      expect(res).toBe('*')
+    })
   })
 
   describe('getPath', () => {

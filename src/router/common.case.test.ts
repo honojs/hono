@@ -774,6 +774,31 @@ export const runTest = ({
       })
     })
 
+    describe('Double wildcard **', () => {
+      beforeEach(() => {
+        router.add('ALL', '/auth/**', 'auth')
+        router.add('GET', '/other', 'other')
+      })
+
+      it('GET /auth/test - should match **', () => {
+        const res = match('GET', '/auth/test')
+        expect(res.length).toBeGreaterThanOrEqual(1)
+        expect(res[0].handler).toEqual('auth')
+      })
+
+      it('GET /auth/deep/path - should match **', () => {
+        const res = match('GET', '/auth/deep/path')
+        expect(res.length).toBeGreaterThanOrEqual(1)
+        expect(res[0].handler).toEqual('auth')
+      })
+
+      it('GET /other - non-wildcard route still works', () => {
+        const res = match('GET', '/other')
+        expect(res.length).toBeGreaterThanOrEqual(1)
+        expect(res[0].handler).toEqual('other')
+      })
+    })
+
     describe('Capture Group', () => {
       describe('Simple capturing group', () => {
         beforeEach(() => {
