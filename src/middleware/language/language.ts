@@ -165,14 +165,10 @@ export function detectFromHeader(c: Context, options: DetectorOptions): string |
  * Detects language from URL path
  */
 export function detectFromPath(c: Context, options: DetectorOptions): string | undefined {
-  try {
-    const url = new URL(c.req.url)
-    const pathSegments = url.pathname.split('/').filter(Boolean)
-    const langSegment = pathSegments[options.lookupFromPathIndex]
-    return normalizeLanguage(langSegment, options)
-  } catch {
-    return undefined
-  }
+  const url = new URL(c.req.url)
+  const pathSegments = url.pathname.split('/').filter(Boolean)
+  const langSegment = pathSegments[options.lookupFromPathIndex]
+  return normalizeLanguage(langSegment, options)
 }
 
 /**
