@@ -231,9 +231,6 @@ const detectLanguage = (c: Context, options: DetectorOptions): string => {
 
   for (const detectorName of options.order) {
     const detector = detectors[detectorName]
-    if (!detector) {
-      continue
-    }
 
     try {
       detectedLang = detector(c, options)
