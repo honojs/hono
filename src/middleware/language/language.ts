@@ -126,24 +126,16 @@ export const normalizeLanguage = (
  * Detects language from query parameter
  */
 export const detectFromQuery = (c: Context, options: DetectorOptions): string | undefined => {
-  try {
-    const query = c.req.query(options.lookupQueryString)
-    return normalizeLanguage(query, options)
-  } catch {
-    return undefined
-  }
+  const query = c.req.query(options.lookupQueryString)
+  return normalizeLanguage(query, options)
 }
 
 /**
  * Detects language from cookie
  */
 export const detectFromCookie = (c: Context, options: DetectorOptions): string | undefined => {
-  try {
-    const cookie = getCookie(c, options.lookupCookie)
-    return normalizeLanguage(cookie, options)
-  } catch {
-    return undefined
-  }
+  const cookie = getCookie(c, options.lookupCookie)
+  return normalizeLanguage(cookie, options)
 }
 
 /**
