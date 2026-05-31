@@ -105,7 +105,7 @@ export const bearerAuth = <E extends Env = Env>(
   options: BearerAuthOptions<E>
 ): MiddlewareHandler<E> => {
   if (!('token' in options || 'verifyToken' in options)) {
-    throw new Error('bearer auth middleware requires options for "token"')
+    throw new Error('bearer auth middleware requires options for "token" or "verifyToken"')
   }
   if (!options.realm) {
     options.realm = ''
