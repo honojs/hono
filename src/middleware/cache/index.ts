@@ -62,12 +62,12 @@ const shouldSkipCache = (
  * ```
  */
 export const cache = (options: {
-  cacheName: string | ((c: Context) => Promise<string> | string)
+  cacheName: string | ((c: Context) => string | Promise<string>)
   wait?: boolean
   cacheControl?: string
   vary?: string | string[]
-  keyGenerator?: (c: Context) => Promise<string> | string
-  cacheableStatusCodes?: StatusCode[]
+  keyGenerator?: (c: Context) => string | Promise<string>
+  cacheableStatusCodes?: number[]
   onCacheNotAvailable?: (() => void) | false
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
@@ -76,7 +76,7 @@ export const cache = (options: {
     } else if (options.onCacheNotAvailable) {
       options.onCacheNotAvailable()
     } else {
-      console.log('Cache Middleware is not enabled because caches is not defined.')
+      console.warn('Cache Middleware is not enabled because caches is not defined.')
     }
     return async (_c, next) => await next()
   }
