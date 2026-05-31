@@ -31,7 +31,10 @@ export const compose = <E extends Env = Env>(
      */
     async function dispatch(i: number): Promise<Context> {
       if (i <= index) {
-        throw new Error('next() called multiple times')
+        throw new Error(
+          `next() called multiple times in middleware at index ${index}. ` +
+          'Each middleware should call next() exactly once, or not at all.'
+        )
       }
       index = i
 
