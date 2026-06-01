@@ -1007,3 +1007,12 @@ describe('Bearer Auth types', () => {
     expectTypeOf(middleware).toEqualTypeOf<MiddlewareHandler<TestEnv>>()
   })
 })
+
+describe('Bearer Auth options validation', () => {
+  it('Should throw an error mentioning both "token" and "verifyToken" when neither is provided', () => {
+    expect(() => {
+      // @ts-expect-error testing runtime guard with no valid options
+      bearerAuth({})
+    }).toThrow('bearer auth middleware requires options for "token" or "verifyToken"')
+  })
+})
