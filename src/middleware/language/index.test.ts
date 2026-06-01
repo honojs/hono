@@ -166,6 +166,23 @@ describe('languageDetector', () => {
       })
       expect(await res.text()).toBe('en')
     })
+
+    it('should handle invalid header lookup key gracefully', async () => {
+      const app = createTestApp({
+        order: ['header'],
+        lookupFromHeaderKey: 'accept\nlanguage',
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr',
+        },
+      })
+
+      expect(await res.text()).toBe('en')
+    })
   })
 
   describe('Path Detection', () => {
@@ -304,6 +321,22 @@ describe('languageDetector', () => {
       const res = await app.request('/')
       expect(await res.text()).toBe('en')
     })
+
+    it('should handle errors in convertDetectedLanguage function', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        convertDetectedLanguage: (lang: string) => {
+          if (lang === 'fr') {
+            throw new Error('Simulated error in convertDetectedLanguage')
+          }
+          return lang
+        },
+      })
+
+      const res = await app.request('/?lang=fr')
+      expect(await res.text()).toBe('en')
+    })
   })
 
   describe('Configuration Validation', () => {
@@ -330,6 +363,26 @@ describe('languageDetector', () => {
           supportedLanguages: [],
         })
       }).toThrow()
+    })
+
+    it('should handle invalid order option', async () => {
+      expect(() => {
+        createTestApp({
+          order: ['invalidDetector' as any],
+        })
+      }).toThrow()
+    })
+
+    it('should handle early return for caches', async () => {
+      const app = createTestApp({
+        caches: ['test'],
+        supportedLanguages: ['en'],
+      })
+
+      const res = await app.request('/?lang=en')
+
+      expect(await res.text()).toBe('en')
+      expect(res.headers.get('set-cookie')).toBeNull()
     })
   })
 
@@ -375,6 +428,44 @@ describe('languageDetector', () => {
       )
 
       consoleSpy.mockRestore()
+    })
+
+    it('should handle cookie cache errors in debug mode', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error')
+
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        caches: ['cookie'],
+        lookupCookie: 'bad cookie',
+        debug: true,
+      })
+
+      const res = await app.request('/?lang=fr')
+
+      expect(await res.text()).toBe('fr')
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to cache language:', expect.any(Error))
+
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('should silently handle cookie cache errors when debug mode is disabled', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        caches: ['cookie'],
+        lookupCookie: 'bad cookie',
+        debug: false,
+      })
+
+      const res = await app.request('/?lang=fr')
+
+      expect(await res.text()).toBe('fr')
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
     })
   })
 })
