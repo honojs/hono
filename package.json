@@ -506,8 +506,17 @@
       "jsx/dom/server": [
         "./dist/types/jsx/dom/server.d.ts"
       ],
+      "jsx/dom/jsx-dev-runtime": [
+        "./dist/types/jsx/dom/jsx-dev-runtime.d.ts"
+      ],
+      "jsx/dom/jsx-runtime": [
+        "./dist/types/jsx/dom/jsx-runtime.d.ts"
+      ],
       "jwt": [
         "./dist/types/middleware/jwt"
+      ],
+      "jwk": [
+        "./dist/types/middleware/jwk"
       ],
       "timeout": [
         "./dist/types/middleware/timeout"
@@ -552,19 +561,19 @@
         "./dist/types/router.d.ts"
       ],
       "router/reg-exp-router": [
-        "./dist/types/router/reg-exp-router/router.d.ts"
+        "./dist/types/router/reg-exp-router"
       ],
       "router/smart-router": [
-        "./dist/types/router/smart-router/router.d.ts"
+        "./dist/types/router/smart-router"
       ],
       "router/trie-router": [
-        "./dist/types/router/trie-router/router.d.ts"
+        "./dist/types/router/trie-router"
       ],
       "router/pattern-router": [
-        "./dist/types/router/pattern-router/router.d.ts"
+        "./dist/types/router/pattern-router"
       ],
       "router/linear-router": [
-        "./dist/types/router/linear-router/router.d.ts"
+        "./dist/types/router/linear-router"
       ],
       "utils/jwt": [
         "./dist/types/utils/jwt/index.d.ts"
@@ -596,14 +605,14 @@
       "bun": [
         "./dist/types/adapter/bun"
       ],
-      "nextjs": [
-        "./dist/types/adapter/nextjs"
-      ],
       "aws-lambda": [
         "./dist/types/adapter/aws-lambda"
       ],
       "vercel": [
         "./dist/types/adapter/vercel"
+      ],
+      "netlify": [
+        "./dist/types/adapter/netlify"
       ],
       "lambda-edge": [
         "./dist/types/adapter/lambda-edge"
