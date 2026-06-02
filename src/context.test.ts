@@ -436,6 +436,19 @@ describe('Context header', () => {
     expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
   })
 
+  it('Should keep prepared cookies when assigning a raw Response to c.res', () => {
+    setCookie(c, 'foo', 'bar', { path: '/' })
+    c.res = new Response('ok')
+    expect(c.res.headers.getSetCookie()).toEqual(['foo=bar; Path=/'])
+  })
+
+  it('Should not duplicate cookies when assigning a raw Response after reading c.res', () => {
+    setCookie(c, 'foo', 'bar', { path: '/' })
+    c.res
+    c.res = new Response('ok')
+    expect(c.res.headers.getSetCookie()).toEqual(['foo=bar; Path=/'])
+  })
+
   it('Should set set-cookie header values if c.res is already defined', () => {
     c.res = new Response(null, {
       headers: [
