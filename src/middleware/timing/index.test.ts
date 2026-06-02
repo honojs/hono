@@ -103,6 +103,65 @@ describe('Server-Timing API', () => {
     consoleWarnSpy.mockRestore()
   })
 
+  describe('Should handle timing options', async () => {
+    it('Should handle autoEnd option', async () => {
+      const autoEndApp = new Hono()
+
+      autoEndApp.use('*', timing())
+      autoEndApp.get('/', (c) => {
+        startTime(c, 'test')
+        return c.text('/')
+      })
+
+      const res = await autoEndApp.request('/')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('server-timing')).toContain('test;dur=')
+
+      const disabledAutoEndApp = new Hono()
+
+      disabledAutoEndApp.use('*', timing({ autoEnd: false }))
+      disabledAutoEndApp.get('/', (c) => {
+        startTime(c, 'test')
+        return c.text('/')
+      })
+
+      const disabledRes = await disabledAutoEndApp.request('/')
+
+      expect(disabledRes.status).toBe(200)
+      expect(disabledRes.headers.get('server-timing')).not.toContain('test;dur=')
+    })
+
+    it('Should use enabled function return value', async () => {
+      const enabledApp = new Hono()
+      const enabled = vi.fn(() => false)
+
+      enabledApp.use('*', timing({ enabled }))
+      enabledApp.get('/', (c) => c.text('/'))
+
+      const res = await enabledApp.request('/')
+
+      expect(res.status).toBe(200)
+      expect(enabled).toHaveBeenCalled()
+      expect(res.headers.has('server-timing')).toBeFalsy()
+    })
+
+    it('Should handle total false and value-less metrics without description', async () => {
+      const metricApp = new Hono()
+
+      metricApp.use('*', timing({ total: false }))
+      metricApp.get('/', (c) => {
+        setMetric(c, 'test')
+        return c.text('/')
+      })
+
+      const res = await metricApp.request('/')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('server-timing')).toBe('test')
+    })
+  })
+
   describe('Should handle crossOrigin setting', async () => {
     it('Should do nothing when crossOrigin is falsy', async () => {
       const crossOriginApp = new Hono()
@@ -185,6 +244,67 @@ describe('Server-Timing API', () => {
       expect(res.headers.has('server-timing')).toBeTruthy()
       expect(res.headers.has('timing-allow-origin')).toBeTruthy()
       expect(res.headers.get('timing-allow-origin')).toBe('https://example.com')
+    })
+
+    it("Should use Date.now as backup if performance API isn't available", async () => {
+      const originalPerformance = globalThis.performance
+      // @ts-expect-error disable performance API for testing
+      delete globalThis.performance
+      const DateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(123456789)
+
+      const app = new Hono().use(timing()).get('/', (c) => {
+        startTime(c, 'test')
+        endTime(c, 'test')
+        return c.text('hello')
+      })
+
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+
+      expect(DateNowSpy).toHaveBeenCalled()
+
+      DateNowSpy.mockRestore()
+      globalThis.performance = originalPerformance
+    })
+  })
+
+  describe('Configuration validation', async () => {
+    it('Should silently warn when no timing metrics are available', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const app = new Hono().get('/', (c) => {
+        setMetric(c, 'test', 123)
+        startTime(c, 'test')
+        endTime(c, 'test')
+        return c.text('hello')
+      })
+
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+
+      expect(consoleWarnSpy).toHaveBeenNthCalledWith(
+        2,
+        'Metrics not initialized! Please add the `timing()` middleware to this route!'
+      )
+
+      consoleWarnSpy.mockRestore()
+    })
+
+    it('Should silently warn when trying to end a non-existent timer', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const app = new Hono().use(timing()).get('/', (c) => {
+        setMetric(c, 'region', 'europe-west3')
+        endTime(c, 'nonExistentTimer')
+        return c.text('hello')
+      })
+
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Timer "nonExistentTimer" does not exist!')
+
+      consoleWarnSpy.mockRestore()
     })
   })
 })

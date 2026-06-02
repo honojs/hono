@@ -102,7 +102,9 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {
     }
 
     if (options.autoEnd) {
-      timers.forEach((_, key) => endTime(c, key))
+      timers.forEach((_, key) => {
+        endTime(c, key)
+      })
     }
 
     const enabled = typeof options.enabled === 'function' ? options.enabled(c) : options.enabled
