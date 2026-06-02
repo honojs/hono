@@ -28,6 +28,10 @@ describe('expandIPv6', () => {
     expect(expandIPv6('2001:0:0:db8::1')).toBe('2001:0000:0000:0db8:0000:0000:0000:0001')
     expect(expandIPv6('::ffff:127.0.0.1')).toBe('0000:0000:0000:0000:0000:ffff:7f00:0001')
   })
+
+  it('Should expand the unspecified address "::" to eight zero groups', () => {
+    expect(expandIPv6('::')).toBe('0000:0000:0000:0000:0000:0000:0000:0000')
+  })
 })
 describe('distinctRemoteAddr', () => {
   it('Should result be valid', () => {
