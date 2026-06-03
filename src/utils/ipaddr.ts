@@ -325,6 +325,12 @@ export const convertIPv4MappedIPv6ToIPv4 = (ipv6binary: bigint): bigint => ipv6b
  * @return normalized IPv6 Address in string
  */
 export const convertIPv6BinaryToString = (ipV6: bigint): string => {
+  if (ipV6 === 0n) {
+    // The unspecified address compresses every group, which the generic
+    // logic below would render as a single ":". Handle it explicitly.
+    return '::'
+  }
+
   if (isIPv4MappedIPv6(ipV6)) {
     return `::ffff:${convertIPv4BinaryToString(convertIPv4MappedIPv6ToIPv4(ipV6))}`
   }

@@ -136,4 +136,11 @@ describe('convertIPv6ToString', () => {
   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
     expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)
   })
+
+  it('Should compress the unspecified address (all zero groups) to "::"', () => {
+    expect(convertIPv6BinaryToString(0n)).toBe('::')
+    expect(convertIPv6BinaryToString(convertIPv6ToBinary('::'))).toBe('::')
+    // The output must round-trip back to the same binary value.
+    expect(convertIPv6ToBinary(convertIPv6BinaryToString(0n))).toBe(0n)
+  })
 })
