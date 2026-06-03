@@ -428,7 +428,7 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   props: Partial<Props>,
   ...children: Child[]
 ): T => {
-  let childrenToClone
+  let childrenToClone: Child[]
   if (children.length > 0) {
     childrenToClone = children
   } else {
