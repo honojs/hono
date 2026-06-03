@@ -69,13 +69,13 @@ describe('cloneElement', () => {
   })
 
   it('should return null when ref is not provided', () => {
-    const element = <div>Hello</div> as unknown as JSXNode
+    const element = (<div>Hello</div>) as unknown as JSXNode
     expect(element.ref).toBeNull()
   })
 
   it('should ignore style with null', () => {
-    const element = <div style={{ color: null }}>Hello</div> as unknown as JSXNode
-    expect((element).toString()).toBe('<div style="">Hello</div>')
+    const element = (<div style={{ color: null }}>Hello</div>) as unknown as JSXNode
+    expect(element.toString()).toBe('<div style="">Hello</div>')
   })
 
   it('should clone an element with new children', () => {
