@@ -140,8 +140,6 @@ export type RequestHeader =
   | 'Max-Forwards'
   | 'Memento-Datetime'
   | 'Meter'
-  | 'Method-Check'
-  | 'Method-Check-Expires'
   | 'MIME-Version'
   | 'Negotiate'
   | 'NEL'

@@ -95,8 +95,6 @@ export type SimplifyDeepArray<T> = T extends any[]
   ? { [E in keyof T]: SimplifyDeepArray<T[E]> }
   : Simplify<T>
 
-export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
-
 export type RequiredKeysOf<BaseType extends object> = Exclude<
   {
     [Key in keyof BaseType]: BaseType extends Record<Key, BaseType[Key]> ? Key : never

@@ -439,10 +439,15 @@ class Hono<
 
       return res instanceof Promise
         ? res
-            .then(
-              (resolved: Response | undefined) =>
-                resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
-            )
+            .then((resolved: Response | undefined) => {
+              if (resolved) {
+                return resolved
+              }
+              if (c.finalized) {
+                return c.res
+              }
+              return this.#notFoundHandler(c)
+            })
             .catch((err: Error) => this.#handleError(err, c))
         : (res ?? this.#notFoundHandler(c))
     }
