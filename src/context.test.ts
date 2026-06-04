@@ -70,6 +70,14 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() throws for top-level values that are not JSON serializable', () => {
+    const values = [undefined, () => 'Hello', Symbol('Hello')]
+
+    for (const value of values) {
+      expect(() => c.json(value)).toThrow(TypeError)
+    }
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
