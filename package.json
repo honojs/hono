@@ -385,6 +385,11 @@
       "import": "./dist/adapter/service-worker/index.js",
       "require": "./dist/cjs/adapter/service-worker/index.js"
     },
+    "./web-extension": {
+      "types": "./dist/types/adapter/web-extension/index.d.ts",
+      "import": "./dist/adapter/web-extension/index.js",
+      "require": "./dist/cjs/adapter/web-extension/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -619,6 +624,9 @@
       ],
       "service-worker": [
         "./dist/types/adapter/service-worker"
+      ],
+      "web-extension": [
+        "./dist/types/adapter/web-extension"
       ],
       "testing": [
         "./dist/types/helper/testing"
