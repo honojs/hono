@@ -79,6 +79,15 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('404 Not Found')
   })
 
+  it('Should not allow a backslash separator injection - /static/admin%5Csecret.txt', async () => {
+    const res = await app.fetch({
+      method: 'GET',
+      url: 'http://localhost/static/admin%5Csecret.txt',
+    } as Request)
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+  })
+
   it('Should return a pre-compressed zstd response - /static/hello.html', async () => {
     const app = new Hono().use(
       '*',

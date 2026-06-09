@@ -64,7 +64,7 @@ export const serveStatic = <E extends Env = Env>(
     } else {
       try {
         filename = tryDecodeURI(c.req.path)
-        if (/(?:^|[\/\\])\.{1,2}(?:$|[\/\\])|[\/\\]{2,}/.test(filename)) {
+        if (/(?:^|[\/\\])\.{1,2}(?:$|[\/\\])|[\/\\]{2,}|\\/.test(filename)) {
           throw new Error()
         }
       } catch {
