@@ -122,6 +122,45 @@ describe('handle', () => {
     })
   })
 
+  it('Should preserve multi-value request headers from CloudFront', async () => {
+    // CloudFront delivers headers as { name: [{ key, value }, ...] }, allowing
+    // multiple values per header name. The previous implementation used
+    // headers.set() inside the inner loop, so only the last value reached
+    // the Hono Request — silently dropping repeated Accept, Cookie, etc.
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.json({
+        accept: c.req.raw.headers.get('accept'),
+        // Headers.get() collapses repeated values with ", " per the WHATWG spec,
+        // so a passthrough of two Accept values appears here as "a/b, c/d".
+      })
+    })
+    const handler = handle(app)
+
+    const event: CloudFrontEdgeEvent = {
+      Records: [
+        {
+          cf: {
+            ...cloudFrontEdgeEvent.Records[0].cf,
+            request: {
+              ...cloudFrontEdgeEvent.Records[0].cf.request,
+              headers: {
+                host: [{ key: 'Host', value: 'hono.dev' }],
+                accept: [
+                  { key: 'Accept', value: 'text/html' },
+                  { key: 'Accept', value: 'application/json' },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    }
+
+    const res = await handler(event)
+    expect(res.body).toBe(JSON.stringify({ accept: 'text/html, application/json' }))
+  })
+
   it('Should support multiple cookies', async () => {
     const app = new Hono()
     app.get('/test-path', (c) => {
