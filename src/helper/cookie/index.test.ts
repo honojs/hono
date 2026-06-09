@@ -2,10 +2,13 @@ import { Hono } from '../../hono'
 import {
   deleteCookie,
   getCookie,
+  getEncryptedCookie,
   getSignedCookie,
   setCookie,
+  setEncryptedCookie,
   setSignedCookie,
   generateCookie,
+  generateEncryptedCookie,
   generateSignedCookie,
 } from '.'
 
@@ -454,6 +457,210 @@ describe('Cookie Middleware', () => {
     })
   })
 
+  describe('Encrypted cookie', () => {
+    const secret = 'secret encryption key'
+
+    describe('Set and get encrypted cookie', () => {
+      const app = new Hono()
+
+      app.get('/set-encrypted-cookie', async (c) => {
+        await setEncryptedCookie(c, 'secret_cookie', 'hidden-value', secret)
+        return c.text('Set encrypted cookie')
+      })
+
+      app.get('/get-encrypted-cookie', async (c) => {
+        const value = await getEncryptedCookie(c, secret, 'secret_cookie')
+        return c.text(typeof value === 'string' ? value : value === false ? 'INVALID' : 'NOT_FOUND')
+      })
+
+      app.get('/get-encrypted-cookie-all', async (c) => {
+        const cookies = await getEncryptedCookie(c, secret)
+        const value = cookies['secret_cookie']
+        return c.text(typeof value === 'string' ? value : value === false ? 'INVALID' : 'NOT_FOUND')
+      })
+
+      it('should set an encrypted cookie', async () => {
+        const res = await app.request('http://localhost/set-encrypted-cookie')
+        expect(res.status).toBe(200)
+        const header = res.headers.get('Set-Cookie')
+        expect(header).toBeTruthy()
+        // encrypted value should not contain the plaintext
+        expect(header).not.toContain('hidden-value')
+        expect(header).toContain('secret_cookie=')
+      })
+
+      it('should round-trip set and get an encrypted cookie', async () => {
+        const setRes = await app.request('http://localhost/set-encrypted-cookie')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        expect(setCookieHeader).toBeTruthy()
+
+        // extract cookie value from Set-Cookie header
+        const cookieValue = setCookieHeader!.split(';')[0]
+
+        const getRes = await app.request('http://localhost/get-encrypted-cookie', {
+          headers: { Cookie: cookieValue },
+        })
+        expect(await getRes.text()).toBe('hidden-value')
+      })
+
+      it('should round-trip with getEncryptedCookie (all cookies)', async () => {
+        const setRes = await app.request('http://localhost/set-encrypted-cookie')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        const cookieValue = setCookieHeader!.split(';')[0]
+
+        const getRes = await app.request('http://localhost/get-encrypted-cookie-all', {
+          headers: { Cookie: cookieValue },
+        })
+        expect(await getRes.text()).toBe('hidden-value')
+      })
+
+      it('should return undefined when cookie is missing', async () => {
+        const res = await app.request('http://localhost/get-encrypted-cookie')
+        expect(await res.text()).toBe('NOT_FOUND')
+      })
+
+      it('should return false for tampered cookie', async () => {
+        const res = await app.request('http://localhost/get-encrypted-cookie', {
+          headers: { Cookie: 'secret_cookie=tampered-value' },
+        })
+        expect(await res.text()).toBe('INVALID')
+      })
+
+      it('should return false when encrypted value is copied to a different cookie name', async () => {
+        const app2 = new Hono()
+        app2.get('/get', async (c) => {
+          const value = await getEncryptedCookie(c, secret, 'other_cookie')
+          return c.text(value === false ? 'INVALID' : 'UNEXPECTED')
+        })
+
+        const setRes = await app.request('http://localhost/set-encrypted-cookie')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        // take the encrypted value from secret_cookie and assign it to other_cookie
+        const encryptedValue = setCookieHeader!.split(';')[0].split('=').slice(1).join('=')
+
+        const getRes = await app2.request('http://localhost/get', {
+          headers: { Cookie: `other_cookie=${encryptedValue}` },
+        })
+        expect(await getRes.text()).toBe('INVALID')
+      })
+
+      it('should return false for wrong secret', async () => {
+        const app2 = new Hono()
+        app2.get('/get', async (c) => {
+          const value = await getEncryptedCookie(c, 'wrong-secret', 'secret_cookie')
+          return c.text(value === false ? 'INVALID' : 'UNEXPECTED')
+        })
+
+        const setRes = await app.request('http://localhost/set-encrypted-cookie')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        const cookieValue = setCookieHeader!.split(';')[0]
+
+        const getRes = await app2.request('http://localhost/get', {
+          headers: { Cookie: cookieValue },
+        })
+        expect(await getRes.text()).toBe('INVALID')
+      })
+    })
+
+    describe('Encrypted cookie with prefix', () => {
+      const app = new Hono()
+
+      app.get('/set-encrypted-secure-prefix', async (c) => {
+        await setEncryptedCookie(c, 'secret_cookie', 'hidden-value', secret, {
+          prefix: 'secure',
+        })
+        return c.text('Set encrypted secure prefix cookie')
+      })
+
+      app.get('/get-encrypted-secure-prefix', async (c) => {
+        const value = await getEncryptedCookie(c, secret, 'secret_cookie', 'secure')
+        return c.text(typeof value === 'string' ? value : 'NOT_FOUND')
+      })
+
+      app.get('/set-encrypted-host-prefix', async (c) => {
+        await setEncryptedCookie(c, 'secret_cookie', 'hidden-value', secret, {
+          prefix: 'host',
+          domain: 'example.com', // this will be ignored
+          path: '/foo', // this will be ignored
+          secure: false, // this will be ignored
+        })
+        return c.text('Set encrypted host prefix cookie')
+      })
+
+      app.get('/get-encrypted-host-prefix', async (c) => {
+        const value = await getEncryptedCookie(c, secret, 'secret_cookie', 'host')
+        return c.text(typeof value === 'string' ? value : 'NOT_FOUND')
+      })
+
+      it('should set encrypted cookie with secure prefix', async () => {
+        const res = await app.request('http://localhost/set-encrypted-secure-prefix')
+        const header = res.headers.get('Set-Cookie')
+        expect(header).toContain('__Secure-secret_cookie=')
+        expect(header).toContain('Secure')
+      })
+
+      it('should round-trip encrypted cookie with secure prefix', async () => {
+        const setRes = await app.request('http://localhost/set-encrypted-secure-prefix')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        const cookieValue = setCookieHeader!.split(';')[0]
+
+        const getRes = await app.request('http://localhost/get-encrypted-secure-prefix', {
+          headers: { Cookie: cookieValue },
+        })
+        expect(await getRes.text()).toBe('hidden-value')
+      })
+
+      it('should set encrypted cookie with host prefix', async () => {
+        const res = await app.request('http://localhost/set-encrypted-host-prefix')
+        const header = res.headers.get('Set-Cookie')
+        expect(header).toContain('__Host-secret_cookie=')
+        expect(header).toContain('Secure')
+        expect(header).not.toContain('Domain=')
+      })
+
+      it('should round-trip encrypted cookie with host prefix', async () => {
+        const setRes = await app.request('http://localhost/set-encrypted-host-prefix')
+        const setCookieHeader = setRes.headers.get('Set-Cookie')
+        const cookieValue = setCookieHeader!.split(';')[0]
+
+        const getRes = await app.request('http://localhost/get-encrypted-host-prefix', {
+          headers: { Cookie: cookieValue },
+        })
+        expect(await getRes.text()).toBe('hidden-value')
+      })
+    })
+
+    describe('Encrypted cookie with options', () => {
+      const app = new Hono()
+
+      app.get('/set-encrypted-cookie-complex', async (c) => {
+        await setEncryptedCookie(c, 'secret_cookie', 'hidden-value', secret, {
+          path: '/',
+          secure: true,
+          domain: 'example.com',
+          httpOnly: true,
+          maxAge: 1000,
+          expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+          sameSite: 'Strict',
+        })
+        return c.text('Set encrypted cookie with options')
+      })
+
+      it('should set encrypted cookie with all options', async () => {
+        const res = await app.request('http://localhost/set-encrypted-cookie-complex')
+        const header = res.headers.get('Set-Cookie')
+        expect(header).toContain('secret_cookie=')
+        expect(header).toContain('Max-Age=1000')
+        expect(header).toContain('Domain=example.com')
+        expect(header).toContain('Path=/')
+        expect(header).toContain('HttpOnly')
+        expect(header).toContain('Secure')
+        expect(header).toContain('SameSite=Strict')
+        expect(header).not.toContain('hidden-value')
+      })
+    })
+  })
+
   describe('Generate cookie', () => {
     it('should generate a cookie', () => {
       const cookie = generateCookie('delicious_cookie', 'macha')
@@ -496,6 +703,36 @@ describe('Cookie Middleware', () => {
       expect(cookie).toBe(
         'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Domain=example.com; Path=/; HttpOnly; Secure'
       )
+    })
+
+    it('should generate an encrypted cookie', async () => {
+      const cookie = await generateEncryptedCookie(
+        'secret_cookie',
+        'hidden-value',
+        'secret encryption key'
+      )
+      expect(cookie).toContain('secret_cookie=')
+      expect(cookie).toContain('Path=/')
+      expect(cookie).not.toContain('hidden-value')
+    })
+
+    it('should generate an encrypted cookie with options', async () => {
+      const cookie = await generateEncryptedCookie(
+        'secret_cookie',
+        'hidden-value',
+        'secret encryption key',
+        {
+          path: '/',
+          secure: true,
+          httpOnly: true,
+          domain: 'example.com',
+        }
+      )
+      expect(cookie).toContain('secret_cookie=')
+      expect(cookie).toContain('Domain=example.com')
+      expect(cookie).toContain('HttpOnly')
+      expect(cookie).toContain('Secure')
+      expect(cookie).not.toContain('hidden-value')
     })
   })
 })
