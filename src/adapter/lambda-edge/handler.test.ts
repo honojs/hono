@@ -89,6 +89,36 @@ describe('handle', () => {
     expect(res.body).toBe('https://hono.dev/test-path')
   })
 
+  it('Should preserve all values of a multi-value request header', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text(c.req.header('x-forwarded-for') ?? ''))
+    const handler = handle(app)
+
+    const event: CloudFrontEdgeEvent = {
+      Records: [
+        {
+          cf: {
+            ...cloudFrontEdgeEvent.Records[0].cf,
+            request: {
+              ...cloudFrontEdgeEvent.Records[0].cf.request,
+              headers: {
+                host: [{ key: 'Host', value: 'hono.dev' }],
+                'x-forwarded-for': [
+                  { key: 'X-Forwarded-For', value: '10.0.0.1' },
+                  { key: 'X-Forwarded-For', value: '192.168.1.1' },
+                  { key: 'X-Forwarded-For', value: '203.0.113.55' },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    }
+
+    const res = await handler(event)
+    expect(res.body).toBe('10.0.0.1, 192.168.1.1, 203.0.113.55')
+  })
+
   it('Should expose async handler arity compatible with NODEJS_24_X', () => {
     const app = new Hono()
     const handler = handle(app)

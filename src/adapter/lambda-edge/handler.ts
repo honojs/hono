@@ -159,7 +159,7 @@ const createRequest = (event: CloudFrontEdgeEvent): Request => {
 
   const headers = new Headers()
   Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
-    v.forEach((header) => headers.set(k, header.value))
+    v.forEach((header) => headers.append(k, header.value))
   })
 
   const requestBody = event.Records[0].cf.request.body
