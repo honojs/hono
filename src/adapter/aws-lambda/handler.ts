@@ -658,7 +658,10 @@ const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
-  return Object.hasOwn(event, 'rawPath')
+  // A V1 (REST API) event behind a custom domain base path mapping also carries a
+  // `rawPath`, so `rawPath` alone is not enough to identify a V2 event. Every V2
+  // (HTTP API / function URL) event has an `http` object on its request context.
+  return Object.hasOwn(event, 'rawPath') && Object.hasOwn(event.requestContext ?? {}, 'http')
 }
 
 const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
