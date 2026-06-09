@@ -97,7 +97,7 @@ export interface ALBProxyEvent {
 }
 
 type WithHeaders = {
-  headers: Record<string, string>
+  headers: Record<string, string | string[]>
   multiValueHeaders?: undefined
 }
 type WithMultiValueHeaders = {
@@ -577,8 +577,7 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     if (result.multiValueHeaders) {
       result.multiValueHeaders['set-cookie'] = cookies
     } else {
-      // otherwise serialize the set-cookie
-      result.headers['set-cookie'] = cookies.join(', ')
+      result.headers['set-cookie'] = cookies[0]
     }
   }
 }
@@ -626,7 +625,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
   protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     result.headers = {
       ...result.headers,
-      'set-cookie': cookies.join(', '),
+      'set-cookie': cookies,
     }
   }
 }

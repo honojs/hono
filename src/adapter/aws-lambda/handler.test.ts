@@ -1,3 +1,4 @@
+import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
 import {
@@ -394,6 +395,63 @@ describe('handle', () => {
     const result = await handler(event)
     expect(result.statusCode).toBe(400)
     expect(result.body).toBe('Invalid request')
+  })
+
+  it('ALB single-header: emits the first Set-Cookie intact, never comma-joined', async () => {
+    const app = new Hono()
+    app.get('/multi-cookie', (c) => {
+      setCookie(c, 'session', 'abc123', { expires: new Date('2026-06-09T00:00:00Z') })
+      setCookie(c, 'csrf', 'xyz789', { expires: new Date('2026-06-10T00:00:00Z') })
+      return c.text('ok')
+    })
+    const handler = handle(app)
+
+    const event = {
+      httpMethod: 'GET',
+      path: '/multi-cookie',
+      headers: { host: 'app.example.com' },
+      body: null,
+      isBase64Encoded: false,
+      requestContext: { elb: { targetGroupArn: 'arn:aws:elasticloadbalancing:...' } },
+    } as unknown as LambdaEvent
+
+    const result = await handler(event)
+
+    expect(result.headers!['set-cookie']).toBe(
+      'session=abc123; Path=/; Expires=Tue, 09 Jun 2026 00:00:00 GMT'
+    )
+  })
+
+  it('Lattice v2: emits multiple Set-Cookie as an array', async () => {
+    const app = new Hono()
+    app.get('/multi-cookie', (c) => {
+      setCookie(c, 'session', 'abc123')
+      setCookie(c, 'csrf', 'xyz789')
+      return c.text('ok')
+    })
+    const handler = handle(app)
+
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/multi-cookie',
+      method: 'GET',
+      headers: { host: ['app.example.com'] },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        serviceNetworkArn: '',
+        serviceArn: 'arn:aws:vpc-lattice:us-east-1:123456789012:service/svc-0a40',
+        targetGroupArn: '',
+        identity: {},
+        region: 'us-east-1',
+        timeEpoch: '1583348638390123',
+      },
+    }
+
+    const result = await handler(event)
+
+    expect(result.headers!['set-cookie']).toEqual(['session=abc123; Path=/', 'csrf=xyz789; Path=/'])
   })
 
   it('Should return 400 when request contains invalid header names (v1)', async () => {
