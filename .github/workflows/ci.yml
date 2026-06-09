@@ -29,7 +29,7 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
           path: ./coverage
-      - uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           fail_ci_if_error: true
           directory: ./coverage
