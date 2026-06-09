@@ -511,9 +511,15 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     if (event.multiValueHeaders) {
       for (const [key, values] of Object.entries(event.multiValueHeaders)) {
         if (values && Array.isArray(values)) {
-          // https://www.rfc-editor.org/rfc/rfc9110.html#name-common-rules-for-defining-f
-          const sanitizedValue = sanitizeHeaderValue(values.join('; '))
-          headers.set(key, sanitizedValue)
+          if (key.toLowerCase() === 'cookie') {
+            // RFC 6265 §5.4: cookies in a Cookie request header are separated by '; '.
+            headers.set(key, sanitizeHeaderValue(values.join('; ')))
+          } else {
+            // RFC 9110 §5.3: multi-valued field lines combine with ', '.
+            for (const value of values) {
+              headers.append(key, sanitizeHeaderValue(value))
+            }
+          }
         }
       }
     } else {

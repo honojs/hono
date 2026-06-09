@@ -365,6 +365,58 @@ describe('EventProcessor.createRequest', () => {
       expect(decodeURIComponent(xCity)).toBe('炎')
     })
   })
+
+  describe('ALBProcessor multi-value header handling', () => {
+    const baseALBEvent = {
+      httpMethod: 'GET',
+      path: '/my/path',
+      headers: undefined,
+      body: null,
+      isBase64Encoded: false,
+      queryStringParameters: {},
+      requestContext: {
+        elb: {
+          targetGroupArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/g/abc',
+        },
+      },
+    }
+
+    it('Should join non-cookie multi-value headers with ", " (RFC 9110 §5.3)', () => {
+      const event = {
+        ...baseALBEvent,
+        multiValueHeaders: {
+          host: ['example.com'],
+          accept: ['text/html', 'application/json'],
+          'cache-control': ['no-cache', 'no-store'],
+        },
+      }
+
+      const processor = getProcessor(event)
+      const request = processor.createRequest(event)
+
+      // The previous implementation joined every multi-value header with "; ",
+      // which is only correct for Cookie. Real clients sending two Accept
+      // values would be interpreted as a single non-conformant value
+      // "text/html; application/json" instead of two distinct media ranges.
+      expect(request.headers.get('accept')).toBe('text/html, application/json')
+      expect(request.headers.get('cache-control')).toBe('no-cache, no-store')
+    })
+
+    it('Should still join Cookie multi-value with "; " (RFC 6265 §5.4)', () => {
+      const event = {
+        ...baseALBEvent,
+        multiValueHeaders: {
+          host: ['example.com'],
+          cookie: ['session=abc123', 'user=john'],
+        },
+      }
+
+      const processor = getProcessor(event)
+      const request = processor.createRequest(event)
+
+      expect(request.headers.get('cookie')).toBe('session=abc123; user=john')
+    })
+  })
 })
 
 describe('handle', () => {
