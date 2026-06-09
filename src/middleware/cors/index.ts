@@ -72,11 +72,6 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
   const findAllowOrigin = ((optsOrigin) => {
     if (typeof optsOrigin === 'string') {
       if (optsOrigin === '*') {
-        // When credentials is true, the spec forbids Access-Control-Allow-Origin: *.
-        // Reflect the request origin instead so browsers accept the response.
-        if (opts.credentials) {
-          return (origin: string) => origin || null
-        }
         return () => optsOrigin
       } else {
         return (origin: string) => (optsOrigin === origin ? origin : null)
@@ -117,7 +112,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
 
     if (c.req.method === 'OPTIONS') {
-      if (opts.origin !== '*' || opts.credentials) {
+      if (opts.origin !== '*') {
         set('Vary', 'Origin')
       }
 
@@ -155,7 +150,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    if (opts.origin !== '*' || opts.credentials) {
+    if (opts.origin !== '*') {
       c.header('Vary', 'Origin', { append: true })
     }
   }

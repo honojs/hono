@@ -362,7 +362,7 @@ describe('CORS by Middleware', () => {
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
 
-  it('Reflect request origin when credentials is true with wildcard origin', async () => {
+  it('Emits the wildcard, not the reflected origin, when credentials is true with wildcard origin', async () => {
     const res = await app.request('http://localhost/api10/abc', {
       headers: {
         Origin: 'http://example.com',
@@ -370,12 +370,15 @@ describe('CORS by Middleware', () => {
     })
 
     expect(res.status).toBe(200)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    // Must not reflect the request origin; the wildcard + credentials combination
+    // is rejected by the browser (fail closed). A wildcard response does not vary
+    // by Origin, so no Vary header is set.
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
-    expect(res.headers.get('Vary')).toBe('Origin')
+    expect(res.headers.get('Vary')).toBeNull()
   })
 
-  it('Preflight: reflect request origin when credentials is true with wildcard origin', async () => {
+  it('Preflight emits the wildcard, not the reflected origin, when credentials is true with wildcard origin', async () => {
     const req = new Request('http://localhost/api10/abc', {
       method: 'OPTIONS',
       headers: {
@@ -385,20 +388,19 @@ describe('CORS by Middleware', () => {
     const res = await app.request(req)
 
     expect(res.status).toBe(204)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
-    expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
   })
 
-  it('Should not set Allow-Origin when no Origin header with credentials and wildcard', async () => {
+  it('Emits the wildcard with no Origin header when credentials is true with wildcard origin', async () => {
     const res = await app.request('http://localhost/api10/abc')
 
     expect(res.status).toBe(200)
-    expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
 
-  it('Reflect different origins correctly for credentials with wildcard', async () => {
+  it('Emits the wildcard for every origin (never reflects) when credentials is true with wildcard origin', async () => {
     const res1 = await app.request('http://localhost/api10/abc', {
       headers: { Origin: 'http://example.com' },
     })
@@ -406,17 +408,49 @@ describe('CORS by Middleware', () => {
       headers: { Origin: 'http://other.com' },
     })
 
-    expect(res1.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
-    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('http://other.com')
+    expect(res1.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
   })
 
-  it('Handle Origin: null with credentials and wildcard', async () => {
+  it('Origin: null gets the wildcard, not a reflected null origin, with credentials', async () => {
     const res = await app.request('http://localhost/api10/abc', {
       headers: { Origin: 'null' },
     })
 
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('null')
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('Should not reflect an arbitrary Origin when credentials is true with default origin', async () => {
+    const app = new Hono()
+    app.use('*', cors({ credentials: true }))
+    app.get('/api/me', (c) => c.json({ secret: 'private user data' }))
+
+    // A wildcard/default origin must not be turned into a reflect-any-origin
+    // credentialed policy; the browser must keep rejecting it (fail closed).
+    for (const origin of ['https://attacker.example', 'http://evil.test', 'null']) {
+      const res = await app.request('http://localhost/api/me', { headers: { Origin: origin } })
+      expect(res.headers.get('Access-Control-Allow-Origin')).not.toBe(origin)
+    }
+  })
+
+  it('Preflight should not approve an arbitrary Origin when credentials is true with default origin', async () => {
+    const app = new Hono()
+    app.use('*', cors({ credentials: true }))
+    app.delete('/api/account', (c) => c.json({ deleted: true }))
+
+    const res = await app.request(
+      new Request('http://localhost/api/account', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'https://attacker.example',
+          'Access-Control-Request-Method': 'DELETE',
+          'Access-Control-Request-Headers': 'X-CSRF',
+        },
+      })
+    )
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).not.toBe('https://attacker.example')
   })
 
   it('Options without origin fall back to wildcard default', async () => {
