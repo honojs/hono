@@ -594,8 +594,15 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     return event.method
   }
 
-  protected getQueryString(): string {
-    return ''
+  protected getQueryString(event: LatticeProxyEventV2): string {
+    // VPC Lattice delivers query parameters as { name: [value, ...] } with
+    // already-decoded values. Re-encode them so the resulting URL is well-formed.
+    return Object.entries(event.queryStringParameters || {})
+      .filter(([, values]) => values && values.length > 0)
+      .map(([key, values]) =>
+        values!.map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&')
+      )
+      .join('&')
   }
 
   protected getHeaders(event: LatticeProxyEventV2): Headers {
