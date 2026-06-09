@@ -168,7 +168,10 @@ const createRequest = (event: CloudFrontEdgeEvent): Request => {
 
   let body: string | Uint8Array<ArrayBuffer> | undefined = rawBody
   if (rawBody !== undefined) {
-    const bytes = typeof rawBody === 'string' ? new TextEncoder().encode(rawBody) : rawBody
+    const bytes =
+      typeof rawBody === 'string'
+        ? (new TextEncoder().encode(rawBody) as Uint8Array<ArrayBuffer>)
+        : rawBody
     body = bytes
     headers.set('content-length', bytes.length.toString())
   }
