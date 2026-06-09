@@ -1,9 +1,9 @@
 import { describe } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
-import { encodeBase64 } from '../../utils/encode'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
 import type { Callback, CloudFrontEdgeEvent } from './handler'
-import { createBody, handle, isContentTypeBinary } from './handler'
+import { createBody, handle, isContentEncodingBinary, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
@@ -18,6 +18,19 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
+  })
+})
+
+describe('isContentEncodingBinary', () => {
+  it('Should determine whether it is binary', () => {
+    expect(isContentEncodingBinary('gzip')).toBe(true)
+    expect(isContentEncodingBinary('br')).toBe(true)
+    expect(isContentEncodingBinary('deflate')).toBe(true)
+    expect(isContentEncodingBinary('compress')).toBe(true)
+    expect(isContentEncodingBinary('deflate, gzip')).toBe(true)
+    expect(isContentEncodingBinary('identity')).toBe(false)
+    expect(isContentEncodingBinary('')).toBe(false)
+    expect(isContentEncodingBinary(null)).toBe(false)
   })
 })
 
@@ -151,5 +164,35 @@ describe('handle', () => {
         },
       ],
     })
+  })
+
+  it('Should base64 encode a compressed response with a textual content-type', async () => {
+    const payload = new TextEncoder().encode('a'.repeat(100))
+    const gzipped = await new Response(
+      new Blob([payload]).stream().pipeThrough(new CompressionStream('gzip'))
+    ).arrayBuffer()
+
+    const app = new Hono()
+    app.get('/test-path', () => {
+      return new Response(gzipped, {
+        headers: {
+          'content-type': 'text/html; charset=UTF-8',
+          'content-encoding': 'gzip',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.bodyEncoding).toBe('base64')
+    expect(res.body).toBe(encodeBase64(gzipped))
+
+    const decompressed = await new Response(
+      new Blob([decodeBase64(res.body as string)])
+        .stream()
+        .pipeThrough(new DecompressionStream('gzip'))
+    ).text()
+    expect(decompressed).toBe('a'.repeat(100))
   })
 })

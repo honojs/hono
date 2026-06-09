@@ -138,7 +138,15 @@ export const handle = (
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  let isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+
+  // A compressed response (for example from the compress middleware) may keep a
+  // textual content-type such as text/html while carrying binary bytes. Detect
+  // that via content-encoding so the body is not corrupted by res.text().
+  if (!isBase64Encoded) {
+    isBase64Encoded = isContentEncodingBinary(res.headers.get('content-encoding'))
+  }
+
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
   return {
@@ -193,4 +201,11 @@ export const isContentTypeBinary = (contentType: string): boolean => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
+}
+
+export const isContentEncodingBinary = (contentEncoding: string | null): boolean => {
+  if (contentEncoding === null) {
+    return false
+  }
+  return /^(gzip|deflate|compress|br)/.test(contentEncoding)
 }
