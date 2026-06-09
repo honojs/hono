@@ -539,10 +539,10 @@ describe('AWS Lambda Adapter for Hono', () => {
     const latticeResponse = await handler(latticeProxyEvent)
 
     expect(latticeResponse.statusCode).toBe(200)
-    expect(latticeResponse.headers).toHaveProperty(
-      'set-cookie',
-      [testCookie1.serialized, testCookie2.serialized].join(', ')
-    )
+    expect(latticeResponse.headers).toHaveProperty('set-cookie', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
   })
 
   describe('headers', () => {
@@ -785,9 +785,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.body).toBe('Cookies Set')
     expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
     expect(albResponse.multiValueHeaders).toBeUndefined()
-    expect(albResponse.headers['set-cookie']).toEqual(
-      [testCookie1.serialized, testCookie2.serialized].join(', ')
-    )
+    expect(albResponse.headers['set-cookie']).toEqual(testCookie1.serialized)
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
