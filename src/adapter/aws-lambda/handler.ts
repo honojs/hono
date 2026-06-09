@@ -331,7 +331,11 @@ export abstract class EventProcessor<E extends LambdaEvent> {
     }
 
     if (event.body) {
-      requestInit.body = event.isBase64Encoded ? decodeBase64(event.body) : event.body
+      const body = event.isBase64Encoded
+        ? decodeBase64(event.body)
+        : new TextEncoder().encode(event.body)
+      requestInit.body = body
+      headers.set('content-length', body.length.toString())
     }
 
     return new Request(url, requestInit)

@@ -1,5 +1,6 @@
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
+import { bodyLimit } from '../../middleware/body-limit'
 import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
 import {
   getProcessor,
@@ -297,6 +298,7 @@ describe('EventProcessor.createRequest', () => {
       'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-length': '17',
       'content-type': 'application/json',
       cookie: 'cookie1; cookie2',
       header1: 'value1',
@@ -342,6 +344,7 @@ describe('EventProcessor.createRequest', () => {
       'https://my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-length': '17',
       'content-type': 'application/x-www-form-urlencoded',
       cookie: 'cookie1=value1; cookie2=value2',
       header1: 'value1',
@@ -472,5 +475,35 @@ describe('handle', () => {
     const result = await handler(event)
     expect(result.statusCode).toBe(400)
     expect(result.body).toBe('Invalid request')
+  })
+
+  it('Should enforce bodyLimit when the client understates Content-Length', async () => {
+    const app = new Hono()
+    app.post(
+      '/upload',
+      bodyLimit({ maxSize: 1024, onError: (c) => c.text('too large', 413) }),
+      async (c) => c.json({ received: (await c.req.text()).length })
+    )
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      rawPath: '/upload',
+      headers: { 'content-type': 'text/plain', 'content-length': '1' },
+      body: 'A'.repeat(10000),
+      requestContext: {
+        ...baseV2Event.requestContext,
+        http: {
+          method: 'POST',
+          path: '/upload',
+          protocol: 'HTTP/1.1',
+          sourceIp: '192.0.2.1',
+          userAgent: 'agent',
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(413)
   })
 })

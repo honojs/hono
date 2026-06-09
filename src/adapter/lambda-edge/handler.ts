@@ -164,7 +164,14 @@ const createRequest = (event: CloudFrontEdgeEvent): Request => {
 
   const requestBody = event.Records[0].cf.request.body
   const method = event.Records[0].cf.request.method
-  const body = createBody(method, requestBody)
+  const rawBody = createBody(method, requestBody)
+
+  let body: string | Uint8Array<ArrayBuffer> | undefined = rawBody
+  if (rawBody !== undefined) {
+    const bytes = typeof rawBody === 'string' ? new TextEncoder().encode(rawBody) : rawBody
+    body = bytes
+    headers.set('content-length', bytes.length.toString())
+  }
 
   return new Request(url, {
     headers,
