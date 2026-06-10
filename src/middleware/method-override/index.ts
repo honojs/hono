@@ -126,6 +126,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
         url.searchParams.delete(queryName)
         const request = new Request(url.toString(), {
           body: c.req.raw.body,
+          duplex: 'half',
           headers: c.req.raw.headers,
           method,
         })
