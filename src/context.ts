@@ -458,14 +458,10 @@ export class Context<
    * @param layout - The layout to set.
    * @returns The layout function.
    */
-  get setLayout() {
-    return (
-      layout: Layout<PropsForRenderer & { Layout: Layout }>
-    ): Layout<
-      PropsForRenderer & {
-        Layout: Layout
-      }
-    > => (this.#layout = layout)
+  get setLayout(): (
+    layout: Layout<PropsForRenderer & { Layout: Layout }>
+  ) => Layout<PropsForRenderer & { Layout: Layout }> {
+    return (layout) => (this.#layout = layout)
   }
 
   /**
@@ -473,8 +469,8 @@ export class Context<
    *
    * @returns The current layout function.
    */
-  get getLayout() {
-    return (): Layout<PropsForRenderer & { Layout: Layout }> | undefined => this.#layout
+  get getLayout(): () => Layout<PropsForRenderer & { Layout: Layout }> | undefined {
+    return () => this.#layout
   }
 
   /**
@@ -498,8 +494,8 @@ export class Context<
    * })
    * ```
    */
-  get setRenderer() {
-    return (renderer: Renderer): void => {
+  get setRenderer(): (renderer: Renderer) => void {
+    return (renderer) => {
       this.#renderer = renderer
     }
   }
@@ -773,11 +769,11 @@ export class Context<
    * })
    * ```
    */
-  get redirect() {
-    return <T extends RedirectStatusCode = 302>(
-      location: string | URL,
-      status?: T
-    ): Response & TypedResponse<undefined, T, 'redirect'> => {
+  get redirect(): <T extends RedirectStatusCode = 302>(
+    location: string | URL,
+    status?: T
+  ) => Response & TypedResponse<undefined, T, 'redirect'> {
+    return (location, status) => {
       const locationString = String(location)
       this.header(
         'Location',
@@ -801,8 +797,8 @@ export class Context<
    * })
    * ```
    */
-  get notFound() {
-    return (): ReturnType<NotFoundHandler> => {
+  get notFound(): () => ReturnType<NotFoundHandler> {
+    return () => {
       this.#notFoundHandler ??= () => createResponseInstance()
       return this.#notFoundHandler(this)
     }
