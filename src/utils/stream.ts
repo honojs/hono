@@ -38,7 +38,9 @@ export class StreamingApi {
         done ? controller.close() : controller.enqueue(value)
       },
       cancel: () => {
-        this.abort()
+        if (!this.closed) {
+          this.abort()
+        }
       },
     })
   }
@@ -65,12 +67,12 @@ export class StreamingApi {
   }
 
   async close() {
+    this.closed = true
     try {
       await this.writer.close()
     } catch {
       // Do nothing. If you want to handle errors, create a stream by yourself.
     }
-    this.closed = true
   }
 
   async pipe(body: ReadableStream) {

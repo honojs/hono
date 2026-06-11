@@ -97,7 +97,7 @@ export interface ALBProxyEvent {
 }
 
 type WithHeaders = {
-  headers: Record<string, string>
+  headers: Record<string, string | string[]>
   multiValueHeaders?: undefined
 }
 type WithMultiValueHeaders = {
@@ -252,8 +252,18 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
-    const req = processor.createRequest(event)
-    const requestContext = getRequestContext(event)
+    let req, requestContext
+    try {
+      req = processor.createRequest(event)
+      requestContext = getRequestContext(event)
+    } catch (error) {
+      console.error('Error processing request:', error)
+      const errorResponse =
+        error instanceof TypeError
+          ? new Response('Invalid request', { status: 400 })
+          : new Response('Internal Server Error', { status: 500 })
+      return processor.createResult(event, errorResponse, { isContentTypeBinary })
+    }
 
     const res = await app.fetch(req, {
       event,
@@ -321,7 +331,11 @@ export abstract class EventProcessor<E extends LambdaEvent> {
     }
 
     if (event.body) {
-      requestInit.body = event.isBase64Encoded ? decodeBase64(event.body) : event.body
+      const body = event.isBase64Encoded
+        ? decodeBase64(event.body)
+        : new TextEncoder().encode(event.body)
+      requestInit.body = body
+      headers.set('content-length', body.length.toString())
     }
 
     return new Request(url, requestInit)
@@ -371,7 +385,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
     return result
   }
 
-  setCookies(event: E, res: Response, result: APIGatewayProxyResult) {
+  setCookies(_event: E, res: Response, result: APIGatewayProxyResult) {
     if (res.headers.has('set-cookie')) {
       const cookies = res.headers.getSetCookie
         ? res.headers.getSetCookie()
@@ -453,12 +467,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
     }
   }
 
-  protected getCookies(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    event: APIGatewayProxyEvent,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    headers: Headers
-  ): void {
+  protected getCookies(_event: APIGatewayProxyEvent, _headers: Headers): void {
     // nop
   }
 
@@ -572,8 +581,7 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     if (result.multiValueHeaders) {
       result.multiValueHeaders['set-cookie'] = cookies
     } else {
-      // otherwise serialize the set-cookie
-      result.headers['set-cookie'] = cookies.join(', ')
+      result.headers['set-cookie'] = cookies[0]
     }
   }
 }
@@ -621,7 +629,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
   protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     result.headers = {
       ...result.headers,
-      'set-cookie': cookies.join(', '),
+      'set-cookie': cookies,
     }
   }
 }

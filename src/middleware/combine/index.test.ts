@@ -93,7 +93,7 @@ describe('some', () => {
   })
 
   it('Should not call skipped middleware even if an error is thrown', async () => {
-    const middleware1: MiddlewareHandler = async (c, next) => {
+    const middleware1: MiddlewareHandler = async (_c, next) => {
       await next()
     }
     const middleware2 = vi.fn(() => true)

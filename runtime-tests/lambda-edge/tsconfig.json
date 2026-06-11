@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "references": [
+    { "path": "../../tsconfig.build.json" }
+  ]
+}

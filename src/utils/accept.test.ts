@@ -17,6 +17,11 @@ describe('parseAccept Comprehensive Tests', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseAccept(null as any)).toEqual([])
     })
+
+    test('handles whitespace-only header', () => {
+      expect(parseAccept('   ')).toEqual([])
+      expect(parseAccept(' \t\n ')).toEqual([])
+    })
   })
 
   describe('Quality Values', () => {
@@ -46,11 +51,9 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result[0].params).toEqual({
         a: '1',
-        b: '"2"',
-
+        b: '2',
         c: "'3'",
-        d: '"semi;colon"',
-        e: '"nested"quoted""',
+        d: 'semi;colon',
       })
     })
 
@@ -105,6 +108,100 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result.map((x) => x.type)).toEqual(['b', 'a'])
     })
+
+    test('handles comma inside quoted parameter value', () => {
+      const header = 'text/plain;meta="a,b";q=0.8,application/json;q=0.7'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a,b',
+            q: '0.8',
+          },
+          q: 0.8,
+        },
+        {
+          type: 'application/json',
+          params: {
+            q: '0.7',
+          },
+          q: 0.7,
+        },
+      ])
+    })
+
+    test('handles escaped quote and semicolon inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\";b";q=0.5'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a";b',
+            q: '0.5',
+          },
+          q: 0.5,
+        },
+      ])
+    })
+
+    test('handles escaped character inside quoted parameter', () => {
+      const header = 'text/plain;meta="a\\\\z;c";q=0.3'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        {
+          type: 'text/plain',
+          params: {
+            meta: 'a\\z;c',
+            q: '0.3',
+          },
+          q: 0.3,
+        },
+      ])
+    })
+
+    test('skips invalid param without swallowing next media type', () => {
+      const header = 'a;foo, b;q=0.5'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: {}, q: 1 },
+        { type: 'b', params: { q: '0.5' }, q: 0.5 },
+      ])
+    })
+
+    test('skips malformed quoted param tail without creating bogus media type', () => {
+      const header = 'a;foo="x"bar,b'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: {}, q: 1 },
+        { type: 'b', params: {}, q: 1 },
+      ])
+    })
+
+    test('parses params after quoted value with trailing whitespace', () => {
+      const header = 'a;foo="x" ;q=0.5,b;q=0.4'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: { foo: 'x', q: '0.5' }, q: 0.5 },
+        { type: 'b', params: { q: '0.4' }, q: 0.4 },
+      ])
+    })
+
+    test('handles quoted param followed immediately by comma', () => {
+      const header = 'a;foo="x",b'
+      const result = parseAccept(header)
+      expect(result).toEqual([
+        { type: 'a', params: { foo: 'x' }, q: 1 },
+        { type: 'b', params: {}, q: 1 },
+      ])
+    })
+
+    test('skips empty media type that starts with semicolon', () => {
+      const header = ';q=0.5,b;q=0.4'
+      const result = parseAccept(header)
+      expect(result).toEqual([{ type: 'b', params: { q: '0.4' }, q: 0.4 }])
+    })
   })
 
   describe('Security Cases', () => {
@@ -119,6 +216,12 @@ describe('parseAccept Comprehensive Tests', () => {
       headers.forEach((header) => {
         expect(() => parseAccept(header)).not.toThrow()
       })
+    })
+
+    test('handles many semicolons with an unbalanced quote', () => {
+      const header = `text/plain;${'a;'.repeat(8000)}"`
+      const result = parseAccept(header)
+      expect(result[0].type).toBe('text/plain')
     })
 
     test('handles extremely large input', () => {

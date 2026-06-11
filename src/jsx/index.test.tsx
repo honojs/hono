@@ -3,7 +3,16 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
+import DefaultExport, {
+  Fragment,
+  StrictMode,
+  createContext,
+  createElement,
+  jsx,
+  memo,
+  useContext,
+  version,
+} from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -168,6 +177,48 @@ describe('render to string', () => {
   it('Empty elements with children are rended with children and closing tag', () => {
     const template = <link>https://example.com</link>
     expect(template.toString()).toBe('<link>https://example.com</link>')
+  })
+
+  describe('programmatic tag names', () => {
+    it('Should throw when jsx() receives a tag name that can break out of the HTML context', () => {
+      const payloads = [
+        '><script>alert(1)</script><x',
+        'div onmouseover="alert(1)" x=',
+        'div></div><img src=x onerror=alert(1)><div',
+        '!--',
+        '!DOCTYPE',
+        '?xml',
+      ]
+
+      for (const tag of payloads) {
+        expect(() => jsx(tag, {}, 'hello')).toThrow(`Invalid JSX tag name: ${tag}`)
+      }
+    })
+
+    it('Should throw when createElement() receives a tag name that can break out of the HTML context', () => {
+      expect(() => createElement('div onmouseover="alert(1)" x=', {}, 'hello')).toThrow(
+        'Invalid JSX tag name: div onmouseover="alert(1)" x='
+      )
+    })
+
+    it('Should throw when jsx() receives an invalid non-primitive tag name', () => {
+      expect(() => jsx(new String('div') as never, {}, 'hello')).toThrow(
+        'Invalid JSX tag name: div'
+      )
+      expect(() =>
+        jsx({ toString: () => 'div onmouseover="alert(1)" x=' } as never, {}, 'hello')
+      ).toThrow('Invalid JSX tag name: div onmouseover="alert(1)" x=')
+    })
+
+    it('Should allow compatible custom and namespaced tag names', () => {
+      expect(jsx('custom-element', {}, 'hello').toString()).toBe(
+        '<custom-element>hello</custom-element>'
+      )
+      expect(jsx('foo:bar', {}, 'hello').toString()).toBe('<foo:bar>hello</foo:bar>')
+      expect(jsx('x.foo', {}, 'hello').toString()).toBe('<x.foo>hello</x.foo>')
+      expect(jsx('x_bar', {}, 'hello').toString()).toBe('<x_bar>hello</x_bar>')
+      expect(jsx('é', {}, 'hello').toString()).toBe('<é>hello</é>')
+    })
   })
 
   it('Props value is null', () => {
@@ -468,6 +519,110 @@ describe('render to string', () => {
       const template = <h1 style={{ '--myVar': 1 }}>Hello</h1>
       expect(template.toString()).toBe('<h1 style="--myVar:1px">Hello</h1>')
     })
+
+    describe('CSS injection prevention', () => {
+      it('should drop style values containing ";" to prevent CSS injection', () => {
+        const userInput =
+          'transparent;background:url(https://attacker.example/a.png);position:fixed;top:0'
+        const template = <div style={{ color: userInput }} />
+        const out = template.toString() as string
+        expect(out).not.toContain('background:url')
+        expect(out).not.toContain('position:fixed')
+        expect(out).not.toContain('color:')
+        expect(out).toBe('<div style=""></div>')
+      })
+
+      it('should drop only the unsafe property and keep other safe properties', () => {
+        const template = <div style={{ color: 'red;background:blue', backgroundColor: 'white' }} />
+        const out = template.toString() as string
+        expect(out).toBe('<div style="background-color:white"></div>')
+        expect(out).not.toContain('background:blue')
+      })
+
+      it('should drop style values that try to hide declaration separators in CSS comments', () => {
+        const template = (
+          <div
+            style={{
+              color: 'red/*(*/;background:blue;position:fixed;top:0',
+              backgroundColor: 'white',
+            }}
+          />
+        )
+        const out = template.toString() as string
+        expect(out).toBe('<div style="background-color:white"></div>')
+        expect(out).not.toContain('position:fixed')
+      })
+
+      it('should drop style values that try to expose declarations through CSS curly blocks', () => {
+        const template = (
+          <div
+            style={{
+              color: 'red{;background:blue}',
+              backgroundColor: 'white',
+            }}
+          />
+        )
+        const out = template.toString() as string
+        expect(out).toBe('<div style="background-color:white"></div>')
+        expect(out).not.toContain('background:blue')
+      })
+
+      it('should drop unterminated style values that can swallow following declarations', () => {
+        const template = <div style={{ color: 'red/*', display: 'none' }} />
+        const out = template.toString() as string
+        expect(out).toBe('<div style="display:none"></div>')
+        expect(out).not.toContain('color:')
+      })
+
+      it('should drop style property names that can inject declarations', () => {
+        const template = (
+          <div
+            style={{
+              'color;background-image': 'url(https://attacker.example/a.png)',
+              backgroundColor: 'white',
+            }}
+          />
+        )
+        const out = template.toString() as string
+        expect(out).toBe('<div style="background-color:white"></div>')
+        expect(out).not.toContain('background-image')
+      })
+
+      it('should still HTML-escape safe style values', () => {
+        const template = <h1 style={{ fontFamily: '"DejaVu Sans Mono", monospace' }}>Hello</h1>
+        expect(template.toString()).toBe(
+          '<h1 style="font-family:&quot;DejaVu Sans Mono&quot;, monospace">Hello</h1>'
+        )
+      })
+
+      it('should keep semicolons inside quoted style values', () => {
+        const template = <h1 style={{ fontFamily: '"a;b", sans-serif' }}>Hello</h1>
+        expect(template.toString()).toBe(
+          '<h1 style="font-family:&quot;a;b&quot;, sans-serif">Hello</h1>'
+        )
+      })
+
+      it('should drop quoted style values that use newlines to expose declaration separators', () => {
+        const template = (
+          <div
+            style={{
+              fontFamily: '"\n;background:url(https://attacker.example/a.png)',
+              backgroundColor: 'white',
+            }}
+          />
+        )
+        expect(template.toString()).toBe('<div style="background-color:white"></div>')
+      })
+
+      it('should keep numeric style values working', () => {
+        const template = <div style={{ fontSize: 10, lineHeight: 1.5 }} />
+        expect(template.toString()).toBe('<div style="font-size:10px;line-height:1.5"></div>')
+      })
+
+      it('should not throw when style values contain ";"', () => {
+        expect(() => (<div style={{ color: 'red;evil:1' }} />).toString()).not.toThrow()
+      })
+    })
   })
 
   describe('HtmlEscaped in props', () => {
@@ -475,6 +630,76 @@ describe('render to string', () => {
       const escapedString = html`${'<html-escaped-string>'}`
       const template = <span data-text={escapedString}>Hello</span>
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
+    })
+  })
+
+  describe('XSS prevention for attribute keys', () => {
+    it('Should skip attribute keys containing double quotes', () => {
+      const props: Record<string, string> = { ['" onfocus="alert(1)']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing >', () => {
+      const props: Record<string, string> = { ['"><script>alert(1)</script><x x="']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing <', () => {
+      const props: Record<string, string> = { ['foo<bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing backslashes', () => {
+      const props: Record<string, string> = { ['foo\\bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing backticks', () => {
+      const props: Record<string, string> = { ['foo`bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip attribute keys containing spaces', () => {
+      const props: Record<string, string> = { ['foo bar']: 'x' }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should still render valid attributes alongside invalid ones', () => {
+      const props: Record<string, string> = {
+        id: 'safe',
+        ['" onfocus="alert(1)']: 'x',
+        class: 'test',
+      }
+      const template = <div {...props}>Hello</div>
+      expect(template.toString()).toBe('<div id="safe" class="test">Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before style serialization', () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: { fontSize: 10 } }}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before function prop validation', () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: () => 'x' }}>Hello</div>
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys before dangerouslySetInnerHTML handling', () => {
+      const template = (
+        <div {...{ ['" onfocus="alert(1)']: { __html: '<strong>Injected</strong>' } }}>Hello</div>
+      )
+      expect(template.toString()).toBe('<div>Hello</div>')
+    })
+
+    it('Should skip invalid attribute keys with Promise values', async () => {
+      const template = <div {...{ ['" onfocus="alert(1)']: Promise.resolve('x') }}>Hello</div>
+      expect(await template.toString()).toBe('<div>Hello</div>')
     })
   })
 
@@ -664,6 +889,22 @@ describe('SVG', () => {
     )
     expect(template.toString()).toBe(
       '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
+    )
+  })
+
+  it('should skip invalid attribute keys in SVG while preserving valid ones', () => {
+    const template = (
+      <svg>
+        <g {...{ ['" onload="alert(1)']: 'x', viewBox: '0 0 10 10' }} />
+      </svg>
+    )
+    expect(template.toString()).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
+  })
+
+  it('should normalize kebab-case attributes on the <svg> root element', () => {
+    const template = <svg {...{ strokeWidth: '1.5', strokeLinecap: 'round' }} viewBox='0 0 16 16' />
+    expect(template.toString()).toBe(
+      '<svg stroke-width="1.5" stroke-linecap="round" viewBox="0 0 16 16"></svg>'
     )
   })
 

@@ -20,7 +20,7 @@ import type {
   LambdaContext,
 } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
-import { streamSSE } from '../../src/helper/streaming'
+import { streamSSE, streamText } from '../../src/helper/streaming'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import './mock'
@@ -539,10 +539,10 @@ describe('AWS Lambda Adapter for Hono', () => {
     const latticeResponse = await handler(latticeProxyEvent)
 
     expect(latticeResponse.statusCode).toBe(200)
-    expect(latticeResponse.headers).toHaveProperty(
-      'set-cookie',
-      [testCookie1.serialized, testCookie2.serialized].join(', ')
-    )
+    expect(latticeResponse.headers).toHaveProperty('set-cookie', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
   })
 
   describe('headers', () => {
@@ -785,9 +785,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.body).toBe('Cookies Set')
     expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
     expect(albResponse.multiValueHeaders).toBeUndefined()
-    expect(albResponse.headers['set-cookie']).toEqual(
-      [testCookie1.serialized, testCookie2.serialized].join(', ')
-    )
+    expect(albResponse.headers['set-cookie']).toEqual(testCookie1.serialized)
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -923,7 +921,7 @@ describe('streamHandle function', () => {
   })
 
   app.get('/stream/text', async (c) => {
-    return c.streamText(async (stream) => {
+    return streamText(c, async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.writeln(`${i}`)
         await stream.sleep(1)
@@ -969,7 +967,8 @@ describe('streamHandle function', () => {
     mockReadableStream.push('3\n')
     mockReadableStream.push(null) // EOF
 
-    await handler(event, mockReadableStream)
+    // @ts-expect-error should this be a ReadbleStream?
+    await handler(event, mockReadableStream, vi.fn())
 
     const chunks = []
     for await (const chunk of mockReadableStream) {
@@ -1013,7 +1012,8 @@ describe('streamHandle function', () => {
     mockReadableStream.push('data: Message\ndata: It is 1\n\n')
     mockReadableStream.push(null) // EOF
 
-    await handler(event, mockReadableStream)
+    // @ts-expect-error should this be a ReadbleStream?
+    await handler(event, mockReadableStream, vi.fn())
 
     const chunks = []
     for await (const chunk of mockReadableStream) {

@@ -2,6 +2,7 @@
 import { vi } from 'vitest'
 import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
+import type { HonoJsonWebKey } from './jws'
 import { signing } from './jws'
 import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
@@ -107,6 +108,53 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  describe('JwtTokenNotBefore with malformed nbf claim', () => {
+    it('rejects token with nbf as a non-numeric string', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (nbf must be number)
+        { message: 'hello', nbf: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenNotBefore(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with nbf = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","nbf":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenNotBefore(tok))
+      expect(authorized).toBeUndefined()
+    })
+  })
+
   it('JwtTokenExpired', async () => {
     const tok =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MzMwNDYxMDAsImV4cCI6MTYzMzA0NjQwMH0.H-OI1TWAbmK8RonvcpPaQcNvOKS9sxinEOsgKwjoiVo'
@@ -120,6 +168,90 @@ describe('JWT', () => {
     }
     expect(err).toEqual(new JwtTokenExpired(tok))
     expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenExpired after Y2038', async () => {
+    const postY2038 = 2147483648 // 2038-01-19 03:14:08 UTC
+    vi.useFakeTimers().setSystemTime(new Date(postY2038 * 1000))
+
+    const expIn2025 = 1735689600 // 2025-01-01 00:00:00 UTC
+    const payload = { message: 'hello', exp: expIn2025 }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenExpired(tok))
+    expect(authorized).toBeUndefined()
+
+    vi.useRealTimers()
+  })
+
+  describe('JwtTokenExpired with malformed exp claim', () => {
+    it('rejects token with exp = 0 (epoch zero)', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign({ message: 'hello', exp: 0 }, secret, AlgorithmTypes.HS256)
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with exp as a non-numeric string', async () => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (exp must be number)
+        { message: 'hello', exp: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
+
+    it('rejects token with exp = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","exp":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenExpired(tok))
+      expect(authorized).toBeUndefined()
+    })
   })
 
   it('JwtTokenIssuedAt', async () => {
@@ -140,6 +272,63 @@ describe('JWT', () => {
     }
     expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
     expect(authorized).toBeUndefined()
+  })
+
+  describe('JwtTokenIssuedAt with malformed iat claim', () => {
+    it('rejects token with iat as a non-numeric string', async () => {
+      const now = 1633046400
+      vi.useFakeTimers().setSystemTime(new Date(now * 1000))
+
+      const secret = 'a-secret'
+      const tok = await JWT.sign(
+        // @ts-expect-error - testing malformed payload (iat must be number)
+        { message: 'hello', iat: 'tomorrow' },
+        secret,
+        AlgorithmTypes.HS256
+      )
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenIssuedAt(now, 'tomorrow' as unknown as number))
+      expect(authorized).toBeUndefined()
+
+      vi.useRealTimers()
+    })
+
+    it('rejects token with iat = Infinity (parsed from 1e400 in JSON)', async () => {
+      // JSON.stringify converts Infinity to null, so hand-craft the payload.
+      const now = 1633046400
+      vi.useFakeTimers().setSystemTime(new Date(now * 1000))
+
+      const secret = 'a-secret'
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+      const encodedPayload = encode('{"message":"hello","iat":1e400}')
+      const signingInput = `${encodedHeader}.${encodedPayload}`
+      const signatureBuffer = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+      let err
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+      } catch (e) {
+        err = e
+      }
+      expect(err).toEqual(new JwtTokenIssuedAt(now, Infinity))
+      expect(authorized).toBeUndefined()
+
+      vi.useRealTimers()
+    })
   })
 
   it('JwtTokenIssuer (none)', async () => {
@@ -1270,6 +1459,63 @@ describe('verifyWithJwks algorithm whitelist', () => {
   })
 })
 
+describe('verifyWithJwks key handling', () => {
+  it('Should not mutate provided keys when JWKS is fetched repeatedly', async () => {
+    const localKeys: HonoJsonWebKey[] = [
+      {
+        kty: 'RSA',
+        kid: 'local-key',
+        alg: 'RS256',
+        e: 'AQAB',
+        n: 'sXchAZo4YqB7f1_g8U9RVcdpShUMHbOWcZHhGXLiCFYI8aAizI0s5momkMumZ5qX6Ch12yvDqOiiMHDLecxB2S7RMyCV2wAPOQgpdnXl16rDpD6PEw24kTx5cDIeEJD7BqXc9Ejo4kKDAdAm8YGtS-wGGyRyvE4s46HoPazTA7k',
+        use: 'sig',
+      },
+    ]
+
+    const originalKeys = structuredClone(localKeys)
+    const originalFetch = globalThis.fetch
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' })
+    ).toString('base64url')
+    const payload = Buffer.from(JSON.stringify({})).toString('base64url')
+    const token = `${header}.${payload}.x`
+
+    try {
+      globalThis.fetch = (async () => {
+        return new Response(
+          JSON.stringify({
+            keys: [
+              { ...localKeys[0], kid: 'remote-key' },
+              { ...localKeys[0], kid: 'remote-key' },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }) as typeof globalThis.fetch
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+
+      await expect(
+        verifyWithJwks(token, {
+          keys: localKeys,
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(JwtTokenInvalid)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(localKeys).toEqual(originalKeys)
+  })
+})
+
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('pkcs8', key)
   const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
@@ -1446,5 +1692,83 @@ describe('Security: Algorithm Confusion Attack Prevention', () => {
       err = e as Error
     }
     expect(err).toBeInstanceOf(JwtAlgorithmRequired)
+  })
+})
+
+describe('JWT decode token format validation', () => {
+  it('decode should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decode(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 1 part', () => {
+    expect(() => JWT.decode('eyJhbGciOiJIUzI1NiJ9')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for token with 4 parts', () => {
+    const fourParts = 'a.b.c.d'
+    expect(() => JWT.decode(fourParts)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decode('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for token with 2 parts', () => {
+    const malformed = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8ifQ'
+    expect(() => JWT.decodeHeader(malformed)).toThrow(JwtTokenInvalid)
+  })
+
+  it('decodeHeader should throw JwtTokenInvalid for empty string', () => {
+    expect(() => JWT.decodeHeader('')).toThrow(JwtTokenInvalid)
+  })
+
+  it('decode should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const decoded = JWT.decode(tok)
+    expect(decoded.header.alg).toBe('HS256')
+    expect(decoded.payload).toEqual({ message: 'hello' })
+  })
+
+  it('decodeHeader should work for valid 3-part token', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello' }, secret, AlgorithmTypes.HS256)
+    const header = JWT.decodeHeader(tok)
+    expect(header.alg).toBe('HS256')
+    expect(header.typ).toBe('JWT')
+  })
+})
+
+describe('PEM parsing', async () => {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+    },
+    true,
+    ['sign', 'verify']
+  )
+
+  const exported = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+  const base64Key = Buffer.from(exported).toString('base64')
+  const privateKey = `-----BEGIN PRIVATE KEY-----\n${base64Key}\n-----END PRIVATE KEY-----`
+
+  it('should sign & verify with a normal private PEM key', async () => {
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, privateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
+  })
+
+  it('should sign & verify with a single-line private PEM key', async () => {
+    const singleLinePrivateKey = privateKey.replace(/\n/g, '')
+    const payload = { sub: '123' }
+
+    const token = await JWT.sign(payload, singleLinePrivateKey, 'EdDSA')
+    const verified = await JWT.verify(token, privateKey, 'EdDSA')
+
+    expect(verified).toEqual(payload)
   })
 })

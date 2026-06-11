@@ -6,11 +6,15 @@
 import type { Context, MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { HTTPException } from '../../http-exception'
+import type { InvalidIPAddressError } from '../../utils/ipaddr'
 import {
+  convertIPv4MappedIPv6ToIPv4,
   convertIPv4ToBinary,
   convertIPv6BinaryToString,
   convertIPv6ToBinary,
   distinctRemoteAddr,
+  isIPv4MappedIPv6,
+  INVALID_IP_ADDRESS_ERROR_CODE,
 } from '../../utils/ipaddr'
 
 /**
@@ -33,13 +37,47 @@ type GetIPAddr = GetConnInfo | ((c: Context) => string)
 type IPRestrictionRuleFunction = (addr: { addr: string; type: AddressType }) => boolean
 export type IPRestrictionRule = string | ((addr: { addr: string; type: AddressType }) => boolean)
 
-const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
+const IS_CIDR_NOTATION_REGEX = /\/[^/]*$/
+const parseCidrPrefix = (rule: string, prefix: string, max: number): number => {
+  if (!/^[0-9]{1,3}$/.test(prefix)) {
+    throw new TypeError(`Invalid rule: ${rule}`)
+  }
+  const parsedPrefix = parseInt(prefix)
+  if (parsedPrefix > max) {
+    throw new TypeError(`Invalid rule: ${rule}`)
+  }
+  return parsedPrefix
+}
 const buildMatcher = (
   rules: IPRestrictionRule[]
 ): ((addr: { addr: string; type: AddressType; isIPv4: boolean }) => boolean) => {
   const functionRules: IPRestrictionRuleFunction[] = []
   const staticRules: Set<string> = new Set()
+  const staticIPv4Rules: Set<bigint> = new Set()
+  const staticIPv6Rules: Set<bigint> = new Set()
   const cidrRules: [boolean, bigint, bigint][] = []
+  const registerStaticRule = (rule: string): void => {
+    const type = distinctRemoteAddr(rule)
+    if (type === undefined) {
+      throw new TypeError(`Invalid rule: ${rule}`)
+    }
+    if (type === 'IPv4') {
+      const ipv4binary = convertIPv4ToBinary(rule)
+      staticRules.add(rule)
+      staticRules.add(`::ffff:${rule}`)
+      staticIPv4Rules.add(ipv4binary)
+      staticIPv6Rules.add((0xffffn << 32n) | ipv4binary)
+    } else {
+      const ipv6binary = convertIPv6ToBinary(rule)
+      const ipv6Addr = convertIPv6BinaryToString(ipv6binary)
+      staticRules.add(ipv6Addr)
+      staticIPv6Rules.add(ipv6binary)
+      if (isIPv4MappedIPv6(ipv6binary)) {
+        staticRules.add(ipv6Addr.substring(7)) // remove ::ffff: prefix
+        staticIPv4Rules.add(convertIPv4MappedIPv6ToIPv4(ipv6binary))
+      }
+    }
+  }
 
   for (let rule of rules) {
     if (rule === '*') {
@@ -56,14 +94,20 @@ const buildMatcher = (
           throw new TypeError(`Invalid rule: ${rule}`)
         }
 
-        const isIPv4 = type === 'IPv4'
-        const prefix = parseInt(separatedRule[1])
+        let isIPv4 = type === 'IPv4'
+        let prefix = parseCidrPrefix(rule, separatedRule[1], isIPv4 ? 32 : 128)
 
         if (isIPv4 ? prefix === 32 : prefix === 128) {
           // this rule is a static rule
           rule = addrStr
         } else {
-          const addr = (isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary)(addrStr)
+          let addr = (isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary)(addrStr)
+          if (type === 'IPv6' && isIPv4MappedIPv6(addr) && prefix >= 96) {
+            isIPv4 = true
+            addr = convertIPv4MappedIPv6ToIPv4(addr)
+            prefix -= 96
+          }
+
           const mask = ((1n << BigInt(prefix)) - 1n) << BigInt((isIPv4 ? 32 : 128) - prefix)
 
           cidrRules.push([isIPv4, addr & mask, mask] as [boolean, bigint, bigint])
@@ -71,15 +115,7 @@ const buildMatcher = (
         }
       }
 
-      const type = distinctRemoteAddr(rule)
-      if (type === undefined) {
-        throw new TypeError(`Invalid rule: ${rule}`)
-      }
-      staticRules.add(
-        type === 'IPv4'
-          ? rule // IPv4 address is already normalized, so it is registered as is.
-          : convertIPv6BinaryToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
-      )
+      registerStaticRule(rule)
     }
   }
 
@@ -92,13 +128,31 @@ const buildMatcher = (
     if (staticRules.has(remote.addr)) {
       return true
     }
+    const remoteAddr = (remote.binaryAddr ||= (
+      remote.isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary
+    )(remote.addr))
+    const remoteIPv4Addr =
+      remote.isIPv4 || isIPv4MappedIPv6(remoteAddr)
+        ? remote.isIPv4
+          ? remoteAddr
+          : convertIPv4MappedIPv6ToIPv4(remoteAddr)
+        : undefined
+    if ((remote.isIPv4 ? staticIPv4Rules : staticIPv6Rules).has(remoteAddr)) {
+      return true
+    }
     for (const [isIPv4, addr, mask] of cidrRules) {
-      if (isIPv4 !== remote.isIPv4) {
+      if (isIPv4) {
+        if (remoteIPv4Addr === undefined) {
+          continue
+        }
+        if ((remoteIPv4Addr & mask) === addr) {
+          return true
+        }
         continue
       }
-      const remoteAddr = (remote.binaryAddr ||= (
-        isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary
-      )(remote.addr))
+      if (remote.isIPv4) {
+        continue
+      }
       if ((remoteAddr & mask) === addr) {
         return true
       }
@@ -121,9 +175,45 @@ export interface IPRestrictionRules {
 }
 
 /**
- * IP Restriction Middleware
+ * IP Restriction Middleware for Hono.
  *
- * @param getIP function to get IP Address
+ * @see {@link https://hono.dev/docs/middleware/builtin/ip-restriction}
+ *
+ * @param {GetConnInfo | ((c: Context) => string)} getIP - A function to retrieve the client IP address. Use `getConnInfo` from the appropriate runtime adapter.
+ * @param {IPRestrictionRules} rules - An object with optional `denyList` and `allowList` arrays of IP rules. Each rule can be a static IP, a CIDR range, or a custom function.
+ * @param {(remote: { addr: string; type: AddressType }, c: Context) => Response | Promise<Response>} [onError] - Optional custom handler invoked when a request is blocked. Defaults to returning a 403 Forbidden response.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * import { Hono } from 'hono'
+ * import { ipRestriction } from 'hono/ip-restriction'
+ * import { getConnInfo } from 'hono/cloudflare-workers'
+ *
+ * const app = new Hono()
+ *
+ * app.use(
+ *   '*',
+ *   ipRestriction(getConnInfo, {
+ *     // Block a specific IP and an entire subnet
+ *     denyList: ['192.168.0.5', '10.0.0.0/8'],
+ *     // Only allow requests from localhost and a private range
+ *     allowList: ['127.0.0.1', '::1', '192.168.1.0/24'],
+ *   })
+ * )
+ *
+ * // With a custom error handler
+ * app.use(
+ *   '/admin/*',
+ *   ipRestriction(
+ *     getConnInfo,
+ *     { allowList: ['203.0.113.0/24'] },
+ *     (remote, c) => c.text(`Access denied for ${remote.addr}`, 403)
+ *   )
+ * )
+ *
+ * app.get('/', (c) => c.text('Hello!'))
+ * ```
  */
 export const ipRestriction = (
   getIP: GetIPAddr,
@@ -156,14 +246,25 @@ export const ipRestriction = (
 
     const remoteData = { addr, type, isIPv4: type === 'IPv4' }
 
-    if (denyMatcher(remoteData)) {
-      if (onError) {
-        return onError({ addr, type }, c)
+    try {
+      if (denyMatcher(remoteData)) {
+        if (onError) {
+          return onError({ addr, type }, c)
+        }
+        throw blockError(c)
       }
-      throw blockError(c)
-    }
-    if (allowMatcher(remoteData)) {
-      return await next()
+      if (allowMatcher(remoteData)) {
+        return await next()
+      }
+    } catch (e) {
+      if (
+        e instanceof TypeError &&
+        (e as InvalidIPAddressError).code === INVALID_IP_ADDRESS_ERROR_CODE
+      ) {
+        // If an invalid IP address is specified, treat it as if no IP address was specified
+        throw blockError(c)
+      }
+      throw e
     }
 
     if (allowLength === 0) {

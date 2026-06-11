@@ -141,6 +141,26 @@ const toAttributeName = (element: SupportedElement, key: string): string =>
     ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
     : key
 
+const normalizeFormValue = (value: Props['value']) =>
+  value === null || value === undefined || value === false ? null : value
+
+const applySelectValue = (select: HTMLSelectElement, props: Props): void => {
+  if (!('value' in props)) {
+    return
+  }
+
+  select.value = normalizeFormValue(props['value'])
+  if (!select.multiple && select.selectedIndex === -1) {
+    select.selectedIndex = 0
+  }
+}
+
+// Unlike SSR (which uses isValidAttributeName for upfront validation),
+// the DOM renderer relies on try/catch for performance—invalid attribute
+// names are rare at runtime, so avoiding the per-attribute regex check is faster.
+const isIgnorableAttributeError = (error: unknown): boolean =>
+  error instanceof DOMException && error.name === 'InvalidCharacterError'
+
 const applyProps = (
   container: SupportedElement,
   attributes: Props,
@@ -188,17 +208,14 @@ const applyProps = (
       } else {
         if (key === 'value') {
           const nodeName = container.nodeName
-          if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
-            ;(container as unknown as HTMLInputElement).value =
-              value === null || value === undefined || value === false ? null : value
+          if (nodeName === 'SELECT') {
+            // Deferred to applySelectValue() after children are rendered
+            continue
+          } else if (nodeName === 'INPUT' || nodeName === 'TEXTAREA') {
+            ;(container as unknown as HTMLInputElement).value = normalizeFormValue(value)
 
             if (nodeName === 'TEXTAREA') {
               container.textContent = value
-              continue
-            } else if (nodeName === 'SELECT') {
-              if ((container as unknown as HTMLSelectElement).selectedIndex === -1) {
-                ;(container as unknown as HTMLSelectElement).selectedIndex = 0
-              }
               continue
             }
           }
@@ -212,14 +229,20 @@ const applyProps = (
 
         const k = toAttributeName(container, key)
 
-        if (value === null || value === undefined || value === false) {
-          container.removeAttribute(k)
-        } else if (value === true) {
-          container.setAttribute(k, '')
-        } else if (typeof value === 'string' || typeof value === 'number') {
-          container.setAttribute(k, value as string)
-        } else {
-          container.setAttribute(k, value.toString())
+        try {
+          if (value === null || value === undefined || value === false) {
+            container.removeAttribute(k)
+          } else if (value === true) {
+            container.setAttribute(k, '')
+          } else if (typeof value === 'string' || typeof value === 'number') {
+            container.setAttribute(k, value as string)
+          } else {
+            container.setAttribute(k, value.toString())
+          }
+        } catch (e) {
+          if (!isIgnorableAttributeError(e)) {
+            throw e
+          }
         }
       }
     }
@@ -235,7 +258,13 @@ const applyProps = (
         } else if (key === 'ref') {
           refCleanupMap.get(container)?.()
         } else {
-          container.removeAttribute(toAttributeName(container, key))
+          try {
+            container.removeAttribute(toAttributeName(container, key))
+          } catch (e) {
+            if (!isIgnorableAttributeError(e)) {
+              throw e
+            }
+          }
         }
       }
     }
@@ -404,8 +433,12 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         el = child.e ||= child.n
           ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
           : document.createElement(child.tag as string)
+
         applyProps(el as HTMLElement, child.props, child.pP)
         applyNodeObject(child, el as HTMLElement, isNewLocal)
+        if (child.tag === 'select') {
+          applySelectValue(el as HTMLSelectElement, child.props)
+        }
       }
     }
     if (child.tag === HONO_PORTAL_ELEMENT) {

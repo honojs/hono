@@ -96,6 +96,7 @@ describe('DOM', () => {
     global.HTMLElement = dom.window.HTMLElement
     global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
+    global.DOMException = dom.window.DOMException
     root = document.getElementById('root') as HTMLElement
   })
 
@@ -192,6 +193,69 @@ describe('DOM', () => {
       const App = () => <div x-value={{ toString: () => 'value' }} />
       render(<App />, root)
       expect(root.innerHTML).toBe('<div x-value="value"></div>')
+    })
+
+    it('ignores invalid attribute keys without interrupting updates', async () => {
+      const invalidKey = '" onfocus="alert(1)'
+
+      const App = () => {
+        const [includeInvalid, setIncludeInvalid] = useState(true)
+        return includeInvalid ? (
+          <div id='safe' {...{ [invalidKey]: 'x' }} onClick={() => setIncludeInvalid(false)}>
+            Hello
+          </div>
+        ) : (
+          <div class='updated'>Hello</div>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id="safe">Hello</div>')
+
+      root.querySelector('div')?.click()
+      await Promise.resolve()
+
+      expect(root.innerHTML).toBe('<div class="updated">Hello</div>')
+    })
+
+    it('rethrows unexpected errors while setting attributes', () => {
+      const error = new Error('boom')
+      const originalSetAttribute = dom.window.Element.prototype.setAttribute
+      const setAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'setAttribute')
+        .mockImplementation(function (this: Element, key: string, value: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalSetAttribute.call(this, key, value)
+        })
+
+      try {
+        expect(() => render(<div data-boom='x'>Hello</div>, root)).toThrow(error)
+      } finally {
+        setAttributeSpy.mockRestore()
+      }
+    })
+
+    it('rethrows unexpected errors while removing attributes', () => {
+      render(<div data-boom='x'>Hello</div>, root)
+
+      const error = new Error('boom')
+      const originalRemoveAttribute = dom.window.Element.prototype.removeAttribute
+      const removeAttributeSpy = vi
+        .spyOn(dom.window.Element.prototype, 'removeAttribute')
+        .mockImplementation(function (this: Element, key: string) {
+          if (key === 'data-boom') {
+            throw error
+          }
+          return originalRemoveAttribute.call(this, key)
+        })
+
+      try {
+        expect(() => render(<div data-boom={undefined}>Hello</div>, root)).toThrow(error)
+      } finally {
+        removeAttributeSpy.mockRestore()
+      }
     })
 
     it('ref', () => {
@@ -904,7 +968,7 @@ describe('DOM', () => {
       it('assign undefined', async () => {
         let setValue: (value: string | undefined) => void = () => {}
         const App = () => {
-          const [value, _setValue] = useState<string | undefined>('a')
+          const [value, _setValue] = useState<string | undefined>('b')
           setValue = _setValue
           return (
             <select value={value}>
@@ -922,6 +986,96 @@ describe('DOM', () => {
         await Promise.resolve()
         const select = root.querySelector('select') as HTMLSelectElement
         expect(select.value).toBe('a') // select the first option
+        expect(select.selectedIndex).toBe(0)
+      })
+
+      it('apply value after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select value='option2'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option2')
+        expect(select.selectedIndex).toBe(1)
+        expect(select.options[1].selected).toBe(true)
+      })
+
+      it('select the first option when undefined after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select value={undefined}>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['option1', 'option2', 'option3'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('option1')
+        expect(select.selectedIndex).toBe(0)
+        expect(select.options[0].selected).toBe(true)
+      })
+
+      it('do not select the first option for invalid multiple value', () => {
+        const App = () => {
+          return (
+            <select multiple value='z'>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
+      })
+
+      it('keep invalid multiple value unselected after options are added', async () => {
+        let setOptions: (options: string[]) => void = () => {}
+        const App = () => {
+          const [options, _setOptions] = useState<string[]>([])
+          setOptions = _setOptions
+          return (
+            <select multiple value='z'>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        render(<App />, root)
+        setOptions(['a', 'b', 'c'])
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('')
+        expect(select.selectedIndex).toBe(-1)
+        expect([...select.options].every((option) => !option.selected)).toBe(true)
       })
     })
 
@@ -2490,6 +2644,18 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+
+    it('skips invalid attribute keys in SVG while preserving valid ones', () => {
+      const App = () => {
+        return (
+          <svg>
+            <g {...{ ['" onload="alert(1)']: 'x', viewBox: '0 0 10 10' }} />
+          </svg>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<svg><g viewBox="0 0 10 10"></g></svg>')
     })
 
     describe('attribute', () => {

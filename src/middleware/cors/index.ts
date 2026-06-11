@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 type CORSOptions = {
-  origin:
+  origin?:
     | string
     | string[]
     | ((
@@ -61,16 +61,13 @@ type CORSOptions = {
  * ```
  */
 export const cors = (options?: CORSOptions): MiddlewareHandler => {
-  const defaults: CORSOptions = {
+  const opts = {
     origin: '*',
     allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
     allowHeaders: [],
     exposeHeaders: [],
-  }
-  const opts = {
-    ...defaults,
     ...options,
-  }
+  } satisfies CORSOptions
 
   const findAllowOrigin = ((optsOrigin) => {
     if (typeof optsOrigin === 'string') {

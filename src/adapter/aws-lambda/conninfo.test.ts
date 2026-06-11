@@ -71,12 +71,20 @@ describe('getConnInfo', () => {
   })
 
   describe('ALB', () => {
-    it('Should return the client IP from x-forwarded-for header', () => {
-      const ip = '192.0.2.50'
+    it.each([
+      {
+        description: 'ALB appends real client IP',
+        xff: '10.0.0.1, 192.0.2.50',
+        expected: '192.0.2.50',
+      },
+      {
+        description: 'attacker-controlled first IP',
+        xff: '127.0.0.1, 192.168.1.100',
+        expected: '192.168.1.100',
+      },
+    ])('Should return the last IP from x-forwarded-for ($description)', ({ xff, expected }) => {
       const req = new Request('http://localhost/', {
-        headers: {
-          'x-forwarded-for': `${ip}, 10.0.0.1`,
-        },
+        headers: { 'x-forwarded-for': xff },
       })
       const c = new Context(req, {
         env: {
@@ -87,10 +95,8 @@ describe('getConnInfo', () => {
           },
         },
       })
-
       const info = getConnInfo(c)
-
-      expect(info.remote.address).toBe(ip)
+      expect(info.remote.address).toBe(expected)
     })
 
     it('Should return undefined when no x-forwarded-for header', () => {

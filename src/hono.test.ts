@@ -484,6 +484,58 @@ describe('Routing', () => {
     expect(await res.text()).toBe('get /book')
   })
 
+  describe('Nested route - basePath of the mounted routes', () => {
+    it('Should set basePath to the mount path', () => {
+      const app = new Hono()
+      const sub = new Hono()
+      sub.get('/posts/:id', (c) => c.text('post'))
+      app.route('/:sub', sub)
+
+      expect(app.routes).toEqual([
+        {
+          basePath: '/:sub',
+          method: 'GET',
+          path: '/:sub/posts/:id',
+          handler: expect.any(Function),
+        },
+      ])
+    })
+
+    it('Should accumulate basePath through nested route() calls', () => {
+      const app = new Hono()
+      const sub1 = new Hono()
+      const sub2 = new Hono()
+      sub2.get('/posts/:id', (c) => c.text('post'))
+      sub1.route('/:sub2', sub2)
+      app.route('/:sub1', sub1)
+
+      expect(app.routes).toEqual([
+        {
+          basePath: '/:sub1/:sub2',
+          method: 'GET',
+          path: '/:sub1/:sub2/posts/:id',
+          handler: expect.any(Function),
+        },
+      ])
+    })
+
+    it('Should merge the basePath of a subApp created with basePath()', () => {
+      const app = new Hono()
+      const sub = new Hono().basePath('/book')
+      sub.get('/:id', (c) => c.text('book'))
+      app.route('/api', sub)
+
+      expect(app.routes).toEqual([
+        {
+          basePath: '/api/book',
+          method: 'GET',
+          path: '/api/book/:id',
+          handler: expect.any(Function),
+        },
+      ])
+    })
+  })
+
   it('Multiple route', async () => {
     const app = new Hono()
 
@@ -2630,6 +2682,40 @@ describe('app.mount()', () => {
       const res = await api.request('/api/another-app')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('AnotherApp')
+    })
+  })
+
+  describe('With encoded paths', () => {
+    const anotherApp = (req: Request) => new Response(getPath(req))
+
+    it('Should strip a decoded non-ASCII mount prefix', async () => {
+      const app = new Hono()
+      app.mount('/api/é', anotherApp)
+
+      const res = await app.request('/api/%C3%A9/hello')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/hello')
+    })
+
+    it('Should preserve an encoded slash as a literal path segment after stripping the prefix', async () => {
+      const app = new Hono()
+      app.mount('/api/v1', anotherApp)
+
+      const res = await app.request('/api/v1/admin%2Fsecret')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/admin%2Fsecret')
+    })
+
+    it('Should preserve encoded percent characters after stripping the prefix', async () => {
+      const app = new Hono()
+      app.mount('/api', anotherApp)
+
+      const res = await app.request('/api/foo%252Fbar')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/foo%252Fbar')
     })
   })
 

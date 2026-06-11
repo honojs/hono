@@ -126,24 +126,16 @@ export const normalizeLanguage = (
  * Detects language from query parameter
  */
 export const detectFromQuery = (c: Context, options: DetectorOptions): string | undefined => {
-  try {
-    const query = c.req.query(options.lookupQueryString)
-    return normalizeLanguage(query, options)
-  } catch {
-    return undefined
-  }
+  const query = c.req.query(options.lookupQueryString)
+  return normalizeLanguage(query, options)
 }
 
 /**
  * Detects language from cookie
  */
 export const detectFromCookie = (c: Context, options: DetectorOptions): string | undefined => {
-  try {
-    const cookie = getCookie(c, options.lookupCookie)
-    return normalizeLanguage(cookie, options)
-  } catch {
-    return undefined
-  }
+  const cookie = getCookie(c, options.lookupCookie)
+  return normalizeLanguage(cookie, options)
 }
 
 /**
@@ -173,14 +165,10 @@ export function detectFromHeader(c: Context, options: DetectorOptions): string |
  * Detects language from URL path
  */
 export function detectFromPath(c: Context, options: DetectorOptions): string | undefined {
-  try {
-    const url = new URL(c.req.url)
-    const pathSegments = url.pathname.split('/').filter(Boolean)
-    const langSegment = pathSegments[options.lookupFromPathIndex]
-    return normalizeLanguage(langSegment, options)
-  } catch {
-    return undefined
-  }
+  const url = new URL(c.req.url)
+  const pathSegments = url.pathname.split('/').filter(Boolean)
+  const langSegment = pathSegments[options.lookupFromPathIndex]
+  return normalizeLanguage(langSegment, options)
 }
 
 /**
@@ -243,9 +231,6 @@ const detectLanguage = (c: Context, options: DetectorOptions): string => {
 
   for (const detectorName of options.order) {
     const detector = detectors[detectorName]
-    if (!detector) {
-      continue
-    }
 
     try {
       detectedLang = detector(c, options)
@@ -290,16 +275,8 @@ export const languageDetector = (userOptions: Partial<DetectorOptions>): Middlew
   validateOptions(options)
 
   return async function languageDetector(ctx, next) {
-    try {
-      const lang = detectLanguage(ctx, options)
-      ctx.set('language', lang)
-    } catch (error) {
-      if (options.debug) {
-        console.error('Language detection failed:', error)
-      }
-      ctx.set('language', options.fallbackLanguage)
-    }
-
+    const lang = detectLanguage(ctx, options)
+    ctx.set('language', lang)
     await next()
   }
 }

@@ -1,8 +1,41 @@
+import { vi } from 'vitest'
 import type { ExecutionContext } from '../../context'
 import { Hono } from '../../hono'
 import { cache } from '.'
 
 // Mock
+type StoreMap = Map<string | Request, Response>
+
+class MockCache {
+  name: string
+  store: StoreMap
+
+  constructor(name: string, store: StoreMap) {
+    this.name = name
+    this.store = store
+  }
+
+  async match(key: Request | string): Promise<Response | null> {
+    return this.store.get(key) || null
+  }
+
+  async keys() {
+    return this.store.keys()
+  }
+
+  async put(key: Request | string, response: Response): Promise<void> {
+    this.store.set(key, response)
+  }
+}
+
+const globalStore: StoreMap = new Map()
+
+vi.stubGlobal('caches', {
+  open: (name: string) => {
+    return new MockCache(name, globalStore)
+  },
+})
+
 class Context implements ExecutionContext {
   passThroughOnException(): void {
     throw new Error('Method not implemented.')
@@ -170,47 +203,6 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
-  let varyWildcardOnlyCount = 0
-  app.use('/vary-wildcard/*', cache({ cacheName: 'vary-wildcard-test', wait: true }))
-  app.get('/vary-wildcard/only', (c) => {
-    varyWildcardOnlyCount++
-    c.header('X-Count', `${varyWildcardOnlyCount}`)
-    c.header('Vary', '*')
-    return c.text('response')
-  })
-
-  let varyWildcardFirstCount = 0
-  app.get('/vary-wildcard/first', (c) => {
-    varyWildcardFirstCount++
-    c.header('X-Count', `${varyWildcardFirstCount}`)
-    c.header('Vary', '*, Accept')
-    return c.text('response')
-  })
-
-  let varyWildcardMiddleCount = 0
-  app.get('/vary-wildcard/middle', (c) => {
-    varyWildcardMiddleCount++
-    c.header('X-Count', `${varyWildcardMiddleCount}`)
-    c.header('Vary', 'Accept, *')
-    return c.text('response')
-  })
-
-  let varyWildcardComplexCount = 0
-  app.get('/vary-wildcard/complex', (c) => {
-    varyWildcardComplexCount++
-    c.header('X-Count', `${varyWildcardComplexCount}`)
-    c.header('Vary', 'Accept, *, Accept-Encoding')
-    return c.text('response')
-  })
-
-  let varyWildcardSpacesCount = 0
-  app.get('/vary-wildcard/spaces', (c) => {
-    varyWildcardSpacesCount++
-    c.header('X-Count', `${varyWildcardSpacesCount}`)
-    c.header('Vary', ' * ')
-    return c.text('response')
-  })
-
   app.use('/default/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
   app.all('/default/:code/', (c) => {
     const code = parseInt(c.req.param('code'))
@@ -333,36 +325,6 @@ describe('Cache Middleware', () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
-  it('Should not cache response when Vary: * is set', async () => {
-    await app.request('http://localhost/vary-wildcard/only')
-    const res = await app.request('http://localhost/vary-wildcard/only')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: *, Accept is set', async () => {
-    await app.request('http://localhost/vary-wildcard/first')
-    const res = await app.request('http://localhost/vary-wildcard/first')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: Accept, * is set', async () => {
-    await app.request('http://localhost/vary-wildcard/middle')
-    const res = await app.request('http://localhost/vary-wildcard/middle')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary: Accept, *, Accept-Encoding is set', async () => {
-    await app.request('http://localhost/vary-wildcard/complex')
-    const res = await app.request('http://localhost/vary-wildcard/complex')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
-  it('Should not cache response when Vary contains * with extra spaces', async () => {
-    await app.request('http://localhost/vary-wildcard/spaces')
-    const res = await app.request('http://localhost/vary-wildcard/spaces')
-    expect(res.headers.get('x-count')).toBe('2')
-  })
-
   it.each([200])('Should cache %i in default cacheable status codes', async (code) => {
     await app.request(`http://localhost/default/${code}/`)
     const res = await app.request(`http://localhost/default/${code}/`)
@@ -416,15 +378,66 @@ describe('Cache Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe(null)
   })
+
+  it('Should call onCacheNotAvailable when caches is not defined', async () => {
+    vi.stubGlobal('caches', undefined)
+    const spy = vi.fn()
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: spy }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(spy).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it('Should suppress default log when onCacheNotAvailable is false', async () => {
+    vi.stubGlobal('caches', undefined)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', onCacheNotAvailable: false }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(logSpy).not.toHaveBeenCalledWith(
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
+    logSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
 })
 
 describe('Cache Skipping Logic', () => {
+  const stubStoreBackedCache = () => {
+    const store = new Map<string | Request, Response>()
+    const mockCache = {
+      match: vi.fn((key: string | Request) => Promise.resolve(store.get(key)?.clone())),
+      put: vi.fn((key: string | Request, response: Response) => {
+        store.set(key, response.clone())
+        return Promise.resolve()
+      }),
+      keys: vi.fn(() => Promise.resolve(Array.from(store.keys()))),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn().mockResolvedValue(mockCache),
+    })
+
+    return { mockCache }
+  }
+
   let putSpy: ReturnType<typeof vi.fn>
+  let matchSpy: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    matchSpy = vi.fn().mockResolvedValue(undefined)
     putSpy = vi.fn()
     const mockCache = {
-      match: vi.fn().mockResolvedValue(undefined), // Always miss
+      match: matchSpy, // Always miss unless a test overrides it
       put: putSpy, // We spy on this
       keys: vi.fn().mockResolvedValue([]),
     }
@@ -498,5 +511,243 @@ describe('Cache Skipping Logic', () => {
     await app.request('/')
     // IMPORTANT: put() SHOULD be called for normal responses
     expect(putSpy).toHaveBeenCalled()
+  })
+
+  it.each(['Accept-Language', 'Authorization', 'X-Tenant'])(
+    'Should NOT cache response if Vary: %s is set',
+    async (vary) => {
+      const app = new Hono()
+      app.use('*', cache({ cacheName: 'skip-test', wait: true }))
+      app.get('/', (c) => {
+        c.header('Vary', vary)
+        return c.text('response')
+      })
+
+      await app.request('/')
+      expect(putSpy).not.toHaveBeenCalled()
+    }
+  )
+
+  it('Should set configured Vary header and cache by the configured request header value', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text('response')
+    })
+
+    await app.request('/')
+    const res = await app.request('/')
+    expect(res.headers.get('Vary')).toBe('accept')
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should store separate variants for different Accept-Language request values', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'vary-language-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(c.req.header('Accept-Language') ?? 'missing')
+    })
+
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    const en = await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'ja',
+      },
+    })
+    const ja = await app.request('/', {
+      headers: {
+        'Accept-Language': 'ja',
+      },
+    })
+
+    expect(await en.text()).toBe('en')
+    expect(en.headers.get('X-Count')).toBe('1')
+    expect(await ja.text()).toBe('ja')
+    expect(ja.headers.get('X-Count')).toBe('2')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should keep missing and present Vary request header values in separate variants', async () => {
+    stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use('*', cache({ cacheName: 'vary-missing-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(c.req.header('Accept-Language') ?? 'missing')
+    })
+
+    await app.request('/')
+    await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+    const missing = await app.request('/')
+    const present = await app.request('/', {
+      headers: {
+        'Accept-Language': 'en',
+      },
+    })
+
+    expect(await missing.text()).toBe('missing')
+    expect(missing.headers.get('X-Count')).toBe('1')
+    expect(await present.text()).toBe('en')
+    expect(present.headers.get('X-Count')).toBe('2')
+  })
+
+  it('Should store separate variants using multiple configured request headers', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let count = 0
+    app.use(
+      '*',
+      cache({ cacheName: 'vary-multiple-test', wait: true, vary: ['Accept', 'Accept-Encoding'] })
+    )
+    app.get('/', (c) => {
+      count++
+      c.header('X-Count', `${count}`)
+      return c.text(`${c.req.header('Accept')}:${c.req.header('Accept-Encoding')}`)
+    })
+
+    await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    const same = await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    const differentAccept = await app.request('/', {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+      },
+    })
+    await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'br',
+      },
+    })
+    const differentEncoding = await app.request('/', {
+      headers: {
+        Accept: 'text/plain',
+        'Accept-Encoding': 'br',
+      },
+    })
+
+    expect(same.headers.get('X-Count')).toBe('1')
+    expect(differentAccept.headers.get('X-Count')).toBe('2')
+    expect(differentEncoding.headers.get('X-Count')).toBe('3')
+    expect(mockCache.put).toHaveBeenCalledTimes(3)
+  })
+
+  it('Should store when the handler Vary header is covered by configured Vary headers', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'vary-covered-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', 'Accept-Language')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should not store when the handler adds Vary headers not covered by configured Vary headers', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', 'Accept-Language, Cookie')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should not store Vary: * responses even when Vary headers are configured', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, vary: 'Accept-Language' }))
+    app.get('/', (c) => {
+      c.header('Vary', '*')
+      return c.text('response')
+    })
+
+    await app.request('/')
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should bypass cache for Authorization requests', async () => {
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, cacheControl: 'max-age=10' }))
+    app.get('/', (c) => {
+      return c.text('fresh')
+    })
+
+    const res = await app.request('/', {
+      headers: {
+        Authorization: 'Bearer token',
+      },
+    })
+    expect(await res.text()).toBe('fresh')
+    expect(caches.open).not.toHaveBeenCalled()
+    expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should not use or store cache for POST requests', async () => {
+    const app = new Hono()
+    let postCount = 0
+    app.use('*', cache({ cacheName: 'skip-test', wait: true, cacheControl: 'max-age=10' }))
+    app.get('/resource', (c) => {
+      return c.text('get response')
+    })
+    app.post('/resource', (c) => {
+      postCount++
+      c.header('X-Count', `${postCount}`)
+      return c.text('post response')
+    })
+
+    await app.request('/resource')
+    putSpy.mockClear()
+    matchSpy.mockClear()
+
+    await app.request('/resource', { method: 'POST' })
+    const res = await app.request('/resource', { method: 'POST' })
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(res.headers.get('Cache-Control')).toBeNull()
+    expect(matchSpy).not.toHaveBeenCalled()
+    expect(putSpy).not.toHaveBeenCalled()
   })
 })

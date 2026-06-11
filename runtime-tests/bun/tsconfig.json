@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "references": [
+    { "path": "../../tsconfig.build.json" }
+  ]
+}

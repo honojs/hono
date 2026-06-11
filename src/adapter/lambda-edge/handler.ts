@@ -121,7 +121,8 @@ export const handle = (
   context?: CloudFrontContext,
   callback?: Callback
 ) => Promise<CloudFrontResult>) => {
-  return async (event, context?, callback?) => {
+  return async (event, ...args: [context?: CloudFrontContext, callback?: Callback]) => {
+    const [context, callback] = args
     const res = await app.fetch(createRequest(event), {
       event,
       context,
@@ -158,12 +159,22 @@ const createRequest = (event: CloudFrontEdgeEvent): Request => {
 
   const headers = new Headers()
   Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
-    v.forEach((header) => headers.set(k, header.value))
+    v.forEach((header) => headers.append(k, header.value))
   })
 
   const requestBody = event.Records[0].cf.request.body
   const method = event.Records[0].cf.request.method
-  const body = createBody(method, requestBody)
+  const rawBody = createBody(method, requestBody)
+
+  let body: string | Uint8Array<ArrayBuffer> | undefined = rawBody
+  if (rawBody !== undefined) {
+    const bytes =
+      typeof rawBody === 'string'
+        ? (new TextEncoder().encode(rawBody) as Uint8Array<ArrayBuffer>)
+        : rawBody
+    body = bytes
+    headers.set('content-length', bytes.length.toString())
+  }
 
   return new Request(url, {
     headers,

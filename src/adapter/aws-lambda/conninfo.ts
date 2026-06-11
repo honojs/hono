@@ -59,8 +59,9 @@ export const getConnInfo: GetConnInfo = (c: Context<Env>) => {
   else {
     const xff = c.req.header('x-forwarded-for')
     if (xff) {
-      // First IP is the client
-      address = xff.split(',')[0].trim()
+      const ips = xff.split(',')
+      // ALB appends the real client IP to the end of the header
+      address = ips[ips.length - 1].trim()
     }
   }
 

@@ -31,7 +31,7 @@ For Bun:
 bun run bench:bun
 ```
 
-This project is heavily impaired by [delvedor/router-benchmark](https://github.com/delvedor/router-benchmark)
+This project is heavily inspired by [delvedor/router-benchmark](https://github.com/delvedor/router-benchmark)
 
 ## License
 

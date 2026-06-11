@@ -1,5 +1,13 @@
+import { setCookie } from '../../helper/cookie'
+import { Hono } from '../../hono'
+import { bodyLimit } from '../../middleware/body-limit'
 import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
-import { getProcessor, isContentEncodingBinary, defaultIsContentTypeBinary } from './handler'
+import {
+  getProcessor,
+  handle,
+  isContentEncodingBinary,
+  defaultIsContentTypeBinary,
+} from './handler'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
@@ -290,6 +298,7 @@ describe('EventProcessor.createRequest', () => {
       'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-length': '17',
       'content-type': 'application/json',
       cookie: 'cookie1; cookie2',
       header1: 'value1',
@@ -335,6 +344,7 @@ describe('EventProcessor.createRequest', () => {
       'https://my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-length': '17',
       'content-type': 'application/x-www-form-urlencoded',
       cookie: 'cookie1=value1; cookie2=value2',
       header1: 'value1',
@@ -358,5 +368,142 @@ describe('EventProcessor.createRequest', () => {
       const xCity = request.headers.get('x-city') ?? ''
       expect(decodeURIComponent(xCity)).toBe('炎')
     })
+  })
+})
+
+describe('handle', () => {
+  it('Should return 400 when request contains invalid header names (v2)', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      headers: {
+        'valid-header': 'value',
+        'a"a': 'invalid header name',
+      },
+      requestContext: {
+        ...baseV2Event.requestContext,
+        http: {
+          method: 'GET',
+          path: '/my/path',
+          protocol: 'HTTP/1.1',
+          sourceIp: '192.0.2.1',
+          userAgent: 'agent',
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(400)
+    expect(result.body).toBe('Invalid request')
+  })
+
+  it('ALB single-header: emits the first Set-Cookie intact, never comma-joined', async () => {
+    const app = new Hono()
+    app.get('/multi-cookie', (c) => {
+      setCookie(c, 'session', 'abc123', { expires: new Date('2026-06-09T00:00:00Z') })
+      setCookie(c, 'csrf', 'xyz789', { expires: new Date('2026-06-10T00:00:00Z') })
+      return c.text('ok')
+    })
+    const handler = handle(app)
+
+    const event = {
+      httpMethod: 'GET',
+      path: '/multi-cookie',
+      headers: { host: 'app.example.com' },
+      body: null,
+      isBase64Encoded: false,
+      requestContext: { elb: { targetGroupArn: 'arn:aws:elasticloadbalancing:...' } },
+    } as unknown as LambdaEvent
+
+    const result = await handler(event)
+
+    expect(result.headers!['set-cookie']).toBe(
+      'session=abc123; Path=/; Expires=Tue, 09 Jun 2026 00:00:00 GMT'
+    )
+  })
+
+  it('Lattice v2: emits multiple Set-Cookie as an array', async () => {
+    const app = new Hono()
+    app.get('/multi-cookie', (c) => {
+      setCookie(c, 'session', 'abc123')
+      setCookie(c, 'csrf', 'xyz789')
+      return c.text('ok')
+    })
+    const handler = handle(app)
+
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/multi-cookie',
+      method: 'GET',
+      headers: { host: ['app.example.com'] },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        serviceNetworkArn: '',
+        serviceArn: 'arn:aws:vpc-lattice:us-east-1:123456789012:service/svc-0a40',
+        targetGroupArn: '',
+        identity: {},
+        region: 'us-east-1',
+        timeEpoch: '1583348638390123',
+      },
+    }
+
+    const result = await handler(event)
+
+    expect(result.headers!['set-cookie']).toEqual(['session=abc123; Path=/', 'csrf=xyz789; Path=/'])
+  })
+
+  it('Should return 400 when request contains invalid header names (v1)', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      headers: {
+        'a"a': 'invalid header name',
+      },
+      multiValueHeaders: {
+        'a"a': ['invalid header name'],
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(400)
+    expect(result.body).toBe('Invalid request')
+  })
+
+  it('Should enforce bodyLimit when the client understates Content-Length', async () => {
+    const app = new Hono()
+    app.post(
+      '/upload',
+      bodyLimit({ maxSize: 1024, onError: (c) => c.text('too large', 413) }),
+      async (c) => c.json({ received: (await c.req.text()).length })
+    )
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      rawPath: '/upload',
+      headers: { 'content-type': 'text/plain', 'content-length': '1' },
+      body: 'A'.repeat(10000),
+      requestContext: {
+        ...baseV2Event.requestContext,
+        http: {
+          method: 'POST',
+          path: '/upload',
+          protocol: 'HTTP/1.1',
+          sourceIp: '192.0.2.1',
+          userAgent: 'agent',
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(413)
   })
 })

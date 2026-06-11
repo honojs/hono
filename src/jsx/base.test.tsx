@@ -1,6 +1,6 @@
 /** @jsxImportSource ./ */
 
-import type { JSXNode } from './base'
+import type { Child, JSXNode } from './base'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cloneElement, jsx, Fragment } from './base'
 
@@ -32,5 +32,21 @@ describe('cloneElement', () => {
     const Hr = ({ ...props }) => <hr {...props} />
     const element = <Hr />
     expect(element.toString()).toBe('<hr/>')
+  })
+})
+
+describe('createElement', () => {
+  it('should preserve the SVG element shape', () => {
+    const ref = { current: null }
+    const element = jsx('svg', { ref }) as unknown as JSXNode
+    expect(element.tag).toBe('svg')
+    expect(element.type).toBe('svg')
+    expect(element.ref).toBe(ref)
+  })
+
+  it('should accept a Child-typed value as a child', () => {
+    const child: Child = <span>inner</span>
+    const element = jsx('div', null, child) as unknown as JSXNode
+    expect(element.toString()).toBe('<div><span>inner</span></div>')
   })
 })

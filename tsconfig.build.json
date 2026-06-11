@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "ES2020",
     "rootDir": "./src/",
@@ -12,12 +12,7 @@
     "src/**/*.mts"
   ],
   "exclude": [
-    "src/mod.ts",
-    "src/helper.ts",
-    "src/middleware.ts",
-    "src/deno/**/*.ts",
-    "src/test-utils/*.ts",
     "src/**/*.test.ts",
-    "src/**/*.test.tsx",
+    "src/**/*.test.tsx"
   ]
 }

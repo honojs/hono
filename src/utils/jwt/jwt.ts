@@ -127,15 +127,21 @@ export const verify = async (
   if (header.alg !== alg) {
     throw new JwtAlgorithmMismatch(alg, header.alg)
   }
-  const now = (Date.now() / 1000) | 0
-  if (nbf && payload.nbf && payload.nbf > now) {
-    throw new JwtTokenNotBefore(token)
+  const now = Math.floor(Date.now() / 1000)
+  if (nbf && payload.nbf !== undefined) {
+    if (typeof payload.nbf !== 'number' || !Number.isFinite(payload.nbf) || payload.nbf > now) {
+      throw new JwtTokenNotBefore(token)
+    }
   }
-  if (exp && payload.exp && payload.exp <= now) {
-    throw new JwtTokenExpired(token)
+  if (exp && payload.exp !== undefined) {
+    if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || payload.exp <= now) {
+      throw new JwtTokenExpired(token)
+    }
   }
-  if (iat && payload.iat && now < payload.iat) {
-    throw new JwtTokenIssuedAt(now, payload.iat)
+  if (iat && payload.iat !== undefined) {
+    if (typeof payload.iat !== 'number' || !Number.isFinite(payload.iat) || now < payload.iat) {
+      throw new JwtTokenIssuedAt(now, payload.iat)
+    }
   }
   if (iss) {
     if (!payload.iss) {
@@ -219,6 +225,8 @@ export const verifyWithJwks = async (
     throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms)
   }
 
+  let verifyKeys = options.keys ? [...options.keys] : undefined
+
   if (options.jwks_uri) {
     const response = await fetch(options.jwks_uri, init)
     if (!response.ok) {
@@ -231,16 +239,13 @@ export const verifyWithJwks = async (
     if (!Array.isArray(data.keys)) {
       throw new Error('invalid JWKS response. "keys" field is not an array')
     }
-    if (options.keys) {
-      options.keys.push(...data.keys)
-    } else {
-      options.keys = data.keys
-    }
-  } else if (!options.keys) {
+    verifyKeys ??= []
+    verifyKeys.push(...(data.keys as HonoJsonWebKey[]))
+  } else if (!verifyKeys) {
     throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
-  const matchingKey = options.keys.find((key) => key.kid === header.kid)
+  const matchingKey = verifyKeys.find((key) => key.kid === header.kid)
   if (!matchingKey) {
     throw new JwtTokenInvalid(token)
   }
@@ -257,10 +262,13 @@ export const verifyWithJwks = async (
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
   try {
-    const [h, p] = token.split('.')
-    const header = decodeJwtPart(h) as TokenHeader
-    const payload = decodeJwtPart(p) as JWTPayload
+    const header = decodeJwtPart(parts[0]) as TokenHeader
+    const payload = decodeJwtPart(parts[1]) as JWTPayload
     return {
       header,
       payload,
@@ -271,9 +279,12 @@ export const decode = (token: string): { header: TokenHeader; payload: JWTPayloa
 }
 
 export const decodeHeader = (token: string): TokenHeader => {
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
   try {
-    const [h] = token.split('.')
-    return decodeJwtPart(h) as TokenHeader
+    return decodeJwtPart(parts[0]) as TokenHeader
   } catch {
     throw new JwtTokenInvalid(token)
   }

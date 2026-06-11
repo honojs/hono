@@ -1,7 +1,7 @@
 import type { Hono } from '../hono'
 import type { HonoBase } from '../hono-base'
 import type { METHODS, METHOD_NAME_ALL_LOWERCASE } from '../router'
-import type { Endpoint, KnownResponseFormat, ResponseFormat, Schema } from '../types'
+import type { Endpoint, ExtractSchema, KnownResponseFormat, ResponseFormat, Schema } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
@@ -129,8 +129,7 @@ export interface ClientResponse<
   T,
   U extends number = StatusCode,
   F extends ResponseFormat = ResponseFormat,
->
-  extends globalThis.Response {
+> {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
   ok: U extends SuccessStatusCode
@@ -138,12 +137,15 @@ export interface ClientResponse<
     : U extends Exclude<StatusCode, SuccessStatusCode>
       ? false
       : boolean
+  redirected: boolean
   status: U
   statusText: string
+  type: 'basic' | 'cors' | 'default' | 'error' | 'opaque' | 'opaqueredirect'
   headers: Headers
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
+  bytes(): Promise<Uint8Array<ArrayBuffer>>
   json(): F extends 'text' ? Promise<never> : F extends 'json' ? Promise<T> : Promise<unknown>
   text(): F extends 'text' ? (T extends string ? Promise<T> : Promise<never>) : Promise<string>
   blob(): Promise<Blob>
@@ -354,6 +356,38 @@ type ModSchema<D, Def extends GlobalResponseDefinition> = {
 }
 
 export type ApplyGlobalResponse<App, Def extends GlobalResponseDefinition> =
-  App extends HonoBase<infer E, infer D extends Schema, infer B>
-    ? Hono<E, ModSchema<D, Def> extends Schema ? ModSchema<D, Def> : never, B>
+  App extends HonoBase<infer E, infer _ extends Schema, infer B>
+    ? ModSchema<ExtractSchema<App>, Def> extends infer S extends Schema
+      ? Hono<E, S, B>
+      : never
+    : never
+
+type PickRoute<R, U extends StatusCode> = R extends Endpoint
+  ? R extends { status: U }
+    ? R
+    : never
+  : R
+
+type PickSchema<D, U extends StatusCode> = {
+  [K in keyof D]: {
+    [M in keyof D[K]]: PickRoute<D[K][M], U>
+  }
+}
+
+/**
+ * Keep only specific status code responses from all routes of an app.
+ * Useful when error responses are handled centrally (e.g., via custom fetch)
+ * and you want the client to only expose success response types.
+ *
+ * @example
+ * ```ts
+ * type AppSuccessOnly = PickResponseByStatusCode<typeof app, 200>
+ * const client = hc<AppSuccessOnly>('http://localhost')
+ * ```
+ */
+export type PickResponseByStatusCode<App, U extends StatusCode> =
+  App extends HonoBase<infer E, infer _ extends Schema, infer B>
+    ? PickSchema<ExtractSchema<App>, U> extends infer S extends Schema
+      ? Hono<E, S, B>
+      : never
     : never

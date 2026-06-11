@@ -10,7 +10,12 @@ import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
-import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+import {
+  isValidAttributeName,
+  isValidTagName,
+  normalizeIntrinsicElementKey,
+  styleObjectForEach,
+} from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -135,6 +140,9 @@ export class JSXNode implements HtmlEscaped {
   isEscaped: true = true as const
   localContexts?: LocalContexts
   constructor(tag: string | Function, props: Props, children: Child[]) {
+    if (typeof tag !== 'function' && !isValidTagName(tag)) {
+      throw new Error(`Invalid JSX tag name: ${tag}`)
+    }
     this.tag = tag
     this.props = props
     this.children = children
@@ -177,11 +185,14 @@ export class JSXNode implements HtmlEscaped {
     buffer[0] += `<${tag}`
 
     const normalizeKey: (key: string) => string =
-      nameSpaceContext && useContext(nameSpaceContext) === 'svg'
+      tag === 'svg' || (nameSpaceContext && useContext(nameSpaceContext) === 'svg')
         ? (key) => toSVGAttributeName(normalizeIntrinsicElementKey(key))
         : (key) => normalizeIntrinsicElementKey(key)
     for (let [key, v] of Object.entries(props)) {
       key = normalizeKey(key)
+      if (!isValidAttributeName(key)) {
+        continue
+      }
       if (key === 'children') {
         // skip children
       } else if (key === 'style' && typeof v === 'object') {
@@ -291,11 +302,7 @@ export class JSXFragmentNode extends JSXNode {
   }
 }
 
-export const jsx = (
-  tag: string | Function,
-  props: Props | null,
-  ...children: (string | number | HtmlEscapedString)[]
-): JSXNode => {
+export const jsx = (tag: string | Function, props: Props | null, ...children: Child[]): JSXNode => {
   props ??= {}
   if (children.length) {
     props.children = children.length === 1 ? children[0] : children
@@ -310,11 +317,7 @@ export const jsx = (
 }
 
 let initDomRenderer = false
-export const jsxFn = (
-  tag: string | Function,
-  props: Props,
-  children: (string | number | HtmlEscapedString)[]
-): JSXNode => {
+export const jsxFn = (tag: string | Function, props: Props, children: Child[]): JSXNode => {
   if (!initDomRenderer) {
     for (const k in domRenderers) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

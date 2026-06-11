@@ -226,7 +226,7 @@ class Hono<
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
-      subApp.#addRoute(r.method, r.path, handler)
+      subApp.#addRoute(r.method, r.path, handler, r.basePath)
     })
     return this
   }
@@ -364,7 +364,7 @@ class Hono<
       const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
       return (request) => {
         const url = new URL(request.url)
-        url.pathname = url.pathname.slice(pathPrefixLength) || '/'
+        url.pathname = this.getPath(request).slice(pathPrefixLength) || '/'
         return new Request(url, request)
       }
     })()
@@ -382,10 +382,16 @@ class Hono<
     return this
   }
 
-  #addRoute(method: string, path: string, handler: H): void {
+  #addRoute(method: string, path: string, handler: H, baseRoutePath?: string): void {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { basePath: this._basePath, path, method, handler }
+    const r: RouterRoute = {
+      basePath:
+        baseRoutePath !== undefined ? mergePath(this._basePath, baseRoutePath) : this._basePath,
+      path,
+      method,
+      handler,
+    }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
@@ -491,7 +497,7 @@ class Hono<
    * @see https://hono.dev/docs/api/hono#request
    */
   request = (
-    input: RequestInfo | URL,
+    input: Request | string | URL,
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext

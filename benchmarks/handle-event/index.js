@@ -89,16 +89,18 @@ sunderApp.use(sunderRouter.middleware)
 
 // worktop
 const worktopRouter = new WorktopRouter()
-worktopRouter.add('GET', '/user', async (req, res) => res.send(200, 'User'))
-worktopRouter.add('GET', '/user/comments', (req, res) => res.send(200, 'User Comments'))
-worktopRouter.add('GET', '/user/avatar', (req, res) => res.send(200, 'User Avatar'))
-worktopRouter.add('GET', '/user/lookup/email/:address', (req, res) =>
+worktopRouter.add('GET', '/user', async (_req, res) => res.send(200, 'User'))
+worktopRouter.add('GET', '/user/comments', (_req, res) => res.send(200, 'User Comments'))
+worktopRouter.add('GET', '/user/avatar', (_req, res) => res.send(200, 'User Avatar'))
+worktopRouter.add('GET', '/user/lookup/email/:address', (_req, res) =>
   res.send(200, 'User Lookup Email Address')
 )
-worktopRouter.add('GET', '/event/:id', (req, res) => res.send(200, 'Event'))
-worktopRouter.add('POST', '/event/:id/comments', (req, res) => res.send(200, 'POST Event Comments'))
-worktopRouter.add('POST', '/status', (req, res) => res.send(200, 'Status'))
-worktopRouter.add('GET', '/very/deeply/nested/route/hello/there', (req, res) =>
+worktopRouter.add('GET', '/event/:id', (_req, res) => res.send(200, 'Event'))
+worktopRouter.add('POST', '/event/:id/comments', (_req, res) =>
+  res.send(200, 'POST Event Comments')
+)
+worktopRouter.add('POST', '/status', (_req, res) => res.send(200, 'Status'))
+worktopRouter.add('GET', '/very/deeply/nested/route/hello/there', (_req, res) =>
   res.send(200, 'Very Deeply Nested Route')
 )
 worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) =>

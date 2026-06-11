@@ -4,7 +4,12 @@
  */
 
 import type { FC, PropsWithChildren } from '../'
-import type { CssClassName, CssVariableType } from '../../helper/css/common'
+import type {
+  ClassNameSlug,
+  CssClassName,
+  CssVariableType,
+  OnInvalidSlug,
+} from '../../helper/css/common'
 import {
   CLASS_NAME,
   DEFAULT_STYLE_ID,
@@ -167,8 +172,20 @@ interface DefaultContextType {
  * @experimental
  * `createCssContext` is an experimental feature.
  * The API might be changed.
+ *
+ * @param options.id - The ID for the style element
+ * @param options.classNameSlug - Optional function to customize generated CSS class names
+ * @param options.onInvalidSlug - Optional callback function called when an invalid slug is returned from ClassNameSlug
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
+export const createCssContext = ({
+  id,
+  classNameSlug,
+  onInvalidSlug,
+}: {
+  id: Readonly<string>
+  classNameSlug?: ClassNameSlug
+  onInvalidSlug?: OnInvalidSlug
+}): DefaultContextType => {
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
@@ -177,7 +194,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   }
 
   const css: CssType = (strings, ...values) => {
-    return newCssClassNameObject(cssCommon(strings, values))
+    return newCssClassNameObject(cssCommon(strings, values, classNameSlug, onInvalidSlug))
   }
 
   const cx: CxType = (...args) => {
@@ -187,14 +204,16 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     return css(Array(args.length).fill('') as any, ...args)
   }
 
-  const keyframes: KeyframesType = keyframesCommon
+  const keyframes: KeyframesType = (strings, ...values) =>
+    keyframesCommon(strings, values, classNameSlug, onInvalidSlug)
 
   const viewTransition: ViewTransitionType = ((
     strings: TemplateStringsArray | string | undefined,
     ...values: CssVariableType[]
   ) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return newCssClassNameObject(viewTransitionCommon(strings as any, values))
+    return newCssClassNameObject(
+      viewTransitionCommon(strings as any, values, classNameSlug, onInvalidSlug) // eslint-disable-line @typescript-eslint/no-explicit-any
+    )
   }) as ViewTransitionType
 
   return {

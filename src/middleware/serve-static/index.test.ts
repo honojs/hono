@@ -79,6 +79,15 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('404 Not Found')
   })
 
+  it('Should not allow a backslash separator injection - /static/admin%5Csecret.txt', async () => {
+    const res = await app.fetch({
+      method: 'GET',
+      url: 'http://localhost/static/admin%5Csecret.txt',
+    } as Request)
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+  })
+
   it('Should return a pre-compressed zstd response - /static/hello.html', async () => {
     const app = new Hono().use(
       '*',
@@ -264,8 +273,34 @@ describe('Serve Static Middleware', () => {
       })
       app.get('*', serveStatic)
 
-      const res = await app.request('///etc/passwd')
+      const res = await app.request('/etc/passwd')
       expect(await res.text()).toBe('Hello in etc/passwd')
+    })
+
+    it('Should not allow bypass via path mismatch between middleware and serveStatic', async () => {
+      const app = new Hono()
+
+      app.use('/admin/*', async (c, next) => {
+        c.header('X-Authorized', 'true')
+        await next()
+      })
+
+      const serveStatic = baseServeStatic({
+        getContent,
+        root: '.',
+      })
+      app.use('/*', serveStatic)
+
+      const res = await app.request('/admin/secret.txt')
+      expect(res.headers.get('X-Authorized')).toBe('true')
+      expect(await res.text()).toBe('Hello in admin/secret.txt')
+
+      const res2 = await app.request('/admin%2Fsecret.txt')
+      expect(res2.headers.get('X-Authorized')).toBeNull()
+      expect(await res2.text()).toBe('Hello in admin%2Fsecret.txt')
+
+      const res3 = await app.request('//admin/secret.txt')
+      expect(res3.status).toBe(404)
     })
   })
 })

@@ -15,6 +15,17 @@ describe('mime', () => {
     expect(getMimeType('site.webmanifest')).toBe('application/manifest+json')
     expect(getMimeType('goodmorninghellogif')).toBeUndefined()
     expect(getMimeType('indexjs.abcd')).toBeUndefined()
+    expect(getMimeType('IMAGE.JPG')).toBe('image/jpeg')
+  })
+
+  it('getMimeType returns charset parameter for text and XML-based formats', () => {
+    expect(getMimeType('icon.svg')).toBe('image/svg+xml; charset=utf-8')
+    expect(getMimeType('page.xhtml')).toBe('application/xhtml+xml; charset=utf-8')
+    expect(getMimeType('feed.xml')).toBe('application/xml; charset=utf-8')
+    expect(getMimeType('events.ics')).toBe('text/calendar; charset=utf-8')
+    expect(getMimeType('script.mjs')).toBe('text/javascript; charset=utf-8')
+    expect(getMimeType('style.css')).toBe('text/css; charset=utf-8')
+    expect(getMimeType('data.csv')).toBe('text/csv; charset=utf-8')
   })
 
   it('getMimeType with custom mime', () => {
@@ -38,5 +49,16 @@ describe('mime', () => {
     expect(getExtension('image/png')).toBe('png')
     expect(getExtension('application/zip')).toBe('zip')
     expect(getExtension('non/existent')).toBeUndefined()
+  })
+
+  it('getExtension matches MIME types regardless of charset/parameters', () => {
+    expect(getExtension('text/html; charset=utf-8')).toBe('htm')
+    expect(getExtension('text/plain; charset=utf-8')).toBe('txt')
+    expect(getExtension('image/svg+xml; charset=utf-8')).toBe('svg')
+    expect(getExtension('application/xml; charset=utf-8')).toBe('xml')
+    expect(getExtension('application/xhtml+xml; charset=utf-8')).toBe('xhtml')
+    expect(getExtension('text/css; charset=utf-16')).toBe('css')
+    expect(getExtension('image/svg+xml')).toBe('svg')
+    expect(getExtension('application/xml')).toBe('xml')
   })
 })
