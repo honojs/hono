@@ -90,6 +90,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
 
     // Check if response should be compressed
     if (
+      ctx.res.status === 206 || // partial content, Content-Range refers to the uncompressed bytes
       ctx.res.headers.has('Content-Encoding') || // already encoded
       ctx.res.headers.has('Transfer-Encoding') || // already encoded or chunked
       ctx.req.method === 'HEAD' || // HEAD request
