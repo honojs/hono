@@ -445,9 +445,11 @@ export class Context<
    * })
    * ```
    */
-  render: Renderer = (...args) => {
-    this.#renderer ??= (content: string | Promise<string>) => this.html(content)
-    return this.#renderer(...args)
+  get render(): Renderer {
+    return (...args) => {
+      this.#renderer ??= (content: string | Promise<string>) => this.html(content)
+      return this.#renderer(...args)
+    }
   }
 
   /**
@@ -456,20 +458,20 @@ export class Context<
    * @param layout - The layout to set.
    * @returns The layout function.
    */
-  setLayout = (
+  get setLayout(): (
     layout: Layout<PropsForRenderer & { Layout: Layout }>
-  ): Layout<
-    PropsForRenderer & {
-      Layout: Layout
-    }
-  > => (this.#layout = layout)
+  ) => Layout<PropsForRenderer & { Layout: Layout }> {
+    return (layout) => (this.#layout = layout)
+  }
 
   /**
    * Gets the current layout for the response.
    *
    * @returns The current layout function.
    */
-  getLayout = (): Layout<PropsForRenderer & { Layout: Layout }> | undefined => this.#layout
+  get getLayout(): () => Layout<PropsForRenderer & { Layout: Layout }> | undefined {
+    return () => this.#layout
+  }
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
@@ -492,8 +494,10 @@ export class Context<
    * })
    * ```
    */
-  setRenderer = (renderer: Renderer): void => {
-    this.#renderer = renderer
+  get setRenderer(): (renderer: Renderer) => void {
+    return (renderer) => {
+      this.#renderer = renderer
+    }
   }
 
   /**
@@ -512,22 +516,26 @@ export class Context<
    * })
    * ```
    */
-  header: SetHeaders = (name, value, options): void => {
-    if (this.finalized) {
-      this.#res = createResponseInstance((this.#res as Response).body, this.#res)
-    }
-    const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
-    if (value === undefined) {
-      headers.delete(name)
-    } else if (options?.append) {
-      headers.append(name, value)
-    } else {
-      headers.set(name, value)
+  get header(): SetHeaders {
+    return (name, value, options): void => {
+      if (this.finalized) {
+        this.#res = createResponseInstance((this.#res as Response).body, this.#res)
+      }
+      const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
+      if (value === undefined) {
+        headers.delete(name)
+      } else if (options?.append) {
+        headers.append(name, value)
+      } else {
+        headers.set(name, value)
+      }
     }
   }
 
-  status = (status: StatusCode): void => {
-    this.#status = status
+  get status(): (status: StatusCode) => void {
+    return (status: StatusCode): void => {
+      this.#status = status
+    }
   }
 
   /**
@@ -543,16 +551,18 @@ export class Context<
    * })
    * ```
    */
-  set: Set<
+  get set(): Set<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           Variables: ContextVariableMap & Record<string, any>
         }
       : E
-  > = (key: string, value: unknown) => {
-    this.#var ??= new Map()
-    this.#var.set(key, value)
+  > {
+    return (key: string, value: unknown) => {
+      this.#var ??= new Map()
+      this.#var.set(key, value)
+    }
   }
 
   /**
@@ -568,15 +578,17 @@ export class Context<
    * })
    * ```
    */
-  get: Get<
+  get get(): Get<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           Variables: ContextVariableMap & Record<string, any>
         }
       : E
-  > = (key: string) => {
-    return this.#var ? this.#var.get(key) : undefined
+  > {
+    return (key: string) => {
+      return this.#var ? this.#var.get(key) : undefined
+    }
   }
 
   /**
@@ -638,7 +650,9 @@ export class Context<
     return createResponseInstance(data, { status, headers: responseHeaders })
   }
 
-  newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
+  get newResponse(): NewResponse {
+    return (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
+  }
 
   /**
    * `.body()` can return the HTTP response.
@@ -661,11 +675,13 @@ export class Context<
    * })
    * ```
    */
-  body: BodyRespond = (
-    data: Data | null,
-    arg?: StatusCode | RequestInit,
-    headers?: HeaderRecord
-  ): ReturnType<BodyRespond> => this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
+  get body(): BodyRespond {
+    return (
+      data: Data | null,
+      arg?: StatusCode | RequestInit,
+      headers?: HeaderRecord
+    ): ReturnType<BodyRespond> => this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
+  }
 
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
@@ -679,18 +695,20 @@ export class Context<
    * })
    * ```
    */
-  text: TextRespond = (
-    text: string,
-    arg?: ContentfulStatusCode | ResponseOrInit,
-    headers?: HeaderRecord
-  ): ReturnType<TextRespond> => {
-    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
-      ? (new Response(text) as ReturnType<TextRespond>)
-      : (this.#newResponse(
-          text,
-          arg,
-          setDefaultContentType(TEXT_PLAIN, headers)
-        ) as ReturnType<TextRespond>)
+  get text(): TextRespond {
+    return (
+      text: string,
+      arg?: ContentfulStatusCode | ResponseOrInit,
+      headers?: HeaderRecord
+    ): ReturnType<TextRespond> => {
+      return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+        ? (new Response(text) as ReturnType<TextRespond>)
+        : (this.#newResponse(
+            text,
+            arg,
+            setDefaultContentType(TEXT_PLAIN, headers)
+          ) as ReturnType<TextRespond>)
+    }
   }
 
   /**
@@ -705,31 +723,35 @@ export class Context<
    * })
    * ```
    */
-  json: JSONRespond = <
-    T extends JSONValue | {} | InvalidJSONValue,
-    U extends ContentfulStatusCode = ContentfulStatusCode,
-  >(
-    object: T,
-    arg?: U | ResponseOrInit<U>,
-    headers?: HeaderRecord
-  ): JSONRespondReturn<T, U> => {
-    return this.#newResponse(
-      JSON.stringify(object),
-      arg,
-      setDefaultContentType('application/json', headers)
-    ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
+  get json(): JSONRespond {
+    return <
+      T extends JSONValue | {} | InvalidJSONValue,
+      U extends ContentfulStatusCode = ContentfulStatusCode,
+    >(
+      object: T,
+      arg?: U | ResponseOrInit<U>,
+      headers?: HeaderRecord
+    ): JSONRespondReturn<T, U> => {
+      return this.#newResponse(
+        JSON.stringify(object),
+        arg,
+        setDefaultContentType('application/json', headers)
+      ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
+    }
   }
 
-  html: HTMLRespond = (
-    html: string | Promise<string>,
-    arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
-    headers?: HeaderRecord
-  ): Response | Promise<Response> => {
-    const res = (html: string) =>
-      this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
-    return typeof html === 'object'
-      ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
-      : res(html)
+  get html(): HTMLRespond {
+    return (
+      html: string | Promise<string>,
+      arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
+      headers?: HeaderRecord
+    ): Response | Promise<Response> => {
+      const res = (html: string) =>
+        this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
+      return typeof html === 'object'
+        ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
+        : res(html)
+    }
   }
 
   /**
@@ -747,18 +769,20 @@ export class Context<
    * })
    * ```
    */
-  redirect = <T extends RedirectStatusCode = 302>(
+  get redirect(): <T extends RedirectStatusCode = 302>(
     location: string | URL,
     status?: T
-  ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    const locationString = String(location)
-    this.header(
-      'Location',
-      // Multibyes should be encoded
-      // eslint-disable-next-line no-control-regex
-      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
-    )
-    return this.newResponse(null, status ?? 302) as any
+  ) => Response & TypedResponse<undefined, T, 'redirect'> {
+    return (location, status) => {
+      const locationString = String(location)
+      this.header(
+        'Location',
+        // Multibyes should be encoded
+        // eslint-disable-next-line no-control-regex
+        !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+      )
+      return this.newResponse(null, status ?? 302) as any
+    }
   }
 
   /**
@@ -773,8 +797,10 @@ export class Context<
    * })
    * ```
    */
-  notFound = (): ReturnType<NotFoundHandler> => {
-    this.#notFoundHandler ??= () => createResponseInstance()
-    return this.#notFoundHandler(this)
+  get notFound(): () => ReturnType<NotFoundHandler> {
+    return () => {
+      this.#notFoundHandler ??= () => createResponseInstance()
+      return this.#notFoundHandler(this)
+    }
   }
 }
