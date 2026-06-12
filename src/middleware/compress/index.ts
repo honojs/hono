@@ -93,6 +93,8 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       ctx.res.headers.has('Content-Encoding') || // already encoded
       ctx.res.headers.has('Transfer-Encoding') || // already encoded or chunked
       ctx.req.method === 'HEAD' || // HEAD request
+      ctx.res.status === 206 || // partial content
+      ctx.res.headers.has('Content-Range') || // byte-range response: Content-Range would describe the uncompressed bytes
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
       !shouldCompress(ctx.res) || // not compressible type
       !shouldTransform(ctx.res) // cache-control: no-transform
