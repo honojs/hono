@@ -185,6 +185,21 @@ describe('Method Override Middleware', () => {
       })
     })
 
+    it('Should override POST to DELETE when request has a body', async () => {
+      const params = new URLSearchParams()
+      params.append('message', 'Hello')
+      const res = await app.request('/posts?_method=DELETE', {
+        method: 'POST',
+        body: params,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        queryValue: null,
+      })
+    })
+
     it('Should not override GET request', async () => {
       const res = await app.request('/posts?_method=delete', {
         method: 'GET',
