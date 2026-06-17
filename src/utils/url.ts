@@ -53,7 +53,7 @@ export const getPattern = (label: string, next?: string): Pattern | null => {
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
 
-  if (label === '*') {
+  if (label === '*' || label === '**') {
     return '*'
   }
 

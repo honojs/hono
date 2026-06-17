@@ -27,6 +27,20 @@ describe('Get with *', () => {
     expect(node.search('get', '/hello')[0].length).toBe(1)
   })
 })
+describe('Get with **', () => {
+  const node = new Node()
+  node.insert('get', '/auth/**', 'auth wildcard')
+  it('matches a single path segment', () => {
+    expect(node.search('get', '/auth/hello')[0].length).toBe(1)
+    expect(node.search('get', '/auth/hello')[0][0][0]).toEqual('auth wildcard')
+  })
+  it('matches multiple path segments', () => {
+    expect(node.search('get', '/auth/a/b/c')[0].length).toBe(1)
+  })
+  it('does not match paths outside the prefix', () => {
+    expect(node.search('get', '/other/hello')[0].length).toBe(0)
+  })
+})
 
 describe('Get with * including JS reserved words', () => {
   const node = new Node()
