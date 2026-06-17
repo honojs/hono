@@ -17,7 +17,7 @@ export const mergePath = (base: string, path: string) => {
 
 export const replaceUrlParam = (urlString: string, params: Record<string, string | undefined>) => {
   for (const [k, v] of Object.entries(params)) {
-    const reg = new RegExp('/:' + k + '(?:{[^/]+})?\\??')
+    const reg = new RegExp('/:' + k + '(?:{[^/]+})?\\??(?=/|$)')
     urlString = urlString.replace(reg, v ? `/${v}` : '')
   }
   return urlString

@@ -64,6 +64,16 @@ describe('replaceUrlParams', () => {
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/something/123/456')
   })
+
+  it('Should not replace a param whose name is a prefix of another param', () => {
+    const url = 'http://localhost/:idType/:id'
+    const params = {
+      id: '1',
+      idType: '2',
+    }
+    const replacedUrl = replaceUrlParam(url, params)
+    expect(replacedUrl).toBe('http://localhost/2/1')
+  })
 })
 
 describe('buildSearchParams', () => {
