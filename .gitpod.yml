@@ -1,9 +1,0 @@
-tasks:
-  - name: Setup
-    init: bun install --frozen-lockfile
-image:
-  file: ./.devcontainer/Dockerfile
-vscode:
-  extensions:
-    - oven.bun-vscode
-    - vitest.explorer
