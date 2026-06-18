@@ -31,7 +31,7 @@
     "watch": "bun run --shell bun remove-dist && bun ./build/build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
-    "release": "np",
+    "release": "np --no-publish",
     "remove-dist": "rm -rf dist"
   },
   "exports": {
