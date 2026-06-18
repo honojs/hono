@@ -753,10 +753,7 @@ describe('JWK', () => {
 
     const app = new Hono()
 
-    app.use(
-      '/auth-with-aud/*',
-      jwk({ keys: verify_keys, verification: { aud: 'my-api' } })
-    )
+    app.use('/auth-with-aud/*', jwk({ keys: verify_keys, verification: { aud: 'my-api' } }))
     app.use(
       '/auth-with-aud-array/*',
       jwk({ keys: verify_keys, verification: { aud: ['my-api', 'other-api'] } })
@@ -827,10 +824,7 @@ describe('JWK', () => {
     })
 
     it('Should not authorize when aud claim is missing', async () => {
-      const credential = await Jwt.sign(
-        { message: 'hello world' },
-        test_keys.private_keys[0]
-      )
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const url = 'http://localhost/auth-with-aud/a'
       const req = new Request(url)
       req.headers.set('Authorization', `Bearer ${credential}`)

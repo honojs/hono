@@ -147,11 +147,7 @@ export const verify = async (
   }
   if (opts.aud) {
     const expectedAud = Array.isArray(opts.aud) ? opts.aud : [opts.aud]
-    const tokenAud = payload.aud
-      ? Array.isArray(payload.aud)
-        ? payload.aud
-        : [payload.aud]
-      : null
+    const tokenAud = payload.aud ? (Array.isArray(payload.aud) ? payload.aud : [payload.aud]) : null
     if (!tokenAud || !expectedAud.some((a) => tokenAud.includes(a))) {
       throw new JwtTokenAudience(opts.aud, payload.aud ?? null)
     }
