@@ -12,6 +12,7 @@ import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
+  JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
@@ -72,6 +73,8 @@ export const sign = async (
 export type VerifyOptions = {
   /** The expected issuer used for verifying the token */
   iss?: string | RegExp
+  /** The expected audience(s) used for verifying the token. Accepts a string or array of strings. Verification passes if the token's `aud` claim contains at least one of the expected values. */
+  aud?: string | string[]
   /** Verify the `nbf` claim (default: `true`) */
   nbf?: boolean
   /** Verify the `exp` claim (default: `true`) */
@@ -87,6 +90,7 @@ export type VerifyOptionsWithAlg = {
 
 type StrictVerifyOptions = {
   iss?: string | RegExp
+  aud?: string | string[]
   nbf: boolean
   exp: boolean
   iat: boolean
@@ -105,6 +109,7 @@ export const verify = async (
   const opts: StrictVerifyOptionsWithAlg = {
     alg: optsIn.alg ?? 'HS256',
     iss: optsIn.iss,
+    aud: optsIn.aud,
     nbf: optsIn.nbf ?? true,
     exp: optsIn.exp ?? true,
     iat: optsIn.iat ?? true,
@@ -138,6 +143,17 @@ export const verify = async (
     }
     if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
       throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
+  }
+  if (opts.aud) {
+    const expectedAud = Array.isArray(opts.aud) ? opts.aud : [opts.aud]
+    const tokenAud = payload.aud
+      ? Array.isArray(payload.aud)
+        ? payload.aud
+        : [payload.aud]
+      : null
+    if (!tokenAud || !expectedAud.some((a) => tokenAud.includes(a))) {
+      throw new JwtTokenAudience(opts.aud, payload.aud ?? null)
     }
   }
 

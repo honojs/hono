@@ -743,4 +743,100 @@ describe('JWK', () => {
       })
     })
   })
+
+  describe('Audience verification', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth-with-aud/*',
+      jwk({ keys: verify_keys, verification: { aud: 'my-api' } })
+    )
+    app.use(
+      '/auth-with-aud-array/*',
+      jwk({ keys: verify_keys, verification: { aud: ['my-api', 'other-api'] } })
+    )
+
+    app.get('/auth-with-aud/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-aud-array/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should authorize when aud matches', async () => {
+      const credential = await Jwt.sign(
+        { message: 'hello world', aud: 'my-api' },
+        test_keys.private_keys[0]
+      )
+      const req = new Request('http://localhost/auth-with-aud/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world', aud: 'my-api' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize when aud is in token aud array', async () => {
+      const credential = await Jwt.sign(
+        { message: 'hello world', aud: ['my-api', 'other-api'] },
+        test_keys.private_keys[0]
+      )
+      const req = new Request('http://localhost/auth-with-aud/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize when one of the expected aud values matches', async () => {
+      const credential = await Jwt.sign(
+        { message: 'hello world', aud: 'other-api' },
+        test_keys.private_keys[0]
+      )
+      const req = new Request('http://localhost/auth-with-aud-array/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize when aud does not match', async () => {
+      const credential = await Jwt.sign(
+        { message: 'hello world', aud: 'wrong-api' },
+        test_keys.private_keys[0]
+      )
+      const url = 'http://localhost/auth-with-aud/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize when aud claim is missing', async () => {
+      const credential = await Jwt.sign(
+        { message: 'hello world' },
+        test_keys.private_keys[0]
+      )
+      const url = 'http://localhost/auth-with-aud/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
 })

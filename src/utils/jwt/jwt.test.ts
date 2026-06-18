@@ -7,6 +7,7 @@ import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
 import {
   JwtAlgorithmNotImplemented,
+  JwtTokenAudience,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
@@ -224,6 +225,132 @@ describe('JWT', () => {
     }
     expect(err).toBeUndefined()
     expect(authorized?.iss).toEqual('hello')
+  })
+
+  it('JwtTokenAudience (none)', async () => {
+    const payload = { iat: 1633046400 }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: 'my-api',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenAudience('my-api', null))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenAudience (wrong - string token aud)', async () => {
+    const payload = { iat: 1633046400, aud: 'other-api' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: 'my-api',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenAudience('my-api', 'other-api'))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenAudience (wrong - array token aud)', async () => {
+    const payload = { iat: 1633046400, aud: ['other-api', 'another-api'] }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: 'my-api',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenAudience('my-api', ['other-api', 'another-api']))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenAudience (wrong - array options aud, no match)', async () => {
+    const payload = { iat: 1633046400, aud: 'other-api' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: ['my-api', 'another-api'],
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenAudience(['my-api', 'another-api'], 'other-api'))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenAudience (correct - string aud matches string token aud)', async () => {
+    const payload = { iat: 1633046400, aud: 'my-api' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: 'my-api',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toBeUndefined()
+    expect(authorized?.aud).toEqual('my-api')
+  })
+
+  it('JwtTokenAudience (correct - string aud matches array token aud)', async () => {
+    const payload = { iat: 1633046400, aud: ['my-api', 'other-api'] }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: 'my-api',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toBeUndefined()
+    expect(authorized?.aud).toEqual(['my-api', 'other-api'])
+  })
+
+  it('JwtTokenAudience (correct - array options aud, one match)', async () => {
+    const payload = { iat: 1633046400, aud: 'my-api' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        aud: ['my-api', 'other-api'],
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toBeUndefined()
+    expect(authorized?.aud).toEqual('my-api')
   })
 
   it('HS256 sign & verify & decode', async () => {
