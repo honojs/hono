@@ -30,7 +30,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm stage publish --provenance --access public
 
   jsr:
     name: publish-to-jsr
