@@ -86,7 +86,7 @@ export const ErrorBoundary: FC<
           return raw(
             fallbackResult,
             (fallbackResult as HtmlEscapedString).callbacks ||
-              (awaitedFallback as HtmlEscapedString)?.callbacks
+              (awaitedFallback as unknown as HtmlEscapedString)?.callbacks
           )
         }
       }
