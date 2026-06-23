@@ -11,7 +11,7 @@ export const encodeBase64Url = (buf: ArrayBufferLike): string =>
   encodeBase64(buf).replace(/\/|\+/g, (m) => ({ '/': '_', '+': '-' })[m] ?? m)
 
 // This approach is written in MDN.
-// btoa does not support utf-8 characters. So we need a little bit hack.
+// btoa does not support utf-8 characters. So we need a small hack.
 export const encodeBase64 = (buf: ArrayBufferLike): string => {
   let binary = ''
   const bytes = new Uint8Array(buf)
@@ -21,7 +21,7 @@ export const encodeBase64 = (buf: ArrayBufferLike): string => {
   return btoa(binary)
 }
 
-// atob does not support utf-8 characters. So we need a little bit hack.
+// atob does not support utf-8 characters. So we need a small hack.
 export const decodeBase64 = (str: string): Uint8Array<ArrayBuffer> => {
   const binary = atob(str)
   const bytes = new Uint8Array<ArrayBuffer>(new ArrayBuffer(binary.length))
