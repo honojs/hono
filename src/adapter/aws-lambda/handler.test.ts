@@ -266,6 +266,23 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  it('Should preserve every repeated header value for version 1.0 API Gateway event', () => {
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      headers: {
+        'x-forwarded-for': '203.0.113.10',
+      },
+      multiValueHeaders: {
+        'x-forwarded-for': ['203.0.113.1', '203.0.113.10'],
+      },
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.headers.get('x-forwarded-for')).toEqual('203.0.113.1, 203.0.113.10')
+  })
+
   it('Should return valid Request object from version 2.0 API Gateway event', () => {
     const event: LambdaEvent = {
       ...baseV2Event,
@@ -351,6 +368,34 @@ describe('EventProcessor.createRequest', () => {
       header2: 'value1, value2',
       host: 'my-service-a1b2c3.x1y2z3.vpc-lattice-svcs.us-east-1.on.aws',
     })
+  })
+
+  it('Should preserve every repeated header value for Lattice event', async () => {
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/my/path',
+      method: 'GET',
+      headers: {
+        host: ['example.test'],
+        'x-forwarded-for': ['203.0.113.1', '203.0.113.10'],
+      },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        serviceNetworkArn: '',
+        serviceArn: '',
+        targetGroupArn: '',
+        identity: {},
+        region: 'us-east-1',
+        timeEpoch: '1583348638390123',
+      },
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.headers.get('x-forwarded-for')).toEqual('203.0.113.1, 203.0.113.10')
   })
 
   describe('non-ASCII header value processing', () => {

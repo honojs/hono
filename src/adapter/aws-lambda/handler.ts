@@ -474,24 +474,17 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
   protected getHeaders(event: APIGatewayProxyEvent): Headers {
     const headers = new Headers()
     this.getCookies(event, headers)
-    if (event.headers) {
-      for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
-          headers.set(k, sanitizeHeaderValue(v))
-        }
-      }
-    }
     if (event.multiValueHeaders) {
       for (const [k, values] of Object.entries(event.multiValueHeaders)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
+        }
+      }
+    }
+    if (event.headers) {
+      for (const [k, v] of Object.entries(event.headers)) {
+        if (v && !headers.has(k)) {
+          headers.set(k, sanitizeHeaderValue(v))
         }
       }
     }
@@ -607,14 +600,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     if (event.headers) {
       for (const [k, values] of Object.entries(event.headers)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
         }
       }
     }
