@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** @jsxImportSource ./ */
 import { JSDOM } from 'jsdom'
+import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
@@ -503,6 +504,115 @@ d.remove()
       handlers[1].resolve(undefined)
       handlers[2].resolve(undefined)
       handlers[3].reject()
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Out Of Service</div>'
+      )
+    })
+
+    it('renders fallback and reports error once when multiple children reject', async () => {
+      let fallbackRenderCount = 0
+      let onErrorCount = 0
+      const stream = renderToReadableStream(
+        <ErrorBoundary
+          fallbackRender={() => {
+            fallbackRenderCount++
+            return <Fallback />
+          }}
+          onError={() => {
+            onErrorCount++
+          }}
+        >
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={2} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={3} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+      handlers[2].reject()
+      handlers[3].resolve(undefined)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Out Of Service</div>'
+      )
+      expect(fallbackRenderCount).toBe(1)
+      expect(onErrorCount).toBe(1)
+    })
+
+    it('preserves callbacks from a thenable fallback', async () => {
+      const fallback = Promise.resolve(
+        raw('<span>Recovering</span>', [
+          ({ phase }) =>
+            phase === HtmlEscapedCallbackPhase.Stream
+              ? Promise.resolve('<span>Recovered</span>')
+              : undefined,
+        ])
+      )
+      const stream = renderToReadableStream(
+        <ErrorBoundary fallback={fallback}>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<span>Recovering</span><span>Recovered</span>'
+      )
+    })
+
+    it('waits for an in-flight async fallback when multiple children reject', async () => {
+      let resolveFallback!: (value: HtmlEscapedString) => void
+      const fallback = new Promise<HtmlEscapedString>((resolve) => {
+        resolveFallback = resolve
+      })
+
+      const stream = renderToReadableStream(
+        <ErrorBoundary fallback={fallback}>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={2} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={3} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+      handlers[2].reject()
+      handlers[3].resolve(undefined)
+      await Promise.resolve()
+      resolveFallback(<Fallback />)
 
       const chunks = []
       const textDecoder = new TextDecoder()

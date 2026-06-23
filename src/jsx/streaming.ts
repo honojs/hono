@@ -9,7 +9,7 @@ import type { HtmlEscapedString } from '../utils/html'
 import { JSXNode } from './base'
 import { childrenToString } from './components'
 import { DOM_RENDERER, DOM_STASH } from './constants'
-import { createContext, useContext } from './context'
+import { captureRenderContext, createContext, useContext } from './context'
 import { Suspense as SuspenseDomRenderer } from './dom/components'
 import { buildDataStack } from './dom/render'
 import type { HasRenderToDom, NodeObject } from './dom/render'
@@ -53,9 +53,8 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
 
   // for use() hook
   const stackNode = { [DOM_STASH]: [0, []] } as unknown as NodeObject
-  const popNodeStack = (value?: unknown) => {
+  const popNodeStack = () => {
     buildDataStack.pop()
-    return value
   }
 
   try {
@@ -66,12 +65,17 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
     ) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
+      // Capture before deferring: on the fallback path the render context is
+      // observable here but not in the `.then()` below.
+      const resume = captureRenderContext()
       resArray = [
-        e.then(() => {
-          stackNode[DOM_STASH][0] = 0
-          buildDataStack.push([[], stackNode])
-          return childrenToString(children as Child[]).then(popNodeStack)
-        }),
+        e.then(() =>
+          resume(() => {
+            stackNode[DOM_STASH][0] = 0
+            buildDataStack.push([[], stackNode])
+            return childrenToString(children as Child[]).finally(popNodeStack)
+          })
+        ),
       ] as Promise<HtmlEscapedString[]>[]
     } else {
       throw e

@@ -2,8 +2,14 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
 import { DOM_RENDERER, DOM_MEMO } from './constants'
+import {
+  captureRenderContext,
+  createContext,
+  globalContexts,
+  runWithRenderContext,
+  useContext,
+} from './context'
 import type { Context } from './context'
-import { createContext, globalContexts, useContext } from './context'
 import { domRenderers } from './intrinsic-element/common'
 import * as intrinsicElementTags from './intrinsic-element/components'
 import type {
@@ -122,7 +128,6 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
   }
 }
 
-type LocalContexts = [Context<unknown>, unknown][]
 export type Child =
   | string
   | Promise<string>
@@ -138,7 +143,7 @@ export class JSXNode implements HtmlEscaped {
   key?: string
   children: Child[]
   isEscaped: true = true as const
-  localContexts?: LocalContexts
+  suspendedContext?: <T>(callback: () => T) => T
   constructor(tag: string | Function, props: Props, children: Child[]) {
     if (typeof tag !== 'function' && !isValidTagName(tag)) {
       throw new Error(`Invalid JSX tag name: ${tag}`)
@@ -159,22 +164,16 @@ export class JSXNode implements HtmlEscaped {
   }
 
   toString(): string | Promise<string> {
-    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
-    this.localContexts?.forEach(([context, value]) => {
-      context.values.push(value)
-    })
-    try {
+    const render = () => {
+      const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
       this.toStringToBuffer(buffer)
-    } finally {
-      this.localContexts?.forEach(([context]) => {
-        context.values.pop()
-      })
+      return buffer.length === 1
+        ? 'callbacks' in buffer
+          ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
+          : buffer[0]
+        : stringBufferToString(buffer, buffer.callbacks)
     }
-    return buffer.length === 1
-      ? 'callbacks' in buffer
-        ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
-        : buffer[0]
-      : stringBufferToString(buffer, buffer.callbacks)
+    return this.suspendedContext ? this.suspendedContext(render) : runWithRenderContext(render)
   }
 
   toStringToBuffer(buffer: StringBufferWithCallbacks): void {
@@ -270,13 +269,13 @@ class JSXFunctionNode extends JSXNode {
       if (globalContexts.length === 0) {
         buffer.unshift('', res)
       } else {
-        // save current contexts for resuming
-        const currentContexts: LocalContexts = globalContexts.map((c) => [c, c.values.at(-1)])
+        // save the current context state for resuming the suspended subtree
+        const suspendedContext = captureRenderContext()
         buffer.unshift(
           '',
           res.then((childRes) => {
             if (childRes instanceof JSXNode) {
-              childRes.localContexts = currentContexts
+              childRes.suspendedContext = suspendedContext
             }
             return childRes
           })
