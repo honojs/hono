@@ -1280,7 +1280,7 @@ d.replaceWith(c.content)
         return resume(async () => {
           markReaderEntered()
           await readerWait
-          return useContext(ThemeContext)
+          return <>{useContext(ThemeContext)}</>
         })
       }
 
@@ -1303,7 +1303,7 @@ d.replaceWith(c.content)
             throw new Error('boom')
           })
         } catch {}
-        return useContext(ThemeContext)
+        return <>{useContext(ThemeContext)}</>
       }
       const CaptureOuter = () => {
         const resume = captureRenderContext()
@@ -1335,7 +1335,7 @@ d.replaceWith(c.content)
             throw new Error('boom')
           })
         } catch {}
-        return useContext(ThemeContext)
+        return <>{useContext(ThemeContext)}</>
       }
       const CaptureOuter = () => {
         const resume = captureRenderContext()
@@ -1472,7 +1472,7 @@ describe('ErrorBoundary', () => {
       throw new Error('boom')
     }
     const fallback = {
-      then(resolve: (value: JSX.Element) => void) {
+      then(resolve: (value: unknown) => void) {
         resolve(<span>Recovered</span>)
       },
     }
