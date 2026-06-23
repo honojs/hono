@@ -589,7 +589,7 @@ d.remove()
     })
 
     it('waits for an in-flight async fallback when multiple children reject', async () => {
-      let resolveFallback!: (value: HtmlEscapedString) => void
+      let resolveFallback!: (value: HtmlEscapedString | PromiseLike<HtmlEscapedString>) => void
       const fallback = new Promise<HtmlEscapedString>((resolve) => {
         resolveFallback = resolve
       })

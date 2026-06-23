@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const importIndex = () =>
+  // @ts-expect-error es6 module target disallows dynamic import
+  import('./index')
+const importStreaming = () =>
+  // @ts-expect-error es6 module target disallows dynamic import
+  import('./streaming')
+const importHooks = () =>
+  // @ts-expect-error es6 module target disallows dynamic import
+  import('./hooks')
+const importAsyncHooks = () =>
+  // @ts-expect-error es6 module target disallows dynamic import
+  import('node:async_hooks')
+
 /**
  * These tests exercise the non-`AsyncLocalStorage` fallback path. They force
  * every `AsyncLocalStorage` acquisition route to fail (and keep it disabled
@@ -32,7 +45,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('falls back to the default value after await and never leaks across concurrent renders', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const SessionContext = createContext<{ username: string; role: string }>({
       username: 'nobody',
@@ -99,7 +112,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('warns once when a post-await read falls back to the default value', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Reader = async () => {
@@ -118,7 +131,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('clears the fallback warning window after an async render rejects', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Broken = async () => {
@@ -136,13 +149,13 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
     // Re-enable only the legacy route: a CJS entrypoint exposes the main
     // module's `require` even where `process.getBuiltinModule` doesn't exist.
     // Context must then survive `await` with no warning.
-    const { AsyncLocalStorage } = await import('node:async_hooks')
+    const { AsyncLocalStorage } = await importAsyncHooks()
     ;(process as { mainModule?: unknown }).mainModule = {
       require: (specifier: string) =>
         specifier === 'node:async_hooks' ? { AsyncLocalStorage } : {},
     }
 
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Reader = async () => {
@@ -157,7 +170,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('keeps a synchronous render synchronous and does not warn', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const ThemeContext = createContext('light')
     const Consumer = () => jsx('span', {}, useContext(ThemeContext))
@@ -179,7 +192,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   }
 
   it('restores provider values for the subtree returned by a resumed async component', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
+    const { createContext, useContext, jsx } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Inner = () => jsx('span', {}, useContext(ThemeContext))
@@ -198,9 +211,9 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes a Suspense-deferred subtree in the captured request store', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
-    const { Suspense, renderToReadableStream } = await import('./streaming')
-    const { use } = await import('./hooks')
+    const { createContext, useContext, jsx } = await importIndex()
+    const { Suspense, renderToReadableStream } = await importStreaming()
+    const { use } = await importHooks()
 
     // A `use()`-suspended child takes the deferred re-render path, which on the
     // fallback path re-establishes the captured render store synchronously.
@@ -224,9 +237,9 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes a Suspense-deferred subtree with outer provider values', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
-    const { Suspense, renderToReadableStream } = await import('./streaming')
-    const { use } = await import('./hooks')
+    const { createContext, useContext, jsx } = await importIndex()
+    const { Suspense, renderToReadableStream } = await importStreaming()
+    const { use } = await importHooks()
 
     const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('done'), 10))
     const ThemeContext = createContext('default')
@@ -252,9 +265,9 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('renders Suspense fallback with outer provider values', async () => {
-    const { createContext, useContext, jsx } = await import('./index')
-    const { Suspense, renderToReadableStream } = await import('./streaming')
-    const { use } = await import('./hooks')
+    const { createContext, useContext, jsx } = await importIndex()
+    const { Suspense, renderToReadableStream } = await importStreaming()
+    const { use } = await importHooks()
 
     const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('done'), 10))
     const ThemeContext = createContext('default')
@@ -281,9 +294,9 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('restores nested provider values in a resumed Suspense subtree', async () => {
-    const { createContext, useContext, jsx, Fragment } = await import('./index')
-    const { Suspense, renderToReadableStream } = await import('./streaming')
-    const { use } = await import('./hooks')
+    const { createContext, useContext, jsx, Fragment } = await importIndex()
+    const { Suspense, renderToReadableStream } = await importStreaming()
+    const { use } = await importHooks()
 
     const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('done'), 10))
     const ThemeContext = createContext('default')
@@ -315,9 +328,9 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('keeps sibling Suspense resume contexts isolated when they resolve out of order', async () => {
-    const { createContext, useContext, jsx, Fragment } = await import('./index')
-    const { Suspense, renderToReadableStream } = await import('./streaming')
-    const { use } = await import('./hooks')
+    const { createContext, useContext, jsx, Fragment } = await importIndex()
+    const { Suspense, renderToReadableStream } = await importStreaming()
+    const { use } = await importHooks()
 
     const ThemeContext = createContext('default')
     const waits = new Map<string, Promise<void>>()
@@ -389,8 +402,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes ErrorBoundary-deferred children in the captured request store', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('done'), 10))
     let resolved: string | undefined
@@ -418,8 +431,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes ErrorBoundary-deferred children with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('done'), 10))
     let resolved: string | undefined
@@ -451,8 +464,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes ErrorBoundary fallback rendering with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error('boom')), 10)
@@ -485,8 +498,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes ErrorBoundary fallbackRender components with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error('boom')), 10)
@@ -519,8 +532,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes ErrorBoundary fallback prop rendering with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error('boom')), 10)
@@ -547,8 +560,8 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes thenable ErrorBoundary fallback prop rendering with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
-    const { renderToReadableStream } = await import('./streaming')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
+    const { renderToReadableStream } = await importStreaming()
 
     const deferred = new Promise((_resolve, reject) =>
       setTimeout(() => reject(new Error('boom')), 10)
@@ -580,7 +593,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes synchronous ErrorBoundary fallback rendering with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Content = () => {
@@ -605,7 +618,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes synchronous ErrorBoundary fallbackRender components with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Content = () => {
@@ -630,7 +643,7 @@ describe('JSX context isolation without AsyncLocalStorage', () => {
   })
 
   it('resumes synchronous ErrorBoundary fallback prop rendering with outer provider values', async () => {
-    const { createContext, useContext, jsx, ErrorBoundary } = await import('./index')
+    const { createContext, useContext, jsx, ErrorBoundary } = await importIndex()
 
     const ThemeContext = createContext('default')
     const Content = () => {
