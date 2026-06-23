@@ -28,7 +28,7 @@ To enforce this, and regardless of whether AI was actually used, a maintainer ma
 
 The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
 
-After that, please install the dependency environment.
+After that, please install the dependencies.
 
 ```bash
 bun install --frozen-lockfile
