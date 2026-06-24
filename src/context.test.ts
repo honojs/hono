@@ -545,7 +545,9 @@ describe('Pass a ResponseInit to respond methods', () => {
     })
     const res = c.body('', originalResponse)
     const cookies = res.headers.getSetCookie()
-    expect(cookies.includes('context=1; Path=/')).toBe(true)
+    // Per RFC 6265, cookies with same name/domain/path should be deduped
+    // so only 'context=2' should remain (not 'context=1')
+    expect(cookies.includes('context=1; Path=/')).toBe(false)
     expect(cookies.includes('context=2; Path=/')).toBe(true)
     expect(cookies.includes('response=1; Path=/')).toBe(true)
   })
