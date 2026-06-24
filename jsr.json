@@ -29,6 +29,7 @@
     "./trailing-slash": "./src/middleware/trailing-slash/index.ts",
     "./html": "./src/helper/html/index.ts",
     "./css": "./src/helper/css/index.ts",
+    "./action": "./src/jsx/action/index.ts",
     "./jsx": "./src/jsx/index.ts",
     "./jsx/jsx-dev-runtime": "./src/jsx/jsx-dev-runtime.ts",
     "./jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts",
