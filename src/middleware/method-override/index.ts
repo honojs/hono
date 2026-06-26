@@ -128,6 +128,8 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           body: c.req.raw.body,
           headers: c.req.raw.headers,
           method,
+          // duplex is required when body is a ReadableStream (Fetch spec)
+          duplex: 'half',
         })
         return app.fetch(request, c.env, getExecutionCtx(c))
       }
