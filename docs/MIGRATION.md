@@ -34,7 +34,7 @@ There are some breaking changes.
 - Hono - `app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.
 - Hono - `app.handleEvent()` is obsolete. Use `app.fetch()` instead.
 - HonoRequest - `req.cookie()` is obsolete. Use `getCookie()` in `hono/cookie` instead.
-- HonoRequest - `headers()`, `body()`, `bodyUsed()`, `integrity()`, `keepalive()`, `referrer()`, and `signal()` are obsolete. Use the methods in `req.raw` such as `req.raw.headers()`.
+- HonoRequest - `headers()`, `body()`, `bodyUsed()`, `integrity()`, `keepalive()`, `referrer()`, and `signal()` are obsolete. Use the equivalent properties on `req.raw` such as `req.raw.headers`.
 
 ### `serveStatic` in Cloudflare Workers Adapter requires `manifest`
 
