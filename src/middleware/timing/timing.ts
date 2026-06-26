@@ -110,7 +110,13 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {
     const enabled = typeof options.enabled === 'function' ? options.enabled(c) : options.enabled
 
     if (enabled) {
-      c.res.headers.append('Server-Timing', headers.join(','))
+      // Ensure response headers are mutable (raw Response objects may have immutable headers)
+      try {
+        c.res.headers.append('Server-Timing', headers.join(','))
+      } catch {
+        c.res = new Response(c.res.body, c.res)
+        c.res.headers.append('Server-Timing', headers.join(','))
+      }
 
       const crossOrigin =
         typeof options.crossOrigin === 'function' ? options.crossOrigin(c) : options.crossOrigin
