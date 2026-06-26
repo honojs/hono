@@ -2,6 +2,7 @@ import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
 import { setSignedCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
+import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import { encodeBase64Url } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
@@ -1076,5 +1077,37 @@ describe('JWK', () => {
 
     // Note: Test for "no whitelist" was removed because alg is now required.
     // This is a breaking change that enforces explicit algorithm specification for security.
+  })
+
+  describe('Realm option', () => {
+    const jwksUri = async (ctx: Context) => {
+      return new Response(JSON.stringify({
+        keys: [test_keys.public_jwks[0]],
+      }))
+    }
+
+    it('Should use custom realm in WWW-Authenticate header', async () => {
+      const app = new Hono()
+      app.use('/auth/*', jwk({ jwks_uri: jwksUri, alg: ['RS256'], realm: 'my-api' }))
+      app.get('/auth/*', () => new Response('Authorized'))
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="my-api",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
+
+    it('Should support empty realm string', async () => {
+      const app = new Hono()
+      app.use('/auth/*', jwk({ jwks_uri: jwksUri, alg: ['RS256'], realm: '' }))
+      app.get('/auth/*', () => new Response('Authorized'))
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
   })
 })

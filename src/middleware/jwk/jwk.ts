@@ -56,6 +56,8 @@ export const jwk = (
 
     headerName?: string
 
+    realm?: string
+
     alg: AsymmetricAlgorithm[]
 
     verification?: VerifyOptions
@@ -85,6 +87,7 @@ export const jwk = (
           message: errDescription,
           res: unauthorizedResponse({
             ctx,
+            realm: options.realm,
             error: 'invalid_request',
             errDescription,
           }),
@@ -124,6 +127,7 @@ export const jwk = (
         message: errDescription,
         res: unauthorizedResponse({
           ctx,
+          realm: options.realm,
           error: 'invalid_request',
           errDescription,
         }),
@@ -153,6 +157,7 @@ export const jwk = (
         message: 'Unauthorized',
         res: unauthorizedResponse({
           ctx,
+          realm: options.realm,
           error: 'invalid_token',
           statusText: 'Unauthorized',
           errDescription: 'token verification failure',
@@ -169,15 +174,17 @@ export const jwk = (
 
 function unauthorizedResponse(opts: {
   ctx: Context
+  realm?: string
   error: string
   errDescription: string
   statusText?: string
 }) {
+  const realm = opts.realm !== undefined ? opts.realm : opts.ctx.req.url
   return new Response('Unauthorized', {
     status: 401,
     statusText: opts.statusText,
     headers: {
-      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+      'WWW-Authenticate': `Bearer realm="${realm}",error="${opts.error}",error_description="${opts.errDescription}"`,
     },
   })
 }

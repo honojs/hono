@@ -744,4 +744,32 @@ describe('JWT', () => {
       })
     })
   })
+
+  describe('Realm option', () => {
+    const app = new Hono()
+
+    app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256', realm: 'my-api' }))
+    app.get('/auth/*', () => new Response('Authorized'))
+
+    it('Should use custom realm in WWW-Authenticate header', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="my-api",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
+
+    it('Should support empty realm string', async () => {
+      const app2 = new Hono()
+      app2.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256', realm: '' }))
+      app2.get('/auth/*', () => new Response('Authorized'))
+      const req = new Request('http://localhost/auth/a')
+      const res = await app2.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
+  })
 })

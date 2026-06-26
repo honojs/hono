@@ -57,6 +57,7 @@ export const jwt = (options: {
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg: SignatureAlgorithm
   headerName?: string
+  realm?: string
   verification?: VerifyOptions
 }): MiddlewareHandler => {
   const verifyOpts = options.verification || {}
@@ -86,6 +87,7 @@ export const jwt = (options: {
           message: errDescription,
           res: unauthorizedResponse({
             ctx,
+            realm: options.realm,
             error: 'invalid_request',
             errDescription,
           }),
@@ -122,6 +124,7 @@ export const jwt = (options: {
         message: errDescription,
         res: unauthorizedResponse({
           ctx,
+          realm: options.realm,
           error: 'invalid_request',
           errDescription,
         }),
@@ -143,6 +146,7 @@ export const jwt = (options: {
         message: 'Unauthorized',
         res: unauthorizedResponse({
           ctx,
+          realm: options.realm,
           error: 'invalid_token',
           statusText: 'Unauthorized',
           errDescription: 'token verification failure',
@@ -159,15 +163,17 @@ export const jwt = (options: {
 
 function unauthorizedResponse(opts: {
   ctx: Context
+  realm?: string
   error: string
   errDescription: string
   statusText?: string
 }) {
+  const realm = opts.realm !== undefined ? opts.realm : opts.ctx.req.url
   return new Response('Unauthorized', {
     status: 401,
     statusText: opts.statusText,
     headers: {
-      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+      'WWW-Authenticate': `Bearer realm="${realm}",error="${opts.error}",error_description="${opts.errDescription}"`,
     },
   })
 }
