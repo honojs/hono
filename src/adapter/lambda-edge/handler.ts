@@ -150,6 +150,11 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
 }
 
 const createRequest = (event: CloudFrontEdgeEvent): Request => {
+  if (!event?.Records?.[0]?.cf?.request) {
+    throw new Error(
+      'Malformed CloudFront event: expected event.Records[0].cf.request to be defined'
+    )
+  }
   const queryString = event.Records[0].cf.request.querystring
   const host =
     event.Records[0].cf.request.headers?.host?.[0]?.value ||
