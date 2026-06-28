@@ -21,10 +21,10 @@ type ReactElement<P = any, T = string | Function> = JSXNode & {
   props: P
   key: string | null
 }
-type ReactNode = ReactElement | string | number | boolean | null | undefined
+type HonoReactNode = ReactElement | string | number | boolean | null | undefined
 type ComponentClass<_P = {}, _S = {}> = unknown
 
-export type { ReactElement, ReactNode, ComponentClass }
+export type { ReactElement, HonoReactNode, ComponentClass }
 
 export type Event = globalThis.Event
 export type MouseEvent = globalThis.MouseEvent
