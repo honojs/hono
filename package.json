@@ -235,6 +235,11 @@
       "import": "./dist/middleware/method-override/index.js",
       "require": "./dist/cjs/middleware/method-override/index.js"
     },
+    "./method-not-allowed": {
+      "types": "./dist/types/middleware/method-not-allowed/index.d.ts",
+      "import": "./dist/middleware/method-not-allowed/index.js",
+      "require": "./dist/cjs/middleware/method-not-allowed/index.js"
+    },
     "./powered-by": {
       "types": "./dist/types/middleware/powered-by/index.d.ts",
       "import": "./dist/middleware/powered-by/index.js",
