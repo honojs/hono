@@ -2009,6 +2009,70 @@ describe('Hono with `app.route`', () => {
   })
 })
 
+describe('Using QUERY method with `app.query`', () => {
+  it('Should handle QUERY method with RegExpRouter', async () => {
+    const app = new Hono({ router: new RegExpRouter() })
+
+    app.query('/search', (c) => c.text('Query accepted', 200))
+
+    const req = new Request('http://localhost/search', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Query accepted')
+  })
+
+  it('Should handle QUERY method with TrieRouter', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+
+    app.query('/search', (c) => c.text('Query accepted', 200))
+
+    const req = new Request('http://localhost/search', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Query accepted')
+  })
+
+  it('Should handle QUERY method with `app.on`', async () => {
+    const app = new Hono()
+
+    app.on('QUERY', '/search', (c) => c.text('Query accepted via on', 200))
+
+    const req = new Request('http://localhost/search', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Query accepted via on')
+  })
+
+  it('Should return 404 for unregistered QUERY path', async () => {
+    const app = new Hono()
+
+    const req = new Request('http://localhost/search', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(404)
+  })
+
+  it('Should handle path parameters with app.query', async () => {
+    const app = new Hono()
+
+    app.query('/users/:id', (c) => c.json({ id: c.req.param('id') }))
+
+    const req = new Request('http://localhost/users/42', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ id: '42' })
+  })
+})
+
 describe('Using other methods with `app.on`', () => {
   it('Should handle PURGE method with RegExpRouter', async () => {
     const app = new Hono({ router: new RegExpRouter() })
