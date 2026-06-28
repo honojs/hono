@@ -1077,4 +1077,47 @@ describe('JWK', () => {
     // Note: Test for "no whitelist" was removed because alg is now required.
     // This is a breaking change that enforces explicit algorithm specification for security.
   })
+
+  describe('realm option', () => {
+    const app = new Hono()
+
+    app.use(
+      '/auth/*',
+      jwk({
+        keys: verify_keys,
+        alg: ['RS256'],
+        realm: 'api.example.com',
+      })
+    )
+    app.get('/auth/page', (c) => c.text('authorized'))
+
+    it('Should use custom realm in WWW-Authenticate header', async () => {
+      const req = new Request('http://localhost/auth/page')
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="api.example.com",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
+
+    it('Should use empty realm when realm is set to empty string', async () => {
+      const emptyRealmApp = new Hono()
+      emptyRealmApp.use(
+        '/auth/*',
+        jwk({
+          keys: verify_keys,
+          alg: ['RS256'],
+          realm: '',
+        })
+      )
+      emptyRealmApp.get('/auth/page', (c) => c.text('authorized'))
+
+      const req = new Request('http://localhost/auth/page')
+      const res = await emptyRealmApp.request(req)
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        'Bearer realm="",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
+  })
 })

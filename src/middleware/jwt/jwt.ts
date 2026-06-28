@@ -29,6 +29,7 @@ export type JwtVariables<T = any> = {
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
  * @param {SignatureAlgorithm} options.alg - An algorithm type that is used for verifying (required). Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
+ * @param {string} [options.realm] - The realm for the WWW-Authenticate header. If not set, defaults to the request URL.
  * @param {VerifyOptions} [options.verification] - Additional options for JWT payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
@@ -57,6 +58,7 @@ export const jwt = (options: {
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg: SignatureAlgorithm
   headerName?: string
+  realm?: string
   verification?: VerifyOptions
 }): MiddlewareHandler => {
   const verifyOpts = options.verification || {}
@@ -88,6 +90,7 @@ export const jwt = (options: {
             ctx,
             error: 'invalid_request',
             errDescription,
+            realm: options.realm,
           }),
         })
       } else {
@@ -124,6 +127,7 @@ export const jwt = (options: {
           ctx,
           error: 'invalid_request',
           errDescription,
+          realm: options.realm,
         }),
       })
     }
@@ -146,6 +150,7 @@ export const jwt = (options: {
           error: 'invalid_token',
           statusText: 'Unauthorized',
           errDescription: 'token verification failure',
+          realm: options.realm,
         }),
         cause,
       })
@@ -162,12 +167,14 @@ function unauthorizedResponse(opts: {
   error: string
   errDescription: string
   statusText?: string
+  realm?: string
 }) {
+  const realm = opts.realm !== undefined ? opts.realm : opts.ctx.req.url
   return new Response('Unauthorized', {
     status: 401,
     statusText: opts.statusText,
     headers: {
-      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+      'WWW-Authenticate': `Bearer realm="${realm}",error="${opts.error}",error_description="${opts.errDescription}"`,
     },
   })
 }
