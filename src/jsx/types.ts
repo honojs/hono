@@ -5,7 +5,7 @@ import type { Child, JSXNode } from './base'
 import type { JSX } from './intrinsic-elements'
 
 export type { Child, JSXNode, FC } from './base'
-export type { RefObject } from './hooks'
+export type { RefObject, MutableRefObject } from './hooks'
 export type { Context } from './context'
 
 export type PropsWithChildren<P = unknown> = P & { children?: Child | undefined }

@@ -316,7 +316,11 @@ export const useCallback = <T extends Function>(callback: T, deps: readonly unkn
 }
 
 export type RefObject<T> = { current: T | null }
-export const useRef = <T>(initialValue: T | null): RefObject<T> => {
+export type MutableRefObject<T> = { current: T }
+export function useRef<T>(initialValue: T): MutableRefObject<T>
+export function useRef<T>(initialValue: T | null): RefObject<T>
+export function useRef<T = undefined>(): MutableRefObject<T | undefined>
+export function useRef<T>(initialValue?: T | null): MutableRefObject<T | undefined> | RefObject<T> {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
     return { current: initialValue }
