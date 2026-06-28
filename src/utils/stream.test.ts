@@ -31,6 +31,21 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar\n'))
   })
 
+  it('pipe() re-acquires writer after pipeTo() rejects', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    const erroringStream = new ReadableStream()
+    erroringStream.pipeTo = () => Promise.reject(new Error('upstream failure'))
+
+    await expect(api.pipe(erroringStream)).rejects.toThrow('upstream failure')
+
+    await api.write('recovered')
+    await api.close()
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('recovered'))
+    expect((await reader.read()).done).toBe(true)
+  })
+
   it('pipe()', async () => {
     const { readable: senderReadable, writable: senderWritable } = new TransformStream()
 
