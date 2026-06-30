@@ -69,6 +69,21 @@ describe('Serve Static Middleware', () => {
     expect(getContent).toBeCalledTimes(1)
   })
 
+  it('Should return 200 response for empty string content - /static/empty.txt', async () => {
+    const onNotFound = vi.fn()
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent: async () => '',
+        onNotFound,
+      })
+    )
+    const res = await app.request('/static/empty.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('')
+    expect(onNotFound).not.toBeCalled()
+  })
+
   it('Should not allow a directory traversal - /static/%2e%2e/static/hello.html', async () => {
     const res = await app.fetch({
       method: 'GET',

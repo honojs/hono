@@ -89,7 +89,7 @@ export const serveStatic = <E extends Env = Env>(
       return c.newResponse(content.body, content)
     }
 
-    if (content) {
+    if (content != null) {
       const mimeType = (options.mimes && getMimeType(path, options.mimes)) || getMimeType(path)
       c.header('Content-Type', mimeType || 'application/octet-stream')
 
