@@ -42,6 +42,17 @@ describe('Parse Body Util', () => {
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
+  it('should parse mixed-case `x-www-form-urlencoded` content type', async () => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('message', 'hello')
+
+    const req = createRequest(SEARCH_URL, 'POST', searchParams, {
+      'Content-Type': 'Application/X-WWW-Form-Urlencoded',
+    })
+
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
   it('should not parse multiple values in default', async () => {
     const data = new FormData()
     data.append('file', 'bbb')
