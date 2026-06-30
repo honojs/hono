@@ -1905,6 +1905,25 @@ describe('DOM', () => {
   })
 
   describe('useRef', async () => {
+    it('types: non-null initial value returns MutableRefObject<T>', () => {
+      const ref = useRef(new Map<string, number>())
+      // .current is non-nullable; this line would not type-check without the overload
+      ref.current.set('a', 1)
+      expect(ref.current.get('a')).toBe(1)
+    })
+
+    it('types: null initial value returns RefObject<T>', () => {
+      const ref = useRef<HTMLDivElement>(null)
+      expect(ref.current).toBeNull()
+    })
+
+    it('types: no argument returns MutableRefObject<T | undefined>', () => {
+      const ref = useRef<number>()
+      expect(ref.current).toBeUndefined()
+      ref.current = 1
+      expect(ref.current).toBe(1)
+    })
+
     it('simple', async () => {
       const Input = ({ label, ref }: { label: string; ref: RefObject<HTMLInputElement> }) => {
         return (
