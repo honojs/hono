@@ -100,10 +100,9 @@ export const parseBody: ParseBody = async (
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
   const contentType = headers.get('Content-Type')
 
-  if (
-    contentType?.startsWith('multipart/form-data') ||
-    contentType?.startsWith('application/x-www-form-urlencoded')
-  ) {
+  const mediaType = contentType?.split(';')[0].trim().toLowerCase()
+
+  if (mediaType === 'multipart/form-data' || mediaType === 'application/x-www-form-urlencoded') {
     return parseFormData(request, { all, dot })
   }
 
