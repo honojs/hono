@@ -436,6 +436,46 @@ describe('Context header', () => {
     expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
   })
 
+  it('Should keep prepared cookies when assigning a raw Response to c.res', () => {
+    setCookie(c, 'foo', 'bar', { path: '/' })
+    c.res = new Response('ok')
+    expect(c.res.headers.getSetCookie()).toEqual(['foo=bar; Path=/'])
+  })
+
+  it('Should keep raw Response cookies when assigning a Response with prepared cookies', () => {
+    setCookie(c, 'context', '1', { path: '/' })
+    const res = new Response('ok')
+    res.headers.append('set-cookie', 'handler=1; Path=/; HttpOnly')
+
+    c.res = res
+
+    expect(c.res.headers.getSetCookie()).toEqual([
+      'handler=1; Path=/; HttpOnly',
+      'context=1; Path=/',
+    ])
+  })
+
+  it('Should not duplicate cookies when assigning a raw Response after reading c.res', () => {
+    setCookie(c, 'foo', 'bar', { path: '/' })
+    c.res
+    c.res = new Response('ok')
+    expect(c.res.headers.getSetCookie()).toEqual(['foo=bar; Path=/'])
+  })
+
+  it('Should keep raw Response cookies when assigning a Response after reading c.res', () => {
+    c.res.headers.set('X-Something', 'true')
+    setCookie(c, 'context', '1', { path: '/' })
+    const res = new Response('ok')
+    res.headers.append('set-cookie', 'handler=1; Path=/; HttpOnly')
+
+    c.res = res
+
+    expect(c.res.headers.getSetCookie()).toEqual([
+      'handler=1; Path=/; HttpOnly',
+      'context=1; Path=/',
+    ])
+  })
+
   it('Should set set-cookie header values if c.res is already defined', () => {
     c.res = new Response(null, {
       headers: [

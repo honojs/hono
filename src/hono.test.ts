@@ -1076,6 +1076,29 @@ describe('Middleware', () => {
       )
     })
 
+    app.use('/raw-response-cookie-with-prepared-headers', async (c, next) => {
+      c.header('Set-Cookie', 'context=1; Path=/', { append: true })
+      await next()
+    })
+
+    app.get('/raw-response-cookie-with-prepared-headers', () => {
+      const res = new Response('ok')
+      res.headers.append('set-cookie', 'handler=1; Path=/; HttpOnly')
+      return res
+    })
+
+    app.use('/raw-response-cookie-after-reading-response', async (c, next) => {
+      c.res.headers.set('X-Something', 'true')
+      c.header('Set-Cookie', 'context=1; Path=/', { append: true })
+      await next()
+    })
+
+    app.get('/raw-response-cookie-after-reading-response', () => {
+      const res = new Response('ok')
+      res.headers.append('set-cookie', 'handler=1; Path=/; HttpOnly')
+      return res
+    })
+
     app.get('/hello/:message', (c) => {
       const message = c.req.param('message')
       return c.text(`${message}`)
@@ -1110,6 +1133,22 @@ describe('Middleware', () => {
       const res = await app.request('http://localhost/json')
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    })
+
+    it('Should keep raw response cookies with prepared headers', async () => {
+      const res = await app.request('/raw-response-cookie-with-prepared-headers')
+      expect(res.headers.getSetCookie()).toEqual([
+        'handler=1; Path=/; HttpOnly',
+        'context=1; Path=/',
+      ])
+    })
+
+    it('Should keep raw response cookies after reading c.res', async () => {
+      const res = await app.request('/raw-response-cookie-after-reading-response')
+      expect(res.headers.getSetCookie()).toEqual([
+        'handler=1; Path=/; HttpOnly',
+        'context=1; Path=/',
+      ])
     })
 
     it('not found', async () => {
