@@ -2079,6 +2079,47 @@ describe('Multiple methods with `app.on`', () => {
   })
 })
 
+describe('HTTP QUERY method', () => {
+  it('Should handle QUERY with app.query()', async () => {
+    const app = new Hono()
+    app.query('/search', (c) => c.json({ method: c.req.method }))
+
+    const req = new Request('http://localhost/search', { method: 'QUERY' })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ method: 'QUERY' })
+  })
+
+  it('Should handle QUERY with app.on()', async () => {
+    const app = new Hono()
+    app.on('QUERY', '/search', (c) => c.json({ method: c.req.method }))
+
+    const req = new Request('http://localhost/search', { method: 'QUERY' })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ method: 'QUERY' })
+  })
+
+  it('Should return 404 for QUERY on unregistered path', async () => {
+    const app = new Hono()
+    app.query('/search', (c) => c.text('ok'))
+
+    const req = new Request('http://localhost/other', { method: 'QUERY' })
+    const res = await app.request(req)
+    expect(res.status).toBe(404)
+  })
+
+  it('Should support path params with app.query()', async () => {
+    const app = new Hono()
+    app.query('/items/:id', (c) => c.json({ id: c.req.param('id') }))
+
+    const req = new Request('http://localhost/items/42', { method: 'QUERY' })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ id: '42' })
+  })
+})
+
 describe('Multiple paths with one handler', () => {
   const app = new Hono()
 
