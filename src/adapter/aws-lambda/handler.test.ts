@@ -552,3 +552,14 @@ describe('handle', () => {
     expect(result.statusCode).toBe(413)
   })
 })
+
+describe('globalThis.crypto polyfill', () => {
+  it('globalThis.crypto is defined', () => {
+    expect(globalThis.crypto).toBeDefined()
+  })
+
+  it('globalThis.crypto.randomUUID() returns a valid UUID', () => {
+    const uuid = globalThis.crypto.randomUUID()
+    expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
+  })
+})

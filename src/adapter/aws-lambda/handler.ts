@@ -1,6 +1,11 @@
+import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+globalThis.crypto ??= crypto
 import type {
   ALBRequestContext,
   ApiGatewayRequestContext,
