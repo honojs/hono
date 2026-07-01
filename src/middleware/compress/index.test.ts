@@ -58,6 +58,12 @@ describe('Compress Middleware', () => {
     c.header('Content-Length', '1024')
     return c.body(new Uint8Array(1024)) // Simulated chunked data
   })
+  app.get('/partial', (c) => {
+    c.header('Content-Type', 'text/plain')
+    c.header('Content-Length', '1024')
+    c.header('Content-Range', 'bytes 0-1023/2048')
+    return c.body('a'.repeat(1024), 206)
+  })
   app.get('/stream', (c) =>
     stream(c, async (stream) => {
       c.header('Content-Type', 'text/plain')
@@ -156,6 +162,14 @@ describe('Compress Middleware', () => {
       const res = await testCompression('/chunked', 'gzip', null)
       expect(res.headers.get('Content-Length')).toBe('1024')
       expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
+    })
+
+    it('should not compress 206 Partial Content responses', async () => {
+      const res = await testCompression('/partial', 'gzip', null)
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-1023/2048')
+      expect(await res.text()).toBe('a'.repeat(1024))
     })
   })
 
