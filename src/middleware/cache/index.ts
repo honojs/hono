@@ -108,7 +108,10 @@ export const cache = (options: {
         c.res.headers
           .get('Cache-Control')
           ?.split(',')
-          .map((d) => d.trim().split('=', 1)[0]) ?? []
+          // Directive names are case-insensitive (RFC 7234 §5.2); lower-case so
+          // the case-insensitive de-dup check below matches handler-set names
+          // like `Max-Age`.
+          .map((d) => d.trim().split('=', 1)[0].toLowerCase()) ?? []
       for (const directive of cacheControlDirectives) {
         let [name, value] = directive.trim().split('=', 2)
         name = name.toLowerCase()
