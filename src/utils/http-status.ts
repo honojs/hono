@@ -41,8 +41,8 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
 
 /**
  * `UnofficialStatusCode` can be used to specify an unofficial status code.
- * @example
  *
+ * @example
  * ```ts
  * app.get('/unknown', (c) => {
  *   return c.text("Unknown Error", 520 as UnofficialStatusCode)
@@ -51,15 +51,6 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
  */
 export type UnofficialStatusCode = -1
 
-/**
- * @deprecated
- * Use `UnofficialStatusCode` instead.
- */
-export type UnOfficalStatusCode = UnofficialStatusCode
-
-/**
- * If you want to use an unofficial status, use `UnofficialStatusCode`.
- */
 export type StatusCode =
   | InfoStatusCode
   | SuccessStatusCode
