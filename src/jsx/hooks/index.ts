@@ -322,9 +322,7 @@ export type MutableRefObject<T> = { current: T }
 export function useRef<T>(initialValue: T): RefObject<T>
 export function useRef<T>(initialValue: T | null): RefObject<T | null>
 export function useRef<T>(initialValue: T | undefined): RefObject<T | undefined>
-export function useRef<T>(
-  initialValue?: T | null
-): RefObject<T | null | undefined> {
+export function useRef<T>(initialValue?: T | null): RefObject<T | null | undefined> {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
     return { current: initialValue } as RefObject<T | null | undefined>
