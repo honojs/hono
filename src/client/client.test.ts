@@ -14,6 +14,7 @@ import type {
   ClientResponse,
   InferRequestType,
   InferResponseType,
+  InferResponseTypeWithDetail,
   ApplyGlobalResponse,
   PickResponseByStatusCode,
 } from './types'
@@ -1011,6 +1012,40 @@ describe('Infer the response type with different status codes', () => {
     type Expected = {
       data: string
     } | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Infer the response type with details', () => {
+  const condition = () => true
+  const app = new Hono().get('/', (c) => {
+    if (condition()) {
+      return c.json({ successMessage: 'Success!' }, 200)
+    }
+    return c.json({ errorMessage: 'Error!' }, 500)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should infer response body, status code, format, and ok state', () => {
+    type Actual = InferResponseTypeWithDetail<typeof client.index.$get>
+    type Expected =
+      | {
+          body: {
+            successMessage: string
+          }
+          statusCode: 200
+          format: 'json'
+          ok: true
+        }
+      | {
+          body: {
+            errorMessage: string
+          }
+          statusCode: 500
+          format: 'json'
+          ok: false
+        }
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
