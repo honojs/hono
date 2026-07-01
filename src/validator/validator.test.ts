@@ -146,6 +146,18 @@ describe('JSON', () => {
     expect(data).toEqual({ foo: 'bar' })
   })
 
+  it('Should validate if Content-Type media type is mixed-case', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'Application/JSON',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
   it('Should not validate if Content-Type is not set', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
@@ -270,6 +282,42 @@ describe('FormData', () => {
       body: params,
       headers: {
         'content-type': 'application/x-www-form-urlencoded',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: 'bar',
+    })
+  })
+
+  it('Should validate mixed-case URL Encoded Content-Type', async () => {
+    const params = new URLSearchParams()
+    params.append('foo', 'bar')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'Application/X-WWW-Form-Urlencoded; charset=UTF-8',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: 'bar',
+    })
+  })
+
+  it('Should validate mixed-case multipart/form-data Content-Type', async () => {
+    const formData = new FormData()
+    formData.append('foo', 'bar')
+    const source = new Request('http://localhost/post', { method: 'POST', body: formData })
+    const contentType = source.headers
+      .get('Content-Type')!
+      .replace('multipart/form-data', 'Multipart/Form-Data')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: await source.arrayBuffer(),
+      headers: {
+        'content-type': contentType,
       },
     })
     expect(res.status).toBe(200)

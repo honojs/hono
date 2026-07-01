@@ -4,6 +4,7 @@
  */
 
 import { HonoRequest } from '../request'
+import { bufferToFormData } from './buffer'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
@@ -100,10 +101,9 @@ export const parseBody: ParseBody = async (
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
   const contentType = headers.get('Content-Type')
 
-  if (
-    contentType?.startsWith('multipart/form-data') ||
-    contentType?.startsWith('application/x-www-form-urlencoded')
-  ) {
+  const mediaType = contentType?.split(';')[0].trim().toLowerCase()
+
+  if (mediaType === 'multipart/form-data' || mediaType === 'application/x-www-form-urlencoded') {
     return parseFormData(request, { all, dot })
   }
 
@@ -122,7 +122,14 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
-  const formData = await (request as Request).formData()
+  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const arrayBuffer = await (request as Request).arrayBuffer()
+  const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
+  if (request instanceof HonoRequest) {
+    // Cache so that a later `c.req.formData()` reuses the already-consumed body
+    request.bodyCache.formData = formDataPromise as unknown as FormData
+  }
+  const formData = await formDataPromise
 
   if (formData) {
     return convertFormDataToBodyData<T>(formData, options)
