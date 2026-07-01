@@ -42,6 +42,32 @@ describe('Parse Body Util', () => {
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
+  it('should parse mixed-case `x-www-form-urlencoded`', async () => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('message', 'hello')
+
+    const req = createRequest(SEARCH_URL, 'POST', searchParams, {
+      'Content-Type': 'Application/X-WWW-Form-Urlencoded',
+    })
+
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
+  it('should parse mixed-case `multipart/form-data`', async () => {
+    const data = new FormData()
+    data.append('message', 'hello')
+
+    const source = createRequest(FORM_URL, 'POST', data)
+    const contentType = source.headers
+      .get('Content-Type')!
+      .replace('multipart/form-data', 'Multipart/Form-Data')
+    const req = createRequest(FORM_URL, 'POST', await source.arrayBuffer(), {
+      'Content-Type': contentType,
+    })
+
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
   it('should not parse multiple values in default', async () => {
     const data = new FormData()
     data.append('file', 'bbb')
@@ -60,17 +86,10 @@ describe('Parse Body Util', () => {
       type: 'application/octet-stream',
     })
     const data = new FormData()
+    data.append('file', file)
+    data.append('file.hoo', 'hoo')
 
     const req = createRequest(FORM_URL, 'POST', data)
-    vi.spyOn(req, 'formData').mockImplementation(
-      async () =>
-        ({
-          forEach: (cb) => {
-            cb(file, 'file', data)
-            cb('hoo', 'file.hoo', data)
-          },
-        }) as FormData
-    )
 
     const parsedData = await parseBody(req, { dot: true })
     expect(parsedData.file).not.instanceOf(File)
