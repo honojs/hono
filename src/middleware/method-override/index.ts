@@ -128,7 +128,8 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           body: c.req.raw.body,
           headers: c.req.raw.headers,
           method,
-        })
+          ...(c.req.raw.body ? { duplex: 'half' } : {}),
+        } as RequestInit)
         return app.fetch(request, c.env, getExecutionCtx(c))
       }
     }
