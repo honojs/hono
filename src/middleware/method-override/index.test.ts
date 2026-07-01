@@ -173,6 +173,13 @@ describe('Method Override Middleware', () => {
         queryValue: c.req.query('_method') ?? null,
       })
     })
+    app.on(['post', 'delete'], '/posts/details', async (c) => {
+      return c.json({
+        method: c.req.method,
+        page: c.req.query('page') ?? null,
+        queryValue: c.req.query('_method') ?? null,
+      })
+    })
 
     it('Should override POST to DELETE', async () => {
       const res = await app.request('/posts?_method=delete', {
@@ -181,6 +188,18 @@ describe('Method Override Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({
         method: 'DELETE',
+        queryValue: null,
+      })
+    })
+
+    it('Should preserve other query parameters when overriding method', async () => {
+      const res = await app.request('/posts/details?_method=delete&page=2', {
+        method: 'POST',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        page: '2',
         queryValue: null,
       })
     })
