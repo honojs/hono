@@ -315,11 +315,17 @@ export const useCallback = <T extends Function>(callback: T, deps: readonly unkn
   return callback
 }
 
-export type RefObject<T> = { current: T | null }
-export const useRef = <T>(initialValue: T | null): RefObject<T> => {
+export type RefObject<T> = { current: T }
+/** @deprecated Use `RefObject<T | null>` instead. */
+export type MutableRefObject<T> = { current: T }
+
+export function useRef<T>(initialValue: T): RefObject<T>
+export function useRef<T>(initialValue: T | null): RefObject<T | null>
+export function useRef<T>(initialValue: T | undefined): RefObject<T | undefined>
+export function useRef<T>(initialValue?: T | null): RefObject<T | null | undefined> {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
-    return { current: initialValue }
+    return { current: initialValue } as RefObject<T | null | undefined>
   }
   const [, node] = buildData
 
@@ -368,13 +374,13 @@ export const useId = (): string => useMemo(() => `:r${(idCounter++).toString(32)
 // Define to avoid errors. This hook currently does nothing.
 export const useDebugValue = (_value: unknown, _formatter?: (value: unknown) => string): void => {}
 
-export const createRef = <T>(): RefObject<T> => {
+export const createRef = <T>(): RefObject<T | null> => {
   return { current: null }
 }
 
 export const forwardRef = <T, P = {}>(
-  Component: (props: P, ref?: RefObject<T>) => JSX.Element
-): ((props: P & { ref?: RefObject<T> }) => JSX.Element) => {
+  Component: (props: P, ref?: RefObject<T | null>) => JSX.Element
+): ((props: P & { ref?: RefObject<T | null> }) => JSX.Element) => {
   return (props) => {
     const { ref, ...rest } = props
     return Component(rest as P, ref)
@@ -382,7 +388,7 @@ export const forwardRef = <T, P = {}>(
 }
 
 export const useImperativeHandle = <T>(
-  ref: RefObject<T>,
+  ref: RefObject<T | null>,
   createHandle: () => T,
   deps: readonly unknown[]
 ): void => {
