@@ -245,6 +245,42 @@ describe('Compress Middleware', () => {
     })
   })
 
+  describe('Range Responses', () => {
+    const app = new Hono()
+    app.use('*', compress())
+    app.get('/partial', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Range', 'bytes 0-1023/4096')
+      c.header('Content-Length', '1024')
+      return c.body('a'.repeat(1024), 206)
+    })
+    app.get('/content-range-200', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Range', 'bytes 0-1023/4096')
+      c.header('Content-Length', '1024')
+      return c.text('a'.repeat(1024))
+    })
+
+    it('should not compress 206 Partial Content responses', async () => {
+      const res = await app.request('/partial', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.status).toBe(206)
+      // Compressing would corrupt the byte range the Content-Range header describes
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-1023/4096')
+      expect(res.headers.get('Content-Length')).toBe('1024')
+    })
+
+    it('should not compress responses carrying a Content-Range header', async () => {
+      const res = await app.request('/content-range-200', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-1023/4096')
+    })
+  })
+
   describe('contentTypeFilter', () => {
     describe('RegExp', () => {
       const app = new Hono()
