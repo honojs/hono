@@ -498,4 +498,121 @@ describe('Cookie Middleware', () => {
       )
     })
   })
+
+  describe('getCookie after setCookie', () => {
+    it('should return the newly set cookie value', async () => {
+      const app = new Hono()
+
+      app.get('/test', (c) => {
+        setCookie(c, 'session', 'abc123')
+        const value = getCookie(c, 'session')
+        return c.text(value || 'not found')
+      })
+
+      const res = await app.request('http://localhost/test')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('abc123')
+    })
+
+    it('should override request cookie with newly set cookie', async () => {
+      const app = new Hono()
+
+      app.get('/test', (c) => {
+        setCookie(c, 'session', 'new_value')
+        const value = getCookie(c, 'session')
+        return c.text(value || 'not found')
+      })
+
+      const req = new Request('http://localhost/test')
+      req.headers.set('Cookie', 'session=old_value')
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('new_value')
+    })
+
+    it('should return all cookies including newly set ones', async () => {
+      const app = new Hono()
+
+      app.get('/test', (c) => {
+        setCookie(c, 'new_cookie', 'new_value')
+        const cookies = getCookie(c)
+        return c.json(cookies)
+      })
+
+      const req = new Request('http://localhost/test')
+      req.headers.set('Cookie', 'existing=hello')
+      const res = await app.request(req)
+      const body = await res.json()
+      expect(body).toEqual({ existing: 'hello', new_cookie: 'new_value' })
+    })
+
+    it('should return set cookie when no request cookies exist', async () => {
+      const app = new Hono()
+
+      app.get('/test', (c) => {
+        setCookie(c, 'token', 'xyz')
+        const value = getCookie(c, 'token')
+        return c.text(value || 'not found')
+      })
+
+      const res = await app.request('http://localhost/test')
+      expect(await res.text()).toBe('xyz')
+    })
+  })
+
+  describe('getSignedCookie after setSignedCookie', () => {
+    const secret = 'secret chocolate chips'
+
+    it('should return the newly set signed cookie value', async () => {
+      const app = new Hono()
+
+      app.get('/test', async (c) => {
+        await setSignedCookie(c, 'session', 'abc123', secret)
+        const value = await getSignedCookie(c, secret, 'session')
+        return c.text(value || 'not found')
+      })
+
+      const res = await app.request('http://localhost/test')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('abc123')
+    })
+
+    it('should override request signed cookie with newly set signed cookie', async () => {
+      const app = new Hono()
+
+      app.get('/test', async (c) => {
+        await setSignedCookie(c, 'session', 'new_value', secret)
+        const value = await getSignedCookie(c, secret, 'session')
+        return c.text(value || 'not found')
+      })
+
+      const req = new Request('http://localhost/test')
+      req.headers.set(
+        'Cookie',
+        'session=old_value.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D'
+      )
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('new_value')
+    })
+
+    it('should return all signed cookies including newly set ones', async () => {
+      const app = new Hono()
+
+      app.get('/test', async (c) => {
+        await setSignedCookie(c, 'new_cookie', 'new_value', secret)
+        const cookies = await getSignedCookie(c, secret)
+        return c.json(cookies)
+      })
+
+      const req = new Request('http://localhost/test')
+      req.headers.set(
+        'Cookie',
+        'existing=hello.Z9v8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F8%2F'
+      )
+      const res = await app.request(req)
+      const body = await res.json()
+      expect(body.new_cookie).toBe('new_value')
+    })
+  })
 })
