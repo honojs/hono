@@ -238,3 +238,27 @@ describe('basePath', () => {
     expect(basePath(c)).toBe('/sub-app-path/foo')
   })
 })
+
+describe('basePath with Hono instance', () => {
+  it('should return "/" for a fresh Hono instance', () => {
+    const app = new Hono()
+    expect(basePath(app)).toBe('/')
+  })
+
+  it('should return the base path after basePath()', () => {
+    const app = new Hono().basePath('/api')
+    expect(basePath(app)).toBe('/api')
+  })
+
+  it('should return the merged path after chained basePath() calls', () => {
+    const app = new Hono().basePath('/api').basePath('/v1')
+    expect(basePath(app)).toBe('/api/v1')
+  })
+
+  it('should not affect the original instance', () => {
+    const app = new Hono()
+    const based = app.basePath('/api')
+    expect(basePath(app)).toBe('/')
+    expect(basePath(based)).toBe('/api')
+  })
+})
