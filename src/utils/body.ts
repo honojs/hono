@@ -74,7 +74,7 @@ export type ParseBodyOptions = {
   dot: boolean
 }
 
-const isRawRequest = (request: HonoRequest | Request): request is Request => 'headers' in request
+const isRawRequest = (request: HonoRequest | Request): request is Request => 'headers' in request // 'headers' method exists only on Request, not on HonoRequest.
 
 /**
  * Parses the body of a request based on the provided options.
