@@ -3,7 +3,7 @@
  * Body utility.
  */
 
-import { HonoRequest } from '../request'
+import type { HonoRequest } from '../request'
 import { bufferToFormData } from './buffer'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
@@ -74,6 +74,8 @@ export type ParseBodyOptions = {
   dot: boolean
 }
 
+const isRawRequest = (request: HonoRequest | Request): request is Request => 'headers' in request
+
 /**
  * Parses the body of a request based on the provided options.
  *
@@ -98,7 +100,7 @@ export const parseBody: ParseBody = async (
 ) => {
   const { all = false, dot = false } = options
 
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
   const contentType = headers.get('Content-Type')
 
   const mediaType = contentType?.split(';')[0].trim().toLowerCase()
@@ -122,10 +124,10 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
   const arrayBuffer = await (request as Request).arrayBuffer()
   const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
-  if (request instanceof HonoRequest) {
+  if (!isRawRequest(request)) {
     // Cache so that a later `c.req.formData()` reuses the already-consumed body
     request.bodyCache.formData = formDataPromise as unknown as FormData
   }
