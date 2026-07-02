@@ -3,8 +3,20 @@
  * Body utility.
  */
 
-import { HonoRequest } from '../request'
+import type { HonoRequest } from '../request'
+import { HONO_REQUEST } from '../request/constants'
 import { bufferToFormData } from './buffer'
+
+/**
+ * Duck-types a `HonoRequest` without an `instanceof` check against the
+ * `HonoRequest` class, so this module only needs a type-only import of
+ * `HonoRequest` (erased at compile time). A runtime (value) import of
+ * `HonoRequest` here would create a circular import, since `../request.ts`
+ * imports `parseBody` from this module. See
+ * https://github.com/honojs/hono/issues/5068.
+ */
+const isHonoRequest = (request: HonoRequest | Request): request is HonoRequest =>
+  HONO_REQUEST in request
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
@@ -98,7 +110,7 @@ export const parseBody: ParseBody = async (
 ) => {
   const { all = false, dot = false } = options
 
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isHonoRequest(request) ? request.raw.headers : request.headers
   const contentType = headers.get('Content-Type')
 
   const mediaType = contentType?.split(';')[0].trim().toLowerCase()
@@ -122,10 +134,10 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isHonoRequest(request) ? request.raw.headers : request.headers
   const arrayBuffer = await (request as Request).arrayBuffer()
   const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
-  if (request instanceof HonoRequest) {
+  if (isHonoRequest(request)) {
     // Cache so that a later `c.req.formData()` reuses the already-consumed body
     request.bodyCache.formData = formDataPromise as unknown as FormData
   }

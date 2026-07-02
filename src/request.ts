@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { HTTPException } from './http-exception'
-import { GET_MATCH_RESULT } from './request/constants'
+import { GET_MATCH_RESULT, HONO_REQUEST } from './request/constants'
 import type { Result } from './router'
 import type {
   Input,
@@ -389,6 +389,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   get [GET_MATCH_RESULT](): Result<[unknown, RouterRoute]> {
     return this.#matchResult
   }
+
+  /**
+   * Marker used by `utils/body.ts` to duck-type a `HonoRequest` without
+   * importing the class at runtime (which would create a circular import).
+   * See `HONO_REQUEST` in `./request/constants.ts`.
+   */
+  readonly [HONO_REQUEST] = true as const
 
   /**
    * `.matchedRoutes()` can return a matched route in the handler
