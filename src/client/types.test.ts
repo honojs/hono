@@ -117,6 +117,7 @@ describe('app.all()', () => {
     expectTypeOf(client['all-route']).toHaveProperty('$delete')
     expectTypeOf(client['all-route']).toHaveProperty('$options')
     expectTypeOf(client['all-route']).toHaveProperty('$patch')
+    expectTypeOf(client['all-route']).toHaveProperty('$query')
   })
 
   it('should have correct return type for expanded methods', async () => {
