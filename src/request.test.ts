@@ -381,6 +381,33 @@ describe('Body methods with caching', () => {
       expect(async () => await req.blob()).not.toThrow()
     })
 
+    it('should cache the parsed FormData so a later req.formData() reuses it', async () => {
+      // `parseBody()` consumes `req.raw`'s body stream via `arrayBuffer()`.
+      // Internally it recognizes `req` as a `HonoRequest` (as opposed to a
+      // bare `Request`) and caches the resulting FormData on
+      // `req.bodyCache.formData` so that a later `req.formData()` call reuses
+      // it instead of re-reading the already-consumed raw stream (which
+      // would throw). This test exercises that HonoRequest-recognition path.
+      const data = new FormData()
+      data.append('foo', 'bar')
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: data,
+        })
+      )
+
+      const parsed = await req.parseBody()
+      expect(parsed['foo']).toBe('bar')
+
+      // If `req` were not correctly recognized as a `HonoRequest`, the
+      // FormData would not have been cached and this would try to read the
+      // raw body a second time and throw.
+      const formData = await req.formData()
+      expect(formData.get('foo')).toBe('bar')
+      expect(req.bodyCache.formData).toBeDefined()
+    })
+
     describe('should not break body methods after parseBody() with non-form content-type', () => {
       const createReq = () =>
         new HonoRequest(
