@@ -261,6 +261,24 @@ const detectLanguage = (c: Context, options: DetectorOptions): string => {
  * Language detector middleware factory
  * @param userOptions Configuration options for the language detector
  * @returns Hono middleware function
+ *
+ * @example
+ * ```ts
+ * type Variables = LanguageVariables
+ * const app = new Hono<{ Variables: Variables }>()
+ *
+ * app.use(
+ *   languageDetector({
+ *     supportedLanguages: ['en', 'ja'], // Must include fallback
+ *     fallbackLanguage: 'en', // Required
+ *   })
+ * )
+ *
+ * app.get('/', (c) => {
+ *   const lang = c.get('language')
+ *   return c.text(`Current language: ${lang}`)
+ * })
+ * ```
  */
 export const languageDetector = (userOptions: Partial<DetectorOptions>): MiddlewareHandler => {
   const options: DetectorOptions = {
