@@ -1,7 +1,9 @@
 /** @jsxImportSource ../../src/jsx */
 import { assertEquals } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
+import { createContext, useContext } from '../../src/jsx/context.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
+import type { FC, PropsWithChildren } from '../../src/jsx/types.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../src/utils/html.ts'
 
@@ -186,4 +188,58 @@ Deno.test('JSX: number', async () => {
 Deno.test('JSX: style', async () => {
   const html = <div style={{ fontSize: '12px', color: null }}></div>
   assertEquals(html.toString(), '<div style="font-size:12px"></div>')
+})
+
+// Regression for honojs/hono#4326: a Context value must survive an intermediate
+// plain DOM element (e.g. <div>) sitting between the Provider and the consumer.
+// In precompile mode the intermediate <div> is emitted as a `jsxTemplate(...)`
+// call whose interpolated component children were stringified eagerly — before
+// the enclosing Provider pushed its value — so the consumer read the default.
+Deno.test('JSX: Context survives an intermediate DOM element (#4326)', () => {
+  // Given a context with a null default and a consumer that reads it
+  const MyContext = createContext<{ greeting: string } | null>(null)
+
+  const MyConsumer: FC = () => {
+    const context = useContext(MyContext)
+    if (!context) {
+      return <div>No context provided</div>
+    }
+    return <div>{context.greeting}</div>
+  }
+
+  // And a component-based wrapper between Provider and consumer
+  const Box: FC<PropsWithChildren> = ({ children }) => <div class='box'>{children}</div>
+
+  // When the consumer is rendered directly under the Provider (no wrapper)
+  const NoExtraDiv: FC = () => (
+    <MyContext.Provider value={{ greeting: 'I do not have an extra div' }}>
+      <MyConsumer />
+    </MyContext.Provider>
+  )
+
+  // And when the consumer is wrapped by a *component* that renders a <div>
+  const ExtraDivAsComponent: FC = () => (
+    <MyContext.Provider value={{ greeting: 'I have an extra div as a component' }}>
+      <Box>
+        <MyConsumer />
+      </Box>
+    </MyContext.Provider>
+  )
+
+  // And when the consumer is wrapped by a *plain DOM element* <div>
+  const ExtraDiv: FC = () => (
+    <MyContext.Provider value={{ greeting: 'I have an extra div' }}>
+      <div>
+        <MyConsumer />
+      </div>
+    </MyContext.Provider>
+  )
+
+  // Then every path must observe the provided value, not the default.
+  assertEquals((<NoExtraDiv />).toString(), '<div>I do not have an extra div</div>')
+  assertEquals(
+    (<ExtraDivAsComponent />).toString(),
+    '<div class="box"><div>I have an extra div as a component</div></div>'
+  )
+  assertEquals((<ExtraDiv />).toString(), '<div><div>I have an extra div</div></div>')
 })
