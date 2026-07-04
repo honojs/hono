@@ -417,6 +417,24 @@ describe('EventProcessor.createRequest', () => {
 })
 
 describe('handle', () => {
+  it('Should route a V1 REST event by its path even when a base path mapping adds rawPath', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    // A custom domain base path mapping makes API Gateway add a `rawPath` to the
+    // V1 (REST API) event, holding the path before the mapping was stripped. The
+    // event is still V1: it carries `path` and a V1 request context with no `http`.
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      rawPath: '/base/my/path',
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(result.body).toBe('Hello')
+  })
+
   it('Should return 400 when request contains invalid header names (v2)', async () => {
     const app = new Hono()
     app.get('/my/path', (c) => c.text('Hello'))
