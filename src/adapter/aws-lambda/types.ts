@@ -114,6 +114,7 @@ interface Authorizer {
     userArn: string
     userId: string
   }
+  lambda?: Record<string, unknown>
 }
 
 export interface ApiGatewayRequestContextV2 {
