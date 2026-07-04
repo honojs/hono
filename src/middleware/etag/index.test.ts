@@ -216,6 +216,14 @@ describe('Etag Middleware', () => {
       },
     })
     expect(res.status).toBe(304)
+
+    // conditional GET with `*` wildcard:
+    res = await app.request('http://localhost/etag/ghi', {
+      headers: {
+        'If-None-Match': '*',
+      },
+    })
+    expect(res.status).toBe(304)
   })
 
   it('Should not return duplicate etag header values', async () => {
