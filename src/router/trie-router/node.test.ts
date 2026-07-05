@@ -424,6 +424,26 @@ describe('Multi match', () => {
       expect(res[0][0]).toEqual('middleware a')
     })
   })
+  describe('Regexp param with trailing wildcard on empty remainder', () => {
+    const node = new Node()
+    node.insert('get', '/:x{[0-9]+}/*', 'wildcard')
+    it('/12 matches the wildcard on empty remainder', () => {
+      const [res] = node.search('get', '/12')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('wildcard')
+      expect(res[0][1]['x']).toBe('12')
+    })
+    it('/12/y still matches the wildcard', () => {
+      const [res] = node.search('get', '/12/y')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('wildcard')
+      expect(res[0][1]['x']).toBe('12')
+    })
+    it('/abc does not match', () => {
+      const [res] = node.search('get', '/abc')
+      expect(res.length).toBe(0)
+    })
+  })
   describe('Trailing slash', () => {
     const node = new Node()
     node.insert('get', '/book', 'GET /book')
