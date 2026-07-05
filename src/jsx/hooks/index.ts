@@ -316,8 +316,6 @@ export const useCallback = <T extends Function>(callback: T, deps: readonly unkn
 }
 
 export type RefObject<T> = { current: T }
-/** @deprecated Use `RefObject<T | null>` instead. */
-export type MutableRefObject<T> = { current: T }
 
 export function useRef<T>(initialValue: T): RefObject<T>
 export function useRef<T>(initialValue: T | null): RefObject<T | null>
