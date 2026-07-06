@@ -11,6 +11,11 @@ describe('LinearRouter', () => {
           'Multi match > `params` per a handler > GET /entry/123/show',
           'Capture regex pattern has trailing wildcard > GET /foo/bar/file.html',
           'Complex > Parameter with {.*} regexp',
+          'Trailing wildcard on empty remainder > GET /static',
+          'Trailing wildcard on empty remainder > GET /plain/12',
+          'Trailing wildcard on empty remainder > GET /regexp/12',
+          'Trailing wildcard on empty remainder > GET /regexp/12/y',
+          'Trailing wildcard on empty remainder > GET /regexp/abc',
         ],
       },
       {

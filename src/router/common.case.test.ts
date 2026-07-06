@@ -550,6 +550,46 @@ export const runTest = ({
       })
     })
 
+    describe('Trailing wildcard on empty remainder', () => {
+      beforeEach(() => {
+        router.add('GET', '/static/*', 'static')
+        router.add('GET', '/plain/:id/*', 'plain')
+        router.add('GET', '/regexp/:id{[0-9]+}/*', 'regexp')
+      })
+
+      it('GET /static', () => {
+        const res = match('GET', '/static')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('static')
+      })
+
+      it('GET /plain/12', () => {
+        const res = match('GET', '/plain/12')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('plain')
+        expect(res[0].params['id']).toBe('12')
+      })
+
+      it('GET /regexp/12', () => {
+        const res = match('GET', '/regexp/12')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('regexp')
+        expect(res[0].params['id']).toBe('12')
+      })
+
+      it('GET /regexp/12/y', () => {
+        const res = match('GET', '/regexp/12/y')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('regexp')
+        expect(res[0].params['id']).toBe('12')
+      })
+
+      it('GET /regexp/abc', () => {
+        const res = match('GET', '/regexp/abc')
+        expect(res.length).toBe(0)
+      })
+    })
+
     describe('Capture complex multiple directories', () => {
       beforeEach(() => {
         router.add('GET', '/:first{.+}/middle-a/:reference?', '1')
