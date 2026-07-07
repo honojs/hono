@@ -3,7 +3,7 @@ import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
 import { encodeBase64 } from '../../utils/encode'
-import type { Callback, CloudFrontEdgeEvent } from './handler'
+import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler'
 import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
@@ -220,6 +220,84 @@ describe('handle', () => {
     }
 
     const res = await handler(event)
-    expect(res.status).toBe('413')
+    expect(res).toMatchObject({ status: '413' })
+  })
+
+  it('Should resolve with the request passed to the callback for origin forwarding', async () => {
+    type Env = { Bindings: { callback: Callback; request: CloudFrontRequest } }
+    const app = new Hono<Env>()
+    const callback = vi.fn()
+
+    app.get('*', async (c, next) => {
+      await next()
+      c.env.callback(null, c.env.request)
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent, undefined, callback)
+
+    expect(result).toBe(cloudFrontEdgeEvent.Records[0].cf.request)
+    expect(callback).toHaveBeenCalledWith(null, cloudFrontEdgeEvent.Records[0].cf.request)
+  })
+
+  it('Should resolve with the result passed to the callback over the app response', async () => {
+    type Env = { Bindings: { callback: Callback } }
+    const app = new Hono<Env>()
+    const customResult = {
+      status: '302',
+      headers: {
+        location: [{ key: 'location', value: 'https://example.com' }],
+      },
+    }
+
+    app.get('/test-path', (c) => {
+      c.env.callback(null, customResult)
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent)
+
+    expect(result).toBe(customResult)
+  })
+
+  it('Should only honor the first callback invocation', async () => {
+    type Env = { Bindings: { callback: Callback; request: CloudFrontRequest } }
+    const app = new Hono<Env>()
+
+    app.get('/test-path', (c) => {
+      c.env.callback(null, c.env.request)
+      c.env.callback(null, { status: '500' })
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent)
+
+    expect(result).toBe(cloudFrontEdgeEvent.Records[0].cf.request)
+  })
+
+  it('Should reject when the callback is called with an error', async () => {
+    type Env = { Bindings: { callback: Callback } }
+    const app = new Hono<Env>()
+    const error = new Error('edge failure')
+
+    app.get('/test-path', (c) => {
+      c.env.callback(error)
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+
+    await expect(handler(cloudFrontEdgeEvent)).rejects.toThrow('edge failure')
+  })
+
+  it('Should resolve with the app response when the callback is not used', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text('normal'))
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+    expect(res).toMatchObject({ status: '200', body: 'normal' })
   })
 })
