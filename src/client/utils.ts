@@ -63,6 +63,12 @@ function isObject(item: unknown): item is ObjectType {
   return typeof item === 'object' && item !== null && !Array.isArray(item)
 }
 
+/**
+ * Deep merge two objects. When the target value is a function and the
+ * source value is an object, they are composed into a new async function
+ * that resolves the original and merges its result with the source object
+ * (source keys take priority).
+ */
 export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
   if (!isObject(target) && !isObject(source)) {
     return source as T
