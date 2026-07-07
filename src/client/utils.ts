@@ -74,7 +74,9 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
     if (typeof merged[key] === 'function' && isObject(value)) {
       const fn = merged[key]
       merged[key] = (async () => {
-        const fnResult = await (fn as () => Record<string, unknown> | Promise<Record<string, unknown>>)()
+        const fnResult = await (
+          fn as () => Record<string, unknown> | Promise<Record<string, unknown>>
+        )()
         return { ...fnResult, ...value }
       }) as T[keyof T] & T
     } else if (isObject(merged[key]) && isObject(value)) {
