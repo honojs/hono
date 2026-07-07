@@ -11,7 +11,7 @@
     "!dist/**/*.tsbuildinfo"
   ],
   "scripts": {
-    "test": "tsc --noEmit && vitest --run",
+    "test": "tsc -p tsconfig.spec.json && vitest --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno && deno test --no-lock -c runtime-tests/deno-jsx/deno.precompile.json runtime-tests/deno-jsx && deno test --no-lock -c runtime-tests/deno-jsx/deno.react-jsx.json runtime-tests/deno-jsx",
     "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/*",
