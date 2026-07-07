@@ -146,7 +146,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   query(key: string): string | undefined
-  query(): Record<string, string>
+  query(): Record<string, string | undefined>
   query(key?: string) {
     return getQueryParam(this.url, key)
   }
