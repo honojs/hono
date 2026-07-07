@@ -103,9 +103,7 @@ const runBuild = async (config: BuildOptions) => {
 await Promise.all([
   runBuild(esmConfig),
   runBuild(cjsConfig),
-  $`tsc ${
-    isWatch ? ['-w'] : []
-  } --emitDeclarationOnly --declaration --project tsconfig.build.json`,
+  $`tsc ${isWatch ? ['-w'] : []} --emitDeclarationOnly --declaration --project tsconfig.build.json`,
 ])
 
 // Remove #private fields
