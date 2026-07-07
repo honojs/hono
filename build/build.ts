@@ -105,7 +105,7 @@ await Promise.all([
   runBuild(cjsConfig),
   $`tsc ${
     isWatch ? ['-w'] : []
-  } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow(),
+  } --emitDeclarationOnly --declaration --project tsconfig.build.json`,
 ])
 
 // Remove #private fields
