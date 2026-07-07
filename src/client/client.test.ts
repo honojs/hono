@@ -1209,8 +1209,10 @@ describe('Dynamic headers', () => {
   const server = setupServer(
     http.post('http://localhost/posts', async ({ request }) => {
       const requestDynamic = request.headers.get('x-dynamic')
+      const requestHono = request.headers.get('x-hono')
       const payload = {
         requestDynamic,
+        requestHono,
       }
       return HttpResponse.json(payload)
     })
@@ -1244,6 +1246,24 @@ describe('Dynamic headers', () => {
     expect(res.ok).toBe(true)
     const data = await res.json()
     expect(data.requestDynamic).toEqual('two')
+  })
+
+  it('Should merge async client headers with per-request headers', async () => {
+    const asyncClient = hc<AppType>('http://localhost', {
+      headers: async () => ({ 'x-hono': 'hono' }),
+    })
+
+    const res = await asyncClient.posts.$post(
+      {},
+      {
+        headers: { 'x-dynamic': 'test' },
+      }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestHono).toEqual('hono')
+    expect(data.requestDynamic).toEqual('test')
   })
 })
 
