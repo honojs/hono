@@ -216,7 +216,16 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
     })
     if (method) {
       options ??= {}
-      const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
+      const reqOptions: ClientRequestOptions = { ...opts.args[1] }
+      const baseHeaders = options.headers
+      const reqHeaders = reqOptions.headers
+      if (baseHeaders && reqHeaders) {
+        reqOptions.headers = async () => ({
+          ...(typeof baseHeaders === 'function' ? await baseHeaders() : baseHeaders),
+          ...(typeof reqHeaders === 'function' ? await reqHeaders() : reqHeaders),
+        })
+      }
+      const args = deepMerge<ClientRequestOptions>(options, reqOptions)
       return req.fetch(opts.args[0], args)
     }
     return req
