@@ -2,7 +2,7 @@ import { describe } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
-import { encodeBase64 } from '../../utils/encode'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
 import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler'
 import { createBody, handle, isContentTypeBinary } from './handler'
 
@@ -299,5 +299,69 @@ describe('handle', () => {
 
     const res = await handler(cloudFrontEdgeEvent)
     expect(res).toMatchObject({ status: '200', body: 'normal' })
+  })
+
+  it('Should base64 encode a compressed response with a textual content-type', async () => {
+    const payload = new TextEncoder().encode('a'.repeat(100))
+    const gzipped = await new Response(
+      new Blob([payload]).stream().pipeThrough(new CompressionStream('gzip'))
+    ).arrayBuffer()
+
+    const app = new Hono()
+    app.get('/test-path', () => {
+      return new Response(gzipped, {
+        headers: {
+          'content-type': 'text/html; charset=UTF-8',
+          'content-encoding': 'gzip',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const body = encodeBase64(gzipped)
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ bodyEncoding: 'base64', body })
+
+    const decompressed = await new Response(
+      new Blob([decodeBase64(body)]).stream().pipeThrough(new DecompressionStream('gzip'))
+    ).text()
+    expect(decompressed).toBe('a'.repeat(100))
+  })
+
+  it('Should base64 encode a response with an unknown content-encoding', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text('zstd bytes', {
+        headers: {
+          'content-encoding': 'zstd',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({
+      bodyEncoding: 'base64',
+      body: encodeBase64(new TextEncoder().encode('zstd bytes').buffer),
+    })
+  })
+
+  it('Should not base64 encode a response with the identity content-encoding', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text('plain', {
+        headers: {
+          'content-encoding': 'identity',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ body: 'plain' })
+    expect(res).not.toHaveProperty('bodyEncoding')
   })
 })
