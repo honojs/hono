@@ -118,8 +118,10 @@ describe('isContentEncodingBinary', () => {
     expect(isContentEncodingBinary('deflate')).toBe(true)
     expect(isContentEncodingBinary('br')).toBe(true)
     expect(isContentEncodingBinary('deflate, gzip')).toBe(true)
+    expect(isContentEncodingBinary('zstd')).toBe(true)
     expect(isContentEncodingBinary('')).toBe(false)
-    expect(isContentEncodingBinary('unknown')).toBe(false)
+    expect(isContentEncodingBinary('identity')).toBe(false)
+    expect(isContentEncodingBinary(null)).toBe(false)
   })
 })
 
