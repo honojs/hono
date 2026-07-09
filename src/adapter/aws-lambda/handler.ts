@@ -670,8 +670,5 @@ export const defaultIsContentTypeBinary = (contentType: string): boolean => {
 }
 
 export const isContentEncodingBinary = (contentEncoding: string | null) => {
-  if (contentEncoding === null) {
-    return false
-  }
-  return /^(gzip|deflate|compress|br)/.test(contentEncoding)
+  return !!contentEncoding && !/^identity$/i.test(contentEncoding)
 }
