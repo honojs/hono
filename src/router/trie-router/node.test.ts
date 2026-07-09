@@ -418,10 +418,11 @@ describe('Multi match', () => {
       expect(res[1][0]).toEqual('regexp')
       expect(res[1][1]['id']).toBe('123')
     })
-    it('/regexp-abc/123', () => {
-      const [res] = node.search('get', '/regex-abc/123/ghi')
+    it('/regex-abc/123', () => {
+      const [res] = node.search('get', '/regex-abc/123')
       expect(res.length).toBe(1)
       expect(res[0][0]).toEqual('middleware a')
+      expect(res[0][1]['id']).toBe('123')
     })
   })
   describe('Trailing slash', () => {
