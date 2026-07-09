@@ -197,6 +197,31 @@ describe('Named params and a wildcard', () => {
   })
 })
 
+describe('Regexp param and a wildcard', () => {
+  const node = new Node()
+
+  node.insert('get', '/:id{[0-9]+}/*', 'onepart')
+
+  it('get /12 - wildcard matches the empty remainder', () => {
+    const [res] = node.search('get', '/12')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('onepart')
+    expect(res[0][1]['id']).toEqual('12')
+  })
+
+  it('get /12/bar', () => {
+    const [res] = node.search('get', '/12/bar')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('onepart')
+    expect(res[0][1]['id']).toEqual('12')
+  })
+
+  it('get /abc - does not match when the regexp fails', () => {
+    const [res] = node.search('get', '/abc')
+    expect(res.length).toBe(0)
+  })
+})
+
 describe('Wildcard', () => {
   const node = new Node()
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
