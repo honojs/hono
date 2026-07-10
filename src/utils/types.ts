@@ -63,7 +63,11 @@ export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
     : T extends InvalidJSONValue
       ? never
       : T extends ReadonlyArray<unknown>
-        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> }
+        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> } extends infer A
+          ? A extends ReadonlyArray<unknown>
+            ? A // plain array or tuple; the mapped type preserves array-ness
+            : JSONParsed<InvalidToNull<T[number]>, TError>[] // array with extra properties; JSON.stringify drops them
+          : never
         : T extends Set<unknown> | Map<unknown, unknown> | Record<string, never>
           ? {}
           : T extends object
