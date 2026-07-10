@@ -31,8 +31,7 @@ const stripWeak = (tag: string) => tag.replace(/^W\//, '')
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
   return (
-    ifNoneMatch != null &&
-    ifNoneMatch.split(/,\s*/).some((t) => t === '*' || stripWeak(t) === stripWeak(etag))
+    ifNoneMatch != null && ifNoneMatch.split(/,\s*/).some((t) => stripWeak(t) === stripWeak(etag))
   )
 }
 
@@ -105,7 +104,12 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
-    if (etagMatches(etag, ifNoneMatch)) {
+    const matched =
+      ifNoneMatch === '*'
+        ? (c.req.method === 'GET' || c.req.method === 'HEAD') && res.ok
+        : etagMatches(etag, ifNoneMatch)
+
+    if (matched) {
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
