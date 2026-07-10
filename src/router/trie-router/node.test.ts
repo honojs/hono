@@ -410,7 +410,7 @@ describe('Multi match', () => {
     const node = new Node()
     node.insert('get', '/regex-abc/:id{[0-9]+}/*', 'middleware a')
     node.insert('get', '/regex-abc/:id{[0-9]+}/def', 'regexp')
-    it('/regexp-abc/123/def', () => {
+    it('/regex-abc/123/def', () => {
       const [res] = node.search('get', '/regex-abc/123/def')
       expect(res.length).toBe(2)
       expect(res[0][0]).toEqual('middleware a')
@@ -418,10 +418,17 @@ describe('Multi match', () => {
       expect(res[1][0]).toEqual('regexp')
       expect(res[1][1]['id']).toBe('123')
     })
-    it('/regexp-abc/123', () => {
+    it('/regex-abc/123/ghi', () => {
       const [res] = node.search('get', '/regex-abc/123/ghi')
       expect(res.length).toBe(1)
       expect(res[0][0]).toEqual('middleware a')
+      expect(res[0][1]['id']).toBe('123')
+    })
+    it('/regex-abc/123', () => {
+      const [res] = node.search('get', '/regex-abc/123')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('middleware a')
+      expect(res[0][1]['id']).toBe('123')
     })
   })
   describe('Trailing slash', () => {
