@@ -684,13 +684,16 @@
     "pkg-pr-new": "^0.0.53",
     "prettier": "3.7.4",
     "publint": "0.3.15",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "undici": "^6.27.0",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^4.1.9",
     "wrangler": "4.107.0",
     "ws": "^8.21.0",
     "zod": "^3.23.8"
+  },
+  "overrides": {
+    "typescript-eslint": "8.62.1"
   },
   "packageManager": "bun@1.2.20",
   "engines": {

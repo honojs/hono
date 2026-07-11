@@ -1,17 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const importIndex = () =>
-  // @ts-expect-error es6 module target disallows dynamic import
-  import('./index')
-const importStreaming = () =>
-  // @ts-expect-error es6 module target disallows dynamic import
-  import('./streaming')
-const importHooks = () =>
-  // @ts-expect-error es6 module target disallows dynamic import
-  import('./hooks')
-const importAsyncHooks = () =>
-  // @ts-expect-error es6 module target disallows dynamic import
-  import('node:async_hooks')
+const importIndex = () => import('./index')
+const importStreaming = () => import('./streaming')
+const importHooks = () => import('./hooks')
+const importAsyncHooks = () => import('node:async_hooks')
 
 /**
  * These tests exercise the non-`AsyncLocalStorage` fallback path. They force
