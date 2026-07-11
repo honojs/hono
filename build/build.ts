@@ -75,13 +75,6 @@ const commonOptions: BuildOptions = {
   platform: 'node',
 }
 
-const cjsConfig: BuildOptions = {
-  ...commonOptions,
-  outbase: './src',
-  outdir: './dist/cjs',
-  format: 'cjs',
-}
-
 const esmConfig: BuildOptions = {
   ...commonOptions,
   bundle: true,
@@ -102,7 +95,6 @@ const runBuild = async (config: BuildOptions) => {
 
 await Promise.all([
   runBuild(esmConfig),
-  runBuild(cjsConfig),
   $`tsc ${isWatch ? ['-w'] : []} --emitDeclarationOnly --declaration --project tsconfig.build.json`,
 ])
 
