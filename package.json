@@ -2,7 +2,7 @@
   "name": "hono",
   "version": "4.12.31",
   "description": "Web framework built on Web Standards",
-  "main": "dist/cjs/index.js",
+  "main": "dist/index.js",
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/types/index.d.ts",
@@ -26,10 +26,9 @@
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
     "editorconfig-checker": "editorconfig-checker",
-    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
-    "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
+    "build": "bun run --shell bun remove-dist && bun ./build/build.ts",
     "postbuild": "publint",
-    "watch": "bun run --shell bun remove-dist && bun ./build/build.ts --watch && bun run copy:package.cjs.json",
+    "watch": "bun run --shell bun remove-dist && bun ./build/build.ts --watch",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
     "release": "np --no-publish",
@@ -39,377 +38,452 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/cjs/index.js"
+      "module-sync": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./request": {
       "types": "./dist/types/request.d.ts",
       "import": "./dist/request.js",
-      "require": "./dist/cjs/request.js"
+      "module-sync": "./dist/request.js",
+      "default": "./dist/request.js"
     },
     "./types": {
       "types": "./dist/types/types.d.ts",
       "import": "./dist/types.js",
-      "require": "./dist/cjs/types.js"
+      "module-sync": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./hono-base": {
       "types": "./dist/types/hono-base.d.ts",
       "import": "./dist/hono-base.js",
-      "require": "./dist/cjs/hono-base.js"
+      "module-sync": "./dist/hono-base.js",
+      "default": "./dist/hono-base.js"
     },
     "./tiny": {
       "types": "./dist/types/preset/tiny.d.ts",
       "import": "./dist/preset/tiny.js",
-      "require": "./dist/cjs/preset/tiny.js"
+      "module-sync": "./dist/preset/tiny.js",
+      "default": "./dist/preset/tiny.js"
     },
     "./quick": {
       "types": "./dist/types/preset/quick.d.ts",
       "import": "./dist/preset/quick.js",
-      "require": "./dist/cjs/preset/quick.js"
+      "module-sync": "./dist/preset/quick.js",
+      "default": "./dist/preset/quick.js"
     },
     "./http-exception": {
       "types": "./dist/types/http-exception.d.ts",
       "import": "./dist/http-exception.js",
-      "require": "./dist/cjs/http-exception.js"
+      "module-sync": "./dist/http-exception.js",
+      "default": "./dist/http-exception.js"
     },
     "./basic-auth": {
       "types": "./dist/types/middleware/basic-auth/index.d.ts",
       "import": "./dist/middleware/basic-auth/index.js",
-      "require": "./dist/cjs/middleware/basic-auth/index.js"
+      "module-sync": "./dist/middleware/basic-auth/index.js",
+      "default": "./dist/middleware/basic-auth/index.js"
     },
     "./bearer-auth": {
       "types": "./dist/types/middleware/bearer-auth/index.d.ts",
       "import": "./dist/middleware/bearer-auth/index.js",
-      "require": "./dist/cjs/middleware/bearer-auth/index.js"
+      "module-sync": "./dist/middleware/bearer-auth/index.js",
+      "default": "./dist/middleware/bearer-auth/index.js"
     },
     "./body-limit": {
       "types": "./dist/types/middleware/body-limit/index.d.ts",
       "import": "./dist/middleware/body-limit/index.js",
-      "require": "./dist/cjs/middleware/body-limit/index.js"
+      "module-sync": "./dist/middleware/body-limit/index.js",
+      "default": "./dist/middleware/body-limit/index.js"
     },
     "./ip-restriction": {
       "types": "./dist/types/middleware/ip-restriction/index.d.ts",
       "import": "./dist/middleware/ip-restriction/index.js",
-      "require": "./dist/cjs/middleware/ip-restriction/index.js"
+      "module-sync": "./dist/middleware/ip-restriction/index.js",
+      "default": "./dist/middleware/ip-restriction/index.js"
     },
     "./cache": {
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
-      "require": "./dist/cjs/middleware/cache/index.js"
+      "module-sync": "./dist/middleware/cache/index.js",
+      "default": "./dist/middleware/cache/index.js"
     },
     "./route": {
       "types": "./dist/types/helper/route/index.d.ts",
       "import": "./dist/helper/route/index.js",
-      "require": "./dist/cjs/helper/route/index.js"
+      "module-sync": "./dist/helper/route/index.js",
+      "default": "./dist/helper/route/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
       "import": "./dist/helper/cookie/index.js",
-      "require": "./dist/cjs/helper/cookie/index.js"
+      "module-sync": "./dist/helper/cookie/index.js",
+      "default": "./dist/helper/cookie/index.js"
     },
     "./accepts": {
       "types": "./dist/types/helper/accepts/index.d.ts",
       "import": "./dist/helper/accepts/index.js",
-      "require": "./dist/cjs/helper/accepts/index.js"
+      "module-sync": "./dist/helper/accepts/index.js",
+      "default": "./dist/helper/accepts/index.js"
     },
     "./compress": {
       "types": "./dist/types/middleware/compress/index.d.ts",
       "import": "./dist/middleware/compress/index.js",
-      "require": "./dist/cjs/middleware/compress/index.js"
+      "module-sync": "./dist/middleware/compress/index.js",
+      "default": "./dist/middleware/compress/index.js"
     },
     "./context-storage": {
       "types": "./dist/types/middleware/context-storage/index.d.ts",
       "import": "./dist/middleware/context-storage/index.js",
-      "require": "./dist/cjs/middleware/context-storage/index.js"
+      "module-sync": "./dist/middleware/context-storage/index.js",
+      "default": "./dist/middleware/context-storage/index.js"
     },
     "./cors": {
       "types": "./dist/types/middleware/cors/index.d.ts",
       "import": "./dist/middleware/cors/index.js",
-      "require": "./dist/cjs/middleware/cors/index.js"
+      "module-sync": "./dist/middleware/cors/index.js",
+      "default": "./dist/middleware/cors/index.js"
     },
     "./csrf": {
       "types": "./dist/types/middleware/csrf/index.d.ts",
       "import": "./dist/middleware/csrf/index.js",
-      "require": "./dist/cjs/middleware/csrf/index.js"
+      "module-sync": "./dist/middleware/csrf/index.js",
+      "default": "./dist/middleware/csrf/index.js"
     },
     "./etag": {
       "types": "./dist/types/middleware/etag/index.d.ts",
       "import": "./dist/middleware/etag/index.js",
-      "require": "./dist/cjs/middleware/etag/index.js"
+      "module-sync": "./dist/middleware/etag/index.js",
+      "default": "./dist/middleware/etag/index.js"
     },
     "./trailing-slash": {
       "types": "./dist/types/middleware/trailing-slash/index.d.ts",
       "import": "./dist/middleware/trailing-slash/index.js",
-      "require": "./dist/cjs/middleware/trailing-slash/index.js"
+      "module-sync": "./dist/middleware/trailing-slash/index.js",
+      "default": "./dist/middleware/trailing-slash/index.js"
     },
     "./html": {
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
-      "require": "./dist/cjs/helper/html/index.js"
+      "module-sync": "./dist/helper/html/index.js",
+      "default": "./dist/helper/html/index.js"
     },
     "./css": {
       "types": "./dist/types/helper/css/index.d.ts",
       "import": "./dist/helper/css/index.js",
-      "require": "./dist/cjs/helper/css/index.js"
+      "module-sync": "./dist/helper/css/index.js",
+      "default": "./dist/helper/css/index.js"
     },
     "./jsx": {
       "types": "./dist/types/jsx/index.d.ts",
       "import": "./dist/jsx/index.js",
-      "require": "./dist/cjs/jsx/index.js"
+      "module-sync": "./dist/jsx/index.js",
+      "default": "./dist/jsx/index.js"
     },
     "./jsx/jsx-dev-runtime": {
       "types": "./dist/types/jsx/jsx-dev-runtime.d.ts",
       "import": "./dist/jsx/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx/jsx-dev-runtime.js"
+      "module-sync": "./dist/jsx/jsx-dev-runtime.js",
+      "default": "./dist/jsx/jsx-dev-runtime.js"
     },
     "./jsx/jsx-runtime": {
       "types": "./dist/types/jsx/jsx-runtime.d.ts",
       "import": "./dist/jsx/jsx-runtime.js",
-      "require": "./dist/cjs/jsx/jsx-runtime.js"
+      "module-sync": "./dist/jsx/jsx-runtime.js",
+      "default": "./dist/jsx/jsx-runtime.js"
     },
     "./jsx/streaming": {
       "types": "./dist/types/jsx/streaming.d.ts",
       "import": "./dist/jsx/streaming.js",
-      "require": "./dist/cjs/jsx/streaming.js"
+      "module-sync": "./dist/jsx/streaming.js",
+      "default": "./dist/jsx/streaming.js"
     },
     "./jsx-renderer": {
       "types": "./dist/types/middleware/jsx-renderer/index.d.ts",
       "import": "./dist/middleware/jsx-renderer/index.js",
-      "require": "./dist/cjs/middleware/jsx-renderer/index.js"
+      "module-sync": "./dist/middleware/jsx-renderer/index.js",
+      "default": "./dist/middleware/jsx-renderer/index.js"
     },
     "./jsx/dom": {
       "types": "./dist/types/jsx/dom/index.d.ts",
       "import": "./dist/jsx/dom/index.js",
-      "require": "./dist/cjs/jsx/dom/index.js"
+      "module-sync": "./dist/jsx/dom/index.js",
+      "default": "./dist/jsx/dom/index.js"
     },
     "./jsx/dom/jsx-dev-runtime": {
       "types": "./dist/types/jsx/dom/jsx-dev-runtime.d.ts",
       "import": "./dist/jsx/dom/jsx-dev-runtime.js",
-      "require": "./dist/cjs/jsx/dom/jsx-dev-runtime.js"
+      "module-sync": "./dist/jsx/dom/jsx-dev-runtime.js",
+      "default": "./dist/jsx/dom/jsx-dev-runtime.js"
     },
     "./jsx/dom/jsx-runtime": {
       "types": "./dist/types/jsx/dom/jsx-runtime.d.ts",
       "import": "./dist/jsx/dom/jsx-runtime.js",
-      "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
+      "module-sync": "./dist/jsx/dom/jsx-runtime.js",
+      "default": "./dist/jsx/dom/jsx-runtime.js"
     },
     "./jsx/dom/client": {
       "types": "./dist/types/jsx/dom/client.d.ts",
       "import": "./dist/jsx/dom/client.js",
-      "require": "./dist/cjs/jsx/dom/client.js"
+      "module-sync": "./dist/jsx/dom/client.js",
+      "default": "./dist/jsx/dom/client.js"
     },
     "./jsx/dom/css": {
       "types": "./dist/types/jsx/dom/css.d.ts",
       "import": "./dist/jsx/dom/css.js",
-      "require": "./dist/cjs/jsx/dom/css.js"
+      "module-sync": "./dist/jsx/dom/css.js",
+      "default": "./dist/jsx/dom/css.js"
     },
     "./jsx/dom/server": {
       "types": "./dist/types/jsx/dom/server.d.ts",
       "import": "./dist/jsx/dom/server.js",
-      "require": "./dist/cjs/jsx/dom/server.js"
+      "module-sync": "./dist/jsx/dom/server.js",
+      "default": "./dist/jsx/dom/server.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
-      "require": "./dist/cjs/middleware/jwt/index.js"
+      "module-sync": "./dist/middleware/jwt/index.js",
+      "default": "./dist/middleware/jwt/index.js"
     },
     "./jwk": {
       "types": "./dist/types/middleware/jwk/index.d.ts",
       "import": "./dist/middleware/jwk/index.js",
-      "require": "./dist/cjs/middleware/jwk/index.js"
+      "module-sync": "./dist/middleware/jwk/index.js",
+      "default": "./dist/middleware/jwk/index.js"
     },
     "./timeout": {
       "types": "./dist/types/middleware/timeout/index.d.ts",
       "import": "./dist/middleware/timeout/index.js",
-      "require": "./dist/cjs/middleware/timeout/index.js"
+      "module-sync": "./dist/middleware/timeout/index.js",
+      "default": "./dist/middleware/timeout/index.js"
     },
     "./timing": {
       "types": "./dist/types/middleware/timing/index.d.ts",
       "import": "./dist/middleware/timing/index.js",
-      "require": "./dist/cjs/middleware/timing/index.js"
+      "module-sync": "./dist/middleware/timing/index.js",
+      "default": "./dist/middleware/timing/index.js"
     },
     "./logger": {
       "types": "./dist/types/middleware/logger/index.d.ts",
       "import": "./dist/middleware/logger/index.js",
-      "require": "./dist/cjs/middleware/logger/index.js"
+      "module-sync": "./dist/middleware/logger/index.js",
+      "default": "./dist/middleware/logger/index.js"
     },
     "./method-override": {
       "types": "./dist/types/middleware/method-override/index.d.ts",
       "import": "./dist/middleware/method-override/index.js",
-      "require": "./dist/cjs/middleware/method-override/index.js"
+      "module-sync": "./dist/middleware/method-override/index.js",
+      "default": "./dist/middleware/method-override/index.js"
     },
     "./powered-by": {
       "types": "./dist/types/middleware/powered-by/index.d.ts",
       "import": "./dist/middleware/powered-by/index.js",
-      "require": "./dist/cjs/middleware/powered-by/index.js"
+      "module-sync": "./dist/middleware/powered-by/index.js",
+      "default": "./dist/middleware/powered-by/index.js"
     },
     "./pretty-json": {
       "types": "./dist/types/middleware/pretty-json/index.d.ts",
       "import": "./dist/middleware/pretty-json/index.js",
-      "require": "./dist/cjs/middleware/pretty-json/index.js"
+      "module-sync": "./dist/middleware/pretty-json/index.js",
+      "default": "./dist/middleware/pretty-json/index.js"
     },
     "./request-id": {
       "types": "./dist/types/middleware/request-id/index.d.ts",
       "import": "./dist/middleware/request-id/index.js",
-      "require": "./dist/cjs/middleware/request-id/index.js"
+      "module-sync": "./dist/middleware/request-id/index.js",
+      "default": "./dist/middleware/request-id/index.js"
     },
     "./language": {
       "types": "./dist/types/middleware/language/index.d.ts",
       "import": "./dist/middleware/language/index.js",
-      "require": "./dist/cjs/middleware/language/index.js"
+      "module-sync": "./dist/middleware/language/index.js",
+      "default": "./dist/middleware/language/index.js"
     },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
       "import": "./dist/middleware/secure-headers/index.js",
-      "require": "./dist/cjs/middleware/secure-headers/index.js"
+      "module-sync": "./dist/middleware/secure-headers/index.js",
+      "default": "./dist/middleware/secure-headers/index.js"
     },
     "./combine": {
       "types": "./dist/types/middleware/combine/index.d.ts",
       "import": "./dist/middleware/combine/index.js",
-      "require": "./dist/cjs/middleware/combine/index.js"
+      "module-sync": "./dist/middleware/combine/index.js",
+      "default": "./dist/middleware/combine/index.js"
     },
     "./ssg": {
       "types": "./dist/types/helper/ssg/index.d.ts",
       "import": "./dist/helper/ssg/index.js",
-      "require": "./dist/cjs/helper/ssg/index.js"
+      "module-sync": "./dist/helper/ssg/index.js",
+      "default": "./dist/helper/ssg/index.js"
     },
     "./streaming": {
       "types": "./dist/types/helper/streaming/index.d.ts",
       "import": "./dist/helper/streaming/index.js",
-      "require": "./dist/cjs/helper/streaming/index.js"
+      "module-sync": "./dist/helper/streaming/index.js",
+      "default": "./dist/helper/streaming/index.js"
     },
     "./validator": {
       "types": "./dist/types/validator/index.d.ts",
       "import": "./dist/validator/index.js",
-      "require": "./dist/cjs/validator/index.js"
+      "module-sync": "./dist/validator/index.js",
+      "default": "./dist/validator/index.js"
     },
     "./router": {
       "types": "./dist/types/router.d.ts",
       "import": "./dist/router.js",
-      "require": "./dist/cjs/router.js"
+      "module-sync": "./dist/router.js",
+      "default": "./dist/router.js"
     },
     "./router/reg-exp-router": {
       "types": "./dist/types/router/reg-exp-router/index.d.ts",
       "import": "./dist/router/reg-exp-router/index.js",
-      "require": "./dist/cjs/router/reg-exp-router/index.js"
+      "module-sync": "./dist/router/reg-exp-router/index.js",
+      "default": "./dist/router/reg-exp-router/index.js"
     },
     "./router/smart-router": {
       "types": "./dist/types/router/smart-router/index.d.ts",
       "import": "./dist/router/smart-router/index.js",
-      "require": "./dist/cjs/router/smart-router/index.js"
+      "module-sync": "./dist/router/smart-router/index.js",
+      "default": "./dist/router/smart-router/index.js"
     },
     "./router/trie-router": {
       "types": "./dist/types/router/trie-router/index.d.ts",
       "import": "./dist/router/trie-router/index.js",
-      "require": "./dist/cjs/router/trie-router/index.js"
+      "module-sync": "./dist/router/trie-router/index.js",
+      "default": "./dist/router/trie-router/index.js"
     },
     "./router/pattern-router": {
       "types": "./dist/types/router/pattern-router/index.d.ts",
       "import": "./dist/router/pattern-router/index.js",
-      "require": "./dist/cjs/router/pattern-router/index.js"
+      "module-sync": "./dist/router/pattern-router/index.js",
+      "default": "./dist/router/pattern-router/index.js"
     },
     "./router/linear-router": {
       "types": "./dist/types/router/linear-router/index.d.ts",
       "import": "./dist/router/linear-router/index.js",
-      "require": "./dist/cjs/router/linear-router/index.js"
+      "module-sync": "./dist/router/linear-router/index.js",
+      "default": "./dist/router/linear-router/index.js"
     },
     "./utils/jwt": {
       "types": "./dist/types/utils/jwt/index.d.ts",
       "import": "./dist/utils/jwt/index.js",
-      "require": "./dist/cjs/utils/jwt/index.js"
+      "module-sync": "./dist/utils/jwt/index.js",
+      "default": "./dist/utils/jwt/index.js"
     },
     "./utils/*": {
       "types": "./dist/types/utils/*.d.ts",
       "import": "./dist/utils/*.js",
-      "require": "./dist/cjs/utils/*.js"
+      "module-sync": "./dist/utils/*.js",
+      "default": "./dist/utils/*.js"
     },
     "./client": {
       "types": "./dist/types/client/index.d.ts",
       "import": "./dist/client/index.js",
-      "require": "./dist/cjs/client/index.js"
+      "module-sync": "./dist/client/index.js",
+      "default": "./dist/client/index.js"
     },
     "./adapter": {
       "types": "./dist/types/helper/adapter/index.d.ts",
       "import": "./dist/helper/adapter/index.js",
-      "require": "./dist/cjs/helper/adapter/index.js"
+      "module-sync": "./dist/helper/adapter/index.js",
+      "default": "./dist/helper/adapter/index.js"
     },
     "./factory": {
       "types": "./dist/types/helper/factory/index.d.ts",
       "import": "./dist/helper/factory/index.js",
-      "require": "./dist/cjs/helper/factory/index.js"
+      "module-sync": "./dist/helper/factory/index.js",
+      "default": "./dist/helper/factory/index.js"
     },
     "./serve-static": {
       "types": "./dist/types/middleware/serve-static/index.d.ts",
       "import": "./dist/middleware/serve-static/index.js",
-      "require": "./dist/cjs/middleware/serve-static/index.js"
+      "module-sync": "./dist/middleware/serve-static/index.js",
+      "default": "./dist/middleware/serve-static/index.js"
     },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
       "import": "./dist/adapter/cloudflare-workers/index.js",
-      "require": "./dist/cjs/adapter/cloudflare-workers/index.js"
+      "module-sync": "./dist/adapter/cloudflare-workers/index.js",
+      "default": "./dist/adapter/cloudflare-workers/index.js"
     },
     "./cloudflare-pages": {
       "types": "./dist/types/adapter/cloudflare-pages/index.d.ts",
       "import": "./dist/adapter/cloudflare-pages/index.js",
-      "require": "./dist/cjs/adapter/cloudflare-pages/index.js"
+      "module-sync": "./dist/adapter/cloudflare-pages/index.js",
+      "default": "./dist/adapter/cloudflare-pages/index.js"
     },
     "./deno": {
       "types": "./dist/types/adapter/deno/index.d.ts",
       "import": "./dist/adapter/deno/index.js",
-      "require": "./dist/cjs/adapter/deno/index.js"
+      "module-sync": "./dist/adapter/deno/index.js",
+      "default": "./dist/adapter/deno/index.js"
     },
     "./bun": {
       "types": "./dist/types/adapter/bun/index.d.ts",
       "import": "./dist/adapter/bun/index.js",
-      "require": "./dist/cjs/adapter/bun/index.js"
+      "module-sync": "./dist/adapter/bun/index.js",
+      "default": "./dist/adapter/bun/index.js"
     },
     "./aws-lambda": {
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",
-      "require": "./dist/cjs/adapter/aws-lambda/index.js"
+      "module-sync": "./dist/adapter/aws-lambda/index.js",
+      "default": "./dist/adapter/aws-lambda/index.js"
     },
     "./vercel": {
       "types": "./dist/types/adapter/vercel/index.d.ts",
       "import": "./dist/adapter/vercel/index.js",
-      "require": "./dist/cjs/adapter/vercel/index.js"
+      "module-sync": "./dist/adapter/vercel/index.js",
+      "default": "./dist/adapter/vercel/index.js"
     },
     "./netlify": {
       "types": "./dist/types/adapter/netlify/index.d.ts",
       "import": "./dist/adapter/netlify/index.js",
-      "require": "./dist/cjs/adapter/netlify/index.js"
+      "module-sync": "./dist/adapter/netlify/index.js",
+      "default": "./dist/adapter/netlify/index.js"
     },
     "./lambda-edge": {
       "types": "./dist/types/adapter/lambda-edge/index.d.ts",
       "import": "./dist/adapter/lambda-edge/index.js",
-      "require": "./dist/cjs/adapter/lambda-edge/index.js"
+      "module-sync": "./dist/adapter/lambda-edge/index.js",
+      "default": "./dist/adapter/lambda-edge/index.js"
     },
     "./service-worker": {
       "types": "./dist/types/adapter/service-worker/index.d.ts",
       "import": "./dist/adapter/service-worker/index.js",
-      "require": "./dist/cjs/adapter/service-worker/index.js"
+      "module-sync": "./dist/adapter/service-worker/index.js",
+      "default": "./dist/adapter/service-worker/index.js"
     },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
-      "require": "./dist/cjs/helper/testing/index.js"
+      "module-sync": "./dist/helper/testing/index.js",
+      "default": "./dist/helper/testing/index.js"
     },
     "./dev": {
       "types": "./dist/types/helper/dev/index.d.ts",
       "import": "./dist/helper/dev/index.js",
-      "require": "./dist/cjs/helper/dev/index.js"
+      "module-sync": "./dist/helper/dev/index.js",
+      "default": "./dist/helper/dev/index.js"
     },
     "./ws": {
       "types": "./dist/types/helper/websocket/index.d.ts",
       "import": "./dist/helper/websocket/index.js",
-      "require": "./dist/cjs/helper/websocket/index.js"
+      "module-sync": "./dist/helper/websocket/index.js",
+      "default": "./dist/helper/websocket/index.js"
     },
     "./conninfo": {
       "types": "./dist/types/helper/conninfo/index.d.ts",
       "import": "./dist/helper/conninfo/index.js",
-      "require": "./dist/cjs/helper/conninfo/index.js"
+      "module-sync": "./dist/helper/conninfo/index.js",
+      "default": "./dist/helper/conninfo/index.js"
     },
     "./proxy": {
       "types": "./dist/types/helper/proxy/index.d.ts",
       "import": "./dist/helper/proxy/index.js",
-      "require": "./dist/cjs/helper/proxy/index.js"
+      "module-sync": "./dist/helper/proxy/index.js",
+      "default": "./dist/helper/proxy/index.js"
     }
   },
   "typesVersions": {
@@ -694,6 +768,6 @@
   },
   "packageManager": "bun@1.2.20",
   "engines": {
-    "node": ">=16.9.0"
+    "node": ">=22.12.0"
   }
 }
