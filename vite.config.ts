@@ -102,14 +102,6 @@ export default defineConfig({
     },
     {
       ...common,
-      format: ['cjs'],
-      outDir: 'dist/cjs',
-      dts: false,
-      outExtensions: () => ({ js: '.js' }),
-      // No need to validate package exports for CJS build, as it is already validated in ESM build.
-    },
-    {
-      ...common,
       format: ['esm'],
       outDir: 'dist/types',
       dts: { emitDtsOnly: true },
