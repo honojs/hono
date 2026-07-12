@@ -154,6 +154,12 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
+  app.use('/wait5/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
+  app.get('/wait5/', (c) => {
+    c.header('Cache-Control', 'Max-Age=3600')
+    return c.text('cached')
+  })
+
   app.use('/vary1/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
   app.get('/vary1/', (c) => {
     return c.text('cached')
@@ -273,6 +279,15 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('private, max-age=10')
+  })
+
+  it('Should not duplicate a Cache-Control directive that differs only in case', async () => {
+    const res = await app.request('/wait5/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    // Directive names are case-insensitive (RFC 7234 §5.2); the handler's
+    // `Max-Age` must suppress the middleware's configured `max-age`.
+    expect(res.headers.get('cache-control')).toBe('Max-Age=3600')
   })
 
   it('Should correctly apply a single Vary header from middleware', async () => {
