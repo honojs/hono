@@ -666,7 +666,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^2.1.0",
+    "@hono/eslint-config": "^2.1.1",
     "@hono/node-server": "^2.0.2",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.3.0",
@@ -691,9 +691,6 @@
     "wrangler": "4.107.0",
     "ws": "^8.21.0",
     "zod": "^3.23.8"
-  },
-  "overrides": {
-    "typescript-eslint": "8.62.1"
   },
   "packageManager": "bun@1.2.20",
   "engines": {

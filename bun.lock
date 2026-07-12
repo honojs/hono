@@ -4,7 +4,7 @@
     "": {
       "name": "hono",
       "devDependencies": {
-        "@hono/eslint-config": "^2.1.0",
+        "@hono/eslint-config": "^2.1.1",
         "@hono/node-server": "^2.0.2",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^24.3.0",
@@ -31,9 +31,6 @@
         "zod": "^3.23.8",
       },
     },
-  },
-  "overrides": {
-    "typescript-eslint": "8.62.1",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.24.7", "", { "dependencies": { "@babel/highlight": "^7.24.7", "picocolors": "^1.0.0" } }, "sha512-BcYH1CVJBO9tvyIZ2jVeXgSIMvGZ2FDRvDdOIVQyuklNKSsx+eppDEBq/g47Ayw+RqNFE+URvOShmf+f/qwAlA=="],
@@ -172,7 +169,7 @@
 
     "@fastly/js-compute": ["@fastly/js-compute@3.23.0", "", { "dependencies": { "@bytecodealliance/jco": "^1.5.0", "@bytecodealliance/weval": "^0.3.2", "@bytecodealliance/wizer": "^7.0.5", "acorn": "^8.12.1", "acorn-walk": "^8.3.3", "esbuild": "^0.23.1", "magic-string": "^0.30.11", "regexpu-core": "^6.0.0" }, "bin": { "js-compute": "js-compute-runtime-cli.js", "js-compute-runtime": "js-compute-runtime-cli.js" } }, "sha512-DZ1rLBMm2veeDF+8oiVgC54cBx/SuqUH2ov7f3K7EtbZJx5C9bSTg9fBhzD/hbJkucSfveu7oIOyqXQWP4cASw=="],
 
-    "@hono/eslint-config": ["@hono/eslint-config@2.1.0", "", { "dependencies": { "@eslint/js": "^9.39.3", "eslint-config-prettier": "^10.1.8", "eslint-import-resolver-typescript": "^4.4.4", "eslint-plugin-import-x": "^4.16.1", "eslint-plugin-n": "^17.24.0", "typescript-eslint": "^8.56.1" }, "peerDependencies": { "eslint": "^9.0.0", "typescript": "^5.0.0" } }, "sha512-uNR7As09OPTFLj5f6JwMd5DgTkEhMMlN8kqSlHmPYDU0p3voyaDghNahckydnAdhxIyRHrZhtLkuJDmZ5aeiqg=="],
+    "@hono/eslint-config": ["@hono/eslint-config@2.1.1", "", { "dependencies": { "@eslint/js": "^9.39.3", "eslint-config-prettier": "^10.1.8", "eslint-import-resolver-typescript": "^4.4.4", "eslint-plugin-import-x": "^4.16.1", "eslint-plugin-n": "^17.24.0", "typescript-eslint": "^8.62.1" }, "peerDependencies": { "eslint": "^9.0.0 || ^10.0.0", "typescript": "^5.0.0 || ^6.0.0" } }, "sha512-EYBjADOysloZOQOT50EEA8UHj6DbuK5bc0Y07MjJhMXRPu+ZcGginQFbs8lc9ASnYTn5pLNwMavsX687O5iL5Q=="],
 
     "@hono/node-server": ["@hono/node-server@2.0.2", "", { "peerDependencies": { "hono": "^4" } }, "sha512-tXlTi1h/4V7sDe7i97IVP+9re9ZU7wXZZggnR5ucCRclf1+AX6YhGStrR5w8bLj+3Mlyl0pKfBh9gqTqqnGKfQ=="],
 
