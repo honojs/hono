@@ -37,6 +37,7 @@ bun install --frozen-lockfile
 ## PRs
 
 Please ensure your PR passes tests with `bun run test`.
+Yes please.
 
 ## Third-party middleware
 
