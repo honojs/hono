@@ -474,24 +474,17 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
   protected getHeaders(event: APIGatewayProxyEvent): Headers {
     const headers = new Headers()
     this.getCookies(event, headers)
-    if (event.headers) {
-      for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
-          headers.set(k, sanitizeHeaderValue(v))
-        }
-      }
-    }
     if (event.multiValueHeaders) {
       for (const [k, values] of Object.entries(event.multiValueHeaders)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
+        }
+      }
+    }
+    if (event.headers) {
+      for (const [k, v] of Object.entries(event.headers)) {
+        if (v && !headers.has(k)) {
+          headers.set(k, sanitizeHeaderValue(v))
         }
       }
     }
@@ -607,14 +600,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     if (event.headers) {
       for (const [k, values] of Object.entries(event.headers)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
         }
       }
     }
@@ -658,7 +644,10 @@ const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
-  return Object.hasOwn(event, 'rawPath')
+  // A V1 (REST API) event behind a custom domain base path mapping also carries a
+  // `rawPath`, so `rawPath` alone is not enough to identify a V2 event. Every V2
+  // (HTTP API / function URL) event has an `http` object on its request context.
+  return Object.hasOwn(event, 'rawPath') && Object.hasOwn(event.requestContext ?? {}, 'http')
 }
 
 const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
@@ -681,8 +670,5 @@ export const defaultIsContentTypeBinary = (contentType: string): boolean => {
 }
 
 export const isContentEncodingBinary = (contentEncoding: string | null) => {
-  if (contentEncoding === null) {
-    return false
-  }
-  return /^(gzip|deflate|compress|br)/.test(contentEncoding)
+  return !!contentEncoding && !/^identity$/i.test(contentEncoding)
 }

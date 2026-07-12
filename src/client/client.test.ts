@@ -1201,6 +1201,7 @@ describe('Dynamic headers', () => {
   const route = app.post('/posts', (c) => {
     return c.json({
       requestDynamic: 'dummy',
+      requestHono: 'dummy',
     })
   })
 
@@ -1209,8 +1210,10 @@ describe('Dynamic headers', () => {
   const server = setupServer(
     http.post('http://localhost/posts', async ({ request }) => {
       const requestDynamic = request.headers.get('x-dynamic')
+      const requestHono = request.headers.get('x-hono')
       const payload = {
         requestDynamic,
+        requestHono,
       }
       return HttpResponse.json(payload)
     })
@@ -1244,6 +1247,63 @@ describe('Dynamic headers', () => {
     expect(res.ok).toBe(true)
     const data = await res.json()
     expect(data.requestDynamic).toEqual('two')
+  })
+
+  it('Should merge function headers with per-request object headers', async () => {
+    const clientWithFn = hc<AppType>('http://localhost', {
+      headers: async () => ({ 'x-hono': 'hono' }),
+    })
+
+    const res = await clientWithFn.posts.$post({}, { headers: { 'x-dynamic': 'request' } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestHono).toEqual('hono')
+    expect(data.requestDynamic).toEqual('request')
+  })
+
+  it('Should merge function headers with per-request function headers', async () => {
+    const clientWithFn = hc<AppType>('http://localhost', {
+      headers: () => ({ 'x-hono': 'hono' }),
+    })
+
+    const res = await clientWithFn.posts.$post(
+      {},
+      { headers: async () => ({ 'x-dynamic': 'request' }) }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestHono).toEqual('hono')
+    expect(data.requestDynamic).toEqual('request')
+  })
+
+  it('Should merge object headers with per-request function headers', async () => {
+    const clientWithObject = hc<AppType>('http://localhost', {
+      headers: { 'x-hono': 'hono' },
+    })
+
+    const res = await clientWithObject.posts.$post(
+      {},
+      { headers: async () => ({ 'x-dynamic': 'request' }) }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestHono).toEqual('hono')
+    expect(data.requestDynamic).toEqual('request')
+  })
+
+  it('Should prioritize per-request headers when the keys conflict', async () => {
+    const clientWithFn = hc<AppType>('http://localhost', {
+      headers: async () => ({ 'x-hono': 'client' }),
+    })
+
+    const res = await clientWithFn.posts.$post({}, { headers: { 'x-hono': 'request' } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestHono).toEqual('request')
   })
 })
 

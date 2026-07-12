@@ -187,6 +187,17 @@ export class Node<T> {
               params[name] = m[0]
               this.#pushHandlerSets(handlerSets, child, method, node.#params, params)
 
+              // '/:id{[0-9]+}/*' => match '/123'
+              if (m[0].length === restPathString.length && child.#children['*']) {
+                this.#pushHandlerSets(
+                  handlerSets,
+                  child.#children['*'],
+                  method,
+                  node.#params,
+                  params
+                )
+              }
+
               if (hasChildren(child.#children)) {
                 child.#params = params
                 const componentCount = m[0].match(/\//)?.length ?? 0

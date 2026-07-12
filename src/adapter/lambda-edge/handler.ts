@@ -120,25 +120,37 @@ export const handle = (
   event: CloudFrontEdgeEvent,
   context?: CloudFrontContext,
   callback?: Callback
-) => Promise<CloudFrontResult>) => {
+) => Promise<CloudFrontResult | CloudFrontRequest>) => {
   return async (event, ...args: [context?: CloudFrontContext, callback?: Callback]) => {
     const [context, callback] = args
+    let callbackError: Error | null = null
+    let callbackResult: CloudFrontResult | CloudFrontRequest | undefined
     const res = await app.fetch(createRequest(event), {
       event,
       context,
       callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
+        if (!callbackError && !callbackResult) {
+          callbackError = err
+          callbackResult = result
+        }
         callback?.(err, result)
       },
       config: event.Records[0].cf.config,
       request: event.Records[0].cf.request,
       response: event.Records[0].cf.response,
     })
-    return createResult(res)
+    if (callbackError) {
+      throw callbackError
+    }
+    return callbackResult ?? createResult(res)
   }
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  const contentEncoding = res.headers.get('content-encoding')
+  const isBase64Encoded =
+    isContentTypeBinary(res.headers.get('content-type') || '') ||
+    (!!contentEncoding && !/^identity$/i.test(contentEncoding))
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
   return {

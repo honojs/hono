@@ -3,7 +3,8 @@
  * Body utility.
  */
 
-import { HonoRequest } from '../request'
+import type { HonoRequest } from '../request'
+import { bufferToFormData } from './buffer'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
@@ -73,6 +74,8 @@ export type ParseBodyOptions = {
   dot: boolean
 }
 
+const isRawRequest = (request: HonoRequest | Request): request is Request => 'headers' in request // 'headers' method exists only on Request, not on HonoRequest.
+
 /**
  * Parses the body of a request based on the provided options.
  *
@@ -97,13 +100,12 @@ export const parseBody: ParseBody = async (
 ) => {
   const { all = false, dot = false } = options
 
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
   const contentType = headers.get('Content-Type')
 
-  if (
-    contentType?.startsWith('multipart/form-data') ||
-    contentType?.startsWith('application/x-www-form-urlencoded')
-  ) {
+  const mediaType = contentType?.split(';')[0].trim().toLowerCase()
+
+  if (mediaType === 'multipart/form-data' || mediaType === 'application/x-www-form-urlencoded') {
     return parseFormData(request, { all, dot })
   }
 
@@ -122,7 +124,14 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
-  const formData = await (request as Request).formData()
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
+  const arrayBuffer = await (request as Request).arrayBuffer()
+  const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
+  if (!isRawRequest(request)) {
+    // Cache so that a later `c.req.formData()` reuses the already-consumed body
+    request.bodyCache.formData = formDataPromise as unknown as FormData
+  }
+  const formData = await formDataPromise
 
   if (formData) {
     return convertFormDataToBodyData<T>(formData, options)

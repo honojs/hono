@@ -2,8 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
+import { captureRenderContext } from './context'
 import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, {
+  ErrorBoundary,
   Fragment,
   StrictMode,
   createContext,
@@ -1262,6 +1264,167 @@ d.replaceWith(c.content)
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
     })
+
+    it('should keep captured context until a resumed async callback settles', async () => {
+      let resolveReader!: () => void
+      const readerWait = new Promise<void>((resolve) => {
+        resolveReader = resolve
+      })
+      let markReaderEntered!: () => void
+      const readerEntered = new Promise<void>((resolve) => {
+        markReaderEntered = resolve
+      })
+
+      const ResumedReader = () => {
+        const resume = captureRenderContext()
+        return resume(async () => {
+          markReaderEntered()
+          await readerWait
+          return <>{useContext(ThemeContext)}</>
+        })
+      }
+
+      const htmlPromise = (
+        <ThemeContext.Provider value='dark'>
+          <ResumedReader />
+        </ThemeContext.Provider>
+      ).toString()
+
+      await readerEntered
+      resolveReader()
+
+      expect(`${await htmlPromise}`).toBe('dark')
+    })
+
+    it('should pop captured context when a resumed callback throws', async () => {
+      const ThrowThenRead = ({ resume }: { resume: ReturnType<typeof captureRenderContext> }) => {
+        try {
+          resume(() => {
+            throw new Error('boom')
+          })
+        } catch {}
+        return <>{useContext(ThemeContext)}</>
+      }
+      const CaptureOuter = () => {
+        const resume = captureRenderContext()
+        return (
+          <ThemeContext.Provider value='inner'>
+            <ThrowThenRead resume={resume} />
+          </ThemeContext.Provider>
+        )
+      }
+
+      expect(
+        `${await (
+          <ThemeContext.Provider value='outer'>
+            <CaptureOuter />
+          </ThemeContext.Provider>
+        ).toString()}`
+      ).toBe('inner')
+    })
+
+    it('should pop captured context when a resumed async callback rejects', async () => {
+      const RejectThenRead = async ({
+        resume,
+      }: {
+        resume: ReturnType<typeof captureRenderContext>
+      }) => {
+        try {
+          await resume(async () => {
+            await Promise.resolve()
+            throw new Error('boom')
+          })
+        } catch {}
+        return <>{useContext(ThemeContext)}</>
+      }
+      const CaptureOuter = () => {
+        const resume = captureRenderContext()
+        return (
+          <ThemeContext.Provider value='inner'>
+            <RejectThenRead resume={resume} />
+          </ThemeContext.Provider>
+        )
+      }
+
+      expect(
+        `${await (
+          <ThemeContext.Provider value='outer'>
+            <CaptureOuter />
+          </ThemeContext.Provider>
+        ).toString()}`
+      ).toBe('inner')
+    })
+
+    it('should isolate async component context between concurrent requests', async () => {
+      const app = new Hono()
+      const SessionContext = createContext({ username: 'guest', role: 'guest' })
+      const waits = new Map<string, Promise<void>>()
+      const entered = new Map<string, () => void>()
+
+      const AdminDashboard = async ({ wait }: { wait: Promise<void> }) => {
+        entered.get(useContext(SessionContext).username)?.()
+        await wait
+        const session = useContext(SessionContext)
+
+        if (session.role !== 'admin') {
+          return <div>Access Denied for {session.username}</div>
+        }
+
+        return <div>Welcome Admin {session.username}. Secret Data: 42</div>
+      }
+
+      app.get('/', (c) => {
+        const session = {
+          username: c.req.query('user') || 'guest',
+          role: c.req.query('role') || 'guest',
+        }
+        const wait = waits.get(session.username) || Promise.resolve()
+
+        return c.html(
+          <SessionContext.Provider value={session}>
+            <AdminDashboard wait={wait} />
+          </SessionContext.Provider>
+        )
+      })
+
+      let resolveAdmin!: () => void
+      let resolveAttacker!: () => void
+      waits.set(
+        'admin',
+        new Promise<void>((resolve) => {
+          resolveAdmin = resolve
+        })
+      )
+      waits.set(
+        'attacker',
+        new Promise<void>((resolve) => {
+          resolveAttacker = resolve
+        })
+      )
+      const adminEntered = new Promise<void>((resolve) => {
+        entered.set('admin', resolve)
+      })
+      const attackerEntered = new Promise<void>((resolve) => {
+        entered.set('attacker', resolve)
+      })
+
+      const adminReq = app.fetch(new Request('http://localhost/?user=admin&role=admin'))
+      const attackerReq = app.fetch(new Request('http://localhost/?user=attacker&role=guest'))
+
+      await Promise.all([adminEntered, attackerEntered])
+      resolveAttacker()
+      await Promise.resolve()
+      resolveAdmin()
+
+      const [adminRes, attackerRes] = await Promise.all([adminReq, attackerReq])
+      const adminHtml = await adminRes.text()
+      const attackerHtml = await attackerRes.text()
+
+      // Each request must render with exactly its own provided value: no
+      // cross-request leak, and no degradation to the context default.
+      expect(adminHtml).toBe('<div>Welcome Admin admin. Secret Data: 42</div>')
+      expect(attackerHtml).toBe('<div>Access Denied for attacker</div>')
+    })
   })
 
   describe('async with html helper', () => {
@@ -1300,6 +1463,74 @@ d.replaceWith(c.content)
       )
       expect((await template.toString()).toString()).toBe('<div><span>black</span></div>')
     })
+  })
+})
+
+describe('ErrorBoundary', () => {
+  it('awaits thenable fallback values', async () => {
+    const Broken = () => {
+      throw new Error('boom')
+    }
+    const fallback = {
+      then(resolve: (value: unknown) => void) {
+        resolve(<span>Recovered</span>)
+      },
+    }
+
+    expect(
+      `${await (
+        <ErrorBoundary fallback={fallback as any}>
+          <Broken />
+        </ErrorBoundary>
+      ).toString()}`
+    ).toBe('<span>Recovered</span>')
+  })
+
+  it('prefers an empty fallback over fallbackRender', async () => {
+    const Broken = () => {
+      throw new Error('boom')
+    }
+    let fallbackRenderCalled = false
+
+    expect(
+      `${await (
+        <ErrorBoundary
+          fallback=''
+          fallbackRender={() => {
+            fallbackRenderCalled = true
+            return <span>fallbackRender</span>
+          }}
+        >
+          <Broken />
+        </ErrorBoundary>
+      ).toString()}`
+    ).toBe('')
+    expect(fallbackRenderCalled).toBe(false)
+  })
+
+  it('renders async rejection fallback with the captured context while streaming', async () => {
+    const ThemeContext = createContext('default')
+    const Fallback = () => <span>{useContext(ThemeContext)}</span>
+    const Broken = async () => {
+      await Promise.resolve()
+      throw new Error('boom')
+    }
+
+    const stream = renderToReadableStream(
+      <ThemeContext.Provider value='outer'>
+        <ErrorBoundary fallbackRender={() => <Fallback />}>
+          <Broken />
+        </ErrorBoundary>
+      </ThemeContext.Provider>
+    )
+    const decoder = new TextDecoder()
+    let html = ''
+    for await (const chunk of stream) {
+      html += decoder.decode(chunk)
+    }
+
+    expect(html).toContain('<span>outer</span>')
+    expect(html).not.toContain('<span>default</span>')
   })
 })
 

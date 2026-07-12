@@ -5,23 +5,17 @@
   Copyright (c) 2022 Taishi Naritomi
 */
 
-/// <reference types="bun-types/bun" />
+/// <reference types="bun-types" />
 
-import arg from 'arg'
-import { $ } from 'bun'
+import { $, Glob } from 'bun'
 import { build, context } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import * as glob from 'glob'
 import fs from 'fs'
 import path from 'path'
 import { removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 
-const args = arg({
-  '--watch': Boolean,
-})
-
-const isWatch = args['--watch'] || false
+const isWatch = process.argv.includes('--watch')
 
 const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-8')).exports
 
@@ -31,9 +25,18 @@ const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].ma
 validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
 validateExports(jsrJsonExports, packageJsonExports, 'package.json')
 
-const entryPoints = glob.sync('./src/**/*.ts', {
-  ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
-})
+const ignorePatterns = [
+  'src/**/*.test.ts',
+  'src/mod.ts',
+  'src/middleware.ts',
+  'src/deno/**/*.ts',
+].map((pattern) => new Glob(pattern))
+const entryPoints: string[] = []
+for await (const file of new Glob('src/**/*.ts').scan('.')) {
+  if (!ignorePatterns.some((ignore) => ignore.match(file))) {
+    entryPoints.push(file)
+  }
+}
 
 /*
   This plugin is inspired by the following.
@@ -100,11 +103,12 @@ const runBuild = async (config: BuildOptions) => {
 await Promise.all([
   runBuild(esmConfig),
   runBuild(cjsConfig),
-  $`tsc ${
-    isWatch ? '-w' : ''
-  } --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow(),
+  $`tsc ${isWatch ? ['-w'] : []} --emitDeclarationOnly --declaration --project tsconfig.build.json`,
 ])
 
 // Remove #private fields
-const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
+const dtsEntries: string[] = []
+for await (const file of new Glob('dist/types/**/*.d.ts').scan('.')) {
+  dtsEntries.push(file)
+}
 await removePrivateFields(dtsEntries)

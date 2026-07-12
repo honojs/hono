@@ -123,7 +123,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
       ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('Hello Lambda!')
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
@@ -198,7 +198,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
       ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('Hello Lambda!')
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
@@ -321,7 +321,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
       ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('Hello Lambda!')
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
@@ -462,7 +462,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
       ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('Hello Lambda!')
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
@@ -503,7 +503,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     const response = await handler(event)
 
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded fake image
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
@@ -544,7 +544,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     const response = await handler(event)
 
-    expect(response.status).toBe('404')
+    expect(response).toMatchObject({ status: '404' })
   })
 
   it('Should handle a POST request and return a 200 response', async () => {
@@ -594,7 +594,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     const response = await handler(event)
 
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('Good Morning Lambda!')
   })
 
@@ -643,7 +643,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     }
 
     const response = await handler(event)
-    expect(response.status).toBe('200')
+    expect(response).toMatchObject({ status: '200' })
     expect(response.body).toBe('3 bytes')
   })
 
@@ -685,7 +685,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     const response = await handler(event)
 
-    expect(response.status).toBe('401')
+    expect(response).toMatchObject({ status: '401' })
   })
 
   it('Should handle a request and return a 401 response with Basic auth', async () => {
@@ -726,7 +726,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     const response = await handler(event)
 
-    expect(response.status).toBe('401')
+    expect(response).toMatchObject({ status: '401' })
   })
 
   it('Should call a callback to continue processing the request', async () => {
@@ -1129,6 +1129,6 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
 
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded "Fake Image"
-    expect(response.bodyEncoding).toBe('base64')
+    expect(response).toMatchObject({ bodyEncoding: 'base64' })
   })
 })

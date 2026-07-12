@@ -4,6 +4,8 @@ import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { createContext, useContext } from './context'
+import { buildDataStack } from './dom/render'
 import { use } from './hooks'
 import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
 
@@ -11,6 +13,15 @@ function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
   document.querySelectorAll('template, script').forEach((e) => e.remove())
   return document.body.innerHTML
+}
+
+async function drainStream(stream: unknown): Promise<string> {
+  const textDecoder = new TextDecoder()
+  let html = ''
+  for await (const chunk of stream as any) {
+    html += textDecoder.decode(chunk)
+  }
+  return html
 }
 
 describe('Streaming', () => {
@@ -638,6 +649,33 @@ d.replaceWith(c.content)
     )
   })
 
+  it('renders Suspense fallback with outer context values', async () => {
+    const ThemeContext = createContext('default')
+    const Fallback = () => <p>Loading {useContext(ThemeContext)}</p>
+    const Content = () =>
+      new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<h1>Done</h1>), 10))
+
+    const stream = renderToReadableStream(
+      <ThemeContext.Provider value='outer'>
+        <Suspense fallback={<Fallback />}>
+          <Content />
+        </Suspense>
+      </ThemeContext.Provider>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks[0]).toBe(
+      `<template id="H:${suspenseCounter}"></template><p>Loading outer</p><!--/$-->`
+    )
+    expect(chunks.join('')).toContain('<h1>Done</h1>')
+    expect(chunks.join('')).not.toContain('default')
+  })
+
   it('nested Suspense', async () => {
     const SubContent = () => {
       const content = new Promise<HtmlEscapedString>((resolve) =>
@@ -984,5 +1022,96 @@ d.replaceWith(c.content)
     expect(onError).not.toHaveBeenCalled()
 
     process.off('unhandledRejection', onRejection)
+  })
+
+  it('pops buildDataStack when a deferred re-render rejects', async () => {
+    const baseLength = buildDataStack.length
+
+    const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('x'), 10))
+    let first = true
+    const Content = () => {
+      if (first) {
+        // Suspend like use() does so Suspense defers the re-render.
+        first = false
+        throw deferred
+      }
+      throw new Error('boom')
+    }
+
+    const onError = vi.fn(() => '')
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading</p>}>
+        <Content />
+      </Suspense>,
+      onError
+    )
+    for await (const _ of stream as any) {
+      // drain
+    }
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    // The deferred re-render pushed a stack frame; rejecting must still pop it.
+    expect(buildDataStack.length).toBe(baseLength)
+  })
+
+  it('isolates context between concurrent streaming renders', async () => {
+    // Default value is distinct from both requests so a cross-request leak
+    // (reading the other request's value) would be detectable.
+    const SessionContext = createContext('nobody')
+    const waits = new Map<string, Promise<void>>()
+    const entered = new Map<string, () => void>()
+
+    const Dashboard = async ({ name }: { name: string }) => {
+      // Read context only after suspending, the pattern that previously leaked.
+      entered.get(name)?.()
+      await waits.get(name)
+      return <span>role:{useContext(SessionContext)}</span>
+    }
+
+    const drain = async (value: string) => {
+      return drainStream(
+        renderToReadableStream(
+          <SessionContext.Provider value={value}>
+            <Dashboard name={value} />
+          </SessionContext.Provider>
+        )
+      )
+    }
+
+    let resolveAdmin!: () => void
+    let resolveGuest!: () => void
+    waits.set(
+      'admin',
+      new Promise<void>((resolve) => {
+        resolveAdmin = resolve
+      })
+    )
+    waits.set(
+      'guest',
+      new Promise<void>((resolve) => {
+        resolveGuest = resolve
+      })
+    )
+    const adminEntered = new Promise<void>((resolve) => {
+      entered.set('admin', resolve)
+    })
+    const guestEntered = new Promise<void>((resolve) => {
+      entered.set('guest', resolve)
+    })
+
+    const adminDrain = drain('admin')
+    const guestDrain = drain('guest')
+
+    await Promise.all([adminEntered, guestEntered])
+    resolveGuest()
+    await Promise.resolve()
+    resolveAdmin()
+
+    const [adminHtml, guestHtml] = await Promise.all([adminDrain, guestDrain])
+
+    expect(adminHtml).toContain('role:admin')
+    expect(adminHtml).not.toContain('role:guest')
+    expect(guestHtml).toContain('role:guest')
+    expect(guestHtml).not.toContain('role:admin')
   })
 })

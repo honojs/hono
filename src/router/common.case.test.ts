@@ -550,6 +550,33 @@ export const runTest = ({
       })
     })
 
+    describe('Capture regex param with trailing wildcard on empty remainder', () => {
+      beforeEach(() => {
+        router.add('GET', '/:id{[0-9]+}/*', 'regexp')
+      })
+
+      it('GET /123', () => {
+        const res = match('GET', '/123')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('regexp')
+        expect(res[0].params['id']).toBe('123')
+      })
+    })
+
+    describe('Capture regex param with trailing wildcard and sibling route', () => {
+      beforeEach(() => {
+        router.add('GET', '/regex-abc/:id{[0-9]+}/*', 'middleware')
+        router.add('GET', '/regex-abc/:id{[0-9]+}/def', 'regexp')
+      })
+
+      it('GET /regex-abc/123/ghi', () => {
+        const res = match('GET', '/regex-abc/123/ghi')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('middleware')
+        expect(res[0].params['id']).toBe('123')
+      })
+    })
+
     describe('Capture complex multiple directories', () => {
       beforeEach(() => {
         router.add('GET', '/:first{.+}/middle-a/:reference?', '1')

@@ -65,6 +65,45 @@ describe('upgradeWebSocket()', () => {
     )
     expect(upgraded).toBeFalsy()
   })
+  it('Should expose the requested subprotocol on WSContext.protocol', async () => {
+    let data: BunWebSocketData | undefined
+    await upgradeWebSocket(() => ({}))(
+      new Context(
+        new Request('http://localhost/ws', {
+          headers: { 'sec-websocket-protocol': 'chat, superchat' },
+        }),
+        {
+          env: {
+            upgrade(_req: Request, options: { data: BunWebSocketData }) {
+              data = options.data
+              return true
+            },
+          },
+        }
+      ),
+      () => Promise.resolve()
+    )
+
+    const ws = createWSContext({ data, readyState: 1 } as BunServerWebSocket<BunWebSocketData>)
+    expect(ws.protocol).toBe('chat')
+  })
+  it('Should set protocol to an empty string when no subprotocol is requested', async () => {
+    let data: BunWebSocketData | undefined
+    await upgradeWebSocket(() => ({}))(
+      new Context(new Request('http://localhost/ws'), {
+        env: {
+          upgrade(_req: Request, options: { data: BunWebSocketData }) {
+            data = options.data
+            return true
+          },
+        },
+      }),
+      () => Promise.resolve()
+    )
+
+    const ws = createWSContext({ data, readyState: 1 } as BunServerWebSocket<BunWebSocketData>)
+    expect(ws.protocol).toBe('')
+  })
   it('Should events are called', async () => {
     const open = vi.fn()
     const message = vi.fn()

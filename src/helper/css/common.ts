@@ -55,6 +55,10 @@ const normalizeLabel = (label: string): string => {
 
 const isValidClassName = (name: string): boolean => /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/.test(name)
 
+// `<`, `{`, `}` never appear in valid class names but can break out of a <style> element
+// or inject a CSS rule when an external cx() class name is used as a selector.
+const hasUnsafeSelectorChar = (name: string): boolean => /[<{}]/.test(name)
+
 // CSS-wide keywords that are invalid as @keyframes names per the spec
 const RESERVED_KEYFRAME_NAMES = new Set([
   'default',
@@ -244,7 +248,8 @@ export const cxCommon = (
         [CLASS_NAME]: '',
         [STYLE_STRING]: '',
         [SELECTORS]: [],
-        [EXTERNAL_CLASS_NAMES]: [arg],
+        // drop names that are unsafe to emit as a selector
+        [EXTERNAL_CLASS_NAMES]: hasUnsafeSelectorChar(arg) ? [] : [arg],
       }
     }
   }
