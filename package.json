@@ -666,7 +666,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^2.1.0",
+    "@hono/eslint-config": "^2.1.1",
     "@hono/node-server": "^2.0.2",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.3.0",
@@ -684,7 +684,7 @@
     "pkg-pr-new": "^0.0.53",
     "prettier": "3.7.4",
     "publint": "0.3.15",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "undici": "^6.27.0",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^4.1.9",

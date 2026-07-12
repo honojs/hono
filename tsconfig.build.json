@@ -4,6 +4,7 @@
     "module": "ES2020",
     "rootDir": "./src/",
     "outDir": "./dist/types/",
+    "types": ["node"],
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
