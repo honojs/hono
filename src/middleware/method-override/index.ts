@@ -124,11 +124,13 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       if (method) {
         const url = new URL(c.req.url)
         url.searchParams.delete(queryName)
-        const request = new Request(url.toString(), {
+        const requestInit: RequestInit & { duplex?: 'half' } = {
           body: c.req.raw.body,
           headers: c.req.raw.headers,
           method,
-        })
+          duplex: c.req.raw.body ? 'half' : undefined,
+        }
+        const request = new Request(url.toString(), requestInit)
         return app.fetch(request, c.env, getExecutionCtx(c))
       }
     }
