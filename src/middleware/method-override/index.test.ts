@@ -185,6 +185,28 @@ describe('Method Override Middleware', () => {
       })
     })
 
+    it('Should override POST to DELETE when the request has a body', async () => {
+      const app = new Hono()
+      app.use('/posts/*', methodOverride({ app, query: '_method' }))
+      app.on(['post', 'delete'], '/posts', async (c) => {
+        return c.json({
+          method: c.req.method,
+          body: await c.req.text(),
+          queryValue: c.req.query('_method') ?? null,
+        })
+      })
+      const res = await app.request('/posts?_method=delete', {
+        method: 'POST',
+        body: new URLSearchParams({ message: 'Hello' }),
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        body: 'message=Hello',
+        queryValue: null,
+      })
+    })
+
     it('Should not override GET request', async () => {
       const res = await app.request('/posts?_method=delete', {
         method: 'GET',
