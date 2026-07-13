@@ -106,7 +106,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
 
     const matched =
       ifNoneMatch === '*'
-        ? (c.req.method === 'GET' || c.req.method === 'HEAD') && res.ok
+        ? (c.req.method === 'GET' || c.req.method === 'HEAD' || c.req.method === 'QUERY') && res.ok
         : etagMatches(etag, ifNoneMatch)
 
     if (matched) {
