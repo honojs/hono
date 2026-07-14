@@ -16,6 +16,19 @@ const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
 
 const defaultMaxQueryBodySize = 64 * 1024
 
+const cacheKeyPath = '/.hono/cache'
+const cacheKeyParameter = '__hono_cache_key'
+const cacheMethodKeyParameter = '__hono_cache_method'
+const queryDigestKeyParameter = '__hono_query_digest'
+const cacheVaryKeyParameter = '__hono_cache_vary'
+
+type CacheKeyRequest =
+  | { method: 'GET' }
+  | {
+      method: 'QUERY'
+      digest: string
+    }
+
 const queryRepresentationMetadataHeaders = [
   'content-type',
   'content-encoding',
@@ -33,6 +46,27 @@ const parseVaryDirectives = (vary: string | string[] | null | undefined): string
   return (Array.isArray(vary) ? vary : vary.split(','))
     .map((directive) => directive.trim().toLowerCase())
     .filter(Boolean)
+}
+
+const createCacheKey = (
+  key: string,
+  requestUrl: string,
+  request: CacheKeyRequest,
+  varyHeaders: [string, string][]
+): string => {
+  const url = new URL(cacheKeyPath, requestUrl)
+  url.searchParams.append(cacheKeyParameter, key.split('#', 1)[0])
+  url.searchParams.append(cacheMethodKeyParameter, request.method)
+
+  if (request.method === 'QUERY') {
+    url.searchParams.append(queryDigestKeyParameter, request.digest)
+  }
+
+  for (const header of varyHeaders) {
+    url.searchParams.append(cacheVaryKeyParameter, JSON.stringify(header))
+  }
+
+  return url.href
 }
 
 const shouldSkipCache = (
@@ -58,12 +92,12 @@ const reportCacheNotAvailable = (
   }
 }
 
-const createQueryCacheKey = async (
+const createQueryDigest = async (
   c: Context,
   maxQueryBodySize: number
-): Promise<string | null> => {
+): Promise<string | undefined> => {
   if (!globalThis.crypto?.subtle) {
-    return null
+    return undefined
   }
 
   if (c.req.raw.bodyUsed && Object.keys(c.req.bodyCache)[0] === 'formData') {
@@ -97,7 +131,7 @@ const createQueryCacheKey = async (
           // Do not await cancellation because a cloned stream's cancellation
           // can wait for the original request stream to finish.
           void reader.cancel().catch(() => {})
-          return null
+          return undefined
         }
         chunks.push(value)
       }
@@ -111,10 +145,10 @@ const createQueryCacheKey = async (
       offset += chunk.byteLength
     }
 
-    return await sha256(data)
+    return (await sha256(data)) ?? undefined
   } catch {
     // A QUERY response cannot be cached safely if its content cannot be read.
-    return null
+    return undefined
   }
 }
 
@@ -238,26 +272,28 @@ export const cache = (options: {
       return
     }
 
-    const queryCacheKey =
-      c.req.method === 'QUERY' ? await createQueryCacheKey(c, maxQueryBodySize) : undefined
-    if (queryCacheKey === null) {
-      await next()
-      return
+    let cacheKeyRequest: CacheKeyRequest = { method: 'GET' }
+    if (c.req.method === 'QUERY') {
+      const digest = await createQueryDigest(c, maxQueryBodySize)
+      if (digest === undefined) {
+        await next()
+        return
+      }
+      cacheKeyRequest = { method: 'QUERY', digest }
     }
 
     let key = c.req.url
     if (options.keyGenerator) {
       key = await options.keyGenerator(c)
     }
-    if (queryCacheKey) {
-      key += `::query=${queryCacheKey}`
-    }
+    const varyHeaders: [string, string][] = []
     if (varyDirectives) {
       for (const directive of varyDirectives) {
         const value = c.req.raw.headers.get(directive) ?? ''
-        key += `::${directive}=${encodeURIComponent(value)}`
+        varyHeaders.push([directive, value])
       }
     }
+    key = createCacheKey(key, c.req.url, cacheKeyRequest, varyHeaders)
 
     const cacheName =
       typeof options.cacheName === 'function' ? await options.cacheName(c) : options.cacheName

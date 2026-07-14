@@ -101,7 +101,9 @@ describe('Customizing Caching Keys', () => {
   it('Should use dynamically generated cache key', async () => {
     await app.request('http://localhost/dynamic-cache-key/')
     const cache = await caches.open('my-app-v1')
-    const response = await cache.match(dynamicCacheKey)
+    const response = await cache.match(
+      'http://localhost/.hono/cache?__hono_cache_key=dynamic-cache-key&__hono_cache_method=GET'
+    )
     expect(response).not.toBeNull()
   })
 
@@ -896,6 +898,86 @@ describe('Cache Skipping Logic', () => {
     expect(await getRes.text()).toBe('get response')
     expect(await queryRes.text()).toBe('query response')
     expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should not let a GET URL alias an internally generated QUERY cache key', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'method-collision-test', wait: true }))
+    app.get('/resource', (c) => c.text('get response'))
+    app.get('*', (c) => c.text('get response'))
+    app.on('QUERY', '/resource', (c) => c.text('query response'))
+
+    await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    const queryKey = mockCache.put.mock.calls[0][0] as string
+    const getRes = await app.request(queryKey)
+    const queryRes = await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    expect(await getRes.text()).toBe('get response')
+    expect(await queryRes.text()).toBe('query response')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should not resolve a custom cache key as a request URL', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use(
+      '/resource',
+      cache({
+        cacheName: 'custom-key-collision-test',
+        wait: true,
+        keyGenerator: () => 'query-key',
+      })
+    )
+    app.use('/query-key', cache({ cacheName: 'custom-key-collision-test', wait: true }))
+    app.get('/resource', (c) => c.text('custom key response'))
+    app.get('/query-key', (c) => c.text('request URL response'))
+
+    expect(await (await app.request('/resource')).text()).toBe('custom key response')
+    expect(await (await app.request('/query-key')).text()).toBe('request URL response')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should keep QUERY digest and vary values with a fragmented custom cache key', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use(
+      '*',
+      cache({
+        cacheName: 'query-fragment-test',
+        wait: true,
+        vary: 'X-Variant',
+        keyGenerator: (c) => `${c.req.url}#custom-fragment`,
+      })
+    )
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      return c.text(`${await c.req.text()}:${c.req.header('X-Variant')}`)
+    })
+
+    const request = (body: string, variant: string) =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'text/plain', 'X-Variant': variant },
+        body,
+      })
+
+    expect(await (await request('one', 'a')).text()).toBe('one:a')
+    expect(await (await request('two', 'a')).text()).toBe('two:a')
+    expect(await (await request('one', 'b')).text()).toBe('one:b')
+    expect(await (await request('one', 'a')).text()).toBe('one:a')
+    expect(queryCount).toBe(3)
+    expect(mockCache.put).toHaveBeenCalledTimes(3)
   })
 
   it('Should bypass QUERY caching when Web Crypto is not available', async () => {
