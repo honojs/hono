@@ -5,8 +5,8 @@
 //
 // Runs on both Bun and Node.
 import './ts-resolve.mjs'
-import { pathToFileURL } from 'node:url'
 import { run, bench, group, summary } from 'mitata'
+import { pathToFileURL } from 'node:url'
 
 const devSrc = new URL('../../src', import.meta.url).pathname
 const baseSrc = process.env.HONO_BASE_SRC
@@ -31,7 +31,7 @@ const makeApp = async (src: string): Promise<any> => {
   return app
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const apps: Record<string, any> = {}
 if (baseSrc) {
   apps[baseRef] = await makeApp(baseSrc)
@@ -43,7 +43,7 @@ const query = new Request('http://localhost/id/1?name=bun')
 
 let sink: unknown
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const cases: [string, (app: any) => Promise<unknown>][] = [
   ['ping GET /', (app) => app.fetch(ping)],
   ['query GET /id/1?name=bun', (app) => app.fetch(query)],
