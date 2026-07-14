@@ -45,6 +45,19 @@ const shouldSkipCache = (
   shouldSkipCacheControl(res.headers.get('Cache-Control')) ||
   res.headers.has('Set-Cookie')
 
+const reportCacheNotAvailable = (
+  onCacheNotAvailable: ((reason: string) => void) | false | undefined,
+  reason: string
+): void => {
+  if (onCacheNotAvailable === false) {
+    // suppress log
+  } else if (onCacheNotAvailable) {
+    onCacheNotAvailable(reason)
+  } else {
+    console.log(reason)
+  }
+}
+
 const createQueryCacheKey = async (
   c: Context,
   maxQueryBodySize: number
@@ -118,7 +131,7 @@ const createQueryCacheKey = async (
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters. QUERY keys additionally include a digest of the request content and its representation metadata.
  * @param {number} [options.maxQueryBodySize=65536] - The maximum QUERY request body size in bytes that can be cached. Larger QUERY requests bypass the cache.
  * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
- * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked when `globalThis.caches` is not available. By default, a message is logged to the console. Set to `false` to suppress the log, or provide a custom function.
+ * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked with the reason when `globalThis.caches` is not available or QUERY caching cannot use Web Crypto. By default, the reason is logged to the console. Set to `false` to suppress the log, or provide a custom function.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
@@ -141,17 +154,21 @@ export const cache = (options: {
   keyGenerator?: (c: Context) => Promise<string> | string
   maxQueryBodySize?: number
   cacheableStatusCodes?: StatusCode[]
-  onCacheNotAvailable?: (() => void) | false
+  onCacheNotAvailable?: ((reason: string) => void) | false
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    if (options.onCacheNotAvailable === false) {
-      // suppress log
-    } else if (options.onCacheNotAvailable) {
-      options.onCacheNotAvailable()
-    } else {
-      console.log('Cache Middleware is not enabled because caches is not defined.')
-    }
+    reportCacheNotAvailable(
+      options.onCacheNotAvailable,
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
     return async (_c, next) => await next()
+  }
+
+  if (!globalThis.crypto?.subtle) {
+    reportCacheNotAvailable(
+      options.onCacheNotAvailable,
+      'Cache Middleware cannot cache QUERY requests because Web Crypto is not available.'
+    )
   }
 
   if (options.wait === undefined) {

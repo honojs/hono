@@ -405,6 +405,9 @@ describe('Cache Middleware', () => {
     const res = await app.request('/')
     expect(res.status).toBe(200)
     expect(spy).toHaveBeenCalledOnce()
+    expect(spy).toHaveBeenCalledWith(
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
     vi.unstubAllGlobals()
   })
 
@@ -900,14 +903,34 @@ describe('Cache Skipping Logic', () => {
     vi.stubGlobal('crypto', undefined)
 
     try {
+      const { mockCache } = stubStoreBackedCache()
       const app = new Hono()
       let queryCount = 0
-      app.use('*', cache({ cacheName: 'query-no-crypto-test', wait: true }))
+      let getCount = 0
+      const onCacheNotAvailable = vi.fn()
+      app.use(
+        '*',
+        cache({
+          cacheName: 'query-no-crypto-test',
+          wait: true,
+          onCacheNotAvailable,
+        })
+      )
+      app.get('/resource', (c) => {
+        getCount++
+        c.header('X-Count', `${getCount}`)
+        return c.text('get response')
+      })
       app.on('QUERY', '/resource', (c) => {
         queryCount++
         c.header('X-Count', `${queryCount}`)
         return c.text('query response')
       })
+
+      expect(onCacheNotAvailable).toHaveBeenCalledOnce()
+      expect(onCacheNotAvailable).toHaveBeenCalledWith(
+        'Cache Middleware cannot cache QUERY requests because Web Crypto is not available.'
+      )
 
       const request = () =>
         app.request('/resource', {
@@ -921,6 +944,13 @@ describe('Cache Skipping Logic', () => {
 
       expect(res.headers.get('X-Count')).toBe('2')
       expect(caches.open).not.toHaveBeenCalled()
+      expect(onCacheNotAvailable).toHaveBeenCalledOnce()
+
+      await app.request('/resource')
+      const getRes = await app.request('/resource')
+
+      expect(getRes.headers.get('X-Count')).toBe('1')
+      expect(mockCache.put).toHaveBeenCalledOnce()
     } finally {
       vi.stubGlobal('crypto', originalCrypto)
     }
