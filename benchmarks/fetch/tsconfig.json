@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["./*.mts", "./*.mjs"]
+}
