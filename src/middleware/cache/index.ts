@@ -171,7 +171,7 @@ const createQueryDigest = async (
  *
  * @example
  * ```ts
- * app.get(
+ * app.use(
  *   '*',
  *   cache({
  *     cacheName: 'my-app',
