@@ -492,6 +492,21 @@ describe('Context header', () => {
     })
     expect(res.headers.get('X-Test')).toBeNull()
   })
+
+  it('Should override the default Content-Type even if the header name casing differs', async () => {
+    const res = c.json({ type: 'urn:example:error' }, 400, {
+      'content-type': 'application/problem+json',
+    })
+    expect(res.headers.get('Content-Type')).toBe('application/problem+json')
+  })
+
+  it('Should apply the last value when header names differ only in casing', async () => {
+    const res = c.body('foo', 200, {
+      'X-Custom': 'first',
+      'x-custom': 'second',
+    })
+    expect(res.headers.get('X-Custom')).toBe('second')
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
