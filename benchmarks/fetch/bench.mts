@@ -47,7 +47,7 @@ const query = new Request('http://localhost/id/1?name=bun')
 
 let sink: unknown
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const cases: [string, (app: any) => Promise<unknown>][] = [
   ['ping GET /', (app) => app.fetch(ping)],
   ['query GET /id/1?name=bun', (app) => app.fetch(query)],
