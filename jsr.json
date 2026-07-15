@@ -45,6 +45,7 @@
     "./timeout": "./src/middleware/timeout/index.ts",
     "./timing": "./src/middleware/timing/timing.ts",
     "./logger": "./src/middleware/logger/index.ts",
+    "./method-not-allowed": "./src/middleware/method-not-allowed/index.ts",
     "./method-override": "./src/middleware/method-override/index.ts",
     "./powered-by": "./src/middleware/powered-by/index.ts",
     "./pretty-json": "./src/middleware/pretty-json/index.ts",
