@@ -606,14 +606,12 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    const responseHeaders = this.#res
-      ? new Headers(this.#res.headers)
-      : (this.#preparedHeaders ?? new Headers())
+    let responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders
 
-    if (typeof arg === 'object' && 'headers' in arg) {
-      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
-      for (const [key, value] of argHeaders) {
-        if (key.toLowerCase() === 'set-cookie') {
+    if (typeof arg === 'object' && arg.headers) {
+      responseHeaders ??= new Headers()
+      for (const [key, value] of new Headers(arg.headers)) {
+        if (key === 'set-cookie') {
           responseHeaders.append(key, value)
         } else {
           responseHeaders.set(key, value)
@@ -622,20 +620,34 @@ export class Context<
     }
 
     if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
-        if (typeof v === 'string') {
-          responseHeaders.set(k, v)
-        } else {
-          responseHeaders.delete(k)
-          for (const v2 of v) {
-            responseHeaders.append(k, v2)
+      if (!responseHeaders) {
+        let count = 0
+        for (const k in headers) {
+          if (++count > 1 || typeof headers[k as keyof HeaderRecord] !== 'string') {
+            responseHeaders = new Headers()
+            break
+          }
+        }
+      }
+      if (responseHeaders) {
+        for (const [k, v] of Object.entries(headers)) {
+          if (typeof v === 'string') {
+            responseHeaders.set(k, v)
+          } else {
+            responseHeaders.delete(k)
+            for (const v2 of v) {
+              responseHeaders.append(k, v2)
+            }
           }
         }
       }
     }
 
     const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
-    return createResponseInstance(data, { status, headers: responseHeaders })
+    return createResponseInstance(data, {
+      status,
+      headers: responseHeaders ?? (headers as Record<string, string> | undefined),
+    })
   }
 
   newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
