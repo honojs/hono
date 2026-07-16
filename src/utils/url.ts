@@ -207,9 +207,6 @@ export const checkOptionalParameter = (path: string): string[] | null => {
 
 // Optimized
 const _decodeURI = (value: string) => {
-  if (!/[%+]/.test(value)) {
-    return value
-  }
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
@@ -223,7 +220,7 @@ const _getQueryParam = (
 ): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
   let encoded
 
-  if (!multiple && key && !/[%+]/.test(key)) {
+  if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
     // optimized for unencoded key
 
     let keyIndex = url.indexOf('?', 8)
