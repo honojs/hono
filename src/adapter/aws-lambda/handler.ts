@@ -248,8 +248,12 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       ? WithMultiValueHeaders
       : WithHeaders)
 >) => {
-  // @ts-expect-error FIXME: Fix return typing
-  return async (event, lambdaContext?) => {
+  return async <L extends LambdaEvent>(event: L, lambdaContext?: LambdaContext): Promise<
+    APIGatewayProxyResult &
+      (L extends { multiValueHeaders: Record<string, string[]> }
+        ? WithMultiValueHeaders
+        : WithHeaders)
+  > => {
     const processor = getProcessor(event)
 
     let req, requestContext
@@ -262,7 +266,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
         error instanceof TypeError
           ? new Response('Invalid request', { status: 400 })
           : new Response('Internal Server Error', { status: 500 })
-      return processor.createResult(event, errorResponse, { isContentTypeBinary })
+      return processor.createResult(event, errorResponse, { isContentTypeBinary }) as any
     }
 
     const res = await app.fetch(req, {
@@ -271,7 +275,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return processor.createResult(event, res, { isContentTypeBinary })
+    return processor.createResult(event, res, { isContentTypeBinary }) as any
   }
 }
 
