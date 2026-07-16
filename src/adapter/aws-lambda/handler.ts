@@ -248,7 +248,10 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       ? WithMultiValueHeaders
       : WithHeaders)
 >) => {
-  return async <L extends LambdaEvent>(event: L, lambdaContext?: LambdaContext): Promise<
+  return async <L extends LambdaEvent>(
+    event: L,
+    lambdaContext?: LambdaContext
+  ): Promise<
     APIGatewayProxyResult &
       (L extends { multiValueHeaders: Record<string, string[]> }
         ? WithMultiValueHeaders
