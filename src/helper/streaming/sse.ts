@@ -24,8 +24,9 @@ export class SSEStreamingApi extends StreamingApi {
       })
       .join('\n')
 
-    for (const key of ['event', 'id', 'retry'] as (keyof SSEMessage)[]) {
-      if (message[key] && /[\r\n]/.test(message[key] as string)) {
+    for (const key of ['event', 'id'] as (keyof SSEMessage)[]) {
+      const value = message[key]
+      if (value && /[\r\n]/.test(value)) {
         throw new Error(`${key} must not contain "\\r" or "\\n"`)
       }
     }
@@ -35,7 +36,7 @@ export class SSEStreamingApi extends StreamingApi {
         message.event && `event: ${message.event}`,
         dataLines,
         message.id && `id: ${message.id}`,
-        message.retry && `retry: ${message.retry}`,
+        message.retry !== undefined && `retry: ${message.retry}`,
       ]
         .filter(Boolean)
         .join('\n') + '\n\n'
