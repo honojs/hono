@@ -381,6 +381,22 @@ describe('Body methods with caching', () => {
       expect(async () => await req.blob()).not.toThrow()
     })
 
+    it('should parse form data even if formData() is called before parseBody()', async () => {
+      const data = new FormData()
+      data.append('foo', 'bar')
+      data.append('file', new File(['hello'], 't.txt', { type: 'text/plain' }))
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: data,
+        })
+      )
+      await req.formData()
+      const body = await req.parseBody()
+      expect(body['foo']).toBe('bar')
+      expect(body['file']).toBeInstanceOf(File)
+    })
+
     describe('should not break body methods after parseBody() with non-form content-type', () => {
       const createReq = () =>
         new HonoRequest(

@@ -124,6 +124,12 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
+  if (!isRawRequest(request) && request.bodyCache.formData) {
+    return convertFormDataToBodyData<T>(
+      await (request.bodyCache.formData as FormData | Promise<FormData>),
+      options
+    )
+  }
   const headers = isRawRequest(request) ? request.headers : request.raw.headers
   const arrayBuffer = await (request as Request).arrayBuffer()
   const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
