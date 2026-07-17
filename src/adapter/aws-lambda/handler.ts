@@ -248,7 +248,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       ? WithMultiValueHeaders
       : WithHeaders)
 >) => {
-  // @ts-expect-error FIXME: Fix return typing
+  // @ts-expect-error conditional return type is not inferable
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
