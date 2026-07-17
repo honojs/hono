@@ -56,5 +56,5 @@ If you want to do it, create an issue about your middleware.
 ## Local Development
 
 ```bash
-git clone git@github.com:honojs/hono.git && cd hono && bun install --frozen-lockfile
+git clone https://github.com/honojs/hono.git && cd hono && bun install --frozen-lockfile
 ```

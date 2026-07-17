@@ -239,19 +239,21 @@ import { cookie } from 'hono/cookie' // <--- Obsolete!
 ```
 
 You do not have to use Cookie middleware to parse or set cookies.
-They become default functions:
+Use the cookie helpers imported from `hono/cookie`:
 
 ```ts
+import { getCookie, setCookie } from 'hono/cookie'
+
 // Parse cookie
 app.get('/entry/:id', (c) => {
-  const value = c.req.cookie('name')
+  const value = getCookie(c, 'name')
   ...
 })
 ```
 
 ```ts
 app.get('/', (c) => {
-  c.cookie('delicious_cookie', 'choco')
+  setCookie(c, 'delicious_cookie', 'choco')
   return c.text('Do you like cookie?')
 })
 ```
