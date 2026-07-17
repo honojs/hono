@@ -556,6 +556,30 @@ describe('cloneRawRequest', () => {
     expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
   })
 
+  test('clones consumed multipart request with a matching boundary', async () => {
+    const data = new FormData()
+    data.append('foo', 'bar')
+    data.append('file', new File(['hello'], 't.txt', { type: 'text/plain' }))
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: data,
+      })
+    )
+    await req.formData()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    const contentType = clonedReq.headers.get('Content-Type') ?? ''
+    const boundary = contentType.split('boundary=')[1]
+    const bodyText = await clonedReq.clone().text()
+    expect(bodyText.startsWith(`--${boundary}`)).toBe(true)
+
+    const formData = await clonedReq.formData()
+    expect(formData.get('foo')).toBe('bar')
+    expect(formData.get('file')).toBeInstanceOf(File)
+  })
+
   test('clones GET request without body', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
