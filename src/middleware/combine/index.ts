@@ -128,7 +128,7 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  * @example
  * ```ts
  * import { except } from 'hono/combine'
- * import { bearerAuth } from 'hono/bearer-auth
+ * import { bearerAuth } from 'hono/bearer-auth'
  *
  * // If client is accessing public API, then skip authentication.
  * // Otherwise, require a valid token.
