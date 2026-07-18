@@ -15,9 +15,9 @@
 // Runs on both Bun and Node.
 import './ts-resolve.mjs'
 import { run, bench } from 'mitata'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const src = process.env.HONO_SRC ?? new URL('../../src', import.meta.url).pathname
+const src = process.env.HONO_SRC ?? fileURLToPath(new URL('../../src', import.meta.url))
 const label = process.env.HONO_LABEL ?? 'hono'
 const asJson = process.env.HONO_JSON === '1'
 
