@@ -312,7 +312,7 @@ export class Context<
    * })
    * ```
    */
-  env: E['Bindings'] = {}
+  env: E['Bindings']
   #var: Map<unknown, unknown> | undefined
   finalized: boolean = false
   /**
@@ -357,6 +357,8 @@ export class Context<
       this.#notFoundHandler = options.notFoundHandler
       this.#path = options.path
       this.#matchResult = options.matchResult
+    } else {
+      this.env = {}
     }
   }
 
@@ -622,7 +624,8 @@ export class Context<
     }
 
     if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
+      for (const k of Object.keys(headers)) {
+        const v = (headers as Record<string, string | string[]>)[k]
         if (typeof v === 'string') {
           responseHeaders.set(k, v)
         } else {
@@ -713,10 +716,11 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
-    return this.#newResponse(
-      JSON.stringify(object),
-      arg,
-      setDefaultContentType('application/json', headers)
+    const body = JSON.stringify(object)
+    return (
+      !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+        ? new Response(body, { headers: { 'content-type': 'application/json' } })
+        : this.#newResponse(body, arg, setDefaultContentType('application/json', headers))
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
   }
 
@@ -726,7 +730,9 @@ export class Context<
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
     const res = (html: string) =>
-      this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
+      !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+        ? new Response(html, { headers: { 'content-type': 'text/html; charset=UTF-8' } })
+        : this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
     return typeof html === 'object'
       ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
       : res(html)

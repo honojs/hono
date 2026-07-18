@@ -50,7 +50,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   raw: Request
 
-  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  #validatedData: { [K in keyof ValidationTargets]?: {} } | undefined // Short name of validatedData
   #matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
   /**
@@ -76,7 +76,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.raw = request
     this.path = path
     this.#matchResult = matchResult
-    this.#validatedData = {}
   }
 
   /**
@@ -106,7 +105,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
-    return param && /\%/.test(param) ? tryDecodeURIComponent(param) : param
+    return param && param.indexOf('%') !== -1 ? tryDecodeURIComponent(param) : param
   }
 
   #getAllDecodedParams(): Record<string, string> {
@@ -116,7 +115,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value !== undefined) {
-        decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
+        decoded[key] = value.indexOf('%') !== -1 ? tryDecodeURIComponent(value) : value
       }
     }
 
@@ -225,8 +224,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    const anyCachedKey = Object.keys(bodyCache)[0]
-    if (anyCachedKey) {
+    for (const anyCachedKey in bodyCache) {
       return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
@@ -337,7 +335,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @param data - The validated data to add.
    */
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.#validatedData[target] = data
+    ;(this.#validatedData ??= {})[target] = data
   }
 
   /**
@@ -350,7 +348,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.#validatedData[target] as unknown
+    return this.#validatedData?.[target] as unknown
   }
 
   /**
