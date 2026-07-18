@@ -37,6 +37,11 @@ const makeApp = async (src: string): Promise<any> => {
       c.header('x-powered-by', 'benchmark')
       return c.text(`${id} ${name}`)
     })
+    .get('/user', (c: any) => c.json({ id: 123, name: 'Alice', roles: ['admin', 'editor'] }))
+    .use('/mw/*', async (_c: any, next: any) => {
+      await next()
+    })
+    .get('/mw/hello', (c: any) => c.text('mw'))
   return app
 }
 
@@ -44,6 +49,8 @@ const app = await makeApp(src)
 
 const ping = new Request('http://localhost/')
 const query = new Request('http://localhost/id/1?name=bun')
+const user = new Request('http://localhost/user')
+const mw = new Request('http://localhost/mw/hello')
 
 let sink: unknown
 
@@ -51,6 +58,8 @@ let sink: unknown
 const cases: [string, (app: any) => Promise<unknown>][] = [
   ['ping GET /', (app) => app.fetch(ping)],
   ['query GET /id/1?name=bun', (app) => app.fetch(query)],
+  ['json GET /user', (app) => app.fetch(user)],
+  ['middleware GET /mw/hello', (app) => app.fetch(mw)],
   [
     'body POST /json',
     (app) =>
