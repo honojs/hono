@@ -113,6 +113,11 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
 
+    // The compressed body depends on the request's Accept-Encoding, so caches must
+    // not reuse it for clients that negotiated a different encoding.
+    // https://www.rfc-editor.org/rfc/rfc9110#field.vary
+    addVaryAcceptEncoding(ctx.res)
+
     // Convert strong ETag to weak ETag since compressed content is not byte-identical
     const etag = ctx.res.headers.get('ETag')
     if (etag && !etag.startsWith('W/')) {
@@ -126,4 +131,14 @@ const shouldTransform = (res: Response) => {
   // Don't compress for Cache-Control: no-transform
   // https://tools.ietf.org/html/rfc7234#section-5.2.2.4
   return !cacheControl || !cacheControlNoTransformRegExp.test(cacheControl)
+}
+
+const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
+const addVaryAcceptEncoding = (res: Response): void => {
+  const vary = res.headers.get('Vary')
+  if (vary === '*' || (vary && varyAcceptEncodingRegExp.test(vary))) {
+    // Already varies on everything, or Accept-Encoding is already listed.
+    return
+  }
+  res.headers.set('Vary', vary ? `${vary}, Accept-Encoding` : 'Accept-Encoding')
 }
