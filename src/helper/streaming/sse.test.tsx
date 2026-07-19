@@ -154,6 +154,17 @@ describe('SSE Streaming helper', () => {
     expect(decodedValue).toContain('retry: 0\n\n')
   })
 
+  it('Should emit an empty id to reset Last-Event-ID', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'reset',
+        id: '',
+      })
+    })
+
+    expect(await res.text()).toBe('data: reset\nid: \n\n')
+  })
+
   it('Check stream Response if error occurred', async () => {
     const onError = vi.fn()
     const res = streamSSE(
