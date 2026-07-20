@@ -3,6 +3,7 @@
  * Compress Middleware for Hono.
  */
 
+import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
@@ -101,6 +102,15 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       return
     }
 
+    // From here on the representation is selected from the request's Accept-Encoding,
+    // so caches must key on that header. This is done before the negotiation result is
+    // known, because an identity response served for a missing or unsupported
+    // Accept-Encoding is just as much a negotiated representation: RFC 9110 lists
+    // Accept-Encoding "or lack thereof" as a determining factor. Without this, a shared
+    // cache could reuse the identity response for a client that does accept gzip.
+    // https://www.rfc-editor.org/rfc/rfc9110#field.vary
+    addVaryAcceptEncoding(ctx)
+
     const accepted = ctx.req.header('Accept-Encoding')
     const encoding = selectEncoding(accepted, candidates)
     if (!encoding || !ctx.res.body) {
@@ -112,11 +122,6 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
-
-    // The compressed body depends on the request's Accept-Encoding, so caches must
-    // not reuse it for clients that negotiated a different encoding.
-    // https://www.rfc-editor.org/rfc/rfc9110#field.vary
-    addVaryAcceptEncoding(ctx.res)
 
     // Convert strong ETag to weak ETag since compressed content is not byte-identical
     const etag = ctx.res.headers.get('ETag')
@@ -134,11 +139,28 @@ const shouldTransform = (res: Response) => {
 }
 
 const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
-const addVaryAcceptEncoding = (res: Response): void => {
-  const vary = res.headers.get('Vary')
-  if (vary === '*' || (vary && varyAcceptEncodingRegExp.test(vary))) {
+const addVaryAcceptEncoding = (ctx: Context): void => {
+  const current = ctx.res.headers.get('Vary')
+  if (current === '*' || (current && varyAcceptEncodingRegExp.test(current))) {
     // Already varies on everything, or Accept-Encoding is already listed.
     return
   }
-  res.headers.set('Vary', vary ? `${vary}, Accept-Encoding` : 'Accept-Encoding')
+  const vary = current ? `${current}, Accept-Encoding` : 'Accept-Encoding'
+
+  // A handler may return a `fetch()` response, whose headers are immutable.
+  // `ctx.header()` is the documented way to write through that, but it recreates the
+  // response with `new Response(body, res)`, which on Node inherits the immutable
+  // header guard from the original — so the write can still throw. Fall back to
+  // rebuilding the response around a fresh, mutable `Headers` instance.
+  try {
+    ctx.header('Vary', vary)
+  } catch {
+    const headers = new Headers(ctx.res.headers)
+    headers.set('Vary', vary)
+    ctx.res = new Response(ctx.res.body, {
+      status: ctx.res.status,
+      statusText: ctx.res.statusText,
+      headers,
+    })
+  }
 }

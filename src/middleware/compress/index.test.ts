@@ -2,6 +2,25 @@ import { stream, streamSSE } from '../../helper/streaming'
 import { Hono } from '../../hono'
 import { compress } from '.'
 
+// Mimics the header guard of a `fetch()` response, whose headers cannot be mutated.
+const makeResponseHeaderImmutable = (res: Response) => {
+  Object.defineProperty(res, 'headers', {
+    value: new Proxy(res.headers, {
+      get(target, prop) {
+        if (prop === 'set' || prop === 'append' || prop === 'delete') {
+          return () => {
+            throw new TypeError('Cannot modify headers: Headers are immutable')
+          }
+        }
+        const value = Reflect.get(target, prop)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    }),
+    writable: false,
+  })
+  return res
+}
+
 describe('Compress Middleware', () => {
   const app = new Hono()
 
@@ -279,6 +298,24 @@ describe('Compress Middleware', () => {
       c.header('Vary', 'Accept-Encoding')
       return c.text('a'.repeat(1024))
     })
+    app.get('/wildcard-vary', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('Vary', '*')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/not-compressible', (c) => {
+      c.header('Content-Type', 'image/png')
+      c.header('Content-Length', '1024')
+      return c.body('a'.repeat(1024))
+    })
+    app.get('/immutable-headers', () =>
+      makeResponseHeaderImmutable(
+        new Response('a'.repeat(1024), {
+          headers: { 'Content-Type': 'text/plain', 'Content-Length': '1024' },
+        })
+      )
+    )
 
     it('should set Vary: Accept-Encoding when compressing', async () => {
       const res = await app.request('/no-vary', {
@@ -304,10 +341,42 @@ describe('Compress Middleware', () => {
       expect(res.headers.get('Vary')).toBe('Accept-Encoding')
     })
 
-    it('should not add a Vary header when not compressing', async () => {
+    it('should leave Vary: * unchanged', async () => {
+      const res = await app.request('/wildcard-vary', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('*')
+    })
+
+    it('should set Vary on an identity response when Accept-Encoding is absent', async () => {
       const res = await app.request('/no-vary')
       expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should set Vary on an identity response when no offered encoding is accepted', async () => {
+      const res = await app.request('/no-vary', {
+        headers: { 'Accept-Encoding': 'br' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should not add a Vary header when the response is not eligible for compression', async () => {
+      const res = await app.request('/not-compressible', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Vary')).toBeNull()
+    })
+
+    it('should set Vary on a response with immutable headers', async () => {
+      const res = await app.request('/immutable-headers', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
     })
   })
 
