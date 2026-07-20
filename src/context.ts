@@ -417,6 +417,8 @@ export class Context<
       // `Set-Cookie` is handled after the loop rather than inside it: it is the
       // only header that may legitimately appear more than once, so `entries()`
       // yields it once per occurrence and would re-merge values it just wrote.
+      // Captured before the merge below deletes them from `_res`.
+      const incomingCookies = _res.headers.getSetCookie()
       const preparedCookies = this.#res.headers.getSetCookie()
 
       for (const [k, v] of this.#res.headers.entries()) {
@@ -428,6 +430,11 @@ export class Context<
       if (preparedCookies.length > 0) {
         _res.headers.delete('set-cookie')
         for (const cookie of preparedCookies) {
+          _res.headers.append('set-cookie', cookie)
+        }
+        // Cookies carried by the response being assigned must survive too;
+        // dropping them silently loses a `Set-Cookie` the app asked for.
+        for (const cookie of incomingCookies) {
           _res.headers.append('set-cookie', cookie)
         }
       }
