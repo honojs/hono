@@ -412,16 +412,20 @@ export class Context<
    * @param _res - The Response object to set.
    */
   set res(_res: Response | undefined) {
-    if (this.#res && _res) {
+    // Headers staged by `c.header()` live in `#preparedHeaders` until something
+    // reads `c.res` and materializes it. Falling back to them keeps those
+    // headers from being dropped when nothing has read `c.res` yet.
+    const preparedHeaders = this.#res ? this.#res.headers : this.#preparedHeaders
+    if (preparedHeaders && _res) {
       _res = createResponseInstance(_res.body, _res)
       // `Set-Cookie` is handled after the loop rather than inside it: it is the
       // only header that may legitimately appear more than once, so `entries()`
       // yields it once per occurrence and would re-merge values it just wrote.
       // Captured before the merge below deletes them from `_res`.
       const incomingCookies = _res.headers.getSetCookie()
-      const preparedCookies = this.#res.headers.getSetCookie()
+      const preparedCookies = preparedHeaders.getSetCookie()
 
-      for (const [k, v] of this.#res.headers.entries()) {
+      for (const [k, v] of preparedHeaders.entries()) {
         if (k !== 'content-type' && k !== 'set-cookie') {
           _res.headers.set(k, v)
         }
@@ -438,6 +442,12 @@ export class Context<
           _res.headers.append('set-cookie', cookie)
         }
       }
+    }
+    if (!_res) {
+      // `c.res = undefined` discards the response built so far, so the staged
+      // headers go with it. Without this they would be re-applied to whatever
+      // response is assigned next.
+      this.#preparedHeaders = undefined
     }
     this.#res = _res
     this.finalized = true
