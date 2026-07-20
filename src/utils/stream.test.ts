@@ -65,6 +65,42 @@ describe('StreamingApi', () => {
     expect((await reader.read()).done).toBe(true)
   })
 
+  it('pipe() should keep the writer usable when the source errors', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+
+    const erroringBody = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream failure'))
+      },
+    })
+
+    await expect(api.pipe(erroringBody)).rejects.toThrow('upstream failure')
+
+    // The writer is re-acquired, so it is still bound to the writable. Before
+    // this was fixed, touching it threw "Writer is not bound to a WritableStream".
+    // @ts-expect-error -- reaching into the private writer to assert its state
+    expect(() => api.writer.desiredSize).not.toThrow()
+  })
+
+  it('pipe() should not break write()/close() when the source errors', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+
+    const erroringBody = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream failure'))
+      },
+    })
+
+    await expect(api.pipe(erroringBody)).rejects.toThrow('upstream failure')
+
+    // These swallow their own errors; the point is that they must not reject
+    // with a TypeError from a writer that is bound to nothing.
+    await expect(api.write('after pipe')).resolves.toBe(api)
+    await expect(api.close()).resolves.toBeUndefined()
+  })
+
   it('should not throw an error in write()', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable, readable)
