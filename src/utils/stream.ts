@@ -77,8 +77,20 @@ export class StreamingApi {
 
   async pipe(body: ReadableStream) {
     this.writer.releaseLock()
-    await body.pipeTo(this.writable, { preventClose: true })
-    this.writer = this.writable.getWriter()
+    try {
+      await body.pipeTo(this.writable, { preventClose: true })
+    } finally {
+      // Re-acquire the writer even when pipeTo() rejects — a client disconnect,
+      // an erroring source or a fired abort signal all land here. Without this
+      // the released writer stays on the instance and every later write(),
+      // writeln() or close() fails against a writer bound to nothing.
+      try {
+        this.writer = this.writable.getWriter()
+      } catch {
+        // The writable is unusable (already locked elsewhere); keep the current
+        // writer rather than masking the original pipeTo() rejection.
+      }
+    }
   }
 
   onAbort(listener: () => void | Promise<void>) {
