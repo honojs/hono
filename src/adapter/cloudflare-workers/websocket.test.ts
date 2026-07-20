@@ -54,6 +54,109 @@ describe('upgradeWebSocket middleware', () => {
       ),
       next
     )
-    expect(next).toBeCalled()
+    expect(next).toHaveBeenCalled()
+  })
+
+  const closePromise = new Promise((resolve) =>
+    app.get(
+      '/ws-close',
+      upgradeWebSocket(() => ({
+        onClose(evt, ws) {
+          resolve(true)
+        },
+      }))
+    )
+  )
+
+  it('Should call onClose when close event fires', async () => {
+    await app.request('/ws-close', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+
+    server.dispatchEvent(new Event('close'))
+
+    expect(await closePromise).toBe(true)
+  })
+
+  const error = new Promise((resolve) => {
+    app.get(
+      '/ws-error',
+      upgradeWebSocket(() => ({
+        onError(evt, ws) {
+          resolve(true)
+        },
+      }))
+    )
+  })
+
+  it('Should call onError when error event fires', async () => {
+    await app.request('/ws-error', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+
+    server.dispatchEvent(new Event('error'))
+    expect(await error).toBe(true)
+  })
+
+  const sendWsRef: Promise<any> = new Promise((resolve) =>
+    app.get(
+      '/ws-send',
+      upgradeWebSocket(() => ({
+        onMessage(evt, ws) {
+          resolve(ws)
+        },
+      }))
+    )
+  )
+
+  it('Should call server.send when ws.send is called', async () => {
+    // @ts-expect-error adding a mock method for the test
+    server.send = vi.fn()
+
+    await app.request('/ws-send', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+    server.dispatchEvent(new MessageEvent('message', { data: 'trigger' }))
+
+    const ws = await sendWsRef
+    ws.send('hello')
+
+    // @ts-expect-error mock method
+    expect(server.send).toHaveBeenCalledWith('hello')
+  })
+
+  const closeWsRef: Promise<any> = new Promise((resolve) =>
+    app.get(
+      '/ws-close-call',
+      upgradeWebSocket(() => ({
+        onMessage(evt, ws) {
+          resolve(ws)
+        },
+      }))
+    )
+  )
+
+  it('Should call server.close when ws.close is called', async () => {
+    // @ts-expect-error adding a mock method for the test
+    server.close = vi.fn()
+
+    await app.request('/ws-close-call', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+    server.dispatchEvent(new MessageEvent('message', { data: 'trigger' }))
+
+    const ws = await closeWsRef
+    ws.close(1000, 'done')
+
+    // @ts-expect-error mock method
+    expect(server.close).toHaveBeenCalledWith(1000, 'done')
   })
 })
