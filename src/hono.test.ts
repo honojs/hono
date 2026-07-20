@@ -1207,6 +1207,45 @@ describe('Middleware', () => {
       expect(res.headers.get('x-custom')).toBe(null)
     })
   })
+
+  describe('Headers set before next() when the handler returns a raw Response', () => {
+    const buildApp = (touchResEarly: boolean) => {
+      const app = new Hono()
+      app.use(async (c, next) => {
+        if (touchResEarly) {
+          // Middleware such as CORS reads `c.res`, which materializes it early.
+          c.res.headers.set('x-something', 'true')
+        }
+        c.header('set-cookie', 'mw=hello; Path=/', { append: true })
+        c.header('x-custom', 'foo')
+        await next()
+      })
+      app.get('/', () => {
+        const res = new Response('ok')
+        res.headers.append('set-cookie', 'handler=world; Path=/')
+        return res
+      })
+      return app
+    }
+
+    it('Should keep cookies from both sides when c.res was never read', async () => {
+      const res = await buildApp(false).request('/')
+      expect(res.headers.getSetCookie()).toEqual(['mw=hello; Path=/', 'handler=world; Path=/'])
+      expect(res.headers.get('x-custom')).toBe('foo')
+    })
+
+    it('Should keep cookies from both sides when c.res was read early', async () => {
+      const res = await buildApp(true).request('/')
+      expect(res.headers.getSetCookie()).toEqual(['mw=hello; Path=/', 'handler=world; Path=/'])
+      expect(res.headers.get('x-custom')).toBe('foo')
+      expect(res.headers.get('x-something')).toBe('true')
+    })
+
+    it('Should preserve the body of the handler response', async () => {
+      expect(await (await buildApp(false).request('/')).text()).toBe('ok')
+      expect(await (await buildApp(true).request('/')).text()).toBe('ok')
+    })
+  })
 })
 
 describe('Builtin Middleware', () => {
