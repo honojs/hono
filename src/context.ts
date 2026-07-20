@@ -414,18 +414,21 @@ export class Context<
   set res(_res: Response | undefined) {
     if (this.#res && _res) {
       _res = createResponseInstance(_res.body, _res)
+      // `Set-Cookie` is handled after the loop rather than inside it: it is the
+      // only header that may legitimately appear more than once, so `entries()`
+      // yields it once per occurrence and would re-merge values it just wrote.
+      const preparedCookies = this.#res.headers.getSetCookie()
+
       for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'content-type') {
-          continue
-        }
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
-          }
-        } else {
+        if (k !== 'content-type' && k !== 'set-cookie') {
           _res.headers.set(k, v)
+        }
+      }
+
+      if (preparedCookies.length > 0) {
+        _res.headers.delete('set-cookie')
+        for (const cookie of preparedCookies) {
+          _res.headers.append('set-cookie', cookie)
         }
       }
     }
