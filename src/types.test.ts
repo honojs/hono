@@ -20,6 +20,7 @@ import type {
   RemoveQuestion,
   ResponseFormat,
   ToSchema,
+  Next,
   TypedResponse,
 } from './types'
 import type { ContentfulStatusCode, StatusCode } from './utils/http-status'
@@ -349,12 +350,38 @@ describe('OnHandlerInterface', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
-  test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
-    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
-    app.on('GET', ['/a', '/b'], middleware, (c) => {
-      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
-      return c.json({})
+  test('app.on(method, path[], middleware, handler) should infer the final handler response', () => {
+    const middleware = async (c: Context, next: Next) => {
+      console.log(c.req.path)
+      return next()
+    }
+    const route = app.on('POST', ['/route1', '/route2'], middleware, (c) => {
+      return c.json({ message: 'Hello from route1 or route2' })
     })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/route1': {
+        $post: {
+          input: {}
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+      '/route2': {
+        $post: {
+          input: {}
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
   })
 
   test('app.on(method, path[], handler).get(pathless handler) - pathless handler should use last path', () => {

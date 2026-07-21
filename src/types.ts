@@ -2455,6 +2455,41 @@ export interface OnHandlerInterface<
     MergePath<BasePath, P>
   >
 
+  // app.on(method | method[], path[], handler x2)
+  <
+    M extends string,
+    const Ps extends string[],
+    R extends HandlerResponse<any> = any,
+    I extends Input = BlankInput,
+    I2 extends Input = I,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    // Middleware
+    M1 extends H<E2, MergePath<BasePath, Ps[number]>, I> = H<
+      E2,
+      MergePath<BasePath, Ps[number]>,
+      I
+    >,
+  >(
+    methods: M | M[],
+    paths: Ps,
+    ...handlers: [
+      H<E2, MergePath<BasePath, Ps[number]>, I> & M1,
+      H<E3, MergePath<BasePath, Ps[number]>, I2, R>,
+    ]
+  ): HonoBase<
+    IntersectNonAnyTypes<[E, E2, E3]>,
+    S &
+      ToSchema<
+        M,
+        MergePath<BasePath, Ps[number]>,
+        I2,
+        MergeTypedResponse<R> | MergeMiddlewareResponse<M1>
+      >,
+    BasePath,
+    Ps extends [...string[], infer LastPath extends string] ? MergePath<BasePath, LastPath> : never
+  >
+
   // app.on(method | method[], path[], ...handlers[])
   <
     M extends string,
