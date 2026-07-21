@@ -114,6 +114,15 @@ interface Authorizer {
     userArn: string
     userId: string
   }
+  jwt?: {
+    claims: Record<string, string | number | boolean | string[]>
+    scopes: string[] | null
+  }
+  /**
+   * The `context` object returned by a Lambda (REQUEST) authorizer.
+   * It is `null` when the authorizer returns no context.
+   */
+  lambda?: Record<string, unknown> | null
 }
 
 export interface ApiGatewayRequestContextV2 {
