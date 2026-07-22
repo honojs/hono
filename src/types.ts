@@ -2465,7 +2465,10 @@ export interface OnHandlerInterface<
   >(
     methods: M | M[],
     paths: Ps,
-    ...handlers: H<E2, MergePath<BasePath, Ps[number]>, I, R>[]
+    ...handlers: [
+      ...H<E2, MergePath<BasePath, Ps[number]>, I>[],
+      H<E2, MergePath<BasePath, Ps[number]>, I, R>,
+    ]
   ): HonoBase<
     E,
     S & ToSchema<M, MergePath<BasePath, Ps[number]>, I, MergeTypedResponse<R>>,

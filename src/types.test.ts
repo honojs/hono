@@ -15,6 +15,7 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
+  Next,
   ParamKeyToRecord,
   ParamKeys,
   RemoveQuestion,
@@ -354,6 +355,50 @@ describe('OnHandlerInterface', () => {
     app.on('GET', ['/a', '/b'], middleware, (c) => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       return c.json({})
+    })
+  })
+
+  test('app.on(method, path[], middleware, handler) should infer the response type from the last handler', () => {
+    // The middleware resolves to `Promise<void>`, which must not take part in
+    // inferring the response type of the route.
+    const middleware = async (_c: Context, next: Next) => {
+      await next()
+    }
+    const route = app.on('POST', ['/a', '/b'], middleware, (c) => {
+      return c.json({ message: 'Hello' })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/a': {
+        $post: {
+          input: {}
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+      '/b': {
+        $post: {
+          input: {}
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: ContentfulStatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method[], path[], middleware x2, handler) should not throw a type error', () => {
+    const middleware = async (_c: Context, next: Next) => {
+      await next()
+    }
+    app.on(['GET', 'POST'], ['/a', '/b'], middleware, middleware, (c) => {
+      return c.text('Hello')
     })
   })
 
