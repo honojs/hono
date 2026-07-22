@@ -714,7 +714,7 @@ export class Context<
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     return this.#newResponse(
-      JSON.stringify(object),
+      JSON.stringify(object) ?? 'null',
       arg,
       setDefaultContentType('application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
