@@ -301,6 +301,31 @@ export class JSXFragmentNode extends JSXNode {
   }
 }
 
+/**
+ * A precompiled template: static HTML chunks interleaved with the JSX children
+ * hoisted out of them. Rendering is deferred to `toStringToBuffer()` like any
+ * other node, so children are evaluated in their tree position — inside the
+ * enclosing `<Context.Provider>`, not before it.
+ */
+export class JSXTemplateNode extends JSXNode {
+  #strings: readonly string[]
+
+  constructor(strings: readonly string[], values: Child[]) {
+    super('', {}, values)
+    this.#strings = strings
+  }
+
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+    const strings = this.#strings
+    const values = this.children
+    for (let i = 0, len = strings.length - 1; i < len; i++) {
+      buffer[0] += strings[i]
+      childrenToStringToBuffer([values[i]], buffer)
+    }
+    buffer[0] += strings[strings.length - 1]
+  }
+}
+
 export const jsx = (tag: string | Function, props: Props | null, ...children: Child[]): JSXNode => {
   props ??= {}
   if (children.length) {

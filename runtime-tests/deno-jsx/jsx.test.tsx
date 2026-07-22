@@ -1,6 +1,7 @@
 /** @jsxImportSource ../../src/jsx */
 import { assertEquals } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
+import { createContext, useContext } from '../../src/jsx/context.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../src/utils/html.ts'
@@ -16,6 +17,34 @@ Deno.test('JSX', () => {
   )
 
   assertEquals(html.toString(), '<div><h1 id="&lt;Hello&gt;"><span>&lt;Hono&gt;</span></h1></div>')
+})
+
+Deno.test('JSX: Context with an element between the provider and the consumer', () => {
+  const Context = createContext('default')
+  const Consumer = () => <span>{useContext(Context)}</span>
+  const html = (
+    <Context.Provider value='provided'>
+      <div>
+        <Consumer />
+      </div>
+    </Context.Provider>
+  )
+
+  assertEquals(html.toString(), '<div><span>provided</span></div>')
+})
+
+Deno.test('JSX: Context with an element between the provider and an async consumer', async () => {
+  const Context = createContext('default')
+  const Consumer = async () => <span>{useContext(Context)}</span>
+  const html = (
+    <Context.Provider value='provided'>
+      <div>
+        <Consumer />
+      </div>
+    </Context.Provider>
+  )
+
+  assertEquals(String(await html.toString()), '<div><span>provided</span></div>')
 })
 
 Deno.test('JSX: Fragment', () => {

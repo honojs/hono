@@ -1,7 +1,9 @@
 /** @jsxRuntime automatic **/
 /** @jsxImportSource . **/
+import { html } from '../helper/html'
 import { Hono } from '../hono'
-import { jsxAttr } from './jsx-runtime'
+import { createContext, useContext } from './context'
+import { jsx, jsxAttr, jsxTemplate } from './jsx-runtime'
 
 describe('jsx-runtime', () => {
   let app: Hono
@@ -69,6 +71,72 @@ describe('jsx-runtime', () => {
         })
       )
     ).toBe('style="background-color:white"')
+  })
+
+  // A precompiling JSX transform (e.g. Deno's `"jsx": "precompile"`) hoists
+  // static elements into `jsxTemplate(tpl, ...children)` calls. Those calls are
+  // argument expressions, so they are evaluated *before* the enclosing
+  // component runs — rendering them eagerly would resolve their children
+  // outside the tree position they belong to.
+  describe('jsxTemplate()', () => {
+    const tpl = (...strings: string[]) => strings
+
+    it('Should render static chunks and interpolated values', () => {
+      expect(jsxTemplate(tpl('<hr/>')).toString()).toBe('<hr/>')
+      expect(jsxTemplate(tpl('<div>', '</div>'), 'hello').toString()).toBe('<div>hello</div>')
+    })
+
+    it('Should read context provided by an enclosing Provider', () => {
+      const Context = createContext('default')
+      const Consumer = () => <span>{useContext(Context)}</span>
+
+      const node = jsx(Context.Provider, {
+        value: 'provided',
+        children: jsxTemplate(tpl('<div>', '</div>'), jsx(Consumer, {})),
+      })
+
+      expect(node.toString()).toBe('<div><span>provided</span></div>')
+    })
+
+    it('Should read context in an async component under a Provider', async () => {
+      const Context = createContext('default')
+      const Consumer = async () => <span>{useContext(Context)}</span>
+
+      const node = jsx(Context.Provider, {
+        value: 'provided',
+        children: jsxTemplate(tpl('<div>', '</div>'), jsx(Consumer, {})),
+      })
+
+      expect(String(await node.toString())).toBe('<div><span>provided</span></div>')
+    })
+
+    it('Should render the same output as the equivalent JSX', async () => {
+      const cases: [unknown, string][] = [
+        ['<script>alert(1)</script>', 'escaped string'],
+        [0, 'zero'],
+        [42, 'number'],
+        [true, 'true'],
+        [false, 'false'],
+        [null, 'null'],
+        [undefined, 'undefined'],
+        [['a', <b>b</b>, ['c', ['d']]], 'nested array'],
+        [html`<b>bold &amp; raw</b>`, 'html fragment'],
+      ]
+
+      for (const [value, label] of cases) {
+        const fromJsx = (<div>{value as never}</div>).toString()
+        const fromTemplate = jsxTemplate(tpl('<div>', '</div>'), value as never).toString()
+        expect(fromTemplate, label).toBe(fromJsx)
+      }
+    })
+
+    it('Should resolve async children instead of stringifying the promise', async () => {
+      const Async = async () => <span>async</span>
+      const rendered = String(await jsxTemplate(tpl('<div>', '</div>'), jsx(Async, {})).toString())
+
+      expect(rendered).toBe('<div><span>async</span></div>')
+      expect(rendered).not.toContain('[object Promise]')
+    })
   })
 
   // https://en.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored

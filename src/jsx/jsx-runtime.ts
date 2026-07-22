@@ -6,12 +6,19 @@
 export { jsxDEV as jsx, Fragment } from './jsx-dev-runtime'
 export { jsxDEV as jsxs } from './jsx-dev-runtime'
 export type { JSX } from './jsx-dev-runtime'
-import { html, raw } from '../helper/html'
+import { raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer, HtmlEscaped } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
+import { JSXTemplateNode } from './base'
+import type { Child, JSXNode } from './base'
 import { isValidAttributeName, styleObjectForEach } from './utils'
 
-export { html as jsxTemplate }
+/**
+ * Build a node from the static HTML chunks and children produced by a
+ * precompiling JSX transform, such as Deno's `"jsx": "precompile"`.
+ */
+export const jsxTemplate = (strings: readonly string[], ...values: Child[]): JSXNode =>
+  new JSXTemplateNode(strings, values)
 
 export const jsxAttr = (
   key: string,
