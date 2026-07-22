@@ -381,6 +381,22 @@ describe('Body methods with caching', () => {
       expect(async () => await req.blob()).not.toThrow()
     })
 
+    it('should parse form data even if formData() is called before parseBody()', async () => {
+      const data = new FormData()
+      data.append('foo', 'bar')
+      data.append('file', new File(['hello'], 't.txt', { type: 'text/plain' }))
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: data,
+        })
+      )
+      await req.formData()
+      const body = await req.parseBody()
+      expect(body['foo']).toBe('bar')
+      expect(body['file']).toBeInstanceOf(File)
+    })
+
     describe('should not break body methods after parseBody() with non-form content-type', () => {
       const createReq = () =>
         new HonoRequest(
@@ -538,6 +554,30 @@ describe('cloneRawRequest', () => {
     expect(clonedReq.credentials).toBe('same-origin')
     expect(req.raw, 'cloned request should be a different object reference').not.toBe(clonedReq)
     expect(req.raw, 'cloned request should contain the same properties').toMatchObject(clonedReq)
+  })
+
+  test('clones consumed multipart request with a matching boundary', async () => {
+    const data = new FormData()
+    data.append('foo', 'bar')
+    data.append('file', new File(['hello'], 't.txt', { type: 'text/plain' }))
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: data,
+      })
+    )
+    await req.formData()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    const contentType = clonedReq.headers.get('Content-Type') ?? ''
+    const boundary = contentType.split('boundary=')[1]
+    const bodyText = await clonedReq.clone().text()
+    expect(bodyText.startsWith(`--${boundary}`)).toBe(true)
+
+    const formData = await clonedReq.formData()
+    expect(formData.get('foo')).toBe('bar')
+    expect(formData.get('file')).toBeInstanceOf(File)
   })
 
   test('clones GET request without body', async () => {

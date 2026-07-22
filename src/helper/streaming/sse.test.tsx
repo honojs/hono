@@ -132,6 +132,39 @@ describe('SSE Streaming helper', () => {
     expect(decodedValue).toContain(expectedRetryValue)
   })
 
+  it('Should accept retry: 0 and not skip it', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'This is a test message',
+        retry: 0,
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    expect(decodedValue).toContain('retry: 0\n\n')
+  })
+
+  it('Should emit an empty id to reset Last-Event-ID', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'reset',
+        id: '',
+      })
+    })
+
+    expect(await res.text()).toBe('data: reset\nid: \n\n')
+  })
+
   it('Check stream Response if error occurred', async () => {
     const onError = vi.fn()
     const res = streamSSE(

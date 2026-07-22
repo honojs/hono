@@ -1357,15 +1357,15 @@ describe('Transform', () => {
         } as {
           page: number
           orderBy: 'asc' | 'desc'
-          ordreByWithdefault?: 'asc' | 'desc' | undefined
+          orderByWithdefault?: 'asc' | 'desc' | undefined
         }
       }),
       (c) => {
-        const { page, orderBy, ordreByWithdefault } = c.req.valid('query')
+        const { page, orderBy, orderByWithdefault } = c.req.valid('query')
         expectTypeOf(page).toEqualTypeOf<number>()
         expectTypeOf(orderBy).toEqualTypeOf<'asc' | 'desc'>()
-        expectTypeOf(ordreByWithdefault).toEqualTypeOf<'asc' | 'desc' | undefined>()
-        return c.json({ page, orderBy, ordreByWithdefault })
+        expectTypeOf(orderByWithdefault).toEqualTypeOf<'asc' | 'desc' | undefined>()
+        return c.json({ page, orderBy, orderByWithdefault })
       }
     )
 
@@ -1376,13 +1376,13 @@ describe('Transform', () => {
             query: {
               page: string | string[]
               orderBy: 'asc' | 'desc'
-              ordreByWithdefault?: 'asc' | 'desc' | undefined
+              orderByWithdefault?: 'asc' | 'desc' | undefined
             }
           }
           output: {
             page: number
             orderBy: 'asc' | 'desc'
-            ordreByWithdefault: 'asc' | 'desc' | undefined
+            orderByWithdefault: 'asc' | 'desc' | undefined
           }
           outputFormat: 'json'
           status: ContentfulStatusCode

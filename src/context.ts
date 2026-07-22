@@ -630,7 +630,8 @@ export class Context<
         }
       }
       if (responseHeaders) {
-        for (const [k, v] of Object.entries(headers)) {
+        for (const k in headers) {
+          const v = headers[k as keyof HeaderRecord]
           if (typeof v === 'string') {
             responseHeaders.set(k, v)
           } else {
