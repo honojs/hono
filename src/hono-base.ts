@@ -471,17 +471,17 @@ class Hono<
    * @see {@link https://hono.dev/docs/api/hono#fetch}
    *
    * @param {Request} request - request Object of request
-   * @param {Env} Env - env Object
-   * @param {ExecutionContext} - context of execution
+   * @param {Env} env - env Object
+   * @param {ExecutionContext} executionCtx - context of execution
    * @returns {Response | Promise<Response>} response of request
    *
    */
   fetch: (
     request: Request,
-    Env?: E['Bindings'] | {},
+    env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => Response | Promise<Response> = (request, ...rest) => {
-    return this.#dispatch(request, rest[1], rest[0], request.method)
+  ) => Response | Promise<Response> = (request, env, executionCtx) => {
+    return this.#dispatch(request, executionCtx, env, request.method)
   }
 
   /**
