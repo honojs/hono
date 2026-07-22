@@ -412,22 +412,33 @@ export class Context<
    * @param _res - The Response object to set.
    */
   set res(_res: Response | undefined) {
-    if (this.#res && _res) {
-      _res = createResponseInstance(_res.body, _res)
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'content-type') {
-          continue
-        }
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+    if (_res) {
+      if (this.#res) {
+        _res = createResponseInstance(_res.body, _res)
+        const cookies = this.#res.headers.getSetCookie()
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'content-type' || k === 'set-cookie') {
+            continue
           }
-        } else {
           _res.headers.set(k, v)
         }
+        for (const cookie of cookies) {
+          _res.headers.append('set-cookie', cookie)
+        }
+      } else if (this.#preparedHeaders) {
+        const cookies = this.#preparedHeaders.getSetCookie()
+        for (const [k, v] of this.#preparedHeaders.entries()) {
+          if (k === 'set-cookie') {
+            continue
+          }
+          _res.headers.set(k, v)
+        }
+        for (const cookie of cookies) {
+          _res.headers.append('set-cookie', cookie)
+        }
       }
+    } else {
+      this.#preparedHeaders = undefined
     }
     this.#res = _res
     this.finalized = true

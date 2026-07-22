@@ -423,8 +423,8 @@ describe('Context header', () => {
     const newResponse = new Response(null)
     newResponse.headers.append('set-cookie', newCookies[0])
     c.res = newResponse
-    expect(c.res.headers.getSetCookie().length).toBe(cookies.length)
-    expect(c.res.headers.getSetCookie()).toEqual(cookies)
+    expect(c.res.headers.getSetCookie().length).toBe(cookies.length + newCookies.length)
+    expect(c.res.headers.getSetCookie()).toEqual([...newCookies, ...cookies])
   })
 
   it('Should keep previous cookies in response headers', () => {
