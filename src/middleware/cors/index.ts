@@ -112,7 +112,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
 
     if (c.req.method === 'OPTIONS') {
-      if (opts.origin !== '*') {
+      if (allowOrigin && allowOrigin !== '*') {
         set('Vary', 'Origin')
       }
 
@@ -150,7 +150,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
-    if (opts.origin !== '*') {
+    if (allowOrigin && allowOrigin !== '*') {
       c.header('Vary', 'Origin', { append: true })
     }
   }

@@ -471,3 +471,104 @@ describe('CORS by Middleware', () => {
     ])
   })
 })
+
+describe('CORS Vary: Origin header - dynamic origin function', () => {
+  it('Should NOT set Vary: Origin when dynamic origin function resolves to "*"', async () => {
+    const app = new Hono()
+    app.use(
+      '/api/*',
+      cors({
+        origin: (origin) => (origin.endsWith('.example.com') ? origin : '*'),
+      })
+    )
+    app.get('/api/test', (c) => c.json({ ok: true }))
+
+    // Request from an origin that causes the function to return '*'
+    const res = await app.request('http://localhost/api/test', {
+      headers: { origin: 'http://untrusted-site.com' },
+    })
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res.headers.get('Vary')).toBeNull()
+  })
+
+  it('Should set Vary: Origin when dynamic origin function resolves to an explicit origin', async () => {
+    const app = new Hono()
+    app.use(
+      '/api/*',
+      cors({
+        origin: (origin) => (origin.endsWith('.example.com') ? origin : '*'),
+      })
+    )
+    app.get('/api/test', (c) => c.json({ ok: true }))
+
+    // Request from an origin that causes the function to return an explicit origin
+    const res = await app.request('http://localhost/api/test', {
+      headers: { origin: 'http://sub.example.com' },
+    })
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://sub.example.com')
+    expect(res.headers.get('Vary')).toBe('Origin')
+  })
+
+  it('Should NOT set Vary: Origin when dynamic origin function resolves to null (rejected origin)', async () => {
+    const app = new Hono()
+    app.use(
+      '/api/*',
+      cors({
+        origin: () => null,
+      })
+    )
+    app.get('/api/test', (c) => c.json({ ok: true }))
+
+    const res = await app.request('http://localhost/api/test', {
+      headers: { origin: 'http://evil.com' },
+    })
+
+    expect(res.headers.has('Access-Control-Allow-Origin')).toBe(false)
+    expect(res.headers.get('Vary')).toBeNull()
+  })
+
+  it('Should NOT set Vary: Origin on preflight when dynamic origin function resolves to "*"', async () => {
+    const app = new Hono()
+    app.use(
+      '/api/*',
+      cors({
+        origin: (origin) => (origin.endsWith('.example.com') ? origin : '*'),
+      })
+    )
+
+    const res = await app.request(
+      new Request('http://localhost/api/test', {
+        method: 'OPTIONS',
+        headers: { origin: 'http://untrusted-site.com' },
+      })
+    )
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res.headers.get('Vary')).toBeNull()
+  })
+
+  it('Should set Vary: Origin on preflight when dynamic origin function resolves to an explicit origin', async () => {
+    const app = new Hono()
+    app.use(
+      '/api/*',
+      cors({
+        origin: (origin) => (origin.endsWith('.example.com') ? origin : '*'),
+      })
+    )
+
+    const res = await app.request(
+      new Request('http://localhost/api/test', {
+        method: 'OPTIONS',
+        headers: { origin: 'http://sub.example.com' },
+      })
+    )
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://sub.example.com')
+    expect(res.headers.get('Vary')).toBe('Origin')
+  })
+})
+
