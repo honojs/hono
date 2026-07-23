@@ -15,7 +15,7 @@ import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
-import { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'
+import { getQueryParam, getQueryParams, tryDecodeURIComponent } from './utils/url'
 
 type Body = {
   json: any
@@ -30,8 +30,6 @@ type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
   [Key in OptionalRequestInitProperties]?: RequestInit[Key]
 }
-
-const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
@@ -106,7 +104,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
-    return param && param.indexOf('%') !== -1 ? tryDecodeURIComponent(param) : param
+    return param && tryDecodeURIComponent(param)
   }
 
   #getAllDecodedParams(): Record<string, string> {
@@ -116,7 +114,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value !== undefined) {
-        decoded[key] = value.indexOf('%') !== -1 ? tryDecodeURIComponent(value) : value
+        decoded[key] = tryDecodeURIComponent(value)
       }
     }
 
