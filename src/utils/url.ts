@@ -205,12 +205,15 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return results.filter((v, i, a) => a.indexOf(v) === i)
 }
 
+export const tryDecodeURIComponent = (str: string): string =>
+  str.indexOf('%') !== -1 ? tryDecode(str, decodeURIComponent_) : str
+
 // Optimized
-const _decodeURI = (value: string) => {
+const _decodeURI = (value: string): string => {
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
-  return value.indexOf('%') !== -1 ? tryDecode(value, decodeURIComponent_) : value
+  return tryDecodeURIComponent(value)
 }
 
 const _getQueryParam = (
