@@ -570,5 +570,33 @@ describe('CORS Vary: Origin header - dynamic origin function', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://sub.example.com')
     expect(res.headers.get('Vary')).toBe('Origin')
   })
+
+  it('Should append Vary: Origin on preflight without overwriting existing Vary headers', async () => {
+    const app = new Hono()
+    app.use('/api/*', async (c, next) => {
+      c.header('Vary', 'Accept-Encoding', { append: true })
+      await next()
+    })
+    app.use(
+      '/api/*',
+      cors({
+        origin: 'http://example.com',
+      })
+    )
+
+    const res = await app.request(
+      new Request('http://localhost/api/test', {
+        method: 'OPTIONS',
+        headers: { origin: 'http://example.com' },
+      })
+    )
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(
+      expect.arrayContaining(['Accept-Encoding', 'Origin'])
+    )
+  })
 })
+
 
