@@ -22,7 +22,7 @@ export const clearCache = () => {
 
 // this function is exported for testing and should not be used by the user
 export const composeRef = <T>(
-  ref: RefObject<T> | Function | undefined,
+  ref: RefObject<T | null> | Function | undefined,
   cb: (e: T) => void | (() => void)
 ): ((e: T) => () => void) => {
   return useMemo(
@@ -320,7 +320,7 @@ export const form: FC<
   PropsWithChildren<{
     action?: Function | string
     method?: 'get' | 'post'
-    ref?: RefObject<HTMLFormElement> | ((e: HTMLFormElement | null) => void | (() => void))
+    ref?: RefObject<HTMLFormElement | null> | ((e: HTMLFormElement | null) => void | (() => void))
   }>
 > = (props) => {
   const { action, ...restProps } = props
@@ -392,7 +392,7 @@ const formActionableElement = (
     ...props
   }: {
     formAction?: Function | string
-    ref?: RefObject<HTMLInputElement> | ((e: HTMLInputElement) => void | (() => void))
+    ref?: RefObject<HTMLInputElement | null> | ((e: HTMLInputElement) => void | (() => void))
   }
 ) => {
   if (typeof formAction === 'function') {
