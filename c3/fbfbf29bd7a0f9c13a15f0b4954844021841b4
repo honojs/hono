@@ -1,0 +1,19 @@
+src/middleware/secure-headers/index.test.ts
+  s_8afc1036024cf5::t_90e797caf872f6 484-558
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c3fbfbf29bd7a0f9c13a15f0b4954844021841b4",
+  "prompts": {},
+  "sessions": {
+    "s_8afc1036024cf5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7bc5b5a-a068-4bc3-acc7-41ecacc5b562",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
