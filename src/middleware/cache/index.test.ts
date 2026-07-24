@@ -101,7 +101,9 @@ describe('Customizing Caching Keys', () => {
   it('Should use dynamically generated cache key', async () => {
     await app.request('http://localhost/dynamic-cache-key/')
     const cache = await caches.open('my-app-v1')
-    const response = await cache.match(dynamicCacheKey)
+    const response = await cache.match(
+      'http://localhost/.hono/cache?__hono_cache_key=dynamic-cache-key&__hono_cache_method=GET'
+    )
     expect(response).not.toBeNull()
   })
 
@@ -405,6 +407,9 @@ describe('Cache Middleware', () => {
     const res = await app.request('/')
     expect(res.status).toBe(200)
     expect(spy).toHaveBeenCalledOnce()
+    expect(spy).toHaveBeenCalledWith(
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
     vi.unstubAllGlobals()
   })
 
@@ -739,6 +744,394 @@ describe('Cache Skipping Logic', () => {
     expect(await res.text()).toBe('fresh')
     expect(caches.open).not.toHaveBeenCalled()
     expect(putSpy).not.toHaveBeenCalled()
+  })
+
+  it('Should cache QUERY responses without consuming the handler request body', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use('*', cache({ cacheName: 'query-test', wait: true, cacheControl: 'max-age=10' }))
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text(await c.req.raw.text())
+    })
+
+    const request = () =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"query":"hono"}',
+      })
+
+    await request()
+    const res = await request()
+
+    expect(await res.text()).toBe('{"query":"hono"}')
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(res.headers.get('Cache-Control')).toBe('max-age=10')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should bypass QUERY caching when the measured body exceeds the configured limit', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use('*', cache({ cacheName: 'query-body-limit-test', wait: true, maxQueryBodySize: 4 }))
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text(await c.req.text())
+    })
+
+    const request = () => {
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('ab'))
+          controller.enqueue(new TextEncoder().encode('cde'))
+          controller.close()
+        },
+      })
+      return app.request('/resource', {
+        method: 'QUERY',
+        headers: {
+          'Content-Length': '1',
+          'Content-Type': 'text/plain',
+        },
+        body,
+        duplex: 'half',
+      } as RequestInit & { duplex: 'half' })
+    }
+
+    await request()
+    const res = await request()
+
+    expect(await res.text()).toBe('abcde')
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(caches.open).not.toHaveBeenCalled()
+    expect(mockCache.put).not.toHaveBeenCalled()
+  })
+
+  it('Should cache QUERY requests at the configured body size limit', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use(
+      '*',
+      cache({ cacheName: 'query-body-limit-boundary-test', wait: true, maxQueryBodySize: 4 })
+    )
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text(await c.req.text())
+    })
+
+    const request = () =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'text/plain' },
+        body: 'abcd',
+      })
+
+    await request()
+    const res = await request()
+
+    expect(await res.text()).toBe('abcd')
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(mockCache.put).toHaveBeenCalledOnce()
+  })
+
+  it('Should keep QUERY request content and Content-Type in separate cache variants', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use(
+      '*',
+      cache({ cacheName: 'query-variant-test', wait: true, keyGenerator: () => 'query-key' })
+    )
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text(`${c.req.header('Content-Type')}:${await c.req.text()}`)
+    })
+
+    const request = (body: string, contentType: string) =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': contentType },
+        body,
+      })
+
+    await request('one', 'text/plain')
+    const same = await request('one', 'text/plain')
+    await request('two', 'text/plain')
+    const differentContent = await request('two', 'text/plain')
+    await request('one', 'application/json')
+    const differentContentType = await request('one', 'application/json')
+
+    expect(same.headers.get('X-Count')).toBe('1')
+    expect(differentContent.headers.get('X-Count')).toBe('2')
+    expect(differentContentType.headers.get('X-Count')).toBe('3')
+    expect(mockCache.put).toHaveBeenCalledTimes(3)
+  })
+
+  it('Should keep GET and QUERY responses in separate cache entries', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'method-test', wait: true }))
+    app.get('/resource', (c) => c.text('get response'))
+    app.on('QUERY', '/resource', (c) => c.text('query response'))
+
+    await app.request('/resource')
+    await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    const getRes = await app.request('/resource')
+    const queryRes = await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    expect(await getRes.text()).toBe('get response')
+    expect(await queryRes.text()).toBe('query response')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should not let a GET URL alias an internally generated QUERY cache key', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use('*', cache({ cacheName: 'method-collision-test', wait: true }))
+    app.get('/resource', (c) => c.text('get response'))
+    app.get('*', (c) => c.text('get response'))
+    app.on('QUERY', '/resource', (c) => c.text('query response'))
+
+    await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    const queryKey = mockCache.put.mock.calls[0][0] as string
+    const getRes = await app.request(queryKey)
+    const queryRes = await app.request('/resource', {
+      method: 'QUERY',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    expect(await getRes.text()).toBe('get response')
+    expect(await queryRes.text()).toBe('query response')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should not resolve a custom cache key as a request URL', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    app.use(
+      '/resource',
+      cache({
+        cacheName: 'custom-key-collision-test',
+        wait: true,
+        keyGenerator: () => 'query-key',
+      })
+    )
+    app.use('/query-key', cache({ cacheName: 'custom-key-collision-test', wait: true }))
+    app.get('/resource', (c) => c.text('custom key response'))
+    app.get('/query-key', (c) => c.text('request URL response'))
+
+    expect(await (await app.request('/resource')).text()).toBe('custom key response')
+    expect(await (await app.request('/query-key')).text()).toBe('request URL response')
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should keep QUERY digest and vary values with a fragmented custom cache key', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use(
+      '*',
+      cache({
+        cacheName: 'query-fragment-test',
+        wait: true,
+        vary: 'X-Variant',
+        keyGenerator: (c) => `${c.req.url}#custom-fragment`,
+      })
+    )
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      return c.text(`${await c.req.text()}:${c.req.header('X-Variant')}`)
+    })
+
+    const request = (body: string, variant: string) =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'text/plain', 'X-Variant': variant },
+        body,
+      })
+
+    expect(await (await request('one', 'a')).text()).toBe('one:a')
+    expect(await (await request('two', 'a')).text()).toBe('two:a')
+    expect(await (await request('one', 'b')).text()).toBe('one:b')
+    expect(await (await request('one', 'a')).text()).toBe('one:a')
+    expect(queryCount).toBe(3)
+    expect(mockCache.put).toHaveBeenCalledTimes(3)
+  })
+
+  it('Should bypass QUERY caching when Web Crypto is not available', async () => {
+    const originalCrypto = globalThis.crypto
+    vi.stubGlobal('crypto', undefined)
+
+    try {
+      const { mockCache } = stubStoreBackedCache()
+      const app = new Hono()
+      let queryCount = 0
+      let getCount = 0
+      const onCacheNotAvailable = vi.fn()
+      app.use(
+        '*',
+        cache({
+          cacheName: 'query-no-crypto-test',
+          wait: true,
+          onCacheNotAvailable,
+        })
+      )
+      app.get('/resource', (c) => {
+        getCount++
+        c.header('X-Count', `${getCount}`)
+        return c.text('get response')
+      })
+      app.on('QUERY', '/resource', (c) => {
+        queryCount++
+        c.header('X-Count', `${queryCount}`)
+        return c.text('query response')
+      })
+
+      expect(onCacheNotAvailable).toHaveBeenCalledOnce()
+      expect(onCacheNotAvailable).toHaveBeenCalledWith(
+        'Cache Middleware cannot cache QUERY requests because Web Crypto is not available.'
+      )
+
+      const request = () =>
+        app.request('/resource', {
+          method: 'QUERY',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+        })
+
+      await request()
+      const res = await request()
+
+      expect(res.headers.get('X-Count')).toBe('2')
+      expect(caches.open).not.toHaveBeenCalled()
+      expect(onCacheNotAvailable).toHaveBeenCalledOnce()
+
+      await app.request('/resource')
+      const getRes = await app.request('/resource')
+
+      expect(getRes.headers.get('X-Count')).toBe('1')
+      expect(mockCache.put).toHaveBeenCalledOnce()
+    } finally {
+      vi.stubGlobal('crypto', originalCrypto)
+    }
+  })
+
+  it('Should bypass QUERY caching when the request content cannot be read', async () => {
+    const app = new Hono()
+    let queryCount = 0
+    app.use('*', async (c, next) => {
+      await c.req.raw.text()
+      await next()
+    })
+    app.use('*', cache({ cacheName: 'query-consumed-body-test', wait: true }))
+    app.on('QUERY', '/resource', (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text('query response')
+    })
+
+    const request = () =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+
+    await request()
+    const res = await request()
+
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(caches.open).not.toHaveBeenCalled()
+  })
+
+  it('Should bypass QUERY caching after the body was read directly as FormData', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use('*', async (c, next) => {
+      expect((await c.req.formData()).get('query')).toBe('hono')
+      await next()
+    })
+    app.use('*', cache({ cacheName: 'query-cached-form-data-test', wait: true }))
+    app.on('QUERY', '/resource', (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text('query response')
+    })
+
+    const body = [
+      '--hono-boundary',
+      'Content-Disposition: form-data; name="query"',
+      '',
+      'hono',
+      '--hono-boundary--',
+      '',
+    ].join('\r\n')
+    const request = () =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'multipart/form-data; boundary=hono-boundary' },
+        body,
+      })
+
+    await request()
+    const res = await request()
+
+    expect(res.headers.get('X-Count')).toBe('2')
+    expect(caches.open).not.toHaveBeenCalled()
+    expect(mockCache.put).not.toHaveBeenCalled()
+  })
+
+  it('Should cache QUERY after the body was read through HonoRequest', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let queryCount = 0
+    app.use('*', async (c, next) => {
+      expect(await c.req.text()).toBe('{}')
+      await next()
+    })
+    app.use('*', cache({ cacheName: 'query-cached-body-test', wait: true }))
+    app.on('QUERY', '/resource', async (c) => {
+      queryCount++
+      c.header('X-Count', `${queryCount}`)
+      return c.text(await c.req.text())
+    })
+
+    const request = () =>
+      app.request('/resource', {
+        method: 'QUERY',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+
+    await request()
+    const res = await request()
+
+    expect(await res.text()).toBe('{}')
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(mockCache.put).toHaveBeenCalledOnce()
   })
 
   it('Should not use or store cache for POST requests', async () => {

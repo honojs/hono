@@ -4,13 +4,37 @@
  */
 
 import type { Context } from '../../context'
+import { cloneRawRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
+import { sha256 } from '../../utils/crypto'
 import type { StatusCode } from '../../utils/http-status'
 
 /**
  * status codes that can be cached by default.
  */
 const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
+
+const defaultMaxQueryBodySize = 64 * 1024
+
+const cacheKeyPath = '/.hono/cache'
+const cacheKeyParameter = '__hono_cache_key'
+const cacheMethodKeyParameter = '__hono_cache_method'
+const queryDigestKeyParameter = '__hono_query_digest'
+const cacheVaryKeyParameter = '__hono_cache_vary'
+
+type CacheKeyRequest =
+  | { method: 'GET' }
+  | {
+      method: 'QUERY'
+      digest: string
+    }
+
+const queryRepresentationMetadataHeaders = [
+  'content-type',
+  'content-encoding',
+  'content-language',
+  'content-location',
+] as const
 
 const shouldSkipCacheControl = (cacheControl: string | null): boolean =>
   !!cacheControl && /(?:^|,\s*)(?:private|no-(?:store|cache))(?:\s*(?:=|,|$))/i.test(cacheControl)
@@ -24,6 +48,27 @@ const parseVaryDirectives = (vary: string | string[] | null | undefined): string
     .filter(Boolean)
 }
 
+const createCacheKey = (
+  key: string,
+  requestUrl: string,
+  request: CacheKeyRequest,
+  varyHeaders: [string, string][]
+): string => {
+  const url = new URL(cacheKeyPath, requestUrl)
+  url.searchParams.append(cacheKeyParameter, key.split('#', 1)[0])
+  url.searchParams.append(cacheMethodKeyParameter, request.method)
+
+  if (request.method === 'QUERY') {
+    url.searchParams.append(queryDigestKeyParameter, request.digest)
+  }
+
+  for (const header of varyHeaders) {
+    url.searchParams.append(cacheVaryKeyParameter, JSON.stringify(header))
+  }
+
+  return url.href
+}
+
 const shouldSkipCache = (
   res: Response,
   optionsVaryDirectives: Set<string> | undefined,
@@ -33,6 +78,79 @@ const shouldSkipCache = (
     (!optionsVaryDirectives || responseVary.some((name) => !optionsVaryDirectives.has(name)))) ||
   shouldSkipCacheControl(res.headers.get('Cache-Control')) ||
   res.headers.has('Set-Cookie')
+
+const reportCacheNotAvailable = (
+  onCacheNotAvailable: ((reason: string) => void) | false | undefined,
+  reason: string
+): void => {
+  if (onCacheNotAvailable === false) {
+    // suppress log
+  } else if (onCacheNotAvailable) {
+    onCacheNotAvailable(reason)
+  } else {
+    console.log(reason)
+  }
+}
+
+const createQueryDigest = async (
+  c: Context,
+  maxQueryBodySize: number
+): Promise<string | undefined> => {
+  if (!globalThis.crypto?.subtle) {
+    return undefined
+  }
+
+  if (c.req.raw.bodyUsed && Object.keys(c.req.bodyCache)[0] === 'formData') {
+    // FormData cannot be reserialized with a stable multipart boundary after
+    // the original request body has been consumed.
+    return undefined
+  }
+
+  try {
+    // RFC 10008 Section 2.7 requires QUERY cache keys to incorporate the
+    // request content and its related representation metadata.
+    const requestHeaders = c.req.raw.headers
+    const metadata = new TextEncoder().encode(
+      JSON.stringify(
+        queryRepresentationMetadataHeaders.map((header) => [header, requestHeaders.get(header)])
+      )
+    )
+    const body = (await cloneRawRequest(c.req)).body
+    const chunks: Uint8Array[] = []
+    let bodySize = 0
+
+    if (body) {
+      const reader = body.getReader()
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) {
+          break
+        }
+        bodySize += value.byteLength
+        if (bodySize > maxQueryBodySize) {
+          // Do not await cancellation because a cloned stream's cancellation
+          // can wait for the original request stream to finish.
+          void reader.cancel().catch(() => {})
+          return undefined
+        }
+        chunks.push(value)
+      }
+    }
+
+    const data = new Uint8Array(metadata.byteLength + bodySize)
+    data.set(metadata)
+    let offset = metadata.byteLength
+    for (const chunk of chunks) {
+      data.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+
+    return (await sha256(data)) ?? undefined
+  } catch {
+    // A QUERY response cannot be cached safely if its content cannot be read.
+    return undefined
+  }
+}
 
 /**
  * Cache Middleware for Hono.
@@ -44,15 +162,16 @@ const shouldSkipCache = (
  * @param {boolean} [options.wait=false] - A boolean indicating if Hono should wait for the Promise of the `cache.put` function to resolve before continuing with the request. Required to be true for the Deno environment.
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Adds the configured request headers to the cache key variants and sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
- * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
+ * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters. QUERY keys additionally include a digest of the request content and its representation metadata.
+ * @param {number} [options.maxQueryBodySize=65536] - The maximum QUERY request body size in bytes that can be cached. Larger QUERY requests bypass the cache.
  * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
- * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked when `globalThis.caches` is not available. By default, a message is logged to the console. Set to `false` to suppress the log, or provide a custom function.
+ * @param {Function | false} [options.onCacheNotAvailable] - A callback invoked with the reason when `globalThis.caches` is not available or QUERY caching cannot use Web Crypto. By default, the reason is logged to the console. Set to `false` to suppress the log, or provide a custom function.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
  * @example
  * ```ts
- * app.get(
+ * app.use(
  *   '*',
  *   cache({
  *     cacheName: 'my-app',
@@ -67,18 +186,23 @@ export const cache = (options: {
   cacheControl?: string
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
+  maxQueryBodySize?: number
   cacheableStatusCodes?: StatusCode[]
-  onCacheNotAvailable?: (() => void) | false
+  onCacheNotAvailable?: ((reason: string) => void) | false
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
-    if (options.onCacheNotAvailable === false) {
-      // suppress log
-    } else if (options.onCacheNotAvailable) {
-      options.onCacheNotAvailable()
-    } else {
-      console.log('Cache Middleware is not enabled because caches is not defined.')
-    }
+    reportCacheNotAvailable(
+      options.onCacheNotAvailable,
+      'Cache Middleware is not enabled because caches is not defined.'
+    )
     return async (_c, next) => await next()
+  }
+
+  if (!globalThis.crypto?.subtle) {
+    reportCacheNotAvailable(
+      options.onCacheNotAvailable,
+      'Cache Middleware cannot cache QUERY requests because Web Crypto is not available.'
+    )
   }
 
   if (options.wait === undefined) {
@@ -101,6 +225,7 @@ export const cache = (options: {
   const cacheableStatusCodes = new Set<number>(
     options.cacheableStatusCodes ?? defaultCacheableStatusCodes
   )
+  const maxQueryBodySize = options.maxQueryBodySize ?? defaultMaxQueryBodySize
 
   const addHeader = (c: Context, responseVary: string[]) => {
     if (cacheControlDirectives) {
@@ -139,21 +264,36 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
-    if (c.req.method !== 'GET' || c.req.raw.headers.has('Authorization')) {
+    if (
+      (c.req.method !== 'GET' && c.req.method !== 'QUERY') ||
+      c.req.raw.headers.has('Authorization')
+    ) {
       await next()
       return
+    }
+
+    let cacheKeyRequest: CacheKeyRequest = { method: 'GET' }
+    if (c.req.method === 'QUERY') {
+      const digest = await createQueryDigest(c, maxQueryBodySize)
+      if (digest === undefined) {
+        await next()
+        return
+      }
+      cacheKeyRequest = { method: 'QUERY', digest }
     }
 
     let key = c.req.url
     if (options.keyGenerator) {
       key = await options.keyGenerator(c)
     }
+    const varyHeaders: [string, string][] = []
     if (varyDirectives) {
       for (const directive of varyDirectives) {
         const value = c.req.raw.headers.get(directive) ?? ''
-        key += `::${directive}=${encodeURIComponent(value)}`
+        varyHeaders.push([directive, value])
       }
     }
+    key = createCacheKey(key, c.req.url, cacheKeyRequest, varyHeaders)
 
     const cacheName =
       typeof options.cacheName === 'function' ? await options.cacheName(c) : options.cacheName
