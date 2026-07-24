@@ -1104,6 +1104,21 @@ describe('JWK', () => {
       )
     })
 
+    it('Should use the configured realm for an invalid token', async () => {
+      const app = new Hono()
+      app.use('/auth/*', jwk({ keys: verify_keys, alg: ['RS256'], realm: 'my-api' }))
+      app.get('/auth/*', (c) => c.text('ok'))
+
+      const req = new Request('http://localhost/auth/page')
+      req.headers.set('Authorization', 'Bearer invalid-token')
+      const res = await app.request(req)
+
+      expect(res.status).toBe(401)
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Bearer realm="my-api",error="invalid_token",error_description="token verification failure"'
+      )
+    })
+
     it('Should escape double quotes in the realm', async () => {
       const app = new Hono()
       app.use('/auth/*', jwk({ keys: verify_keys, alg: ['RS256'], realm: 'my "quoted" api' }))
