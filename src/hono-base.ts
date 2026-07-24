@@ -24,6 +24,7 @@ import type {
   OnHandlerInterface,
   RouterRoute,
   Schema,
+  ValidPath,
 } from './types'
 import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
@@ -212,7 +213,7 @@ class Hono<
     SubBasePath extends string,
     SubCurrentPath extends string,
   >(
-    path: SubPath,
+    path: ValidPath<SubPath>,
     app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
     const subApp = this.basePath(path)
@@ -245,7 +246,7 @@ class Hono<
    * ```
    */
   basePath<SubPath extends string>(
-    path: SubPath
+    path: ValidPath<SubPath>
   ): Hono<E, S, MergePath<BasePath, SubPath>, MergePath<BasePath, SubPath>> {
     const subApp = this.#clone()
     subApp._basePath = mergePath(this._basePath, path)
@@ -325,8 +326,8 @@ class Hono<
    * })
    * ```
    */
-  mount(
-    path: string,
+  mount<Path extends string>(
+    path: ValidPath<Path>,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     options?: MountOptions
   ): Hono<E, S, BasePath, CurrentPath> {
