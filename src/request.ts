@@ -190,7 +190,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return this.raw.headers.get(name) ?? undefined
     }
 
-    const headerData: Record<string, string | undefined> = {}
+    const headerData: Record<string, string | undefined> = Object.create(null)
     this.raw.headers.forEach((value, key) => {
       headerData[key] = value
     })
