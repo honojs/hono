@@ -245,6 +245,19 @@ describe('compress', async () => {
     const res = await agent.get('/fetch/style.css')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-encoding')).toBe('gzip')
+    expect(res.headers.get('vary')).toBe('Accept-Encoding')
+    await expect(res.text()).resolves.toBe(cssContent)
+  })
+
+  it('Should set Vary on an identity fetch response', async () => {
+    // The headers of a `fetch()` response are immutable, so this exercises the
+    // response-rebuilding path of the Vary handling.
+    const res = await agent.get('/fetch/style.css', {
+      headers: { 'Accept-Encoding': 'identity' },
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-encoding')).toBeNull()
+    expect(res.headers.get('vary')).toBe('Accept-Encoding')
     await expect(res.text()).resolves.toBe(cssContent)
   })
 })
