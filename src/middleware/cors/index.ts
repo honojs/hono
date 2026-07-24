@@ -28,7 +28,7 @@ type CORSOptions = {
  *
  * @param {CORSOptions} [options] - The options for the CORS middleware.
  * @param {string | string[] | ((origin: string, c: Context) => Promise<string | undefined | null> | string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
- * @param {string[] | ((origin: string, c: Context) => Promise<string[]> | string[])} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH']] - The value of "Access-Control-Allow-Methods" CORS header.
+ * @param {string[] | ((origin: string, c: Context) => Promise<string[]> | string[])} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH', 'QUERY']] - The value of "Access-Control-Allow-Methods" CORS header.
  * @param {string[]} [options.allowHeaders=[]] - The value of "Access-Control-Allow-Headers" CORS header.
  * @param {number} [options.maxAge] - The value of "Access-Control-Max-Age" CORS header.
  * @param {boolean} [options.credentials] - The value of "Access-Control-Allow-Credentials" CORS header.
@@ -63,7 +63,7 @@ type CORSOptions = {
 export const cors = (options?: CORSOptions): MiddlewareHandler => {
   const opts = {
     origin: '*',
-    allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
+    allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH', 'QUERY'],
     allowHeaders: [],
     exposeHeaders: [],
     ...options,

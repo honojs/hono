@@ -145,13 +145,26 @@ describe('CORS by Middleware', () => {
   })
 
   it('Preflight default', async () => {
-    const req = new Request('https://localhost/api/abc', { method: 'OPTIONS' })
-    req.headers.append('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type')
+    const req = new Request('https://localhost/api/abc', {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'QUERY',
+        'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+      },
+    })
     const res = await app.request(req)
 
     expect(res.status).toBe(204)
     expect(res.statusText).toBe('No Content')
-    expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')[0]).toBe('GET')
+    expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')).toEqual([
+      'GET',
+      'HEAD',
+      'PUT',
+      'POST',
+      'DELETE',
+      'PATCH',
+      'QUERY',
+    ])
     expect(res.headers.get('Access-Control-Allow-Headers')?.split(',')).toEqual([
       'X-PINGOTHER',
       'Content-Type',
