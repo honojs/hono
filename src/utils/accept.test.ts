@@ -70,6 +70,12 @@ describe('parseAccept Comprehensive Tests', () => {
       expect(result[0].params.key).toBe('2')
       expect(result[0].params.KEY).toBe('3')
     })
+
+    test('treats `__proto__` as a normal parameter without changing the prototype', () => {
+      const result = parseAccept('text/html;__proto__=x')
+      expect(Object.getPrototypeOf(result[0].params)).toBeNull()
+      expect(result[0].params['__proto__']).toBe('x')
+    })
   })
 
   describe('Media Type Edge Cases', () => {
