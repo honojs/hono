@@ -1,0 +1,19 @@
+src/middleware/jwk/index.test.ts
+  s_98a71c0d5e61e0::t_9607ff539f2e14 1107-1121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b3afc90469032422b37134f95bd6c5720772d40b",
+  "prompts": {},
+  "sessions": {
+    "s_98a71c0d5e61e0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3cb3db0a-1c63-494d-90a0-b5d25354a25f",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
