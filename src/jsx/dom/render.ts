@@ -303,7 +303,10 @@ const getNextChildren = (
     delete (node as any).vR
   }
   if (typeof node.tag === 'function') {
-    node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
+    node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => {
+      data[5]?.() // promote effect data staged by the build being committed
+      callbacks.push(data)
+    })
   }
   node.vC.forEach((child) => {
     if (isNodeString(child)) {
@@ -340,7 +343,11 @@ const findInsertBefore = (node: Node | undefined): SupportedElement | Text | und
 
 const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
-    node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
+    node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => {
+      data[1] = data[3] = data[4] = data[5] = data[6] = undefined // cancel pending effects
+      data[2]?.()
+      data[2] = undefined
+    })
 
     refCleanupMap.get(node.e as Element)?.()
     if (node.p === 2) {

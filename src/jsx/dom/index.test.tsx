@@ -7,6 +7,8 @@ import { createElement, jsx } from '..'
 import type { RefObject } from '../hooks'
 import {
   createRef,
+  startTransition,
+  use,
   useCallback,
   useEffect,
   useInsertionEffect,
@@ -26,6 +28,7 @@ import DefaultExport, {
   isValidElement,
   memo,
   render,
+  Suspense,
   version,
 } from '.'
 
@@ -2079,6 +2082,220 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(effectCount).toBe(2)
       expect(cleanupCount).toBe(1)
+    })
+
+    it('runs only the latest effect when deps change again before pending effects run', async () => {
+      const logs: string[] = []
+      const App = () => {
+        const [count, setCount] = useState(0)
+        useEffect(() => {
+          logs.push(`effect ${count}`)
+          return () => {
+            logs.push(`cleanup ${count}`)
+          }
+        }, [count])
+        return <button onClick={() => setCount((c) => c + 1)}>+</button>
+      }
+      render(<App />, root)
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0'])
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0', 'cleanup 0', 'effect 2'])
+    })
+
+    it('does not run effects pending at unmount', async () => {
+      let effectCount = 0
+      const Child = () => {
+        useEffect(() => {
+          effectCount++
+        }, [])
+        return <div>Child</div>
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <Child />}
+            <button onClick={() => setShow(false)}>hide</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(effectCount).toBe(0)
+    })
+
+    it('preserves a committed pending effect when a later render suspends', async () => {
+      let resolvePromise: (() => void) | undefined
+      const promise = new Promise<void>((r) => (resolvePromise = r))
+      const logs: string[] = []
+      const Suspender = ({ suspended }: { suspended: boolean }) => {
+        if (suspended) {
+          use(promise)
+        }
+        return <span>ok</span>
+      }
+      const Effecty = ({ count }: { count: number }) => {
+        useEffect(() => {
+          logs.push(`effect ${count}`)
+          return () => {
+            logs.push(`cleanup ${count}`)
+          }
+        }, [count])
+        return <span>{count}</span>
+      }
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <Suspense fallback={<span>...</span>}>
+            <button onClick={() => startTransition(() => setCount(1))}>go</button>
+            <Effecty count={count} />
+            <Suspender suspended={count === 1} />
+          </Suspense>
+        )
+      }
+      render(<App />, root)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0'])
+
+      resolvePromise!()
+      await new Promise((resolve) => setTimeout(resolve))
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0', 'cleanup 0', 'effect 1'])
+    })
+
+    it('keeps the latest cleanup when an effect commits synchronously during setup', async () => {
+      const logs: string[] = []
+      const Child = () => {
+        const [count, setCount] = useState(0)
+        useLayoutEffect(() => {
+          logs.push(`setup ${count}`)
+          if (count === 0) {
+            flushSync(() => setCount(1))
+          }
+          return () => {
+            logs.push(`cleanup ${count}`)
+          }
+        }, [count])
+        return <p>{count}</p>
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <Child />}
+            <button onClick={() => setShow(false)}>hide</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['setup 0', 'setup 1', 'cleanup 0'])
+
+      root.querySelector('button')?.click()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['setup 0', 'setup 1', 'cleanup 0', 'cleanup 1'])
+    })
+
+    it('releases a superseded effect immediately when the newer effect has no cleanup', async () => {
+      const logs: string[] = []
+      const Child = () => {
+        const [count, setCount] = useState(0)
+        useLayoutEffect(() => {
+          logs.push(`setup ${count}`)
+          if (count === 0) {
+            flushSync(() => setCount(1))
+            return () => {
+              logs.push(`cleanup ${count}`)
+            }
+          }
+        }, [count])
+        return <p>{count}</p>
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <Child />}
+            <button onClick={() => setShow(false)}>hide</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['setup 0', 'setup 1', 'cleanup 0'])
+
+      root.querySelector('button')?.click()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['setup 0', 'setup 1', 'cleanup 0'])
+    })
+
+    it('does not run a cleanup twice when a suspense fallback replaces the subtree', async () => {
+      const logs: string[] = []
+      let resolvePromise: (() => void) | undefined
+      const promise = new Promise<void>((r) => (resolvePromise = r))
+
+      const Child = memo(({ count }: { count: number }) => {
+        useEffect(() => {
+          logs.push(`effect ${count}`)
+          return () => {
+            logs.push(`cleanup ${count}`)
+          }
+        }, [count])
+        return <p>{count}</p>
+      })
+      const Suspender = memo(({ suspended }: { suspended: boolean }) => {
+        if (suspended) {
+          use(promise)
+        }
+        return null
+      })
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [x, setX] = useState(0)
+        return (
+          <Suspense fallback={<span>...</span>}>
+            <i>{x}</i>
+            <Child count={count} />
+            <Suspender suspended={count === 1} />
+            <button id='t' onClick={() => startTransition(() => setCount(1))}>
+              t
+            </button>
+            <button id='x' onClick={() => setX(1)}>
+              x
+            </button>
+          </Suspense>
+        )
+      }
+
+      render(<App />, root)
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0'])
+
+      root.querySelector<HTMLButtonElement>('#t')?.click()
+      await Promise.resolve()
+      root.querySelector<HTMLButtonElement>('#x')?.click()
+      await Promise.resolve()
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(root.innerHTML).toBe('<span>...</span>')
+      expect(logs).toEqual(['effect 0', 'cleanup 0'])
+
+      resolvePromise!()
+      await new Promise((resolve) => setTimeout(resolve))
+      await new Promise((resolve) => setTimeout(resolve))
+      expect(logs).toEqual(['effect 0', 'cleanup 0', 'effect 1'])
     })
   })
 

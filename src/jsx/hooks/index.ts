@@ -13,10 +13,12 @@ const STASH_REF = 4
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
-  (() => void | (() => void)) | undefined, // layout effect
+  (() => void) | undefined, // layout effect runner
   (() => void) | undefined, // cleanup
-  (() => void) | undefined, // effect
-  (() => void) | undefined, // insertion effect
+  (() => void) | undefined, // effect runner
+  (() => void) | undefined, // insertion effect runner
+  (() => void) | undefined, // promote staged effect data on commit
+  (() => void) | undefined, // latest promoted runner
 ]
 
 const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
@@ -271,18 +273,35 @@ const useEffectCommon = (
   const effectDepsArray = (node[DOM_STASH][1][STASH_EFFECT] ||= [])
   const hookIndex = node[DOM_STASH][0]++
 
-  const [prevDeps, , prevCleanup] = (effectDepsArray[hookIndex] ||= [])
-  if (isDepsChanged(prevDeps, deps)) {
-    if (prevCleanup) {
-      prevCleanup()
-    }
+  const data = (effectDepsArray[hookIndex] ||= [])
+  if (isDepsChanged(data[0], deps)) {
     const runner = () => {
-      data[index] = undefined // clear this effect in order to avoid calling effect twice
-      data[2] = effect() as (() => void) | undefined
+      // skip if this effect has been executed or superseded by a newer one
+      if (data[index] !== runner) {
+        return
+      }
+      data[index] = undefined
+      const cleanup = effect() as (() => void) | undefined
+      if (data[6] === runner) {
+        data[2] = cleanup
+      } else {
+        // superseded by a newer effect during setup; undo this stale one
+        cleanup?.()
+      }
     }
-    const data: EffectData = [deps, undefined, undefined, undefined, undefined]
-    data[index] = runner
-    effectDepsArray[hookIndex] = data
+    // stage the update; a build that is never committed must not touch active effects
+    data[5] = () => {
+      data[5] = undefined
+      if (data[2]) {
+        data[2]()
+        data[2] = undefined
+      }
+      data[0] = deps
+      data[index] = runner
+      data[6] = runner
+    }
+  } else {
+    data[5] = undefined
   }
 }
 export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void =>
