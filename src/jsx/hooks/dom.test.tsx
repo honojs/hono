@@ -13,6 +13,7 @@ import {
   useDeferredValue,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useReducer,
   useState,
   useSyncExternalStore,
@@ -758,6 +759,31 @@ describe('Hooks', () => {
       listeners.forEach((listener) => listener())
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>b1</button>')
+    })
+
+    it('uses the latest getSnapshot when subscribing after a layout effect update', async () => {
+      const state = { a: 'a0', b: 'b0' }
+      const subscribe = vi.fn((_listener: () => void) => vi.fn())
+
+      const App = () => {
+        const [key, setKey] = useState<keyof typeof state>('a')
+        const value = useSyncExternalStore(subscribe, () => state[key])
+
+        useLayoutEffect(() => {
+          setKey('b')
+          queueMicrotask(() => {
+            state.b = 'b1'
+          })
+        }, [])
+
+        return <div>{value}</div>
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>a0</div>')
+
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>b1</div>')
     })
 
     it('does not loop when subscribe changes on every render', async () => {

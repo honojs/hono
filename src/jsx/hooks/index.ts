@@ -411,10 +411,13 @@ export const useSyncExternalStore = <T>(
   const snapshot =
     buildData[0][4] && getServerSnapshot ? (getServerSnapshot as () => T)() : getSnapshot()
   const [, setVersion] = useState(0)
+  const latestSnapshot = useRef<[T, () => T]>([snapshot, getSnapshot])
+  latestSnapshot.current = [snapshot, getSnapshot]
 
   useEffect(() => {
     const update = () => setVersion((version) => version + 1)
     const unsubscribe = subscribe(update)
+    const [snapshot, getSnapshot] = latestSnapshot.current!
     if (!Object.is(snapshot, getSnapshot())) {
       update()
     }
