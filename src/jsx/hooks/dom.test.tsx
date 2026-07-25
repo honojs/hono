@@ -731,5 +731,31 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
     })
+
+    it('resubscribes when subscribe function changes', async () => {
+      const unsub1 = vi.fn()
+      const unsub2 = vi.fn()
+      const sub1 = vi.fn(() => unsub1)
+      const sub2 = vi.fn(() => unsub2)
+
+      let setSubFn: (s: { fn: any }) => void = () => {}
+      const App = () => {
+        const [sub, setSub] = useState({ fn: sub1 })
+        setSubFn = setSub
+        const value = useSyncExternalStore(sub.fn, () => 'val')
+        return <div>{value}</div>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(sub1).toHaveBeenCalledTimes(1)
+      expect(sub2).toHaveBeenCalledTimes(0)
+
+      setSubFn({ fn: sub2 })
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(unsub1).toHaveBeenCalledTimes(1)
+      expect(sub2).toHaveBeenCalledTimes(1)
+    })
   })
 })

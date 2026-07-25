@@ -419,7 +419,7 @@ export const useSyncExternalStore = <T>(
     return subscribe(() => {
       setState(getSnapshot())
     })
-  }, [])
+  }, [subscribe])
 
   return state
 }
