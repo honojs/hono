@@ -730,6 +730,62 @@ describe('Hooks', () => {
       expect(subscribeB).toBeCalledTimes(1)
     })
 
+    it('updates the snapshot when getSnapshot changes', async () => {
+      const state: Record<string, string> = { a: 'a0', b: 'b0' }
+      const listeners = new Set<() => void>()
+      const subscribe = vi.fn((listener: () => void) => {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      })
+
+      const App = () => {
+        const [key, setKey] = useState('a')
+        const value = useSyncExternalStore(subscribe, () => state[key])
+        return <button onClick={() => setKey('b')}>{value}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>a0</button>')
+      expect(subscribe).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>b0</button>')
+      expect(subscribe).toBeCalledTimes(1)
+
+      state.b = 'b1'
+      listeners.forEach((listener) => listener())
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>b1</button>')
+    })
+
+    it('does not loop when subscribe changes on every render', async () => {
+      const subscribe = vi.fn((_listener: () => void) => vi.fn())
+      const getSnapshot = () => 'snapshot'
+      let renderCount = 0
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        renderCount++
+        const value = useSyncExternalStore((listener) => subscribe(listener), getSnapshot)
+        return <button onClick={() => setCount((count) => count + 1)}>{`${value}:${count}`}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>snapshot:0</button>')
+      expect(renderCount).toBe(1)
+      expect(subscribe).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>snapshot:1</button>')
+      expect(renderCount).toBe(2)
+      expect(subscribe).toBeCalledTimes(2)
+    })
+
     it('with getServerSnapshot', async () => {
       let count = 0
       const unsubscribe = vi.fn()
