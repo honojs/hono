@@ -705,7 +705,8 @@ describe('Hooks', () => {
     it('updates the snapshot when subscribe changes', async () => {
       const unsubscribeA = vi.fn()
       const subscribeA = vi.fn(() => unsubscribeA)
-      const subscribeB = vi.fn(() => vi.fn())
+      const unsubscribeB = vi.fn()
+      const subscribeB = vi.fn(() => unsubscribeB)
       const stores = [
         { subscribe: subscribeA, getSnapshot: () => 'a1' },
         { subscribe: subscribeB, getSnapshot: () => 'b0' },
@@ -725,10 +726,13 @@ describe('Hooks', () => {
 
       root.querySelector('button')?.click()
       await Promise.resolve()
-      await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>b0</button>')
+      // the old store stays subscribed until the new subscription is set up at effect flush
+      expect(unsubscribeA).not.toBeCalled()
+      await new Promise((r) => setTimeout(r))
       expect(unsubscribeA).toBeCalledTimes(1)
       expect(subscribeB).toBeCalledTimes(1)
+      expect(unsubscribeB).not.toBeCalled()
     })
 
     it('updates the snapshot when getSnapshot changes', async () => {
@@ -787,7 +791,12 @@ describe('Hooks', () => {
     })
 
     it('does not loop when subscribe changes on every render', async () => {
-      const subscribe = vi.fn((_listener: () => void) => vi.fn())
+      const unsubscribes: ReturnType<typeof vi.fn>[] = []
+      const subscribe = vi.fn((_listener: () => void) => {
+        const unsubscribe = vi.fn()
+        unsubscribes.push(unsubscribe)
+        return unsubscribe
+      })
       const getSnapshot = () => 'snapshot'
       let renderCount = 0
 
@@ -810,6 +819,8 @@ describe('Hooks', () => {
       expect(root.innerHTML).toBe('<button>snapshot:1</button>')
       expect(renderCount).toBe(2)
       expect(subscribe).toBeCalledTimes(2)
+      expect(unsubscribes[0]).toBeCalledTimes(1)
+      expect(unsubscribes[1]).not.toBeCalled()
     })
 
     it('with getServerSnapshot', async () => {

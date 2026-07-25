@@ -413,16 +413,21 @@ export const useSyncExternalStore = <T>(
   const [, setVersion] = useState(0)
   const latestSnapshot = useRef<[T, () => T]>([snapshot, getSnapshot])
   latestSnapshot.current = [snapshot, getSnapshot]
+  const unsubscribeRef = useRef<() => void>(null)
 
+  // Swap subscriptions at effect flush: a returned cleanup would run synchronously
+  // during render when `subscribe` changes, leaving a window with no subscription.
   useEffect(() => {
     const update = () => setVersion((version) => version + 1)
-    const unsubscribe = subscribe(update)
+    unsubscribeRef.current?.()
+    unsubscribeRef.current = subscribe(update)
     const [snapshot, getSnapshot] = latestSnapshot.current!
     if (!Object.is(snapshot, getSnapshot())) {
       update()
     }
-    return unsubscribe
   }, [subscribe])
+
+  useEffect(() => () => unsubscribeRef.current?.(), [])
 
   return snapshot
 }
