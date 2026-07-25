@@ -674,7 +674,7 @@ describe('Hooks', () => {
       let count = 0
       const unsubscribe = vi.fn()
       const subscribe = vi.fn(() => unsubscribe)
-      const getSnapshot = vi.fn(() => count++)
+      const getSnapshot = vi.fn(() => count)
       const SubApp = () => {
         const count = useSyncExternalStore(subscribe, getSnapshot)
         return <div>{count}</div>
@@ -695,16 +695,46 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>toggle</button>')
       expect(unsubscribe).toBeCalled()
+      count = 1
       root.querySelector('button')?.click()
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
+    })
+
+    it('updates the snapshot when subscribe changes', async () => {
+      const unsubscribeA = vi.fn()
+      const subscribeA = vi.fn(() => unsubscribeA)
+      const subscribeB = vi.fn(() => vi.fn())
+      const stores = [
+        { subscribe: subscribeA, getSnapshot: () => 'a1' },
+        { subscribe: subscribeB, getSnapshot: () => 'b0' },
+      ]
+
+      const App = () => {
+        const [index, setIndex] = useState(0)
+        const store = stores[index]
+        const value = useSyncExternalStore(store.subscribe, store.getSnapshot)
+        return <button onClick={() => setIndex(1)}>{value}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>a1</button>')
+      expect(subscribeA).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>b0</button>')
+      expect(unsubscribeA).toBeCalledTimes(1)
+      expect(subscribeB).toBeCalledTimes(1)
     })
 
     it('with getServerSnapshot', async () => {
       let count = 0
       const unsubscribe = vi.fn()
       const subscribe = vi.fn(() => unsubscribe)
-      const getSnapshot = vi.fn(() => count++)
+      const getSnapshot = vi.fn(() => count)
       const getServerSnapshot = vi.fn(() => 100)
       const SubApp = () => {
         const count = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
@@ -727,6 +757,7 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>toggle</button>')
       expect(unsubscribe).toBeCalled()
+      count = 1
       root.querySelector('button')?.click()
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')

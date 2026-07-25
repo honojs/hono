@@ -413,13 +413,11 @@ export const useSyncExternalStore = <T>(
     serverSnapshotIsUsed ? (getServerSnapshot as () => T)() : getSnapshot()
   )
   useEffect(() => {
-    if (serverSnapshotIsUsed) {
-      setState(getSnapshot())
-    }
-    return subscribe(() => {
-      setState(getSnapshot())
-    })
-  }, [])
+    const update = () => setState(() => getSnapshot())
+    const unsubscribe = subscribe(update)
+    update()
+    return unsubscribe
+  }, [subscribe])
 
   return state
 }
