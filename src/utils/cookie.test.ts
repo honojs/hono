@@ -80,6 +80,32 @@ describe('Parse cookie', () => {
     expect(cookie['']).toBeUndefined()
   })
 
+  it('Should parse cookies whose names are not RFC 6265 tokens', () => {
+    const cookieString =
+      'paraglide:lang=en; CognitoIdentityServiceProvider.abc.user@example.com.idToken=token; round(brackets)=ok; square[brackets]=ok; curly{brackets}=ok'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['CognitoIdentityServiceProvider.abc.user@example.com.idToken']).toBe('token')
+    expect(cookie['round(brackets)']).toBe('ok')
+    expect(cookie['square[brackets]']).toBe('ok')
+    expect(cookie['curly{brackets}']).toBe('ok')
+  })
+
+  it('Should parse one cookie specified by a name that is not an RFC 6265 token', () => {
+    const cookieString = 'paraglide:lang=en; test=ok'
+    const cookie: Cookie = parse(cookieString, 'paraglide:lang')
+    expect(cookie['paraglide:lang']).toBe('en')
+    expect(cookie['test']).toBeUndefined()
+  })
+
+  it('Should ignore cookie names containing non-ASCII or control characters', () => {
+    const cookieString = 'yummy_cookie=choco; クッキー=strawberry; bad\x01name=sugar'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['クッキー']).toBeUndefined()
+    expect(cookie['bad\x01name']).toBeUndefined()
+  })
+
   it('Should ignore invalid cookie values', () => {
     const cookieString = 'yummy_cookie=choco\\nchip; tasty_cookie=strawberry; best_cookie="sugar'
     const cookie: Cookie = parse(cookieString)
