@@ -3,7 +3,6 @@
  * Compress Middleware for Hono.
  */
 
-import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
@@ -43,6 +42,8 @@ const selectEncoding = (
   }
   return best?.encoding
 }
+
+const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
 
 /**
  * Compress Middleware for Hono.
@@ -109,7 +110,10 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     // Accept-Encoding "or lack thereof" as a determining factor. Without this, a shared
     // cache could reuse the identity response for a client that does accept gzip.
     // https://www.rfc-editor.org/rfc/rfc9110#field.vary
-    addVaryAcceptEncoding(ctx)
+    const current = ctx.res.headers.get('Vary')
+    if (current !== '*' && !(current && varyAcceptEncodingRegExp.test(current))) {
+      ctx.header('Vary', current ? `${current}, Accept-Encoding` : 'Accept-Encoding')
+    }
 
     const accepted = ctx.req.header('Accept-Encoding')
     const encoding = selectEncoding(accepted, candidates)
@@ -136,31 +140,4 @@ const shouldTransform = (res: Response) => {
   // Don't compress for Cache-Control: no-transform
   // https://tools.ietf.org/html/rfc7234#section-5.2.2.4
   return !cacheControl || !cacheControlNoTransformRegExp.test(cacheControl)
-}
-
-const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
-const addVaryAcceptEncoding = (ctx: Context): void => {
-  const current = ctx.res.headers.get('Vary')
-  if (current === '*' || (current && varyAcceptEncodingRegExp.test(current))) {
-    // Already varies on everything, or Accept-Encoding is already listed.
-    return
-  }
-  const vary = current ? `${current}, Accept-Encoding` : 'Accept-Encoding'
-
-  // A handler may return a `fetch()` response, whose headers are immutable.
-  // `ctx.header()` is the documented way to write through that, but it recreates the
-  // response with `new Response(body, res)`, which on Node inherits the immutable
-  // header guard from the original — so the write can still throw. Fall back to
-  // rebuilding the response around a fresh, mutable `Headers` instance.
-  try {
-    ctx.header('Vary', vary)
-  } catch {
-    const headers = new Headers(ctx.res.headers)
-    headers.set('Vary', vary)
-    ctx.res = new Response(ctx.res.body, {
-      status: ctx.res.status,
-      statusText: ctx.res.statusText,
-      headers,
-    })
-  }
 }

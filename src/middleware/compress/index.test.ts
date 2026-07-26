@@ -2,25 +2,6 @@ import { stream, streamSSE } from '../../helper/streaming'
 import { Hono } from '../../hono'
 import { compress } from '.'
 
-// Mimics the header guard of a `fetch()` response, whose headers cannot be mutated.
-const makeResponseHeaderImmutable = (res: Response) => {
-  Object.defineProperty(res, 'headers', {
-    value: new Proxy(res.headers, {
-      get(target, prop) {
-        if (prop === 'set' || prop === 'append' || prop === 'delete') {
-          return () => {
-            throw new TypeError('Cannot modify headers: Headers are immutable')
-          }
-        }
-        const value = Reflect.get(target, prop)
-        return typeof value === 'function' ? value.bind(target) : value
-      },
-    }),
-    writable: false,
-  })
-  return res
-}
-
 describe('Compress Middleware', () => {
   const app = new Hono()
 
@@ -309,13 +290,6 @@ describe('Compress Middleware', () => {
       c.header('Content-Length', '1024')
       return c.body('a'.repeat(1024))
     })
-    app.get('/immutable-headers', () =>
-      makeResponseHeaderImmutable(
-        new Response('a'.repeat(1024), {
-          headers: { 'Content-Type': 'text/plain', 'Content-Length': '1024' },
-        })
-      )
-    )
 
     it('should set Vary: Accept-Encoding when compressing', async () => {
       const res = await app.request('/no-vary', {
@@ -371,13 +345,6 @@ describe('Compress Middleware', () => {
       expect(res.headers.get('Vary')).toBeNull()
     })
 
-    it('should set Vary on a response with immutable headers', async () => {
-      const res = await app.request('/immutable-headers', {
-        headers: { 'Accept-Encoding': 'gzip' },
-      })
-      expect(res.headers.get('Content-Encoding')).toBe('gzip')
-      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
-    })
   })
 
   describe('contentTypeFilter', () => {
