@@ -303,7 +303,10 @@ const getNextChildren = (
     delete (node as any).vR
   }
   if (typeof node.tag === 'function') {
-    node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
+    node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => {
+      data[5]?.() // promote effect data staged by the build being committed
+      callbacks.push(data)
+    })
   }
   node.vC.forEach((child) => {
     if (isNodeString(child)) {
@@ -340,7 +343,11 @@ const findInsertBefore = (node: Node | undefined): SupportedElement | Text | und
 
 const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
-    node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
+    node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => {
+      data[1] = data[3] = data[4] = data[5] = data[6] = undefined // cancel pending effects
+      data[2]?.()
+      data[2] = undefined
+    })
 
     refCleanupMap.get(node.e as Element)?.()
     if (node.p === 2) {
@@ -384,7 +391,15 @@ const findChildNodeIndex = (
 }
 
 const cancelBuild: symbol = Symbol()
-const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean): void => {
+const applyNodeObject = (
+  node: NodeObject,
+  container: Container,
+  isNew: boolean,
+  rootCallbacks?: EffectData[]
+): void => {
+  // the commit root collects effects from every nested apply and flushes them phased
+  const isCommitRoot = !rootCallbacks
+  rootCallbacks ||= []
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
@@ -435,7 +450,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
           : document.createElement(child.tag as string)
 
         applyProps(el as HTMLElement, child.props, child.pP)
-        applyNodeObject(child, el as HTMLElement, isNewLocal)
+        applyNodeObject(child, el as HTMLElement, isNewLocal, rootCallbacks)
         if (child.tag === 'select') {
           applySelectValue(el as HTMLSelectElement, child.props)
         }
@@ -459,22 +474,33 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
   if (node.pP) {
     node.pP = undefined
   }
-  if (callbacks.length) {
-    const useLayoutEffectCbs: Array<() => void> = []
-    const useEffectCbs: Array<() => void> = []
-    callbacks.forEach(([, useLayoutEffectCb, , useEffectCb, useInsertionEffectCb]) => {
+  // appended after the nested applies so descendant effects run before this node's own
+  rootCallbacks.push(...callbacks)
+  if (isCommitRoot && rootCallbacks.length) {
+    const useInsertionEffectCbs: Array<(phase: 0 | 1) => void> = []
+    const useLayoutEffectCbs: Array<(phase: 0 | 1) => void> = []
+    const useEffectCbs: Array<(phase: 0 | 1) => void> = []
+    rootCallbacks.forEach(([, useLayoutEffectCb, , useEffectCb, useInsertionEffectCb]) => {
       if (useLayoutEffectCb) {
         useLayoutEffectCbs.push(useLayoutEffectCb)
       }
       if (useEffectCb) {
         useEffectCbs.push(useEffectCb)
       }
-      useInsertionEffectCb?.() // invoke useInsertionEffect callbacks
+      if (useInsertionEffectCb) {
+        useInsertionEffectCbs.push(useInsertionEffectCb)
+      }
     })
-    useLayoutEffectCbs.forEach((cb) => cb()) // invoke useLayoutEffect callbacks
+    // phase 0 runs every cleanup before phase 1 runs any setup, as in React's commit
+    const runPhased = (cbs: Array<(phase: 0 | 1) => void>) => {
+      cbs.forEach((cb) => cb(0))
+      cbs.forEach((cb) => cb(1))
+    }
+    runPhased(useInsertionEffectCbs) // invoke useInsertionEffect callbacks
+    runPhased(useLayoutEffectCbs) // invoke useLayoutEffect callbacks
     if (useEffectCbs.length) {
       requestAnimationFrame(() => {
-        useEffectCbs.forEach((cb) => cb()) // invoke useEffect callbacks
+        runPhased(useEffectCbs) // invoke useEffect callbacks
       })
     }
   }

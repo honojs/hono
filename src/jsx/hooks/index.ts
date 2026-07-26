@@ -13,10 +13,12 @@ const STASH_REF = 4
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
-  (() => void | (() => void)) | undefined, // layout effect
+  ((phase: 0 | 1) => void) | undefined, // layout effect runner
   (() => void) | undefined, // cleanup
-  (() => void) | undefined, // effect
-  (() => void) | undefined, // insertion effect
+  ((phase: 0 | 1) => void) | undefined, // effect runner
+  ((phase: 0 | 1) => void) | undefined, // insertion effect runner
+  (() => void) | undefined, // promote staged effect data on commit
+  ((phase: 0 | 1) => void) | undefined, // latest promoted runner
 ]
 
 const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
@@ -271,18 +273,36 @@ const useEffectCommon = (
   const effectDepsArray = (node[DOM_STASH][1][STASH_EFFECT] ||= [])
   const hookIndex = node[DOM_STASH][0]++
 
-  const [prevDeps, , prevCleanup] = (effectDepsArray[hookIndex] ||= [])
-  if (isDepsChanged(prevDeps, deps)) {
-    if (prevCleanup) {
-      prevCleanup()
+  const data = (effectDepsArray[hookIndex] ||= [])
+  if (isDepsChanged(data[0], deps)) {
+    const runner = (phase: 0 | 1) => {
+      // skip if this effect has been executed or superseded by a newer one
+      if (data[index] !== runner) {
+        return
+      }
+      if (phase === 0) {
+        data[2]?.()
+        data[2] = undefined
+      } else {
+        data[index] = undefined
+        const cleanup = effect() as (() => void) | undefined
+        if (data[6] === runner) {
+          data[2] = cleanup
+        } else {
+          // superseded by a newer effect during setup; undo this stale one
+          cleanup?.()
+        }
+      }
     }
-    const runner = () => {
-      data[index] = undefined // clear this effect in order to avoid calling effect twice
-      data[2] = effect() as (() => void) | undefined
+    // stage the update; a build that is never committed must not touch active effects
+    data[5] = () => {
+      data[5] = undefined
+      data[0] = deps
+      data[index] = runner
+      data[6] = runner
     }
-    const data: EffectData = [deps, undefined, undefined, undefined, undefined]
-    data[index] = runner
-    effectDepsArray[hookIndex] = data
+  } else {
+    data[5] = undefined
   }
 }
 export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void =>
@@ -413,21 +433,16 @@ export const useSyncExternalStore = <T>(
   const [, setVersion] = useState(0)
   const latestSnapshot = useRef<[T, () => T]>([snapshot, getSnapshot])
   latestSnapshot.current = [snapshot, getSnapshot]
-  const unsubscribeRef = useRef<() => void>(null)
 
-  // Swap subscriptions at effect flush: a returned cleanup would run synchronously
-  // during render when `subscribe` changes, leaving a window with no subscription.
   useEffect(() => {
     const update = () => setVersion((version) => version + 1)
-    unsubscribeRef.current?.()
-    unsubscribeRef.current = subscribe(update)
+    const unsubscribe = subscribe(update)
     const [snapshot, getSnapshot] = latestSnapshot.current!
     if (!Object.is(snapshot, getSnapshot())) {
       update()
     }
+    return unsubscribe
   }, [subscribe])
-
-  useEffect(() => () => unsubscribeRef.current?.(), [])
 
   return snapshot
 }
