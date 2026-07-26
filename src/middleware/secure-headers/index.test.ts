@@ -481,6 +481,81 @@ describe('Secure Headers Middleware', () => {
     })
   })
 
+  describe('CSP with combined modes', () => {
+    it('keeps the enforced policy when report-only uses a nonce', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            defaultSrc: ["'self'"],
+          },
+          contentSecurityPolicyReportOnly: {
+            scriptSrc: ["'self'", NONCE],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'self'")
+      expect(res.headers.get('Content-Security-Policy-Report-Only')).toMatch(
+        /^script-src 'self' 'nonce-[a-zA-Z0-9+/]+=*'$/
+      )
+    })
+
+    it('keeps the report-only policy when the enforced policy uses a nonce', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            scriptSrc: ["'self'", NONCE],
+          },
+          contentSecurityPolicyReportOnly: {
+            defaultSrc: ["'self'"],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Security-Policy')).toMatch(
+        /^script-src 'self' 'nonce-[a-zA-Z0-9+/]+=*'$/
+      )
+      expect(res.headers.get('Content-Security-Policy-Report-Only')).toBe("default-src 'self'")
+    })
+
+    it('supports nonces in both policies', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            scriptSrc: ["'self'", NONCE],
+          },
+          contentSecurityPolicyReportOnly: {
+            styleSrc: ["'self'", NONCE],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+      const csp = res.headers.get('Content-Security-Policy')
+      const reportOnly = res.headers.get('Content-Security-Policy-Report-Only')
+      const nonce = csp?.match(/'nonce-([^']+)'/)?.[1]
+
+      expect(res.status).toBe(200)
+      expect(nonce).toBeTruthy()
+      expect(reportOnly).toContain(`'nonce-${nonce}'`)
+    })
+  })
+
   // OUR NEW REPORT-URI TESTS
   describe('CSP report-uri directive', () => {
     it('should set report-uri with single endpoint', async () => {

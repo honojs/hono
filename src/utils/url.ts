@@ -252,7 +252,7 @@ const _getQueryParam = (
     // fallback to default routine
   }
 
-  const results: Record<string, string> | Record<string, string[]> = {}
+  const results: Record<string, string> | Record<string, string[]> = Object.create(null)
   encoded ??= /[%+]/.test(url)
 
   let keyIndex = url.indexOf('?', 8)

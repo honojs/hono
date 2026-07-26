@@ -35,7 +35,7 @@ export class SSEStreamingApi extends StreamingApi {
       [
         message.event && `event: ${message.event}`,
         dataLines,
-        message.id && `id: ${message.id}`,
+        message.id !== undefined && `id: ${message.id}`,
         message.retry !== undefined && `retry: ${message.retry}`,
       ]
         .filter(Boolean)

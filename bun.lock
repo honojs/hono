@@ -1,11 +1,12 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "hono",
       "devDependencies": {
         "@hono/eslint-config": "^2.1.1",
-        "@hono/node-server": "^2.0.2",
+        "@hono/node-server": "^2.0.12",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^24.3.0",
         "@types/ws": "^8.18.1",
@@ -171,7 +172,7 @@
 
     "@hono/eslint-config": ["@hono/eslint-config@2.1.1", "", { "dependencies": { "@eslint/js": "^9.39.3", "eslint-config-prettier": "^10.1.8", "eslint-import-resolver-typescript": "^4.4.4", "eslint-plugin-import-x": "^4.16.1", "eslint-plugin-n": "^17.24.0", "typescript-eslint": "^8.62.1" }, "peerDependencies": { "eslint": "^9.0.0 || ^10.0.0", "typescript": "^5.0.0 || ^6.0.0" } }, "sha512-EYBjADOysloZOQOT50EEA8UHj6DbuK5bc0Y07MjJhMXRPu+ZcGginQFbs8lc9ASnYTn5pLNwMavsX687O5iL5Q=="],
 
-    "@hono/node-server": ["@hono/node-server@2.0.2", "", { "peerDependencies": { "hono": "^4" } }, "sha512-tXlTi1h/4V7sDe7i97IVP+9re9ZU7wXZZggnR5ucCRclf1+AX6YhGStrR5w8bLj+3Mlyl0pKfBh9gqTqqnGKfQ=="],
+    "@hono/node-server": ["@hono/node-server@2.0.12", "", { "peerDependencies": { "hono": "^4" } }, "sha512-eWpQYr67tqJLeaSUl0Q+TquuYfUdTibpOJlUMV2FfUP7+KqCC5TufnwnlXL6mobZBJbGAYRd7ZvEBDCbLInjhg=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

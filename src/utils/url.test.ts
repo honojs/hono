@@ -359,5 +359,14 @@ describe('url', () => {
         toString: [''],
       })
     })
+
+    it('should treat `__proto__` as a normal key without changing the prototype', () => {
+      const params = getQueryParams('http://example.com/?__proto__=a&__proto__=b') as Record<
+        string,
+        string[]
+      >
+      expect(Object.getPrototypeOf(params)).toBeNull()
+      expect(params['__proto__']).toEqual(['a', 'b'])
+    })
   })
 })

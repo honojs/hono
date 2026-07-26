@@ -236,6 +236,12 @@ describe('headers', () => {
     expect(req.header('Content-Type')).toBe('application/json')
     expect(req.header('ApiKey')).toBe('abc')
   })
+
+  test('req.header() is not affected by a `__proto__` header name', () => {
+    const req = new HonoRequest(new Request('http://localhost', { headers: { __proto__: 'evil' } }))
+    const headers = req.header()
+    expect(Object.getPrototypeOf(headers)).toBeNull()
+  })
 })
 
 const text = '{"foo":"bar"}'

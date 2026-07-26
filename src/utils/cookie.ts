@@ -67,7 +67,14 @@ const verifySignature = async (
 
 // all alphanumeric chars and all of _!#$%&'*.^`|~+-
 // (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+// used only when producing cookies via serialize(); parsing uses the relaxed regex below
 const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+
+// all ASCII chars 33-126 except 34, 59, 61, and 92 (i.e. "!" to "~" but not double quote, semicolon, equals, or backslash)
+// the strict RFC 6265 token rule above is a requirement for cookie producers; when consuming
+// the Cookie header we accept the names other producers emit in the wild, e.g. "paraglide:lang"
+// (see: https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis#section-5.6 and https://github.com/honojs/hono/issues/3189)
+const relaxedCookieNameRegEx = /^[!#-:<>-[\]-~]+$/
 
 // all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
 // (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
@@ -115,7 +122,7 @@ export const parse = (cookie: string, name?: string): Cookie => {
     const cookieName = trimCookieWhitespace(pairStr.substring(0, valueStartPos))
     if (
       (name && name !== cookieName) ||
-      !validCookieNameRegEx.test(cookieName) ||
+      !relaxedCookieNameRegEx.test(cookieName) ||
       cookieName in parsedCookie
     ) {
       continue

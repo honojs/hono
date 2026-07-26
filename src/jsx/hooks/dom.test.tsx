@@ -13,6 +13,7 @@ import {
   useDeferredValue,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useReducer,
   useState,
   useSyncExternalStore,
@@ -674,7 +675,7 @@ describe('Hooks', () => {
       let count = 0
       const unsubscribe = vi.fn()
       const subscribe = vi.fn(() => unsubscribe)
-      const getSnapshot = vi.fn(() => count++)
+      const getSnapshot = vi.fn(() => count)
       const SubApp = () => {
         const count = useSyncExternalStore(subscribe, getSnapshot)
         return <div>{count}</div>
@@ -695,16 +696,138 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>toggle</button>')
       expect(unsubscribe).toBeCalled()
+      count = 1
       root.querySelector('button')?.click()
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
+    })
+
+    it('updates the snapshot when subscribe changes', async () => {
+      const unsubscribeA = vi.fn()
+      const subscribeA = vi.fn(() => unsubscribeA)
+      const unsubscribeB = vi.fn()
+      const subscribeB = vi.fn(() => unsubscribeB)
+      const stores = [
+        { subscribe: subscribeA, getSnapshot: () => 'a1' },
+        { subscribe: subscribeB, getSnapshot: () => 'b0' },
+      ]
+
+      const App = () => {
+        const [index, setIndex] = useState(0)
+        const store = stores[index]
+        const value = useSyncExternalStore(store.subscribe, store.getSnapshot)
+        return <button onClick={() => setIndex(1)}>{value}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>a1</button>')
+      expect(subscribeA).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>b0</button>')
+      // the old store stays subscribed until the new subscription is set up at effect flush
+      expect(unsubscribeA).not.toBeCalled()
+      await new Promise((r) => setTimeout(r))
+      expect(unsubscribeA).toBeCalledTimes(1)
+      expect(subscribeB).toBeCalledTimes(1)
+      expect(unsubscribeB).not.toBeCalled()
+    })
+
+    it('updates the snapshot when getSnapshot changes', async () => {
+      const state: Record<string, string> = { a: 'a0', b: 'b0' }
+      const listeners = new Set<() => void>()
+      const subscribe = vi.fn((listener: () => void) => {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      })
+
+      const App = () => {
+        const [key, setKey] = useState('a')
+        const value = useSyncExternalStore(subscribe, () => state[key])
+        return <button onClick={() => setKey('b')}>{value}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>a0</button>')
+      expect(subscribe).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>b0</button>')
+      expect(subscribe).toBeCalledTimes(1)
+
+      state.b = 'b1'
+      listeners.forEach((listener) => listener())
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>b1</button>')
+    })
+
+    it('uses the latest getSnapshot when subscribing after a layout effect update', async () => {
+      const state = { a: 'a0', b: 'b0' }
+      const subscribe = vi.fn((_listener: () => void) => vi.fn())
+
+      const App = () => {
+        const [key, setKey] = useState<keyof typeof state>('a')
+        const value = useSyncExternalStore(subscribe, () => state[key])
+
+        useLayoutEffect(() => {
+          setKey('b')
+          queueMicrotask(() => {
+            state.b = 'b1'
+          })
+        }, [])
+
+        return <div>{value}</div>
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>a0</div>')
+
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>b1</div>')
+    })
+
+    it('does not loop when subscribe changes on every render', async () => {
+      const unsubscribes: ReturnType<typeof vi.fn>[] = []
+      const subscribe = vi.fn((_listener: () => void) => {
+        const unsubscribe = vi.fn()
+        unsubscribes.push(unsubscribe)
+        return unsubscribe
+      })
+      const getSnapshot = () => 'snapshot'
+      let renderCount = 0
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        renderCount++
+        const value = useSyncExternalStore((listener) => subscribe(listener), getSnapshot)
+        return <button onClick={() => setCount((count) => count + 1)}>{`${value}:${count}`}</button>
+      }
+
+      render(<App />, root)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>snapshot:0</button>')
+      expect(renderCount).toBe(1)
+      expect(subscribe).toBeCalledTimes(1)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>snapshot:1</button>')
+      expect(renderCount).toBe(2)
+      expect(subscribe).toBeCalledTimes(2)
+      expect(unsubscribes[0]).toBeCalledTimes(1)
+      expect(unsubscribes[1]).not.toBeCalled()
     })
 
     it('with getServerSnapshot', async () => {
       let count = 0
       const unsubscribe = vi.fn()
       const subscribe = vi.fn(() => unsubscribe)
-      const getSnapshot = vi.fn(() => count++)
+      const getSnapshot = vi.fn(() => count)
       const getServerSnapshot = vi.fn(() => 100)
       const SubApp = () => {
         const count = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
@@ -727,6 +850,7 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<button>toggle</button>')
       expect(unsubscribe).toBeCalled()
+      count = 1
       root.querySelector('button')?.click()
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')

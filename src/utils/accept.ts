@@ -162,7 +162,7 @@ const getNextAcceptValue = (
 ): [number, Accept | undefined] => {
   const accept: Accept = {
     type: '',
-    params: {},
+    params: Object.create(null),
     q: 1,
   }
   startIndex = consumeWhitespace(acceptHeader, startIndex)

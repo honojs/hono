@@ -1,13 +1,14 @@
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
-import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
+import type { APIGatewayProxyEventV2, LambdaEvent, LatticeProxyEventV2 } from './handler'
 import {
   getProcessor,
   handle,
   isContentEncodingBinary,
   defaultIsContentTypeBinary,
 } from './handler'
+import type { ApiGatewayRequestContextV2 } from './types'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
@@ -570,5 +571,63 @@ describe('handle', () => {
 
     const result = await handler(event)
     expect(result.statusCode).toBe(413)
+  })
+})
+
+describe('V2 request context authorizer', () => {
+  const baseV2RequestContext = baseV2Event.requestContext as ApiGatewayRequestContextV2
+
+  it('Should expose the context of a Lambda (REQUEST) authorizer', async () => {
+    const app = new Hono<{ Bindings: { event: APIGatewayProxyEventV2 } }>()
+    app.get('/my/path', (c) => c.json(c.env.event.requestContext.authorizer.lambda))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      requestContext: {
+        ...baseV2RequestContext,
+        http: { ...baseV2RequestContext.http, method: 'GET' },
+        authorizer: { lambda: { userId: 'user-123', isAdmin: true } },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(JSON.parse(result.body)).toEqual({ userId: 'user-123', isAdmin: true })
+  })
+
+  it('Should expose the claims and scopes of a JWT authorizer', async () => {
+    const app = new Hono<{ Bindings: { event: APIGatewayProxyEventV2 } }>()
+    app.get('/my/path', (c) => c.json(c.env.event.requestContext.authorizer.jwt))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      requestContext: {
+        ...baseV2RequestContext,
+        http: { ...baseV2RequestContext.http, method: 'GET' },
+        authorizer: {
+          jwt: { claims: { sub: 'user-123', email_verified: true }, scopes: ['read'] },
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(JSON.parse(result.body)).toEqual({
+      claims: { sub: 'user-123', email_verified: true },
+      scopes: ['read'],
+    })
+  })
+
+  it('Should type each authorizer variant as optional', () => {
+    const authorizer: ApiGatewayRequestContextV2['authorizer'] = {}
+    expectTypeOf(authorizer.lambda).toEqualTypeOf<Record<string, unknown> | null | undefined>()
+    expectTypeOf(authorizer.jwt).toEqualTypeOf<
+      | { claims: Record<string, string | number | boolean | string[]>; scopes: string[] | null }
+      | undefined
+    >()
+    // A JWT authorizer reports no scopes as `null`.
+    expectTypeOf<null>().toMatchTypeOf<NonNullable<typeof authorizer.jwt>['scopes']>()
   })
 })
