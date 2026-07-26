@@ -344,7 +344,6 @@ describe('Compress Middleware', () => {
       expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Vary')).toBeNull()
     })
-
   })
 
   describe('contentTypeFilter', () => {
