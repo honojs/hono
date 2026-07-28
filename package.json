@@ -685,7 +685,6 @@
     "prettier": "3.7.4",
     "publint": "0.3.15",
     "typescript": "^6.0.3",
-    "undici": "^6.27.0",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^4.1.9",
     "wrangler": "4.107.0",
