@@ -171,6 +171,26 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
+  it('Component returning an array', () => {
+    const Item = ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Component returning a nested array', () => {
+    const Items = () => [['a', 'b'], [<span>c</span>], null]
+    const template = <Items />
+    expect(template.toString()).toBe('ab<span>c</span>')
+  })
+
+  it('Component returning an array including async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <AsyncItem key={x} x={x} />)
+    const template = <Items />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
+  })
+
   it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')

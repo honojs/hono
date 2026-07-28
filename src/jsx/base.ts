@@ -35,6 +35,9 @@ export type DOMAttributes = HonoJSX.HTMLAttributes
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
+  // A function component may return anything renderable, not just a single element.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type ElementType = string | ((props: any) => Child)
   export interface ElementChildrenAttribute {
     children: Child
   }
@@ -283,6 +286,8 @@ class JSXFunctionNode extends JSXNode {
       }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
+    } else if (Array.isArray(res)) {
+      childrenToStringToBuffer(res, buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
       if (res.callbacks) {

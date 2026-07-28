@@ -374,6 +374,18 @@ describe('DOM', () => {
       expect(Child).toBeCalledTimes(3)
     })
 
+    it('returning an array', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return [<div>{count}</div>, <button onClick={() => setCount(count + 1)}>+</button>]
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div><button>+</button>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div><button>+</button>')
+    })
+
     it('multiple children', async () => {
       const Child = ({ name }: { name: string }) => {
         const [count, setCount] = useState(0)
