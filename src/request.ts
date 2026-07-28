@@ -87,6 +87,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @example
    * ```ts
    * const name = c.req.param('name')
+   * // or wildcard parameter
+   * const wildcard = c.req.param('*')
    * // or all parameters at once
    * const { id, comment_id } = c.req.param()
    * ```

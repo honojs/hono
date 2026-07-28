@@ -7,7 +7,12 @@ import type { HtmlEscapedString } from '../utils/html'
 import { createContext, useContext } from './context'
 import { buildDataStack } from './dom/render'
 import { use } from './hooks'
-import { Suspense, renderToReadableStream, StreamingContext, resetSuspenseCounter } from './streaming'
+import {
+  Suspense,
+  renderToReadableStream,
+  StreamingContext,
+  resetSuspenseCounter,
+} from './streaming'
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
@@ -545,7 +550,8 @@ d.replaceWith(c.content)
     expect(onError).toBeCalledTimes(1)
 
     expect(chunks).toEqual([
-      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--><template id="H:${suspenseCounter + 1
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--><template id="H:${
+        suspenseCounter + 1
       }"></template><p>Loading...</p><!--/$-->`,
     ])
 
@@ -719,7 +725,8 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><template id=\"H:${suspenseCounter + 1
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><template id=\"H:${
+        suspenseCounter + 1
       }\"></template><p>Loading sub content...</p><!--/$--></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
