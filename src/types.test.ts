@@ -321,7 +321,7 @@ describe('OnHandlerInterface', () => {
   })
 
   test('app.on(method[], path, middleware, handler)', () => {
-    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => { }
     const route = app.on(['GET', 'POST'], '/multi-method', middleware, (c) => {
       return c.json({ success: true })
     })
@@ -350,7 +350,7 @@ describe('OnHandlerInterface', () => {
   })
 
   test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
-    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => { }
     app.on('GET', ['/a', '/b'], middleware, (c) => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       return c.json({})
@@ -668,6 +668,18 @@ describe('Path parameters', () => {
   test('ParamKeys', () => {
     type Actual = ParamKeys<'/posts/:postId/comment/:commentId'>
     type Expected = 'postId' | 'commentId'
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('ParamKeys with wildcard', () => {
+    type Actual = ParamKeys<'/thing/*'>
+    type Expected = '*'
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('ParamKeys with named parameter and wildcard', () => {
+    type Actual = ParamKeys<'/posts/:postId/*'>
+    type Expected = 'postId' | '*'
     type verify = Expect<Equal<Expected, Actual>>
   })
 
@@ -997,22 +1009,22 @@ describe('MergeSchemaPath', () => {
       {
         '/': {
           $get:
-            | {
-                input: {}
-                output: {
-                  error: string
-                }
-                outputFormat: 'json'
-                status: 404
-              }
-            | {
-                input: {}
-                output: {
-                  success: boolean
-                }
-                outputFormat: 'json'
-                status: 200
-              }
+          | {
+            input: {}
+            output: {
+              error: string
+            }
+            outputFormat: 'json'
+            status: 404
+          }
+          | {
+            input: {}
+            output: {
+              success: boolean
+            }
+            outputFormat: 'json'
+            status: 200
+          }
         }
       },
       '/api/hello'
@@ -1020,22 +1032,22 @@ describe('MergeSchemaPath', () => {
     type Expected = {
       '/api/hello': {
         $get:
-          | {
-              input: {}
-              output: {
-                error: string
-              }
-              outputFormat: 'json'
-              status: 404
-            }
-          | {
-              input: {}
-              output: {
-                success: boolean
-              }
-              outputFormat: 'json'
-              status: 200
-            }
+        | {
+          input: {}
+          output: {
+            error: string
+          }
+          outputFormat: 'json'
+          status: 404
+        }
+        | {
+          input: {}
+          output: {
+            success: boolean
+          }
+          outputFormat: 'json'
+          status: 200
+        }
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
@@ -1067,30 +1079,30 @@ describe('Different types using json()', () => {
       type Expected = {
         '/': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ng: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
-            | {
-                input: {}
-                output: {
-                  default: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
+          | {
+            input: {}
+            output: {
+              ng: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
+          | {
+            input: {}
+            output: {
+              default: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -1123,30 +1135,30 @@ describe('Different types using json()', () => {
       type Expected = {
         '/': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ng: true
-                }
-                outputFormat: 'json'
-                status: 400
-              }
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
-            | {
-                input: {}
-                output: {
-                  default: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
+          | {
+            input: {}
+            output: {
+              ng: true
+            }
+            outputFormat: 'json'
+            status: 400
+          }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
+          | {
+            input: {}
+            output: {
+              default: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -1177,30 +1189,30 @@ describe('Different types using json()', () => {
       type Expected = {
         '/foo': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ng: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
-            | {
-                input: {}
-                output: {
-                  default: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
+          | {
+            input: {}
+            output: {
+              ng: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
+          | {
+            input: {}
+            output: {
+              default: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -1233,30 +1245,30 @@ describe('Different types using json()', () => {
       type Expected = {
         '/foo': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ng: true
-                }
-                outputFormat: 'json'
-                status: 400
-              }
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
-            | {
-                input: {}
-                output: {
-                  default: true
-                }
-                outputFormat: 'json'
-                status: ContentfulStatusCode
-              }
+          | {
+            input: {}
+            output: {
+              ng: true
+            }
+            outputFormat: 'json'
+            status: 400
+          }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
+          | {
+            input: {}
+            output: {
+              default: true
+            }
+            outputFormat: 'json'
+            status: ContentfulStatusCode
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -1324,52 +1336,52 @@ describe('c.var with chaining - test only types', () => {
     { Variables: { foo1: string } },
     string,
     { out: { query: { bar1: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw2 = createMiddleware<
     { Variables: { foo2: string } },
     string,
     { out: { query: { bar2: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw3 = createMiddleware<
     { Variables: { foo3: string } },
     string,
     { out: { query: { bar3: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw4 = createMiddleware<
     { Variables: { foo4: string } },
     string,
     { out: { query: { bar4: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw5 = createMiddleware<
     { Variables: { foo5: string } },
     string,
     { out: { query: { bar5: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw6 = createMiddleware<
     { Variables: { foo6: string } },
     string,
     { out: { query: { bar6: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw7 = createMiddleware<
     { Variables: { foo7: string } },
     string,
     { out: { query: { bar7: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw8 = createMiddleware<
     { Variables: { foo8: string } },
     string,
     { out: { query: { bar8: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw9 = createMiddleware<
     { Variables: { foo9: string } },
     string,
     { out: { query: { bar9: number } } }
-  >(async () => {})
+  >(async () => { })
   const mw10 = createMiddleware<
     { Variables: { foo10: string } },
     string,
     { out: { query: { bar10: number } } }
-  >(async () => {})
+  >(async () => { })
 
   it('Should not throw type errors', () => {
     // app.get(handler...)
@@ -2067,8 +2079,8 @@ describe('c.req.valid() in non-last handler after validator middleware - test on
 describe('Env types with `use` middleware - test only types', () => {
   const app = new Hono()
 
-  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => {})
-  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => {})
+  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => { })
+  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => { })
 
   it('Should not throw a type error', () => {
     app
@@ -3273,7 +3285,7 @@ describe('RPC supports Middleware responses', () => {
   })
 
   describe('Infers types with multiple middlewares but none returning response', () => {
-    const middleware = createMiddleware(async () => {})
+    const middleware = createMiddleware(async () => { })
     const handler = (c: Context) => c.json({ ok: true }, 200)
     type Expected = {
       '/': {
@@ -3413,29 +3425,29 @@ describe('RPC supports Middleware responses', () => {
           )
         }
       }
-      const middleware2 = async () => {}
+      const middleware2 = async () => { }
 
       const routes = new Hono().get('/', middleware1, middleware2, handler)
       type Actual = ExtractSchema<typeof routes>
       type Expected = {
         '/': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
-            | {
-                input: {}
-                output: {
-                  q: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
+          | {
+            input: {}
+            output: {
+              q: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -3462,37 +3474,37 @@ describe('RPC supports Middleware responses', () => {
           )
         }
       }
-      const middleware3 = async () => {}
+      const middleware3 = async () => { }
 
       const routes = new Hono().get('/', middleware1, middleware2, middleware3, handler)
       type Actual = ExtractSchema<typeof routes>
       type Expected = {
         '/': {
           $get:
-            | {
-                input: {}
-                output: {
-                  ok: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
-            | {
-                input: {}
-                output: {
-                  q1: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
-            | {
-                input: {}
-                output: {
-                  q2: true
-                }
-                outputFormat: 'json'
-                status: 200
-              }
+          | {
+            input: {}
+            output: {
+              ok: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
+          | {
+            input: {}
+            output: {
+              q1: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
+          | {
+            input: {}
+            output: {
+              q2: true
+            }
+            outputFormat: 'json'
+            status: 200
+          }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -4020,7 +4032,11 @@ describe('Handlers returning Promise<void>', () => {
     type Expected = {
       '*': {
         $post: {
-          input: {}
+          input: {
+            param: {
+              '*': string
+            }
+          }
           output: 'after'
           outputFormat: 'text'
           status: ContentfulStatusCode

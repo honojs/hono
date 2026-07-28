@@ -32,6 +32,9 @@ export const StreamingContext: JSXContext<{ scriptNonce: string } | null> = crea
 } | null>(null)
 
 let suspenseCounter = 0
+export const resetSuspenseCounter = () => {
+  suspenseCounter = 0
+}
 
 /**
  * @experimental
@@ -104,9 +107,8 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
           }
           let html = buffer
             ? ''
-            : `<template data-hono-target="H:${index}">${content}</template><script${
-                nonce ? ` nonce="${nonce}"` : ''
-              }>
+            : `<template data-hono-target="H:${index}">${content}</template><script${nonce ? ` nonce="${nonce}"` : ''
+            }>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
@@ -135,7 +137,7 @@ d.replaceWith(c.content)
     return raw(resArray.join(''))
   }
 }
-;(Suspense as HasRenderToDom)[DOM_RENDERER] = SuspenseDomRenderer
+  ; (Suspense as HasRenderToDom)[DOM_RENDERER] = SuspenseDomRenderer
 
 const textEncoder = new TextEncoder()
 /**
@@ -183,11 +185,11 @@ export const renderToReadableStream = (
                   true,
                   context
                 )
-                ;(res as HtmlEscapedString).callbacks
-                  ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  .filter<Promise<string>>(Boolean as any)
-                  .forEach(then)
+                  ; (res as HtmlEscapedString).callbacks
+                    ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .filter<Promise<string>>(Boolean as any)
+                    .forEach(then)
                 resolvedCount++
                 if (!cancelled) {
                   controller.enqueue(textEncoder.encode(res))
@@ -195,11 +197,11 @@ export const renderToReadableStream = (
               })
           )
         }
-        ;(resolved as HtmlEscapedString).callbacks
-          ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .filter<Promise<string>>(Boolean as any)
-          .forEach(then)
+          ; (resolved as HtmlEscapedString).callbacks
+            ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter<Promise<string>>(Boolean as any)
+            .forEach(then)
         while (resolvedCount !== callbacks.length) {
           await Promise.all(callbacks)
         }
