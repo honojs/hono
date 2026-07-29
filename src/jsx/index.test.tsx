@@ -198,6 +198,19 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<span>0</span><span>1</span>')
   })
 
+  it('Async component returning an array', async () => {
+    const AsyncItems = async () => [<span>a</span>, <span>b</span>]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>a</span><span>b</span>')
+  })
+
+  it('Async component returning an array of async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const AsyncItems = async () => [<AsyncItem key={0} x={0} />, <AsyncItem key={1} x={1} />]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
+  })
+
   it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
@@ -1267,6 +1280,19 @@ d.replaceWith(c.content)
         </ThemeContext.Provider>
       )
       expect((await template.toString()).toString()).toBe('<span>dark</span>')
+    })
+
+    it('returning an array', async () => {
+      const ArrayConsumer = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return [<span>{useContext(ThemeContext)}</span>, <span>x</span>]
+      }
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ArrayConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<span>dark</span><span>x</span>')
     })
 
     it('nested', async () => {

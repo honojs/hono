@@ -30,6 +30,32 @@ describe('Streaming', () => {
     suspenseCounter++
   })
 
+  it('Suspense / async component returning an array', async () => {
+    const Content = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return [<h1>Hello</h1>, <h2>World</h2>]
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks[0]).toBe(
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`
+    )
+    expect(chunks[1]).toContain(
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><h2>World</h2></template>`
+    )
+  })
+
   it('Suspense / renderToReadableStream', async () => {
     let contentEvaluatedCount = 0
     const Content = () => {
