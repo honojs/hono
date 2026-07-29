@@ -171,6 +171,16 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
+  it('Should throw when a component returns an array', () => {
+    const Item = ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    // @ts-expect-error a component returning an array is not a valid JSX element
+    const template = <Items />
+    expect(() => template.toString()).toThrow(
+      'A function component must not return an array. Wrap the elements in a Fragment: <>...</>'
+    )
+  })
+
   it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')

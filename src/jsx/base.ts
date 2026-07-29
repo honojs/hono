@@ -289,6 +289,12 @@ class JSXFunctionNode extends JSXNode {
         buffer.callbacks ||= []
         buffer.callbacks.push(...res.callbacks)
       }
+    } else if (Array.isArray(res)) {
+      // Reaching `escapeToBuffer()` with an array fails with an unrelated message,
+      // so report what the caller actually has to change.
+      throw new Error(
+        'A function component must not return an array. Wrap the elements in a Fragment: <>...</>'
+      )
     } else {
       escapeToBuffer(res, buffer)
     }
