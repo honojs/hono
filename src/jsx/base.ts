@@ -26,7 +26,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
 export type FC<P = Props> = {
-  (props: P): HtmlEscapedString | Promise<HtmlEscapedString> | null
+  (props: P): HtmlEscapedString | Promise<HtmlEscapedString> | Child[] | null
   defaultProps?: Partial<P> | undefined
   displayName?: string | undefined
 }
@@ -35,9 +35,11 @@ export type DOMAttributes = HonoJSX.HTMLAttributes
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
-  // A function component may return anything renderable, not just a single element.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export type ElementType = string | ((props: any) => Child)
+  // Kept in sync with the call signature of `FC`, so that a function component
+  // returning an array is accepted as a tag.
+  export type ElementType =
+    | string
+    | ((props: never) => HtmlEscapedString | Promise<HtmlEscapedString> | Child[] | null)
   export interface ElementChildrenAttribute {
     children: Child
   }

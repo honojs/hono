@@ -191,6 +191,13 @@ describe('render to string', () => {
     expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
   })
 
+  it('Component typed as FC returning an array', () => {
+    const Item: FC<{ x: number }> = ({ x }) => <span>{x}</span>
+    const Items: FC = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
   it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
