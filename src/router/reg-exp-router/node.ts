@@ -104,12 +104,10 @@ export class Node {
           return
         }
         node = this.#children[regexpStr] = new Node()
-        if (name !== '') {
-          node.#varIndex = context.varIndex++
-        }
       }
       if (!pathErrorCheckOnly && name !== '') {
-        paramMap.push([name, node.#varIndex as number])
+        node.#varIndex ??= context.varIndex++
+        paramMap.push([name, node.#varIndex])
       }
     } else {
       node = this.#children[token]

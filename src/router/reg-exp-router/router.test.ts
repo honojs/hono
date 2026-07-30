@@ -1,4 +1,4 @@
-import type { ParamStash } from '../../router'
+import type { ParamIndexMap, ParamStash } from '../../router'
 import { UnsupportedPathError } from '../../router'
 import { runTest } from '../common.case.test'
 import { RegExpRouter } from './router'
@@ -136,6 +136,19 @@ describe('RegExpRouter', () => {
           }).toThrowError(UnsupportedPathError)
         })
       })
+    })
+  })
+
+  describe('Capture a param of a label node created by a middle wildcard', () => {
+    it('Should capture the param', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/w/*/x', 'wildcard')
+      router.add('GET', '/w/:id/y', 'label')
+
+      const [res, stash] = router.match('GET', '/w/123/y')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('label')
+      expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['id']]).toBe('123')
     })
   })
 })
