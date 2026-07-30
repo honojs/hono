@@ -39,29 +39,21 @@ describe('RegExpRouter', () => {
 
   describe('UnsupportedPathError', () => {
     describe('Ambiguous', () => {
-      const router = new RegExpRouter<string>()
-
-      router.add('GET', '/:user/entries', 'get user entries')
-      router.add('GET', '/entry/:name', 'get entry')
-      router.add('POST', '/entry', 'create entry')
-
-      it('GET /entry/entries', () => {
+      it('GET /entry/:name', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/:user/entries', 'get user entries')
         expect(() => {
-          router.match('GET', '/entry/entries')
+          router.add('GET', '/entry/:name', 'get entry')
         }).toThrowError(UnsupportedPathError)
       })
     })
 
     describe('Multiple handlers with different label', () => {
-      const router = new RegExpRouter<string>()
-
-      router.add('GET', '/:type/:id', ':type')
-      router.add('GET', '/:class/:id', ':class')
-      router.add('GET', '/:model/:id', ':model')
-
-      it('GET /entry/123', () => {
+      it('GET /:class/:id', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/:type/:id', ':type')
         expect(() => {
-          router.match('GET', '/entry/123')
+          router.add('GET', '/:class/:id', ':class')
         }).toThrowError(UnsupportedPathError)
       })
     })
@@ -69,19 +61,16 @@ describe('RegExpRouter', () => {
     it('parent', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/:id/:action', 'foo')
-      router.add('GET', '/posts/:id', 'bar')
       expect(() => {
-        router.match('GET', '/')
+        router.add('GET', '/posts/:id', 'bar')
       }).toThrowError(UnsupportedPathError)
     })
 
     it('child', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/posts/:id', 'foo')
-      router.add('GET', '/:id/:action', 'bar')
-
       expect(() => {
-        router.match('GET', '/')
+        router.add('GET', '/:id/:action', 'bar')
       }).toThrowError(UnsupportedPathError)
     })
 
@@ -89,30 +78,24 @@ describe('RegExpRouter', () => {
       it('static first', () => {
         const router = new RegExpRouter<string>()
         router.add('GET', '/reg-exp/router', 'foo')
-        router.add('GET', '/reg-exp/:id', 'bar')
-
         expect(() => {
-          router.match('GET', '/')
+          router.add('GET', '/reg-exp/:id', 'bar')
         }).toThrowError(UnsupportedPathError)
       })
 
       it('long label', () => {
         const router = new RegExpRouter<string>()
         router.add('GET', '/reg-exp/router', 'foo')
-        router.add('GET', '/reg-exp/:service', 'bar')
-
         expect(() => {
-          router.match('GET', '/')
+          router.add('GET', '/reg-exp/:service', 'bar')
         }).toThrowError(UnsupportedPathError)
       })
 
       it('dynamic first', () => {
         const router = new RegExpRouter<string>()
         router.add('GET', '/reg-exp/:id', 'bar')
-        router.add('GET', '/reg-exp/router', 'foo')
-
         expect(() => {
-          router.match('GET', '/')
+          router.add('GET', '/reg-exp/router', 'foo')
         }).toThrowError(UnsupportedPathError)
       })
     })
@@ -120,9 +103,16 @@ describe('RegExpRouter', () => {
     it('different regular expression', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/:id/:action{create|update}', 'foo')
-      router.add('GET', '/:id/:action{delete}', 'bar')
       expect(() => {
-        router.match('GET', '/')
+        router.add('GET', '/:id/:action{delete}', 'bar')
+      }).toThrowError(UnsupportedPathError)
+    })
+
+    it('ALL and specific method', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/foo/:a', 'foo')
+      expect(() => {
+        router.add('ALL', '/foo/:b', 'bar')
       }).toThrowError(UnsupportedPathError)
     })
 
@@ -130,12 +120,99 @@ describe('RegExpRouter', () => {
       describe('Complex capturing group', () => {
         it('GET request', () => {
           const router = new RegExpRouter<string>()
-          router.add('GET', '/foo/:capture{ba(r|z)}', 'ok')
           expect(() => {
-            router.match('GET', '/foo/bar')
+            router.add('GET', '/foo/:capture{ba(r|z)}', 'ok')
           }).toThrowError(UnsupportedPathError)
         })
       })
+    })
+  })
+
+  describe('Wildcard after label', () => {
+    it('Should be able to add a tail wildcard after a label', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/api/:x', 'label')
+      router.add('GET', '/api/*', 'wildcard')
+
+      const [res] = router.match('GET', '/api/foo')
+      expect(res.length).toBe(2)
+      expect(res[0][0]).toBe('label')
+      expect(res[1][0]).toBe('wildcard')
+    })
+
+    it('Should prioritize the only wildcard over the tail wildcard regardless of the order', () => {
+      for (const paths of [
+        ['/a*', '/a/*'],
+        ['/a/*', '/a*'],
+      ]) {
+        const router = new RegExpRouter<string>()
+        for (const path of paths) {
+          router.add('GET', path, path)
+        }
+        const [res] = router.match('GET', '/a')
+        expect(res[0][0]).toBe('/a*')
+      }
+    })
+  })
+
+  describe('Single character regexp pattern', () => {
+    it('Should capture a param even if a static path created the node first', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/a/c', 'static')
+      router.add('GET', '/:x{a}/b', 'pattern')
+
+      const [res, stash] = router.match('GET', '/a/b')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('pattern')
+      expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['x']]).toBe('a')
+    })
+
+    it('Should throw an error when a pattern terminal conflicts with a static terminal', () => {
+      for (const paths of [
+        ['/a', '/:x{a}'],
+        ['/:x{a}', '/a'],
+      ]) {
+        const router = new RegExpRouter<string>()
+        router.add('GET', paths[0], paths[0])
+        expect(() => {
+          router.add('GET', paths[1], paths[1])
+        }).toThrowError(UnsupportedPathError)
+      }
+    })
+
+    it('Should coexist with static paths regardless of the order', () => {
+      for (const paths of [
+        ['/foo/bar', '/:y{b}'],
+        ['/:y{b}', '/foo/bar'],
+      ]) {
+        const router = new RegExpRouter<string>()
+        for (const path of paths) {
+          router.add('GET', path, path)
+        }
+        expect(router.match('GET', '/foo/bar')[0][0][0]).toBe('/foo/bar')
+        expect(router.match('GET', '/b')[0][0][0]).toBe('/:y{b}')
+      }
+    })
+
+    it('Should coexist with dynamic paths regardless of the order', () => {
+      for (const paths of [
+        ['/foo/:p', '/:x{a}'],
+        ['/:x{a}', '/foo/:p'],
+      ]) {
+        const router = new RegExpRouter<string>()
+        for (const path of paths) {
+          router.add('GET', path, path)
+        }
+        expect(router.match('GET', '/a')[0][0][0]).toBe('/:x{a}')
+        expect(router.match('GET', '/foo/v')[0][0][0]).toBe('/foo/:p')
+      }
+    })
+
+    it('Should throw an error for a single meta character pattern', () => {
+      const router = new RegExpRouter<string>()
+      expect(() => {
+        router.add('GET', '/:x{.}', 'meta')
+      }).toThrowError(UnsupportedPathError)
     })
   })
 
@@ -149,6 +226,22 @@ describe('RegExpRouter', () => {
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('label')
       expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['id']]).toBe('123')
+    })
+  })
+
+  describe('Static path including a colon in the middle', () => {
+    it('Should be treated as a static path', () => {
+      for (const paths of [
+        ['/v1/name:activate', '/v1/name2'],
+        ['/v1/name2', '/v1/name:activate'],
+      ]) {
+        const router = new RegExpRouter<string>()
+        for (const path of paths) {
+          router.add('GET', path, path)
+        }
+        expect(router.match('GET', '/v1/name:activate')[0][0][0]).toBe('/v1/name:activate')
+        expect(router.match('GET', '/v1/name2')[0][0][0]).toBe('/v1/name2')
+      }
     })
   })
 })
