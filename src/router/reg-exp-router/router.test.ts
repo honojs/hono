@@ -108,12 +108,30 @@ describe('RegExpRouter', () => {
       }).toThrowError(UnsupportedPathError)
     })
 
-    it('ALL and specific method', () => {
+    it('ALL route added after a specific-method route', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/foo/:a', 'foo')
       expect(() => {
         router.add('ALL', '/foo/:b', 'bar')
       }).toThrowError(UnsupportedPathError)
+    })
+
+    it('specific-method route added after an ALL route', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/reg-exp/router', 'foo')
+
+      expect(() => {
+        router.add('GET', '/reg-exp/:id', 'bar')
+      }).toThrowError(UnsupportedPathError)
+    })
+
+    it('different methods do not conflict', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/router', 'foo')
+      router.add('POST', '/reg-exp/:id', 'bar')
+
+      expect(router.match('GET', '/reg-exp/router')[0][0][0]).toBe('foo')
+      expect(router.match('POST', '/reg-exp/router')[0][0][0]).toBe('bar')
     })
 
     describe('Capture Group', () => {
