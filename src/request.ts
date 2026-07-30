@@ -223,8 +223,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    const anyCachedKey = Object.keys(bodyCache)[0]
-    if (anyCachedKey) {
+    for (const anyCachedKey in bodyCache) {
       return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
