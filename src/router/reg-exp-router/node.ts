@@ -25,9 +25,9 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard
+  // wildcard: the only wildcard (.*) precedes the tail wildcard
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
-    return 1
+    return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
     return -1
   }
