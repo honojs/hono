@@ -77,8 +77,11 @@ export class StreamingApi {
 
   async pipe(body: ReadableStream) {
     this.writer.releaseLock()
-    await body.pipeTo(this.writable, { preventClose: true })
-    this.writer = this.writable.getWriter()
+    try {
+      await body.pipeTo(this.writable, { preventClose: true })
+    } finally {
+      this.writer = this.writable.getWriter()
+    }
   }
 
   onAbort(listener: () => void | Promise<void>) {

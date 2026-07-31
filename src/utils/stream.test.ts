@@ -57,6 +57,29 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
   })
 
+  it('pipe() re-acquires the writer when the source errors', async () => {
+    const { readable: receiverReadable, writable: receiverWritable } = new TransformStream()
+    const api = new StreamingApi(receiverWritable, receiverReadable)
+
+    const erroringSource = new ReadableStream({
+      pull(controller) {
+        controller.error(new Error('boom'))
+      },
+    })
+
+    await expect(api.pipe(erroringSource)).rejects.toThrow('boom')
+
+    // The writer must be re-acquired even when pipe() rejects, so the instance is
+    // never left holding a released writer. Without the fix the lock stays released.
+    expect((api as unknown as { writable: WritableStream }).writable.locked).toBe(true)
+    await expect(api.write('x')).resolves.toBe(api)
+    await expect(api.close()).resolves.toBeUndefined()
+
+    // Observe the aborted readable so it does not surface as an unhandled rejection.
+    const reader = api.responseReadable.getReader()
+    await expect(reader.read()).rejects.toThrow('boom')
+  })
+
   it('close()', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable, readable)
