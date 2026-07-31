@@ -1,5 +1,4 @@
 import { createAdaptorServer, serve } from '@hono/node-server'
-import * as undici from 'undici'
 import { once } from 'node:events'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -278,10 +277,10 @@ function createAgent(app: Hono) {
   const listening = once(server.listen(), 'listening')
 
   return {
-    async get(path: string, init?: undici.RequestInit) {
+    async get(path: string, init?: RequestInit) {
       await listening
       const url = new URL(path, getOrigin())
-      return undici.fetch(url, init)
+      return fetch(url, init)
     },
   }
 
