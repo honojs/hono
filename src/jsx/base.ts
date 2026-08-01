@@ -25,8 +25,13 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
+type FunctionComponentResult =
+  | HtmlEscapedString
+  | Child[]
+  | Promise<HtmlEscapedString | Child[]>
+  | null
 export type FC<P = Props> = {
-  (props: P): HtmlEscapedString | Child[] | Promise<HtmlEscapedString | Child[]> | null
+  (props: P): FunctionComponentResult
   defaultProps?: Partial<P> | undefined
   displayName?: string | undefined
 }
@@ -35,11 +40,7 @@ export type DOMAttributes = HonoJSX.HTMLAttributes
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
-  // Kept in sync with the call signature of `FC`, so that a function component
-  // returning an array is accepted as a tag.
-  export type ElementType =
-    | string
-    | ((props: never) => HtmlEscapedString | Child[] | Promise<HtmlEscapedString | Child[]> | null)
+  export type ElementType = string | ((props: never) => FunctionComponentResult)
   export interface ElementChildrenAttribute {
     children: Child
   }
@@ -110,21 +111,21 @@ export const booleanAttributes = [
   'selected',
 ]
 
-// An array cannot be resolved into the string buffer as-is, so wrap it in a fragment.
-// When a context is given, it is attached to the resolved node so that the suspended
-// subtree resumes with the same context state.
-const resolveArrayToFragment = (
-  child: Promise<string | Child[]>,
-  suspendedContext?: <T>(callback: () => T) => T
+type SuspendedContext = <T>(callback: () => T) => T
+
+const resolveFunctionComponentResult = (
+  result: Promise<string | JSXNode | Child[]>,
+  suspendedContext?: SuspendedContext
 ): Promise<string> =>
-  child.then((resolved) => {
-    const node = Array.isArray(resolved) ? new JSXFragmentNode('', {}, resolved) : resolved
-    if (suspendedContext && node instanceof JSXNode) {
-      node.suspendedContext = suspendedContext
+  result.then((resolved) => {
+    if (!Array.isArray(resolved) && !(resolved instanceof JSXNode)) {
+      return resolved
     }
-    // The buffer is typed as strings, but it also holds resolved nodes, which
-    // `stringBufferToString()` stringifies.
-    return node as unknown as string
+    const children = Array.isArray(resolved) ? resolved : [resolved]
+    const render = () => new JSXFragmentNode('', {}, children).toString()
+    return Promise.resolve(suspendedContext ? suspendedContext(render) : render()).then((value) =>
+      raw(value, (value as HtmlEscapedString).callbacks)
+    )
   })
 
 const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
@@ -142,7 +143,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
     ) {
       ;(buffer[0] as string) += child
     } else if (child instanceof Promise) {
-      buffer.unshift('', resolveArrayToFragment(child))
+      buffer.unshift('', child)
     } else {
       // `child` type is `Child[]`, so stringify recursively
       childrenToStringToBuffer(child, buffer)
@@ -152,7 +153,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
 
 export type Child =
   | string
-  | Promise<string | Child[]>
+  | Promise<string>
   | number
   | JSXNode
   | null
@@ -289,10 +290,10 @@ class JSXFunctionNode extends JSXNode {
       return
     } else if (res instanceof Promise) {
       if (globalContexts.length === 0) {
-        buffer.unshift('', resolveArrayToFragment(res))
+        buffer.unshift('', resolveFunctionComponentResult(res))
       } else {
         // save the current context state for resuming the suspended subtree
-        buffer.unshift('', resolveArrayToFragment(res, captureRenderContext()))
+        buffer.unshift('', resolveFunctionComponentResult(res, captureRenderContext()))
       }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)

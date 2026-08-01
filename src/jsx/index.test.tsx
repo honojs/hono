@@ -1295,6 +1295,25 @@ d.replaceWith(c.content)
       expect((await template.toString()).toString()).toBe('<span>dark</span><span>x</span>')
     })
 
+    it('isolates a shared async result between providers', async () => {
+      const sharedResult = Promise.resolve(<Consumer />)
+      const SharedConsumer = () => sharedResult
+      const [dark, black] = await Promise.all([
+        (
+          <ThemeContext.Provider value='dark'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+        (
+          <ThemeContext.Provider value='black'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+      ])
+      expect(dark.toString()).toBe('<span>dark</span>')
+      expect(black.toString()).toBe('<span>black</span>')
+    })
+
     it('nested', async () => {
       const template = (
         <ThemeContext.Provider value='dark'>
