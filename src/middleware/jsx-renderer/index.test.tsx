@@ -55,6 +55,22 @@ describe('JSX renderer', () => {
     )
   })
 
+  it('accepts an array result', async () => {
+    const app = new Hono()
+    app.use(jsxRenderer(({ children }) => [<header>Header</header>, <main>{children}</main>]))
+    app.get('/', (c) => c.render(<h1>Hello</h1>, { title: 'Hello' }))
+
+    const res = await app.request('/')
+    expect(await res.text()).toBe(
+      '<!DOCTYPE html><header>Header</header><main><h1>Hello</h1></main>'
+    )
+  })
+
+  it('does not accept a null result', () => {
+    // @ts-expect-error A JSX renderer component must produce renderable content.
+    jsxRenderer(() => null)
+  })
+
   it('Should get the context object as a 2nd arg', async () => {
     const app = new Hono()
     app.use(
