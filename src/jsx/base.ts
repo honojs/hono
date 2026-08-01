@@ -122,10 +122,14 @@ const resolveFunctionComponentResult = (
       return resolved
     }
     const children = Array.isArray(resolved) ? resolved : [resolved]
-    const render = () => new JSXFragmentNode('', {}, children).toString()
-    return Promise.resolve(suspendedContext ? suspendedContext(render) : render()).then((value) =>
-      raw(value, (value as HtmlEscapedString).callbacks)
-    )
+    const render = () => {
+      const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+      childrenToStringToBuffer(children, buffer)
+      return buffer.length === 1
+        ? raw(buffer[0], buffer.callbacks)
+        : stringBufferToString(buffer, buffer.callbacks)
+    }
+    return suspendedContext ? suspendedContext(render) : runWithRenderContext(render)
   })
 
 const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
@@ -137,11 +141,15 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
       continue
     } else if (child instanceof JSXNode) {
       child.toStringToBuffer(buffer)
-    } else if (
-      typeof child === 'number' ||
-      (child as unknown as { isEscaped: boolean }).isEscaped
-    ) {
+    } else if (typeof child === 'number') {
       ;(buffer[0] as string) += child
+    } else if ((child as unknown as HtmlEscaped).isEscaped) {
+      ;(buffer[0] as string) += child
+      const callbacks = (child as unknown as HtmlEscapedString).callbacks
+      if (callbacks) {
+        buffer.callbacks ||= []
+        buffer.callbacks.push(...callbacks)
+      }
     } else if (child instanceof Promise) {
       buffer.unshift('', child)
     } else {

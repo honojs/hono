@@ -1,6 +1,6 @@
 /** @jsxImportSource ./ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { html } from '../helper/html'
+import { html, raw } from '../helper/html'
 import { Hono } from '../hono'
 import { captureRenderContext } from './context'
 import { Suspense, renderToReadableStream } from './streaming'
@@ -182,6 +182,28 @@ describe('render to string', () => {
     const Items = () => [['a', 'b'], [<span>c</span>], null]
     const template = <Items />
     expect(template.toString()).toBe('ab<span>c</span>')
+  })
+
+  it('Component returning an array preserves escaped string callbacks', () => {
+    const Items = () => [
+      raw('a', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] += 'b'
+          }
+        },
+      ]),
+    ]
+    expect((<Items />).toString()).toBe('ab')
+  })
+
+  it('Component returning an array escapes strings', async () => {
+    const SyncItems = () => ['<script>alert(1)</script>']
+    const AsyncItems = async () => ['<script>alert(1)</script>']
+    const expected = '&lt;script&gt;alert(1)&lt;/script&gt;'
+
+    expect((<SyncItems />).toString()).toBe(expected)
+    expect((await (<AsyncItems />).toString()).toString()).toBe(expected)
   })
 
   it('Component returning an array including async components', async () => {
