@@ -284,7 +284,7 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
       }
     : node.props
   try {
-    return [func.call(null, props)]
+    return [func.call(null, props) as Child]
   } finally {
     buildDataStack.pop()
   }

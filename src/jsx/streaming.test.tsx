@@ -56,6 +56,20 @@ describe('Streaming', () => {
     )
   })
 
+  it('preserves callbacks in a streamed async component array', async () => {
+    const phases: number[] = []
+    const Content = async () => [
+      raw('Hello', [({ phase }) => void phases.push(phase)]),
+      <span>World</span>,
+    ]
+
+    const html = await drainStream(renderToReadableStream(<Content />))
+
+    expect(html).toBe('Hello<span>World</span>')
+    expect(phases).toEqual([HtmlEscapedCallbackPhase.BeforeStream, HtmlEscapedCallbackPhase.Stream])
+    suspenseCounter--
+  })
+
   it('Suspense / renderToReadableStream', async () => {
     let contentEvaluatedCount = 0
     const Content = () => {
