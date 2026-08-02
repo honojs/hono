@@ -174,7 +174,6 @@ export class JSXNode implements HtmlEscaped {
   key?: string
   children: Child[]
   isEscaped: true = true as const
-  suspendedContext?: <T>(callback: () => T) => T
   constructor(tag: string | Function, props: Props, children: Child[]) {
     if (typeof tag !== 'function' && !isValidTagName(tag)) {
       throw new Error(`Invalid JSX tag name: ${tag}`)
@@ -204,7 +203,7 @@ export class JSXNode implements HtmlEscaped {
           : buffer[0]
         : stringBufferToString(buffer, buffer.callbacks)
     }
-    return this.suspendedContext ? this.suspendedContext(render) : runWithRenderContext(render)
+    return runWithRenderContext(render)
   }
 
   toStringToBuffer(buffer: StringBufferWithCallbacks): void {
