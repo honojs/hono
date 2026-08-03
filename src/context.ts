@@ -312,7 +312,7 @@ export class Context<
    * })
    * ```
    */
-  env: E['Bindings']
+  env: E['Bindings'] = {}
   #var: Map<unknown, unknown> | undefined
   finalized: boolean = false
   /**
@@ -357,8 +357,6 @@ export class Context<
       this.#notFoundHandler = options.notFoundHandler
       this.#path = options.path
       this.#matchResult = options.matchResult
-    } else {
-      this.env = {}
     }
   }
 
