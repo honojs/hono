@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { detectors } from './language'
+import { DEFAULT_OPTIONS, detectors, normalizeLanguage } from './language'
 import { languageDetector } from '.'
 
 describe('languageDetector', () => {
@@ -107,6 +107,21 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('zh-Hant')
     })
 
+    it('should select the longest truncated match regardless of supported language order', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['zh', 'zh-Hant'],
+        fallbackLanguage: 'zh',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'zh-Hant-CN',
+        },
+      })
+      expect(await res.text()).toBe('zh-Hant')
+    })
+
     it('should fallback when truncation does not match any supported language', async () => {
       const app = createTestApp({
         supportedLanguages: ['en', 'ja'],
@@ -182,6 +197,28 @@ describe('languageDetector', () => {
       })
 
       expect(await res.text()).toBe('en')
+    })
+  })
+
+  describe('Language Normalization', () => {
+    it('should preserve the configured value for a case-insensitive truncated match', () => {
+      expect(
+        normalizeLanguage('zh-HANT-CN', {
+          ...DEFAULT_OPTIONS,
+          supportedLanguages: ['en', 'ZH-Hant'],
+        })
+      ).toBe('ZH-Hant')
+    })
+
+    it('should handle a large unsupported language tag', () => {
+      const unsupportedLanguage = 'x-'.repeat(30_000).slice(0, -1)
+
+      expect(
+        normalizeLanguage(unsupportedLanguage, {
+          ...DEFAULT_OPTIONS,
+          supportedLanguages: ['en', 'ja'],
+        })
+      ).toBeUndefined()
     })
   })
 
