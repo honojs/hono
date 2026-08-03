@@ -1,5 +1,6 @@
 /** @jsxImportSource ../ */
 import { useActionState } from '../'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 
 describe('intrinsic element', () => {
   describe('document metadata', () => {
@@ -15,6 +16,23 @@ describe('intrinsic element', () => {
           </html>
         )
         expect(template.toString()).toBe(
+          '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should hoist a title from an async component array', async () => {
+        const Metadata = async () => [<title>Hello</title>]
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <Metadata />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        const rendered = await template.toString()
+        expect(await resolveCallback(rendered, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
           '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
         )
       })

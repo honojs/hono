@@ -30,6 +30,46 @@ describe('Streaming', () => {
     suspenseCounter++
   })
 
+  it('Suspense / async component returning an array', async () => {
+    const Content = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return [<h1>Hello</h1>, <h2>World</h2>]
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks[0]).toBe(
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`
+    )
+    expect(chunks[1]).toContain(
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><h2>World</h2></template>`
+    )
+  })
+
+  it('preserves callbacks in a streamed async component array', async () => {
+    const phases: number[] = []
+    const Content = async () => [
+      raw('Hello', [({ phase }) => void phases.push(phase)]),
+      <span>World</span>,
+    ]
+
+    const html = await drainStream(renderToReadableStream(<Content />))
+
+    expect(html).toBe('Hello<span>World</span>')
+    expect(phases).toEqual([HtmlEscapedCallbackPhase.BeforeStream, HtmlEscapedCallbackPhase.Stream])
+    suspenseCounter--
+  })
+
   it('Suspense / renderToReadableStream', async () => {
     let contentEvaluatedCount = 0
     const Content = () => {

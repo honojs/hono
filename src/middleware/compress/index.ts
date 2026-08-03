@@ -43,6 +43,8 @@ const selectEncoding = (
   return best?.encoding
 }
 
+const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
+
 /**
  * Compress Middleware for Hono.
  *
@@ -99,6 +101,18 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       !shouldTransform(ctx.res) // cache-control: no-transform
     ) {
       return
+    }
+
+    // From here on the representation is selected from the request's Accept-Encoding,
+    // so caches must key on that header. This is done before the negotiation result is
+    // known, because an identity response served for a missing or unsupported
+    // Accept-Encoding is just as much a negotiated representation: RFC 9110 lists
+    // Accept-Encoding "or lack thereof" as a determining factor. Without this, a shared
+    // cache could reuse the identity response for a client that does accept gzip.
+    // https://www.rfc-editor.org/rfc/rfc9110#field.vary
+    const current = ctx.res.headers.get('Vary')
+    if (current !== '*' && !(current && varyAcceptEncodingRegExp.test(current))) {
+      ctx.header('Vary', current ? `${current}, Accept-Encoding` : 'Accept-Encoding')
     }
 
     const accepted = ctx.req.header('Accept-Encoding')
