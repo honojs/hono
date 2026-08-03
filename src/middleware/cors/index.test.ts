@@ -158,6 +158,13 @@ describe('CORS by Middleware', () => {
     ])
   })
 
+  it('Preflight handles a large Access-Control-Request-Headers value', async () => {
+    const req = new Request('https://localhost/api/abc', { method: 'OPTIONS' })
+    req.headers.append('Access-Control-Request-Headers', 'x' + ' '.repeat(200000) + 'x')
+    const res = await app.request(req)
+    expect(res.status).toBe(204)
+  })
+
   it('Preflight with options', async () => {
     const req = new Request('https://localhost/api2/abc', {
       method: 'OPTIONS',

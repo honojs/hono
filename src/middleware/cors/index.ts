@@ -129,7 +129,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       if (!headers?.length) {
         const requestHeaders = c.req.header('Access-Control-Request-Headers')
         if (requestHeaders) {
-          headers = requestHeaders.split(/\s*,\s*/)
+          headers = requestHeaders.split(',').map((h) => h.trim())
         }
       }
       if (headers?.length) {
