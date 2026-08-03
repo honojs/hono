@@ -266,6 +266,16 @@ describe('Context', () => {
     expect(await res.text()).toBe('this is body')
   })
 
+  it('Can replace the response with one that has immutable headers', async () => {
+    c.res = new Response('first', { headers: { 'X-Custom1': 'Message1' } })
+    // Response.redirect() returns a response whose headers are immutable,
+    // like a response returned by fetch()
+    c.res = Response.redirect('https://example.com/', 301)
+    expect(c.res.status).toBe(301)
+    expect(c.res.headers.get('Location')).toBe('https://example.com/')
+    expect(c.res.headers.get('X-Custom1')).toBe('Message1')
+  })
+
   it('Inherit current status if not specified', async () => {
     c.status(201)
     const res = c.newResponse('this is body', {

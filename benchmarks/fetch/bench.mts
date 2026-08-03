@@ -43,6 +43,12 @@ const makeApp = async (src: string): Promise<any> => {
       await next()
     })
     .get('/mw/hello', (c: any) => c.text('mw'))
+    .use('/replace/*', async (c: any, next: any) => {
+      await next()
+      // the shape of compress/cache-style middleware
+      c.res = new Response(c.res.body, c.res)
+    })
+    .get('/replace/hello', (c: any) => c.text('replace'))
   return app
 }
 
@@ -52,6 +58,7 @@ const ping = new Request('http://localhost/')
 const query = new Request('http://localhost/id/1?name=bun')
 const user = new Request('http://localhost/user')
 const mw = new Request('http://localhost/mw/hello')
+const replace = new Request('http://localhost/replace/hello')
 
 let sink: unknown
 
@@ -62,6 +69,7 @@ const allCases: [string, (app: any) => Promise<unknown>][] = [
   ['query GET /id/1?name=bun', (app) => app.fetch(query)],
   ['json GET /user', (app) => app.fetch(user)],
   ['middleware GET /mw/hello', (app) => app.fetch(mw)],
+  ['replace-res GET /replace/hello', (app) => app.fetch(replace)],
   [
     'body POST /json',
     (app) =>

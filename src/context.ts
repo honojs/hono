@@ -290,6 +290,23 @@ const createResponseInstance = (
   init?: globalThis.ResponseInit
 ): Response => new Response(body, init)
 
+const copyHeadersOnto = (source: Headers, target: Response): void => {
+  for (const [k, v] of source.entries()) {
+    if (k === 'content-type') {
+      continue
+    }
+    if (k === 'set-cookie') {
+      const cookies = source.getSetCookie()
+      target.headers.delete('set-cookie')
+      for (const cookie of cookies) {
+        target.headers.append('set-cookie', cookie)
+      }
+    } else {
+      target.headers.set(k, v)
+    }
+  }
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -415,20 +432,14 @@ export class Context<
    */
   set res(_res: Response | undefined) {
     if (this.#res && _res) {
-      _res = createResponseInstance(_res.body, _res)
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'content-type') {
-          continue
-        }
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
-          }
-        } else {
-          _res.headers.set(k, v)
-        }
+      // Merge the previous response's headers into the new response in place. Recreating
+      // the Response is expensive, so do it only when its headers are immutable (e.g. a
+      // response obtained with `fetch()`) and mutating them throws.
+      try {
+        copyHeadersOnto(this.#res.headers, _res)
+      } catch {
+        _res = createResponseInstance(_res.body, _res)
+        copyHeadersOnto(this.#res.headers, _res)
       }
     }
     this.#res = _res
