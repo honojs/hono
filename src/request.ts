@@ -48,7 +48,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   raw: Request
 
-  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  #validatedData: { [K in keyof ValidationTargets]?: {} } | undefined // Short name of validatedData
   #matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
   /**
@@ -74,7 +74,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.raw = request
     this.path = path
     this.#matchResult = matchResult
-    this.#validatedData = {}
   }
 
   /**
@@ -335,7 +334,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @param data - The validated data to add.
    */
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.#validatedData[target] = data
+    ;(this.#validatedData ??= {})[target] = data
   }
 
   /**
@@ -348,7 +347,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.#validatedData[target] as unknown
+    return this.#validatedData?.[target] as unknown
   }
 
   /**
