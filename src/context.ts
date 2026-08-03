@@ -276,6 +276,9 @@ interface ResponseInit<T extends StatusCode = StatusCode> {
 
 type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Response
 
+const contextHeadersSymbol = Symbol()
+type ResponseWithContextHeaders = Response & { [contextHeadersSymbol]?: true }
+
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
 const setDefaultContentType = (contentType: string, headers?: HeaderRecord): HeaderRecord => {
@@ -412,22 +415,38 @@ export class Context<
    * @param _res - The Response object to set.
    */
   set res(_res: Response | undefined) {
-    if (this.#res && _res) {
-      _res = createResponseInstance(_res.body, _res)
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'content-type') {
-          continue
-        }
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+    if (_res) {
+      if (
+        (this.#res ?? this.#preparedHeaders) &&
+        !(_res as ResponseWithContextHeaders)[contextHeadersSymbol]
+      ) {
+        const headers = new Headers(this.#res?.headers ?? this.#preparedHeaders)
+        headers.delete('content-type')
+
+        let setCookieHandled = false
+        for (const [k, v] of _res.headers.entries()) {
+          if (k === 'set-cookie') {
+            if (setCookieHandled) {
+              continue
+            }
+            setCookieHandled = true
+            for (const cookie of _res.headers.getSetCookie()) {
+              headers.append('set-cookie', cookie)
+            }
+          } else {
+            headers.set(k, v)
           }
-        } else {
-          _res.headers.set(k, v)
         }
+
+        _res = createResponseInstance(_res.body, {
+          headers,
+          status: _res.status,
+          statusText: _res.statusText,
+        })
+        ;(_res as ResponseWithContextHeaders)[contextHeadersSymbol] = true
       }
+    } else {
+      this.#preparedHeaders = undefined
     }
     this.#res = _res
     this.finalized = true
@@ -606,11 +625,12 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    const responseHeaders = this.#res
-      ? new Headers(this.#res.headers)
-      : (this.#preparedHeaders ?? new Headers())
+    const existingHeaders = this.#res ? this.#res.headers : this.#preparedHeaders
+    let responseHeaders: Headers | undefined
 
     if (typeof arg === 'object' && 'headers' in arg) {
+      responseHeaders ??= new Headers(existingHeaders)
+
       const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
       for (const [key, value] of argHeaders) {
         if (key.toLowerCase() === 'set-cookie') {
@@ -622,6 +642,8 @@ export class Context<
     }
 
     if (headers) {
+      responseHeaders ??= new Headers(existingHeaders)
+
       for (const [k, v] of Object.entries(headers)) {
         if (typeof v === 'string') {
           responseHeaders.set(k, v)
@@ -635,7 +657,14 @@ export class Context<
     }
 
     const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
-    return createResponseInstance(data, { status, headers: responseHeaders })
+    const response = createResponseInstance(data, {
+      status,
+      headers: responseHeaders ?? (existingHeaders ? new Headers(existingHeaders) : undefined),
+    })
+    if (existingHeaders) {
+      ;(response as ResponseWithContextHeaders)[contextHeadersSymbol] = true
+    }
+    return response
   }
 
   newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))

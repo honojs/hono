@@ -423,8 +423,8 @@ describe('Context header', () => {
     const newResponse = new Response(null)
     newResponse.headers.append('set-cookie', newCookies[0])
     c.res = newResponse
-    expect(c.res.headers.getSetCookie().length).toBe(cookies.length)
-    expect(c.res.headers.getSetCookie()).toEqual(cookies)
+    expect(c.res.headers.getSetCookie().length).toBe(3)
+    expect(c.res.headers.getSetCookie()).toEqual([...cookies, ...newCookies])
   })
 
   it('Should keep previous cookies in response headers', () => {
@@ -446,6 +446,45 @@ describe('Context header', () => {
     })
     const res = c.text('Hi')
     expect(res.headers.get('set-cookie')).toBe('a, b, c')
+  })
+
+  it('Should not duplicate set-cookie when assigning a response with context headers', () => {
+    c.header('Set-Cookie', 'a=1')
+    c.res = c.text('Hi')
+
+    expect(c.res.headers.getSetCookie()).toEqual(['a=1'])
+  })
+
+  it('Should keep prepared headers when assigning a raw response', async () => {
+    c.header('X-Powered-By-Before', 'Hono')
+    c.res = new Response('Hi')
+    c.header('X-Powered-By-After', 'Hono')
+
+    expect(await c.res.text()).toBe('Hi')
+    expect(c.res.headers.get('X-Powered-By-Before')).toBe('Hono')
+    expect(c.res.headers.get('X-Powered-By-After')).toBe('Hono')
+  })
+
+  it('Should keep response headers isolated when response methods are called repeatedly', async () => {
+    c.header('X-Powered-By', 'Hono')
+    const res1 = c.text('Hi', {
+      headers: {
+        Res1: 'Value1',
+      },
+    })
+    const res2 = c.text('Hi', {
+      headers: {
+        Res2: 'Value2',
+      },
+    })
+
+    expect(res1.headers.get('X-Powered-By')).toBe('Hono')
+    expect(res1.headers.get('Res1')).toBe('Value1')
+    expect(res1.headers.get('Res2')).toBeNull()
+
+    expect(res2.headers.get('X-Powered-By')).toBe('Hono')
+    expect(res2.headers.get('Res1')).toBeNull()
+    expect(res2.headers.get('Res2')).toBe('Value2')
   })
 
   it('Should be able to overwrite a fetch response with a new response.', async () => {
