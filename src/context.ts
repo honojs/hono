@@ -290,6 +290,21 @@ const createResponseInstance = (
   init?: globalThis.ResponseInit
 ): Response => new Response(body, init)
 
+const setHeaderValue = (
+  headers: Headers,
+  name: string,
+  value: string | undefined,
+  options?: SetHeadersOptions
+): void => {
+  if (value === undefined) {
+    headers.delete(name)
+  } else if (options?.append) {
+    headers.append(name, value)
+  } else {
+    headers.set(name, value)
+  }
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -516,16 +531,23 @@ export class Context<
    */
   header: SetHeaders = (name, value, options): void => {
     if (this.finalized) {
-      this.#res = createResponseInstance((this.#res as Response).body, this.#res)
+      // The headers of a finalized response are mutable unless the handler returned a
+      // response whose headers are guarded (e.g. one obtained with `fetch()`). Recreating
+      // the Response is expensive, so do it only when mutating in place throws.
+      try {
+        setHeaderValue((this.#res as Response).headers, name, value, options)
+      } catch {
+        this.#res = createResponseInstance((this.#res as Response).body, this.#res)
+        setHeaderValue(this.#res.headers, name, value, options)
+      }
+      return
     }
-    const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
-    if (value === undefined) {
-      headers.delete(name)
-    } else if (options?.append) {
-      headers.append(name, value)
-    } else {
-      headers.set(name, value)
-    }
+    setHeaderValue(
+      this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers()),
+      name,
+      value,
+      options
+    )
   }
 
   status = (status: StatusCode): void => {

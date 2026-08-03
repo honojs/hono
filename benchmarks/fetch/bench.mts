@@ -43,6 +43,12 @@ const makeApp = async (src: string): Promise<any> => {
       await next()
     })
     .get('/mw/hello', (c: any) => c.text('mw'))
+    .use('/hdr/*', async (c: any, next: any) => {
+      await next()
+      c.header('x-response-time', '3ms')
+      c.header('x-served-by', 'benchmark')
+    })
+    .get('/hdr/hello', (c: any) => c.text('hdr'))
   return app
 }
 
@@ -52,6 +58,7 @@ const ping = new Request('http://localhost/')
 const query = new Request('http://localhost/id/1?name=bun')
 const user = new Request('http://localhost/user')
 const mw = new Request('http://localhost/mw/hello')
+const hdr = new Request('http://localhost/hdr/hello')
 
 let sink: unknown
 
@@ -62,6 +69,7 @@ const allCases: [string, (app: any) => Promise<unknown>][] = [
   ['query GET /id/1?name=bun', (app) => app.fetch(query)],
   ['json GET /user', (app) => app.fetch(user)],
   ['middleware GET /mw/hello', (app) => app.fetch(mw)],
+  ['post-mw headers GET /hdr/hello', (app) => app.fetch(hdr)],
   [
     'body POST /json',
     (app) =>
