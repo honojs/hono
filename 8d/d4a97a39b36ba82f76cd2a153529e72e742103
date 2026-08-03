@@ -1,0 +1,19 @@
+benchmarks/fetch/bench.mts
+  s_15bc14e5037186::t_9e8875218c839c 14,18,58-60,78-88,96-97,99-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8dd4a97a39b36ba82f76cd2a153529e72e742103",
+  "prompts": {},
+  "sessions": {
+    "s_15bc14e5037186": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3dfc0e35-9818-486e-945f-7c17d423f642",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
