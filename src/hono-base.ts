@@ -480,8 +480,8 @@ class Hono<
     request: Request,
     env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => Response | Promise<Response> = (request, env, executionCtx) => {
-    return this.#dispatch(request, executionCtx, env, request.method)
+  ) => Response | Promise<Response> = (request, ...rest) => {
+    return this.#dispatch(request, rest[1], rest[0], request.method)
   }
 
   /**
