@@ -2079,6 +2079,47 @@ describe('Multiple methods with `app.on`', () => {
   })
 })
 
+describe('Using QUERY with `app.query` and `app.on`', () => {
+  it('Should handle QUERY method with app.query()', async () => {
+    const app = new Hono()
+
+    app.query('/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle QUERY method with RegExpRouter', async () => {
+    const app = new Hono({ router: new RegExpRouter() })
+
+    app.on('QUERY', '/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle QUERY method with TrieRouter', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+
+    app.on('QUERY', '/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+})
+
 describe('Multiple paths with one handler', () => {
   const app = new Hono()
 

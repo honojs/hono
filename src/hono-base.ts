@@ -107,6 +107,7 @@ class Hono<
   delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
   options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  query!: HandlerInterface<E, 'query', S, BasePath, CurrentPath>
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
