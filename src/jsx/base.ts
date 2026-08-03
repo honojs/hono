@@ -384,15 +384,7 @@ export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
-  let computed: ReturnType<FC<T>> = null
-  let prevProps: T | undefined = undefined
-  const wrapper: MemorableFC<T> = ((props: T) => {
-    if (prevProps && !propsAreEqual(prevProps, props)) {
-      computed = null
-    }
-    prevProps = props
-    return (computed ||= component(props))
-  }) as MemorableFC<T>
+  const wrapper: MemorableFC<T> = ((props: T) => component(props)) as MemorableFC<T>
 
   // This function is for toString(), but it can also be used for DOM renderer.
   // So, set DOM_MEMO and DOM_RENDERER for DOM renderer.
