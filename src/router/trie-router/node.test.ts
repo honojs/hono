@@ -812,6 +812,35 @@ describe('The same name is used for path params', () => {
   })
 })
 
+describe('Pattern spanning multiple parts', () => {
+  describe('followed by a wildcard', () => {
+    const node = new Node()
+    node.insert('get', '/:file{.*}/*', 'file')
+
+    it('should return the handler once per matching part count', () => {
+      for (const path of ['/a', '/a/b', '/a/b/c', '/a/b/c/d']) {
+        const [res] = node.search('get', path)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toEqual('file')
+      }
+    })
+  })
+
+  describe('followed by a static part', () => {
+    const node = new Node()
+    node.insert('get', '/:dirs{.+}/file.html', 'file.html')
+
+    it('should match however many parts the pattern spans', () => {
+      for (const dirs of ['foo', 'foo/bar', 'foo/bar/baz', 'a/b/c/d']) {
+        const [res] = node.search('get', `/${dirs}/file.html`)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toEqual('file.html')
+        expect(res[0][1]).toEqual({ dirs })
+      }
+    })
+  })
+})
+
 describe('Node with initial method and handler', () => {
   it('should create a node with method and handler via constructor', () => {
     const node = new Node('get', 'initial handler')

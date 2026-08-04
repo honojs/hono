@@ -200,7 +200,11 @@ export class Node<T> {
 
               if (hasChildren(child.#children)) {
                 child.#params = params
-                const componentCount = m[0].match(/\//)?.length ?? 0
+                // Count every slash the pattern consumed, so the node resumes at the
+                // part after the match. A non-global regexp would report 1 for any
+                // number of slashes and resume one part too early, matching a part
+                // the pattern had already consumed.
+                const componentCount = m[0].match(/\//g)?.length ?? 0
                 const targetCurNodes = (curNodesQueue[componentCount] ||= [])
                 targetCurNodes.push(child)
               }
