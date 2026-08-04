@@ -50,6 +50,16 @@ describe('Proxy Middleware', () => {
               },
             })
           )
+        } else if (req.url === 'https://example.com/connection-listed') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                Connection: 'x-connection-scoped, bad name',
+                'X-Connection-Scoped': 'should not be forwarded',
+                'X-Normal': 'kept',
+              },
+            })
+          )
         } else if (req.url === 'https://example.com/set-cookie') {
           return Promise.resolve(
             new Response('ok', {
@@ -231,6 +241,16 @@ describe('Proxy Middleware', () => {
       expect(req.headers.get('Proxy-Authorization')).toBe('Basic 123456')
 
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('remove response headers listed in the Connection header', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+      const res = await app.request('/proxy/connection-listed')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Connection')).toBeNull()
+      expect(res.headers.get('X-Connection-Scoped')).toBeNull()
+      expect(res.headers.get('X-Normal')).toBe('kept')
     })
 
     it('modify header', async () => {

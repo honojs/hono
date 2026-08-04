@@ -374,6 +374,30 @@ describe('DOM', () => {
       expect(Child).toBeCalledTimes(3)
     })
 
+    it('returning an array', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return [<div>{count}</div>, <button onClick={() => setCount(count + 1)}>+</button>]
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div><button>+</button>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div><button>+</button>')
+    })
+
+    it('typed as FC returning an array', async () => {
+      const App: FC = () => {
+        const [count, setCount] = useState(0)
+        return [<div>{count}</div>, <button onClick={() => setCount(count + 1)}>+</button>]
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div><button>+</button>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div><button>+</button>')
+    })
+
     it('multiple children', async () => {
       const Child = ({ name }: { name: string }) => {
         const [count, setCount] = useState(0)
@@ -1905,8 +1929,33 @@ describe('DOM', () => {
   })
 
   describe('useRef', async () => {
+    it('types: non-null initial value returns RefObject<T>', () => {
+      const ref = useRef(new Map<string, number>())
+      // .current is non-nullable; this line would not type-check without the overload
+      ref.current.set('a', 1)
+      expect(ref.current.get('a')).toBe(1)
+    })
+
+    it('types: null initial value returns RefObject<T | null>', () => {
+      const ref = useRef<HTMLDivElement>(null)
+      expect(ref.current).toBeNull()
+    })
+
+    it('types: undefined initial value returns RefObject<T | undefined>', () => {
+      const ref = useRef<number>(undefined)
+      expect(ref.current).toBeUndefined()
+      ref.current = 1
+      expect(ref.current).toBe(1)
+    })
+
     it('simple', async () => {
-      const Input = ({ label, ref }: { label: string; ref: RefObject<HTMLInputElement> }) => {
+      const Input = ({
+        label,
+        ref,
+      }: {
+        label: string
+        ref: RefObject<HTMLInputElement | null>
+      }) => {
         return (
           <div>
             <label>{label}</label>
@@ -2015,7 +2064,7 @@ describe('DOM', () => {
     })
 
     it('cleanup', async () => {
-      const Child = ({ parent }: { parent: RefObject<HTMLElement> }) => {
+      const Child = ({ parent }: { parent: RefObject<HTMLElement | null> }) => {
         useEffect(() => {
           return () => {
             parent.current?.setAttribute('data-cleanup', 'true')
@@ -2115,7 +2164,7 @@ describe('DOM', () => {
     })
 
     it('cleanup', async () => {
-      const Child = ({ parent }: { parent: RefObject<HTMLElement> }) => {
+      const Child = ({ parent }: { parent: RefObject<HTMLElement | null> }) => {
         useLayoutEffect(() => {
           return () => {
             parent.current?.setAttribute('data-cleanup', 'true')
@@ -2229,7 +2278,7 @@ describe('DOM', () => {
     })
 
     it('cleanup', async () => {
-      const Child = ({ parent }: { parent: RefObject<HTMLElement> }) => {
+      const Child = ({ parent }: { parent: RefObject<HTMLElement | null> }) => {
         useInsertionEffect(() => {
           return () => {
             parent.current?.setAttribute('data-cleanup', 'true')

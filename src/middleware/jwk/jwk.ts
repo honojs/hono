@@ -25,6 +25,7 @@ import type { VerifyOptions } from '../../utils/jwt/jwt'
  * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
+ * @param {string} [options.realm] - The protection space described by the `realm` parameter of the returned `WWW-Authenticate` challenge header. Defaults to the request URL.
  * @param {AsymmetricAlgorithm[]} options.alg - An array of allowed asymmetric algorithms for JWT verification. Only tokens signed with these algorithms will be accepted.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
@@ -58,6 +59,8 @@ export const jwk = (
 
     alg: AsymmetricAlgorithm[]
 
+    realm?: string
+
     verification?: VerifyOptions
   },
   init?: RequestInit
@@ -87,6 +90,7 @@ export const jwk = (
             ctx,
             error: 'invalid_request',
             errDescription,
+            realm: options.realm,
           }),
         })
       } else {
@@ -126,6 +130,7 @@ export const jwk = (
           ctx,
           error: 'invalid_request',
           errDescription,
+          realm: options.realm,
         }),
       })
     }
@@ -156,6 +161,7 @@ export const jwk = (
           error: 'invalid_token',
           statusText: 'Unauthorized',
           errDescription: 'token verification failure',
+          realm: options.realm,
         }),
         cause,
       })
@@ -172,12 +178,19 @@ function unauthorizedResponse(opts: {
   error: string
   errDescription: string
   statusText?: string
+  realm?: string
 }) {
+  // `realm` and `error_description` end up inside a quoted-string, so any `"`
+  // they contain has to be escaped or the header is cut short. Same handling as
+  // the bearer-auth middleware.
+  const realm = (opts.realm ?? opts.ctx.req.url).replace(/"/g, '\\"')
+  const errDescription = opts.errDescription.replace(/"/g, '\\"')
+
   return new Response('Unauthorized', {
     status: 401,
     statusText: opts.statusText,
     headers: {
-      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+      'WWW-Authenticate': `Bearer realm="${realm}",error="${opts.error}",error_description="${errDescription}"`,
     },
   })
 }

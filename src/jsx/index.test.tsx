@@ -1,7 +1,8 @@
 /** @jsxImportSource ./ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { html } from '../helper/html'
+import { html, raw } from '../helper/html'
 import { Hono } from '../hono'
+import { DOM_MEMO } from './constants'
 import { captureRenderContext } from './context'
 import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, {
@@ -169,6 +170,68 @@ describe('render to string', () => {
       </p>
     )
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
+  })
+
+  it('Component returning an array', () => {
+    const Item = ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Component returning a nested array', () => {
+    const Items = () => [['a', 'b'], [<span>c</span>], null]
+    const template = <Items />
+    expect(template.toString()).toBe('ab<span>c</span>')
+  })
+
+  it('Component returning an array preserves escaped string callbacks', () => {
+    const Items = () => [
+      raw('a', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] += 'b'
+          }
+        },
+      ]),
+    ]
+    expect((<Items />).toString()).toBe('ab')
+  })
+
+  it('Component returning an array escapes strings', async () => {
+    const SyncItems = () => ['<script>alert(1)</script>']
+    const AsyncItems = async () => ['<script>alert(1)</script>']
+    const expected = '&lt;script&gt;alert(1)&lt;/script&gt;'
+
+    expect((<SyncItems />).toString()).toBe(expected)
+    expect((await (<AsyncItems />).toString()).toString()).toBe(expected)
+  })
+
+  it('Component returning an array including async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <AsyncItem key={x} x={x} />)
+    const template = <Items />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Component typed as FC returning an array', () => {
+    const Item: FC<{ x: number }> = ({ x }) => <span>{x}</span>
+    const Items: FC = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Async component returning an array', async () => {
+    const AsyncItems = async () => [<span>a</span>, <span>b</span>]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>a</span><span>b</span>')
+  })
+
+  it('Async component returning an array of async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const AsyncItems = async () => [<AsyncItem key={0} x={0} />, <AsyncItem key={1} x={1} />]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
   })
 
   it('Empty elements are rended without closing tag', () => {
@@ -742,7 +805,7 @@ describe('className', () => {
 })
 
 describe('memo', () => {
-  it('memoized', () => {
+  it('does not reuse the result of a previous render', () => {
     let counter = 0
     const Header = memo(() => <title>Test Site {counter}</title>)
     const Body = () => <span>{counter}</span>
@@ -773,8 +836,22 @@ describe('memo', () => {
       </html>
     )
     expect(template.toString()).toBe(
-      '<html><head><title>Test Site 0</title></head><body><span>1</span></body></html>'
+      '<html><head><title>Test Site 1</title></head><body><span>1</span></body></html>'
     )
+  })
+
+  it('does not carry a context value into a later render', () => {
+    const NameContext = createContext('anonymous')
+    const Panel = memo(() => <p>{useContext(NameContext)}</p>)
+    const render = (name: string) =>
+      (
+        <NameContext.Provider value={name}>
+          <Panel />
+        </NameContext.Provider>
+      ).toString()
+
+    expect(render('alice')).toBe('<p>alice</p>')
+    expect(render('bob')).toBe('<p>bob</p>')
   })
 
   it('props are updated', () => {
@@ -787,20 +864,15 @@ describe('memo', () => {
     expect(template.toString()).toBe('<span>1</span>')
   })
 
-  it('custom propsAreEqual', () => {
-    const Body = memo(
-      ({ counter }: { counter: number; refresh?: boolean }) => <span>{counter}</span>,
-      (_, nextProps) => (typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh)
-    )
+  it('custom propsAreEqual is handed to the DOM renderer', () => {
+    const propsAreEqual = (_: { counter: number }, nextProps: { counter: number }) =>
+      nextProps.counter === 0
+    const Body = memo(({ counter }: { counter: number }) => <span>{counter}</span>, propsAreEqual)
 
-    let template = <Body counter={0} />
-    expect(template.toString()).toBe('<span>0</span>')
+    expect((Body as any)[DOM_MEMO]).toBe(propsAreEqual)
 
-    template = <Body counter={1} />
-    expect(template.toString()).toBe('<span>0</span>')
-
-    template = <Body counter={2} refresh={true} />
-    expect(template.toString()).toBe('<span>2</span>')
+    expect((<Body counter={0} />).toString()).toBe('<span>0</span>')
+    expect((<Body counter={1} />).toString()).toBe('<span>1</span>')
   })
 })
 
@@ -1240,6 +1312,38 @@ d.replaceWith(c.content)
         </ThemeContext.Provider>
       )
       expect((await template.toString()).toString()).toBe('<span>dark</span>')
+    })
+
+    it('returning an array', async () => {
+      const ArrayConsumer = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return [<span>{useContext(ThemeContext)}</span>, <span>x</span>]
+      }
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ArrayConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<span>dark</span><span>x</span>')
+    })
+
+    it('isolates a shared async result between providers', async () => {
+      const sharedResult = Promise.resolve(<Consumer />)
+      const SharedConsumer = () => sharedResult
+      const [dark, black] = await Promise.all([
+        (
+          <ThemeContext.Provider value='dark'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+        (
+          <ThemeContext.Provider value='black'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+      ])
+      expect(dark.toString()).toBe('<span>dark</span>')
+      expect(black.toString()).toBe('<span>black</span>')
     })
 
     it('nested', async () => {

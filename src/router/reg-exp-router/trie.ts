@@ -6,14 +6,24 @@ export type ReplacementMap = number[]
 export class Trie {
   #context: Context = { varIndex: 0 }
   #root: Node = new Node()
+  #index: number = 0
+  // dynamic path -> [handler index, param assoc]; static paths are not registered
+  paths: Record<string, [number, ParamAssocArray]> = Object.create(null)
 
-  insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamAssocArray {
+  insert(path: string, isStatic: boolean): void {
+    if (isStatic) {
+      // a static path has no pattern; every character is a literal token
+      this.#root.insert(path.split(''), 0, [], this.#context, true)
+      return
+    }
+
     const paramAssoc: ParamAssocArray = []
 
     const groups: [string, string][] = [] // [mark, original string]
+    let markedPath = path
     for (let i = 0; ; ) {
       let replaced = false
-      path = path.replace(/\{[^}]+\}/g, (m) => {
+      markedPath = markedPath.replace(/\{[^}]+\}/g, (m) => {
         const mark = `@\\${i}`
         groups[i] = [mark, m]
         i++
@@ -30,7 +40,7 @@ export class Trie {
      *  - /* wildcard
      *  - character
      */
-    const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g) || []
+    const tokens = markedPath.match(/(?::[^\/]+)|(?:\/\*$)|./g) || []
     for (let i = groups.length - 1; i >= 0; i--) {
       const [mark] = groups[i]
       for (let j = tokens.length - 1; j >= 0; j--) {
@@ -41,9 +51,8 @@ export class Trie {
       }
     }
 
-    this.#root.insert(tokens, index, paramAssoc, this.#context, pathErrorCheckOnly)
-
-    return paramAssoc
+    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, false)
+    this.paths[path] = [this.#index++, paramAssoc]
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {

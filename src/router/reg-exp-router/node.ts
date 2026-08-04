@@ -25,9 +25,9 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard
+  // wildcard: the only wildcard (.*) precedes the tail wildcard
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
-    return 1
+    return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
     return -1
   }
@@ -43,6 +43,7 @@ function compareKey(a: string, b: string): number {
 }
 
 export class Node {
+  // handler index of a dynamic path, or -1 for a static path terminal
   #index?: number
   #varIndex?: number
   #children: Record<string, Node> = Object.create(null)
@@ -52,101 +53,106 @@ export class Node {
     index: number,
     paramMap: ParamAssocArray,
     context: Context,
-    pathErrorCheckOnly: boolean
+    isStatic: boolean
   ): void {
-    if (tokens.length === 0) {
-      if (this.#index !== undefined) {
-        throw PATH_ERROR
-      }
-      if (pathErrorCheckOnly) {
-        return
-      }
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let node: Node = this
+    for (let i = 0, len = tokens.length; i < len; i++) {
+      const token = tokens[i]
+      const pattern =
+        token.length === 1
+          ? token === '*'
+            ? i === len - 1
+              ? ['', '', ONLY_WILDCARD_REG_EXP_STR] // '*' matches to all the trailing paths
+              : ['', '', LABEL_REG_EXP_STR]
+            : null
+          : token === '/*'
+            ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
+            : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
 
-      this.#index = index
-      return
-    }
+      let nextNode: Node
+      if (pattern) {
+        const name = pattern[1]
+        let regexpStr = pattern[2] || LABEL_REG_EXP_STR
+        if (name && pattern[2]) {
+          if (regexpStr === '.*') {
+            throw PATH_ERROR
+          }
+          regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
+          if (/\((?!\?:)/.test(regexpStr)) {
+            // prefix(?:a|b) is allowed, but prefix(a|b) is not
+            throw PATH_ERROR
+          }
+          if (regexpStr.length === 1 && regExpMetaChars.has(regexpStr)) {
+            // a single-char pattern like :x{.} is ambiguous with a literal character
+            throw PATH_ERROR
+          }
+        }
 
-    const [token, ...restTokens] = tokens
-    const pattern =
-      token === '*'
-        ? restTokens.length === 0
-          ? ['', '', ONLY_WILDCARD_REG_EXP_STR] // '*' matches to all the trailing paths
-          : ['', '', LABEL_REG_EXP_STR]
-        : token === '/*'
-          ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
-          : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
-
-    let node
-    if (pattern) {
-      const name = pattern[1]
-      let regexpStr = pattern[2] || LABEL_REG_EXP_STR
-      if (name && pattern[2]) {
-        if (regexpStr === '.*') {
-          throw PATH_ERROR
+        nextNode = node.#children[regexpStr]
+        if (!nextNode) {
+          if (regexpStr !== ONLY_WILDCARD_REG_EXP_STR && regexpStr !== TAIL_WILDCARD_REG_EXP_STR) {
+            for (const k in node.#children) {
+              if (
+                // a single-char pattern coexists with single-char literals as a literal does
+                (regexpStr.length > 1 || k.length > 1) &&
+                k !== ONLY_WILDCARD_REG_EXP_STR &&
+                k !== TAIL_WILDCARD_REG_EXP_STR
+              ) {
+                throw PATH_ERROR
+              }
+            }
+          }
+          nextNode = node.#children[regexpStr] = new Node()
         }
-        regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
-        if (/\((?!\?:)/.test(regexpStr)) {
-          // prefix(?:a|b) is allowed, but prefix(a|b) is not
-          throw PATH_ERROR
-        }
-      }
-
-      node = this.#children[regexpStr]
-      if (!node) {
-        if (
-          Object.keys(this.#children).some(
-            (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-          )
-        ) {
-          throw PATH_ERROR
-        }
-        if (pathErrorCheckOnly) {
-          return
-        }
-        node = this.#children[regexpStr] = new Node()
         if (name !== '') {
-          node.#varIndex = context.varIndex++
+          nextNode.#varIndex ??= context.varIndex++
+          paramMap.push([name, nextNode.#varIndex])
+        }
+      } else {
+        nextNode = node.#children[token]
+        if (!nextNode) {
+          for (const k in node.#children) {
+            if (
+              k.length > 1 &&
+              k !== ONLY_WILDCARD_REG_EXP_STR &&
+              k !== TAIL_WILDCARD_REG_EXP_STR
+            ) {
+              throw PATH_ERROR
+            }
+          }
+          nextNode = node.#children[token] = new Node()
         }
       }
-      if (!pathErrorCheckOnly && name !== '') {
-        paramMap.push([name, node.#varIndex as number])
-      }
-    } else {
-      node = this.#children[token]
-      if (!node) {
-        if (
-          Object.keys(this.#children).some(
-            (k) =>
-              k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-          )
-        ) {
-          throw PATH_ERROR
-        }
-        if (pathErrorCheckOnly) {
-          return
-        }
-        node = this.#children[token] = new Node()
-      }
+
+      node = nextNode
     }
 
-    node.insert(restTokens, index, paramMap, context, pathErrorCheckOnly)
+    if (node.#index !== undefined) {
+      throw PATH_ERROR
+    }
+    node.#index = isStatic ? -1 : index
   }
 
   buildRegExpStr(): string {
     const childKeys = Object.keys(this.#children).sort(compareKey)
 
-    const strList = childKeys.map((k) => {
-      const c = this.#children[k]
-      return (
-        (typeof c.#varIndex === 'number'
-          ? `(${k})@${c.#varIndex}`
-          : regExpMetaChars.has(k)
-            ? `\\${k}`
-            : k) + c.buildRegExpStr()
-      )
-    })
+    const strList = childKeys
+      .map((k) => {
+        const c = this.#children[k]
+        const childStr = c.buildRegExpStr()
+        // an empty childStr means a static-only branch, which is handled by staticMap
+        return childStr === ''
+          ? ''
+          : (typeof c.#varIndex === 'number'
+              ? `(${k})@${c.#varIndex}`
+              : regExpMetaChars.has(k)
+                ? `\\${k}`
+                : k) + childStr
+      })
+      .filter(Boolean)
 
-    if (typeof this.#index === 'number') {
+    if (typeof this.#index === 'number' && this.#index !== -1) {
       strList.unshift(`#${this.#index}`)
     }
 

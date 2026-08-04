@@ -226,6 +226,53 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(304)
   })
 
+  it('Should handle conditional QUERY requests', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.on('QUERY', '/etag/query', (c) => c.text('Hono is great'))
+
+    // unconditional QUERY
+    let res = await app.request('http://localhost/etag/query', {
+      method: 'QUERY',
+      body: 'select *',
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    const etagHeaderValue = res.headers.get('ETag') || ''
+
+    // conditional QUERY with the wrong ETag:
+    res = await app.request('http://localhost/etag/query', {
+      method: 'QUERY',
+      body: 'select *',
+      headers: {
+        'If-None-Match': '"not the right etag"',
+      },
+    })
+    expect(res.status).toBe(200)
+
+    // conditional QUERY with matching ETag:
+    res = await app.request('http://localhost/etag/query', {
+      method: 'QUERY',
+      body: 'select *',
+      headers: {
+        'If-None-Match': etagHeaderValue,
+      },
+    })
+    expect(res.status).toBe(304)
+    expect(res.headers.get('ETag')).toBe(etagHeaderValue)
+    expect(await res.text()).toBe('')
+
+    // conditional QUERY with `*` wildcard:
+    res = await app.request('http://localhost/etag/query', {
+      method: 'QUERY',
+      body: 'select *',
+      headers: {
+        'If-None-Match': '*',
+      },
+    })
+    expect(res.status).toBe(304)
+  })
+
   it('Should not return 304 for `If-None-Match: *` on unsafe methods or error responses', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())

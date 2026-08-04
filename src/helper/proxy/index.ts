@@ -173,6 +173,18 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
 
   const res = await (customFetch || fetch)(req)
   const resHeaders = new Headers(res.headers)
+
+  // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+  // Remove headers listed in the response's own Connection header (MUST per RFC 9110)
+  const connectionValue = resHeaders.get('connection')
+  if (connectionValue) {
+    connectionValue
+      .split(',')
+      .map((h) => h.trim())
+      .filter((h) => ALLOWED_TOKEN_PATTERN.test(h))
+      .forEach((h) => resHeaders.delete(h))
+  }
+
   hopByHopHeaders.forEach((header) => {
     resHeaders.delete(header)
   })

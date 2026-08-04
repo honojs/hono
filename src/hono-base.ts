@@ -107,6 +107,7 @@ class Hono<
   delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
   options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  query!: HandlerInterface<E, 'query', S, BasePath, CurrentPath>
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
@@ -471,14 +472,14 @@ class Hono<
    * @see {@link https://hono.dev/docs/api/hono#fetch}
    *
    * @param {Request} request - request Object of request
-   * @param {Env} Env - env Object
-   * @param {ExecutionContext} - context of execution
+   * @param {Env} env - env Object
+   * @param {ExecutionContext} executionCtx - context of execution
    * @returns {Response | Promise<Response>} response of request
    *
    */
   fetch: (
     request: Request,
-    Env?: E['Bindings'] | {},
+    env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
   ) => Response | Promise<Response> = (request, ...rest) => {
     return this.#dispatch(request, rest[1], rest[0], request.method)

@@ -107,13 +107,22 @@ export const normalizeLanguage = (
     }
 
     // Progressive truncation (RFC 4647 Lookup)
-    const parts = compLang.split('-')
-    for (let i = parts.length - 1; i > 0; i--) {
-      const candidate = parts.slice(0, i).join('-')
-      const prefixIndex = compSupported.indexOf(candidate)
-      if (prefixIndex !== -1) {
-        return options.supportedLanguages[prefixIndex]
+    let longestMatchIndex = -1
+    let longestMatchLength = -1
+    for (let i = 0; i < compSupported.length; i++) {
+      const candidate = compSupported[i]
+      if (
+        candidate.length < compLang.length &&
+        candidate.length > longestMatchLength &&
+        compLang.startsWith(candidate) &&
+        compLang[candidate.length] === '-'
+      ) {
+        longestMatchIndex = i
+        longestMatchLength = candidate.length
       }
+    }
+    if (longestMatchIndex !== -1) {
+      return options.supportedLanguages[longestMatchIndex]
     }
 
     return undefined
