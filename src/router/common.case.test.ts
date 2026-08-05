@@ -535,6 +535,20 @@ export const runTest = ({
         expect(res[0].handler).toEqual('file.html')
         expect(res[0].params['dirs']).toEqual('foo/bar')
       })
+
+      it('GET /foo/bar/baz/file.html', () => {
+        const res = match('GET', '/foo/bar/baz/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dirs']).toEqual('foo/bar/baz')
+      })
+
+      it('GET /a/b/c/d/file.html', () => {
+        const res = match('GET', '/a/b/c/d/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dirs']).toEqual('a/b/c/d')
+      })
     })
 
     describe('Capture regex pattern has trailing wildcard', () => {

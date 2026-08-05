@@ -200,7 +200,7 @@ export class Node<T> {
 
               if (hasChildren(child.#children)) {
                 child.#params = params
-                const componentCount = m[0].match(/\//)?.length ?? 0
+                const componentCount = m[0].match(/\//g)?.length ?? 0
                 const targetCurNodes = (curNodesQueue[componentCount] ||= [])
                 targetCurNodes.push(child)
               }
