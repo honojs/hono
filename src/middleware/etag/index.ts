@@ -4,12 +4,14 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 import { generateDigest } from './digest'
 
 type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
   generateDigest?: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
+  cacheableStatusCodes?: StatusCode[] | undefined
 }
 
 /**
@@ -64,6 +66,7 @@ function initializeGenerator(
  * @param {function(Uint8Array): ArrayBuffer | Promise<ArrayBuffer>} [options.generateDigest] -
  * A custom digest generation function. By default, it uses 'SHA-1'
  * This function is called with the response body as a `Uint8Array` and should return a hash as an `ArrayBuffer` or a Promise of one.
+ * @param {number[] | undefined} [options.cacheableStatusCodes] - An array of status codes for which an ETag can be generated and a 304 response returned. By default, all responses are included.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -80,11 +83,17 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
   const generator = initializeGenerator(options?.generateDigest)
+  const cacheableStatusCodes = options?.cacheableStatusCodes
+    ? new Set<number>(options.cacheableStatusCodes)
+    : undefined
 
   return async function etag(c, next) {
     const ifNoneMatch = c.req.header('If-None-Match') ?? null
 
     await next()
+    if (cacheableStatusCodes && !cacheableStatusCodes.has(c.res.status)) {
+      return
+    }
 
     const res = c.res as Response
     let etag = res.headers.get('ETag')

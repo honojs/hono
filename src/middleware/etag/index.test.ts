@@ -394,4 +394,36 @@ describe('Etag Middleware', () => {
       expect(res.headers.get('ETag')).toBeNull()
     })
   })
+
+  it('Should only generate ETag and return 304 for specified cacheable status codes', async () => {
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        cacheableStatusCodes: [200],
+      })
+    )
+    app.get('/etag/200', (c) => c.text('OK', 200))
+    app.get('/etag/201', (c) => c.text('OK', 201))
+
+    let res = await app.request('http://localhost/etag/200')
+    expect(res.status).toBe(200)
+    const etagOK = res.headers.get('ETag')
+    expect(etagOK).not.toBeNull()
+
+    res = await app.request('http://localhost/etag/200', {
+      headers: { 'If-None-Match': etagOK! },
+    })
+    expect(res.status).toBe(304)
+
+    res = await app.request('http://localhost/etag/201')
+    expect(res.status).toBe(201)
+    expect(res.headers.get('ETag')).toBeNull()
+
+    res = await app.request('http://localhost/etag/201', {
+      headers: { 'If-None-Match': etagOK! },
+    })
+    expect(res.status).toBe(201)
+    expect(res.headers.get('ETag')).toBeNull()
+  })
 })
