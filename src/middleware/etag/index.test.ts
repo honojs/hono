@@ -394,4 +394,40 @@ describe('Etag Middleware', () => {
       expect(res.headers.get('ETag')).toBeNull()
     })
   })
+
+  describe('cacheableStatusCodes option', () => {
+    it('Should skip ETag generation for non-listed status codes', async () => {
+      const app = new Hono()
+      app.use(
+        '/etag/*',
+        etag({
+          cacheableStatusCodes: [200],
+        })
+      )
+      app.get('/etag/ok', (c) => c.text('{}'))
+      app.get('/etag/bad', (c) => c.json({}, 400))
+      app.get('/etag/err', (c) => c.json({}, 500))
+
+      const ok = await app.request('http://localhost/etag/ok')
+      expect(ok.status).toBe(200)
+      expect(ok.headers.get('ETag')).not.toBeNull()
+
+      const bad = await app.request('http://localhost/etag/bad')
+      expect(bad.status).toBe(400)
+      expect(bad.headers.get('ETag')).toBeNull()
+
+      const err = await app.request('http://localhost/etag/err')
+      expect(err.status).toBe(500)
+      expect(err.headers.get('ETag')).toBeNull()
+    })
+
+    it('Should still generate ETags for error statuses when not restricted (default)', async () => {
+      const app = new Hono()
+      app.use('/etag/*', etag())
+      app.get('/etag/bad', (c) => c.json({}, 400))
+      const res = await app.request('http://localhost/etag/bad')
+      expect(res.status).toBe(400)
+      expect(res.headers.get('ETag')).not.toBeNull()
+    })
+  })
 })

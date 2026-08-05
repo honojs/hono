@@ -10,6 +10,12 @@ type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
   generateDigest?: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
+  /**
+   * Status codes for which an ETag may be generated / used for 304 negotiation.
+   * When omitted, all status codes remain eligible (backward compatible).
+   * Common choice for safer caching: `[200]`.
+   */
+  cacheableStatusCodes?: number[]
 }
 
 /**
@@ -64,6 +70,10 @@ function initializeGenerator(
  * @param {function(Uint8Array): ArrayBuffer | Promise<ArrayBuffer>} [options.generateDigest] -
  * A custom digest generation function. By default, it uses 'SHA-1'
  * This function is called with the response body as a `Uint8Array` and should return a hash as an `ArrayBuffer` or a Promise of one.
+ * @param {number[]} [options.cacheableStatusCodes] - Status codes allowed for
+ * ETag generation and 304 negotiation. When omitted, all statuses are eligible
+ * (backward compatible). Prefer `[200]` (or other cacheable 2xx) so identical
+ * error bodies cannot collapse to 304 across different status codes.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -74,12 +84,18 @@ function initializeGenerator(
  * app.get('/etag/abc', (c) => {
  *   return c.text('Hono is hot')
  * })
+ *
+ * // Only attach / negotiate ETags for successful responses
+ * app.use('/cache/*', etag({ cacheableStatusCodes: [200] }))
  * ```
  */
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
   const generator = initializeGenerator(options?.generateDigest)
+  const cacheableStatusCodes = options?.cacheableStatusCodes
+  const isCacheableStatus = (status: number) =>
+    cacheableStatusCodes == null || cacheableStatusCodes.includes(status)
 
   return async function etag(c, next) {
     const ifNoneMatch = c.req.header('If-None-Match') ?? null
@@ -87,6 +103,10 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     await next()
 
     const res = c.res as Response
+    if (!isCacheableStatus(res.status)) {
+      return
+    }
+
     let etag = res.headers.get('ETag')
 
     if (!etag) {
