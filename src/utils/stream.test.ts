@@ -57,6 +57,44 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
   })
 
+  it('pipe() re-acquires writer lock when pipeTo() throws', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+
+    const erroringReadable = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream error'))
+      },
+    })
+
+    await expect(api.pipe(erroringReadable)).rejects.toThrow('upstream error')
+    api.write('after pipe')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('after pipe'))
+  })
+
+  it('pipe() can be called again after a previous pipe() throws', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+
+    const erroringReadable = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream error'))
+      },
+    })
+    await expect(api.pipe(erroringReadable)).rejects.toThrow('upstream error')
+
+    const src = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('second pipe'))
+        controller.close()
+      },
+    })
+    await api.pipe(src)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('second pipe'))
+  })
+
   it('close()', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable, readable)
