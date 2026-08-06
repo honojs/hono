@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from '../../hono'
 
-export const handle =
-  (app: Hono<any, any, any>) =>
-  (req: Request): Response | Promise<Response> => {
+export function handle(
+  app: Hono<any, any, any>
+): (req: Request, ctx?: unknown) => Response | Promise<Response> | void {
+  return (req: Request, ctx?: unknown): Response | Promise<Response> | void => {
     return app.fetch(req)
   }
+}
