@@ -15,6 +15,7 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
+  Next,
   ParamKeyToRecord,
   ParamKeys,
   RemoveQuestion,
@@ -355,6 +356,38 @@ describe('OnHandlerInterface', () => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       return c.json({})
     })
+  })
+
+  test('app.on(method, path[], explicitly typed middleware, handler)', () => {
+    const app = new Hono<{ Bindings: { value: string } }>()
+    const middleware = async (_c: Context, next: Next) => {
+      await next()
+    }
+    const route = app.on('POST', ['/route1', '/route2'], middleware, (c) => {
+      expectTypeOf(c.env.value).toEqualTypeOf<string>()
+      return c.json({ message: 'Hello from route1 or route2' })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type ExpectedPaths = '/route1' | '/route2'
+    type verifyPaths = Expect<Equal<ExpectedPaths, keyof Actual>>
+    type ExpectedOutput = { message: string }
+    type verifyOutput = Expect<Equal<ExpectedOutput, Actual['/route1']['$post']['output']>>
+  })
+
+  test('app.on(method[], path[], middleware response)', async () => {
+    const badRequest = createMiddleware(async (c) => c.json({ badRequest: true }, 400))
+    const route = new Hono().on(['GET', 'POST'], ['/test', '/test2'], badRequest, (c) =>
+      c.json({ success: true }, 200)
+    )
+    const client = hc<typeof route>('http://localhost', { fetch: route.request })
+    const res = await client.test.$get()
+
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ success: true }>()
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ badRequest: true }>()
+    }
   })
 
   test('app.on(method, path[], handler).get(pathless handler) - pathless handler should use last path', () => {
