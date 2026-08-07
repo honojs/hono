@@ -187,7 +187,7 @@ describe('Secure Headers Middleware', () => {
 
     const res = await app.request('/test')
     expect(res.headers.get('Permissions-Policy')).toEqual(
-      'fullscreen=(self), bluetooth=none, payment=(self "example.com"), sync-xhr=(), camera=none, microphone=*, ' +
+      'fullscreen=(self), bluetooth=(), payment=(self "example.com"), sync-xhr=(), camera=(), microphone=*, ' +
         'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
         'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
         'magnetometer=("https://a.example.com" "https://b.example.com")'
