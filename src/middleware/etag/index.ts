@@ -86,6 +86,13 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
 
     await next()
 
+    if (
+      !(c.req.method === 'GET' || c.req.method === 'HEAD' || c.req.method === 'QUERY') ||
+      !c.res.ok
+    ) {
+      return
+    }
+
     const res = c.res as Response
     let etag = res.headers.get('ETag')
 
@@ -104,10 +111,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
-    const matched =
-      ifNoneMatch === '*'
-        ? (c.req.method === 'GET' || c.req.method === 'HEAD' || c.req.method === 'QUERY') && res.ok
-        : etagMatches(etag, ifNoneMatch)
+    const matched = ifNoneMatch === '*' || etagMatches(etag, ifNoneMatch)
 
     if (matched) {
       c.res = new Response(null, {

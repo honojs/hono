@@ -273,13 +273,13 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(304)
   })
 
-  it('Should not return 304 for `If-None-Match: *` on unsafe methods or error responses', async () => {
+  it('Should not return 304 on unsafe methods or error responses', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
-    app.put('/etag/put', (c) => c.text('created', 201))
-    app.get('/etag/not-found', (c) => c.text('not found', 404))
+    app.put('/etag/put', (c) => c.text('created', 201, { ETag: '"etag-123"' }))
+    app.get('/etag/not-found', (c) => c.text('not found', 404, { ETag: '"etag-123"' }))
 
-    // `*` does not apply to unsafe methods:
+    // Unsafe methods:
     let res = await app.request('http://localhost/etag/put', {
       method: 'PUT',
       headers: {
@@ -289,10 +289,26 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(201)
     expect(await res.text()).toBe('created')
 
-    // `*` does not apply when there is no current representation:
+    res = await app.request('http://localhost/etag/put', {
+      method: 'PUT',
+      headers: {
+        'If-None-Match': '"etag-123"',
+      },
+    })
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('created')
+
+    // Error responses:
     res = await app.request('http://localhost/etag/not-found', {
       headers: {
         'If-None-Match': '*',
+      },
+    })
+    expect(res.status).toBe(404)
+
+    res = await app.request('http://localhost/etag/not-found', {
+      headers: {
+        'If-None-Match': '"etag-123"',
       },
     })
     expect(res.status).toBe(404)
