@@ -316,6 +316,11 @@
       "import": "./dist/router/linear-router/index.js",
       "require": "./dist/cjs/router/linear-router/index.js"
     },
+    "./router/transform-router": {
+      "types": "./dist/types/router/transform-router/index.d.ts",
+      "import": "./dist/router/transform-router/index.js",
+      "require": "./dist/cjs/router/transform-router/index.js"
+    },
     "./utils/jwt": {
       "types": "./dist/types/utils/jwt/index.d.ts",
       "import": "./dist/utils/jwt/index.js",
@@ -583,6 +588,9 @@
       ],
       "router/linear-router": [
         "./dist/types/router/linear-router"
+      ],
+      "router/transform-router": [
+        "./dist/types/router/transform-router"
       ],
       "utils/jwt": [
         "./dist/types/utils/jwt/index.d.ts"
