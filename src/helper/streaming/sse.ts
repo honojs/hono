@@ -63,8 +63,6 @@ const run = async (
     } else {
       console.error(e)
     }
-  } finally {
-    stream.close()
   }
 }
 
