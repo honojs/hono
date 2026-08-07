@@ -154,12 +154,18 @@ export const parseSigned = async (
   for (const [key, value] of Object.entries(parse(cookie, name))) {
     const signatureStartPos = value.lastIndexOf('.')
     if (signatureStartPos < 1) {
+      if (name === key) {
+        parsedCookie[key] = false
+      }
       continue
     }
 
     const signedValue = value.substring(0, signatureStartPos)
     const signature = value.substring(signatureStartPos + 1)
     if (signature.length !== 44 || !signature.endsWith('=')) {
+      if (name === key) {
+        parsedCookie[key] = false
+      }
       continue
     }
 
