@@ -61,6 +61,12 @@ export interface RouterRoute {
   handler: H
 }
 
+export type HandlerWrapper = (
+  c: Context,
+  next: Next,
+  route: RouterRoute
+) => Response | void | Promise<Response | void>
+
 ////////////////////////////////////////
 //////                            //////
 //////          Handlers          //////
