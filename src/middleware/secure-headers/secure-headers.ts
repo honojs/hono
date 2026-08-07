@@ -297,15 +297,18 @@ function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): strin
       const kebabDirective = camelToKebab(directive)
 
       if (typeof value === 'boolean') {
-        return `${kebabDirective}=${value ? '*' : 'none'}`
+        return `${kebabDirective}=${value ? '*' : '()'}`
       }
 
       if (Array.isArray(value)) {
         if (value.length === 0) {
           return `${kebabDirective}=()`
         }
-        if (value.length === 1 && (value[0] === '*' || value[0] === 'none')) {
-          return `${kebabDirective}=${value[0]}`
+        if (value.length === 1 && value[0] === '*') {
+          return `${kebabDirective}=*`
+        }
+        if (value.length === 1 && value[0] === 'none') {
+          return `${kebabDirective}=()`
         }
         const allowlist = value.map((item) => (['self', 'src'].includes(item) ? item : `"${item}"`))
         return `${kebabDirective}=(${allowlist.join(' ')})`
