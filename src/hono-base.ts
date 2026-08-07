@@ -208,8 +208,9 @@ class Hono<
   #notFoundHandler: NotFoundHandler = notFoundHandler
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
-  // Cannot use `#` because it is set via `Object.assign` in the constructor.
-  private handlerWrapper: HandlerWrapper = defaultHandlerWrapper
+  // Public and not `#` or `private`: it is set via `Object.assign` in the constructor,
+  // and a Hono instance must remain assignable to `HonoOptions` for extended classes
+  handlerWrapper: HandlerWrapper = defaultHandlerWrapper
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
