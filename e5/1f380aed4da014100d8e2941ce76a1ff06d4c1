@@ -1,0 +1,19 @@
+src/hono-base.ts
+  s_9ada027e81fe12::t_cce902bc140e7b 211-213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e51f380aed4da014100d8e2941ce76a1ff06d4c1",
+  "prompts": {},
+  "sessions": {
+    "s_9ada027e81fe12": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "238a690b-bc25-4949-91a4-72cc70c46dfd",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
