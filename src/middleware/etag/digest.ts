@@ -1,18 +1,3 @@
-const mergeBuffers = (
-  buffer1: ArrayBuffer | undefined,
-  buffer2: Uint8Array<ArrayBuffer>
-): Uint8Array<ArrayBuffer> => {
-  if (!buffer1) {
-    return buffer2
-  }
-  const merged = new Uint8Array<ArrayBuffer>(
-    new ArrayBuffer(buffer1.byteLength + buffer2.byteLength)
-  )
-  merged.set(new Uint8Array(buffer1), 0)
-  merged.set(buffer2, buffer1.byteLength)
-  return merged
-}
-
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
   generator: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
@@ -21,7 +6,8 @@ export const generateDigest = async (
     return null
   }
 
-  let result: ArrayBuffer | undefined = undefined
+  const chunks: Uint8Array<ArrayBuffer>[] = []
+  let totalLength = 0
 
   const reader = stream.getReader()
   for (;;) {
@@ -29,13 +15,22 @@ export const generateDigest = async (
     if (done) {
       break
     }
-
-    result = await generator(mergeBuffers(result, value))
+    chunks.push(value)
+    totalLength += value.byteLength
   }
 
-  if (!result) {
+  if (chunks.length === 0) {
     return null
   }
+
+  const merged = new Uint8Array<ArrayBuffer>(new ArrayBuffer(totalLength))
+  let offset = 0
+  for (const chunk of chunks) {
+    merged.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+
+  const result = await generator(merged)
 
   return Array.prototype.map
     .call(new Uint8Array(result), (x) => x.toString(16).padStart(2, '0'))

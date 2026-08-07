@@ -386,6 +386,36 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(304)
   })
 
+  it('Should generate standard SHA-1 hash for chunked stream instead of incremental incorrect hash', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/chunked', (c) => {
+      const stream = new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder()
+          controller.enqueue(encoder.encode('Hono '))
+          controller.enqueue(encoder.encode('is hot'))
+          controller.close()
+        },
+      })
+      return c.body(stream)
+    })
+    const res = await app.request('http://localhost/etag/chunked')
+    expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
+  })
+
+  it('Should skip ETag generation for text/event-stream (SSE)', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/sse', (c) => {
+      return c.text('data: hello\n\n', 200, {
+        'Content-Type': 'text/event-stream',
+      })
+    })
+    const res = await app.request('http://localhost/etag/sse')
+    expect(res.headers.get('ETag')).toBeNull()
+  })
+
   describe('When crypto is not available', () => {
     let _crypto: Crypto | undefined
     beforeAll(() => {
