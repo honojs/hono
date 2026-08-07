@@ -232,6 +232,20 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBe(false)
   })
 
+  it('Should parse one signed cookie specified by name and return "false" if cookie has no signature', async () => {
+    const secret = 'secret ingredient'
+    const cookieString = 'yummy_cookie=choco; tasty_cookie=strawberry'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
+    expect(cookie['tasty_cookie']).toBe(false)
+  })
+
+  it('Should parse one signed cookie specified by name and return "false" if cookie signature has invalid length', async () => {
+    const secret = 'secret ingredient'
+    const cookieString = 'tasty_cookie=strawberry.short'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
+    expect(cookie['tasty_cookie']).toBe(false)
+  })
+
   it('Should parse signed cookies and ignore regular cookies', async () => {
     const secret = 'secret ingredient'
     // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
