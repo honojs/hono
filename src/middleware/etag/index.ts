@@ -87,6 +87,11 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     await next()
 
     const res = c.res as Response
+    const contentType = res.headers.get('Content-Type')
+    if (contentType && contentType.includes('text/event-stream')) {
+      return
+    }
+
     let etag = res.headers.get('ETag')
 
     if (!etag) {
