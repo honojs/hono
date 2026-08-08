@@ -274,6 +274,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       validator('cookie', () => {
         return {
           hello: 'world',
+          goodbye: 'moon',
         }
       }),
       (c) => {
@@ -312,9 +313,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       return HttpResponse.json({ 'x-message-id': message })
     }),
     http.get('http://localhost/api/cookie', async ({ request }) => {
-      const obj = parse(request.headers.get('cookie') || '')
-      const value = obj['hello']
-      return HttpResponse.json({ hello: value })
+      return HttpResponse.json(parse(request.headers.get('cookie') || ''))
     })
   )
 
@@ -373,6 +372,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
   it('Should get 200 response - cookie', async () => {
     const cookie = {
       hello: 'world',
+      goodbye: 'moon',
     }
     const res = await client.cookie.$get({
       cookie,

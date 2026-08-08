@@ -98,9 +98,9 @@ class ClientRequestImpl {
     if (args?.cookie) {
       const cookies: string[] = []
       for (const [key, value] of Object.entries(args.cookie)) {
-        cookies.push(serialize(key, value, { path: '/' }))
+        cookies.push(serialize(key, value))
       }
-      headerValues['Cookie'] = cookies.join(',')
+      headerValues['Cookie'] = cookies.join('; ')
     }
 
     if (this.cType) {
