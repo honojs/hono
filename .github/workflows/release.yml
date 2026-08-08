@@ -18,15 +18,19 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.tool-versions'
           registry-url: 'https://registry.npmjs.org'
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: '.tool-versions'
-      - run: npm install -g npm@11.17.0
+          no-cache: true
+      - run: npm install -g npm@11.17.0 # zizmor: ignore[adhoc-packages] npm is pinned to an exact version for staged publishing
       - run: bun install --frozen-lockfile
       - run: bun run build
       - name: Publish to npm
@@ -41,9 +45,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Install deno
-        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
         with:
           deno-version-file: '.tool-versions'
       - run: deno install --no-lock --allow-scripts

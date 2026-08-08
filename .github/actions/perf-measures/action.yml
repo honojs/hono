@@ -10,7 +10,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version-file: '.tool-versions'
     - run: |
@@ -44,7 +44,7 @@ runs:
 
     - name: Run octocov
       if: ${{ inputs.target-ref == 'auto' }}
-      uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1
+      uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1.5.1
       with:
         config: perf-measures/.octocov.consolidated.perf-measures.yml
       env:
@@ -54,7 +54,7 @@ runs:
 
     - name: Run octocov with custom target ref
       if: ${{ inputs.target-ref == 'main' }}
-      uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1
+      uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1.5.1
       with:
         config: perf-measures/.octocov.consolidated.perf-measures.main.yml
       env:
