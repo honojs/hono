@@ -2459,16 +2459,18 @@ export interface OnHandlerInterface<
   <
     M extends string,
     const Ps extends string[],
-    I extends Input = BlankInput,
     R extends HandlerResponse<any> = any,
+    I extends Input = BlankInput,
+    I2 extends Input = I,
     E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
   >(
     methods: M | M[],
     paths: Ps,
-    ...handlers: H<E2, MergePath<BasePath, Ps[number]>, I, R>[]
+    ...handlers: [...H<E2, MergePath<BasePath, Ps[number]>, I>[], H<E3, MergePath<BasePath, Ps[number]>, I2, R>]
   ): HonoBase<
-    E,
-    S & ToSchema<M, MergePath<BasePath, Ps[number]>, I, MergeTypedResponse<R>>,
+    IntersectNonAnyTypes<[E, E2, E3]>,
+    S & ToSchema<M, MergePath<BasePath, Ps[number]>, I2, MergeTypedResponse<R>>,
     BasePath,
     Ps extends [...string[], infer LastPath extends string] ? MergePath<BasePath, LastPath> : never
   >

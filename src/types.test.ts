@@ -2,6 +2,7 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import { Context } from './context'
+import type { Next } from './types'
 import { createMiddleware } from './helper/factory'
 import { testClient } from './helper/testing'
 import { Hono } from './hono'
@@ -354,6 +355,19 @@ describe('OnHandlerInterface', () => {
     app.on('GET', ['/a', '/b'], middleware, (c) => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       return c.json({})
+    })
+  })
+
+  // Regression for https://github.com/honojs/hono/issues/5144
+  // An inline middleware whose inferred return type is Promise<void> (async fn
+  // returning next()) used to make the path[] overload infer R = Promise<void>
+  // for every handler, rejecting the final JSON-returning handler.
+  test('app.on(method, path[], inline middleware returning next(), handler) should infer handler response', () => {
+    const middleware = async (_c: Context, next: Next) => {
+      return next()
+    }
+    app.on('POST', ['/route1', '/route2'], middleware, (c) => {
+      return c.json({ message: 'Hello from route1 or route2' })
     })
   })
 
