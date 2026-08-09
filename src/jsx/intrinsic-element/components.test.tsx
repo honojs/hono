@@ -36,6 +36,43 @@ describe('intrinsic element', () => {
           '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
         )
       })
+
+      it('should hoist a title with async children', async () => {
+        const AsyncChild = async () => <>{'Hello'}</>
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <title>
+                <AsyncChild />
+              </title>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        const rendered = await template.toString()
+        expect(await resolveCallback(rendered, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
+          '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should render a title with async children without a head element', async () => {
+        const AsyncChild = async () => <>{'Hello'}</>
+        const template = (
+          <html>
+            <body>
+              <title>
+                <AsyncChild />
+              </title>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        const rendered = await template.toString()
+        const html = await resolveCallback(rendered, HtmlEscapedCallbackPhase.Stringify, false, {})
+        expect(html.toString()).toBe('<html><body><title>Hello</title><h1>World</h1></body></html>')
+        expect(html.toString()).not.toContain('[object Promise]')
+      })
     })
 
     describe('link element', () => {

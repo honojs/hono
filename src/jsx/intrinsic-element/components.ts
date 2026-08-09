@@ -108,7 +108,7 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
 
   if (string instanceof Promise) {
     return string.then((resString) =>
-      raw(string, [
+      raw(resString, [
         ...((resString as HtmlEscapedString).callbacks || []),
         insertIntoHead(tag, resString, restProps, precedence),
       ])
