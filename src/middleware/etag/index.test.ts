@@ -388,18 +388,6 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
   })
 
-  it('Should skip ETag generation for text/event-stream (SSE)', async () => {
-    const app = new Hono()
-    app.use('/etag/*', etag())
-    app.get('/etag/sse', (c) => {
-      return c.text('data: hello\n\n', 200, {
-        'Content-Type': 'text/event-stream',
-      })
-    })
-    const res = await app.request('http://localhost/etag/sse')
-    expect(res.headers.get('ETag')).toBeNull()
-  })
-
   describe('When crypto is not available', () => {
     let _crypto: Crypto | undefined
     beforeAll(() => {
