@@ -130,6 +130,37 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should return the same etag regardless of ReadableStream chunk boundaries', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/rs1', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(100_000))
+            controller.close()
+          },
+        })
+      )
+    })
+    app.get('/etag/rs2', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(1))
+            controller.enqueue(new Uint8Array(32_768))
+            controller.enqueue(new Uint8Array(67_231))
+            controller.close()
+          },
+        })
+      )
+    })
+
+    const res1 = await app.request('http://localhost/etag/rs1')
+    const res2 = await app.request('http://localhost/etag/rs2')
+    expect(res2.headers.get('ETag')).toBe(res1.headers.get('ETag'))
+  })
+
   it('Should not return etag header when the stream is empty', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())

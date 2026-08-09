@@ -13,6 +13,8 @@ const mergeBuffers = (
   return merged
 }
 
+const CHUNK_SIZE = 64 * 1024
+
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
   generator: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
@@ -22,6 +24,8 @@ export const generateDigest = async (
   }
 
   let result: ArrayBuffer | undefined = undefined
+  let chunk: Uint8Array<ArrayBuffer> | undefined
+  let chunkLength = 0
 
   const reader = stream.getReader()
   for (;;) {
@@ -30,7 +34,24 @@ export const generateDigest = async (
       break
     }
 
-    result = await generator(mergeBuffers(result, value))
+    let offset = 0
+    while (offset < value.byteLength) {
+      chunk ??= new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
+
+      const length = Math.min(CHUNK_SIZE - chunkLength, value.byteLength - offset)
+      chunk.set(value.subarray(offset, offset + length), chunkLength)
+      chunkLength += length
+      offset += length
+
+      if (chunkLength === CHUNK_SIZE) {
+        result = await generator(mergeBuffers(result, chunk))
+        chunkLength = 0
+      }
+    }
+  }
+
+  if (chunk && chunkLength > 0) {
+    result = await generator(mergeBuffers(result, chunk.subarray(0, chunkLength)))
   }
 
   if (!result) {
