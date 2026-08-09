@@ -137,7 +137,7 @@ describe('Etag Middleware', () => {
       return c.body(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new Uint8Array(100_000))
+            controller.enqueue(new Uint8Array(1_000_000))
             controller.close()
           },
         })
@@ -149,7 +149,7 @@ describe('Etag Middleware', () => {
           start(controller) {
             controller.enqueue(new Uint8Array(1))
             controller.enqueue(new Uint8Array(32_768))
-            controller.enqueue(new Uint8Array(67_231))
+            controller.enqueue(new Uint8Array(967_231))
             controller.close()
           },
         })

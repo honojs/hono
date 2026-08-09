@@ -13,7 +13,7 @@ const mergeBuffers = (
   return merged
 }
 
-const CHUNK_SIZE = 64 * 1024
+const CHUNK_SIZE = 256 * 1024
 
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
@@ -27,6 +27,10 @@ export const generateDigest = async (
   let chunk: Uint8Array<ArrayBuffer> | undefined
   let chunkLength = 0
 
+  const digest = async (body: Uint8Array<ArrayBuffer>) => {
+    result = await generator(mergeBuffers(result, body))
+  }
+
   const reader = stream.getReader()
   for (;;) {
     const { value, done } = await reader.read()
@@ -36,22 +40,49 @@ export const generateDigest = async (
 
     let offset = 0
     while (offset < value.byteLength) {
-      chunk ??= new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
+      const remaining = value.byteLength - offset
 
-      const length = Math.min(CHUNK_SIZE - chunkLength, value.byteLength - offset)
-      chunk.set(value.subarray(offset, offset + length), chunkLength)
-      chunkLength += length
-      offset += length
-
-      if (chunkLength === CHUNK_SIZE) {
-        result = await generator(mergeBuffers(result, chunk))
-        chunkLength = 0
+      if (chunkLength === 0 && remaining >= CHUNK_SIZE) {
+        await digest(value.subarray(offset, offset + CHUNK_SIZE))
+        offset += CHUNK_SIZE
+        continue
       }
+
+      const requiredLength = chunkLength + remaining
+      if (requiredLength < CHUNK_SIZE) {
+        if (!chunk) {
+          chunk = value.subarray(offset)
+        } else {
+          if (chunk.byteLength < requiredLength) {
+            const nextChunk = new Uint8Array<ArrayBuffer>(
+              new ArrayBuffer(Math.min(CHUNK_SIZE, Math.max(requiredLength, chunk.byteLength * 2)))
+            )
+            nextChunk.set(chunk.subarray(0, chunkLength))
+            chunk = nextChunk
+          }
+          chunk.set(value.subarray(offset), chunkLength)
+        }
+        chunkLength = requiredLength
+        break
+      }
+
+      const length = CHUNK_SIZE - chunkLength
+      if (chunk?.byteLength !== CHUNK_SIZE) {
+        const nextChunk = new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
+        if (chunk) {
+          nextChunk.set(chunk.subarray(0, chunkLength))
+        }
+        chunk = nextChunk
+      }
+      chunk.set(value.subarray(offset, offset + length), chunkLength)
+      await digest(chunk)
+      chunkLength = 0
+      offset += length
     }
   }
 
   if (chunk && chunkLength > 0) {
-    result = await generator(mergeBuffers(result, chunk.subarray(0, chunkLength)))
+    await digest(chunk.subarray(0, chunkLength))
   }
 
   if (!result) {
