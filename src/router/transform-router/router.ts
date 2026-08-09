@@ -1,54 +1,48 @@
 import type { Result, Router } from '../../router'
-import { RegExpRouter } from '../reg-exp-router'
-import { SmartRouter } from '../smart-router'
-import { TrieRouter } from '../trie-router'
+import type { H, RouterRoute } from '../../types'
 
-export type RouterTransform<T> = (handler: T, method: string, path: string) => T
+export type HandlerTransform = (route: Readonly<RouterRoute>) => H
 
-export type TransformRouterOptions<T> = {
+export type TransformRouterOptions = {
   /**
    * The router to which transformed registrations and matching are delegated.
    */
-  delegateRouter?: Router<T>
-  transform: RouterTransform<T>
+  delegateRouter: Router<[H, RouterRoute]>
+  transform: HandlerTransform
 }
 
 /**
- * A router decorator that transforms handlers when they are registered and delegates matching to
- * another router.
+ * A router decorator that transforms Hono handlers when they are registered and delegates matching
+ * to another router.
  *
  * @example
  * ```ts
  * import { Hono } from 'hono'
+ * import { RegExpRouter } from 'hono/router/reg-exp-router'
  * import { TransformRouter } from 'hono/router/transform-router'
  *
  * const app = new Hono({
  *   router: new TransformRouter({
- *     transform: ([handler, route]) => [
- *       async (c, next) => {
- *         console.time(route.path)
- *         try {
- *           return await handler(c, next)
- *         } finally {
- *           console.timeEnd(route.path)
- *         }
- *       },
- *       route,
- *     ],
+ *     delegateRouter: new RegExpRouter(),
+ *     transform: ({ handler, method, path }) => async (c, next) => {
+ *       const label = `${method} ${path}`
+ *       console.time(label)
+ *       try {
+ *         return await handler(c, next)
+ *       } finally {
+ *         console.timeEnd(label)
+ *       }
+ *     },
  *   }),
  * })
  * ```
  */
-export class TransformRouter<T> implements Router<T> {
-  #delegateRouter: Router<T>
-  #transform: RouterTransform<T>
+export class TransformRouter implements Router<[H, RouterRoute]> {
+  #delegateRouter: Router<[H, RouterRoute]>
+  #transform: HandlerTransform
 
-  constructor(init: TransformRouterOptions<T>) {
-    this.#delegateRouter =
-      init.delegateRouter ??
-      new SmartRouter({
-        routers: [new RegExpRouter(), new TrieRouter()],
-      })
+  constructor(init: TransformRouterOptions) {
+    this.#delegateRouter = init.delegateRouter
     this.#transform = init.transform
   }
 
@@ -56,11 +50,11 @@ export class TransformRouter<T> implements Router<T> {
     return `TransformRouter + ${this.#delegateRouter.name}`
   }
 
-  add(method: string, path: string, handler: T): void {
-    this.#delegateRouter.add(method, path, this.#transform(handler, method, path))
+  add(method: string, path: string, [handler, route]: [H, RouterRoute]): void {
+    this.#delegateRouter.add(method, path, [this.#transform({ ...route, handler }), route])
   }
 
-  match(method: string, path: string): Result<T> {
+  match(method: string, path: string): Result<[H, RouterRoute]> {
     return this.#delegateRouter.match(method, path)
   }
 }

@@ -4,4 +4,4 @@
  */
 
 export { TransformRouter } from './router'
-export type { RouterTransform, TransformRouterOptions } from './router'
+export type { HandlerTransform, TransformRouterOptions } from './router'

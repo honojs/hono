@@ -2,23 +2,24 @@ import { matchedRoutes } from '../../helper/route'
 import { Hono } from '../../hono'
 import type { Result, Router } from '../../router'
 import type { H, Handler, MiddlewareHandler, RouterRoute } from '../../types'
-import { runTest } from '../common.case.test'
 import { RegExpRouter } from '../reg-exp-router'
 import { TransformRouter } from './router'
 
 describe('TransformRouter', () => {
-  runTest({
-    newRouter: <T>() =>
-      new TransformRouter<T>({
-        transform: (handler) => handler,
-      }),
-  })
-
   it('transforms registrations and delegates matching', () => {
-    const matchResult: Result<string> = [[['matched', {}]]]
-    const added: [string, string, string][] = []
+    const routeHandler: H = vi.fn()
+    const currentHandler: H = vi.fn()
+    const transformedHandler: H = vi.fn()
+    const route: RouterRoute = {
+      basePath: '/',
+      method: 'GET',
+      path: '/posts',
+      handler: routeHandler,
+    }
+    const matchResult: Result<[H, RouterRoute]> = [[[[transformedHandler, route], {}]]]
+    const added: [string, string, [H, RouterRoute]][] = []
     const matched: [string, string][] = []
-    const delegateRouter: Router<string> = {
+    const delegateRouter: Router<[H, RouterRoute]> = {
       name: 'DelegateRouter',
       add(method, path, handler) {
         added.push([method, path, handler])
@@ -28,16 +29,15 @@ describe('TransformRouter', () => {
         return matchResult
       },
     }
-    const transform = vi.fn((handler: string, method: string, path: string) => {
-      return `${method} ${path}: ${handler}`
-    })
+    const transform = vi.fn((_route: Readonly<RouterRoute>) => transformedHandler)
     const router = new TransformRouter({ delegateRouter, transform })
 
-    router.add('GET', '/posts', 'handler')
+    router.add('GET', '/posts', [currentHandler, route])
     const result = router.match('POST', '/comments')
 
-    expect(transform).toHaveBeenCalledWith('handler', 'GET', '/posts')
-    expect(added).toEqual([['GET', '/posts', 'GET /posts: handler']])
+    expect(transform).toHaveBeenCalledWith({ ...route, handler: currentHandler })
+    expect(added).toEqual([['GET', '/posts', [transformedHandler, route]]])
+    expect(route.handler).toBe(routeHandler)
     expect(matched).toEqual([['POST', '/comments']])
     expect(result).toBe(matchResult)
     expect(router.name).toBe('TransformRouter + DelegateRouter')
@@ -48,17 +48,17 @@ describe('TransformRouter', () => {
     const registrations: string[] = []
     const app = new Hono({
       router: new TransformRouter({
-        transform: ([handler, route], method, path) => {
+        delegateRouter: new RegExpRouter(),
+        transform: ({ handler, method, path }) => {
           registrations.push(`${method} ${path}`)
-          const wrapped: H = async (c, next) => {
-            events.push(`start:${route.handler.name}`)
+          return async (c, next) => {
+            events.push(`start:${handler.name}`)
             try {
               return await handler(c, next)
             } finally {
-              events.push(`end:${route.handler.name}`)
+              events.push(`end:${handler.name}`)
             }
           }
-          return [wrapped, route]
         },
       }),
     })
@@ -83,7 +83,7 @@ describe('TransformRouter', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('ok')
     expect(registrations).toEqual(['ALL /posts/*', 'GET /posts/:id'])
-    expect(app.router.name).toBe('TransformRouter + SmartRouter + RegExpRouter')
+    expect(app.router.name).toBe('TransformRouter + RegExpRouter')
     expect(app.routes.map((route) => route.handler)).toEqual([middleware, handler])
     expect(events).toEqual([
       'start:middleware',
@@ -98,18 +98,17 @@ describe('TransformRouter', () => {
 
   it('observes errors before Hono handles them', async () => {
     const errors: string[] = []
-    const router = new TransformRouter<[H, RouterRoute]>({
+    const router = new TransformRouter({
       delegateRouter: new RegExpRouter(),
-      transform: ([handler, route]) => {
-        const wrapped: H = async (c, next) => {
+      transform: ({ handler, path }) => {
+        return async (c, next) => {
           try {
             return await handler(c, next)
           } catch (error) {
-            errors.push(`${route.path}: ${(error as Error).message}`)
+            errors.push(`${path}: ${(error as Error).message}`)
             throw error
           }
         }
-        return [wrapped, route]
       },
     })
     const app = new Hono({ router })
