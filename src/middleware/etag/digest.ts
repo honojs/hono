@@ -24,7 +24,8 @@ export const generateDigest = async (
   }
 
   let result: ArrayBuffer | undefined = undefined
-  let chunk: Uint8Array<ArrayBuffer> | undefined
+  let chunk: Uint8Array<ArrayBuffer> | undefined = undefined
+  let buf: Uint8Array<ArrayBuffer> | undefined = undefined
   let chunkLength = 0
 
   const digest = async (body: Uint8Array<ArrayBuffer>) => {
@@ -42,47 +43,53 @@ export const generateDigest = async (
     while (offset < value.byteLength) {
       const remaining = value.byteLength - offset
 
+      // Fast Path 1: Buffer is empty and incoming chunk is >= 256 KB
       if (chunkLength === 0 && remaining >= CHUNK_SIZE) {
         await digest(value.subarray(offset, offset + CHUNK_SIZE))
         offset += CHUNK_SIZE
         continue
       }
 
-      const requiredLength = chunkLength + remaining
-      if (requiredLength < CHUNK_SIZE) {
-        if (!chunk) {
-          chunk = value.subarray(offset)
-        } else {
-          if (chunk.byteLength < requiredLength) {
-            const nextChunk = new Uint8Array<ArrayBuffer>(
-              new ArrayBuffer(Math.min(CHUNK_SIZE, Math.max(requiredLength, chunk.byteLength * 2)))
-            )
-            nextChunk.set(chunk.subarray(0, chunkLength))
-            chunk = nextChunk
-          }
-          chunk.set(value.subarray(offset), chunkLength)
+      // Fast Path 2: First partial chunk (0 allocations if stream ends here)
+      if (chunkLength === 0 && !chunk && !buf) {
+        const length = Math.min(remaining, CHUNK_SIZE)
+        chunk = value.subarray(offset, offset + length)
+        chunkLength = length
+        offset += length
+        if (chunkLength === CHUNK_SIZE) {
+          await digest(chunk)
+          chunk = undefined
+          chunkLength = 0
         }
-        chunkLength = requiredLength
-        break
+        continue
       }
 
-      const length = CHUNK_SIZE - chunkLength
-      if (chunk?.byteLength !== CHUNK_SIZE) {
-        const nextChunk = new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
-        if (chunk) {
-          nextChunk.set(chunk.subarray(0, chunkLength))
+      // Multi-chunk path: Lazily allocate 256 KB buffer once and accumulate
+      if (!buf) {
+        buf = new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
+        if (chunk && chunkLength > 0) {
+          buf.set(chunk.subarray(0, chunkLength), 0)
+          chunk = undefined
         }
-        chunk = nextChunk
       }
-      chunk.set(value.subarray(offset, offset + length), chunkLength)
-      await digest(chunk)
-      chunkLength = 0
+
+      const length = Math.min(remaining, CHUNK_SIZE - chunkLength)
+      buf.set(value.subarray(offset, offset + length), chunkLength)
+      chunkLength += length
       offset += length
+
+      if (chunkLength === CHUNK_SIZE) {
+        await digest(buf)
+        chunkLength = 0
+      }
     }
   }
 
-  if (chunk && chunkLength > 0) {
-    await digest(chunk.subarray(0, chunkLength))
+  if (chunkLength > 0) {
+    const finalChunk = buf ?? chunk
+    if (finalChunk) {
+      await digest(finalChunk.subarray(0, chunkLength))
+    }
   }
 
   if (!result) {
@@ -93,3 +100,4 @@ export const generateDigest = async (
     .call(new Uint8Array(result), (x) => x.toString(16).padStart(2, '0'))
     .join('')
 }
+
