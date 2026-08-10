@@ -193,7 +193,7 @@ export const checkOptionalParameter = (path: string): string[] | null => {
         } else {
           results.push(basePath)
         }
-        const optionalSegment = segment.replace('?', '')
+        const optionalSegment = segment.replace(/\?$/, '')
         basePath += '/' + optionalSegment
         results.push(basePath)
       } else {

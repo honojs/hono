@@ -253,6 +253,7 @@ describe('url', () => {
         '/api/:version/animal',
         '/api/:version/animal/:type',
       ])
+      expect(checkOptionalParameter('/api/:id{[0-9]?}?')).toEqual(['/api', '/api/:id{[0-9]?}'])
     })
   })
 
