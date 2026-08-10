@@ -15,6 +15,13 @@ const mergeBuffers = (
 
 const CHUNK_SIZE = 256 * 1024
 
+/**
+ * Generates an ETag digest for a ReadableStream body in 256 KiB bounded chunks.
+ *
+ * @param stream - The input ReadableStream to digest, or null.
+ * @param generator - Function computing an ArrayBuffer digest for a byte chunk.
+ * @returns Hex string representation of the final ETag digest, or null if empty.
+ */
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
   generator: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
