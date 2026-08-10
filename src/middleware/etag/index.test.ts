@@ -155,10 +155,22 @@ describe('Etag Middleware', () => {
         })
       )
     })
+    app.get('/etag/rs3', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(256 * 1024))
+            controller.close()
+          },
+        })
+      )
+    })
 
     const res1 = await app.request('http://localhost/etag/rs1')
     const res2 = await app.request('http://localhost/etag/rs2')
+    const res3 = await app.request('http://localhost/etag/rs3')
     expect(res2.headers.get('ETag')).toBe(res1.headers.get('ETag'))
+    expect(res3.headers.get('ETag')).not.toBeNull()
   })
 
   it('Should not return etag header when the stream is empty', async () => {
