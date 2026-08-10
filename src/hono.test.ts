@@ -1638,6 +1638,116 @@ describe('Error handling in middleware', () => {
       expect(await res.text()).toBe('Error in Not Found')
     })
   })
+
+  describe('notFound with middleware handlers', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+
+    app.get('/notfound', (c) => c.notFound())
+
+    app.notFound(
+      async (c, next) => {
+        c.header('x-not-found-middleware', 'true')
+        await next()
+      },
+      (c) => {
+        return c.text('Custom 404 from notFound middleware', 404)
+      }
+    )
+
+    it('Should run the middleware chain for a non-matching route', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom 404 from notFound middleware')
+      expect(res.headers.get('x-not-found-middleware')).toBe('true')
+    })
+
+    it('Should run the middleware chain for `c.notFound()`', async () => {
+      const res = await app.request('http://localhost/notfound')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom 404 from notFound middleware')
+      expect(res.headers.get('x-not-found-middleware')).toBe('true')
+    })
+  })
+
+  describe('notFound with multiple middleware handlers', () => {
+    const app = new Hono()
+
+    app.notFound(
+      async (c, next) => {
+        c.header('x-mw-1', '1')
+        await next()
+      },
+      async (c, next) => {
+        c.header('x-mw-2', '2')
+        await next()
+      },
+      (c) => {
+        return c.text('Custom 404 from notFound multi-middleware', 404)
+      }
+    )
+
+    it('Should run all the middleware handlers in order', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom 404 from notFound multi-middleware')
+      expect(res.headers.get('x-mw-1')).toBe('1')
+      expect(res.headers.get('x-mw-2')).toBe('2')
+    })
+  })
+
+  describe('onError with middleware handlers', () => {
+    const app = new Hono()
+
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    app.onError(
+      async (c, next) => {
+        c.header('x-error-middleware', 'true')
+        await next()
+      },
+      (err, c) => {
+        return c.text(`Custom Error: ${err.message}`, 500)
+      }
+    )
+
+    it('Should run the middleware chain before the error handler', async () => {
+      const res = await app.request('http://localhost/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error: This is Error')
+      expect(res.headers.get('x-error-middleware')).toBe('true')
+    })
+  })
+
+  describe('onError with middleware handlers for an error in a middleware', () => {
+    const app = new Hono()
+
+    app.use('/error', async () => {
+      throw new Error('This is Middleware Error')
+    })
+
+    app.get('/error', (c) => c.text('ok'))
+
+    app.onError(
+      async (c, next) => {
+        c.header('x-error-middleware', 'true')
+        await next()
+      },
+      (err, c) => {
+        return c.text(`Custom Error: ${err.message}`, 500)
+      }
+    )
+
+    it('Should run the middleware chain for an error thrown in a middleware', async () => {
+      const res = await app.request('http://localhost/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error: This is Middleware Error')
+      expect(res.headers.get('x-error-middleware')).toBe('true')
+    })
+  })
 })
 
 describe('Request methods with custom middleware', () => {

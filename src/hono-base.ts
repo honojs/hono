@@ -256,9 +256,12 @@ class Hono<
   /**
    * `.onError()` handles an error and returns a customized Response.
    *
+   * You can also pass middleware handlers before the error handler so that the
+   * middleware runs only for error responses without registering it globally.
+   *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
-   * @param {ErrorHandler} handler - request Handler for error
+   * @param {...(MiddlewareHandler | ErrorHandler)} handlers - middleware handlers and an error handler
    * @returns {Hono} changed Hono instance
    *
    * @example
@@ -268,18 +271,49 @@ class Hono<
    *   return c.text('Custom Error Message', 500)
    * })
    * ```
+   *
+   * @example
+   * ```ts
+   * app.onError(
+   *   languageDetector(),
+   *   (err, c) => {
+   *     return c.html(renderErrorPage(c.get('language')))
+   *   }
+   * )
+   * ```
    */
-  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
-    this.errorHandler = handler
+  onError: {
+    (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath>
+    (
+      ...handlers: [MiddlewareHandler<E>, ...MiddlewareHandler<E>[], ErrorHandler<E>]
+    ): Hono<E, S, BasePath, CurrentPath>
+  } = (...handlers: unknown[]) => {
+    const handler = handlers[handlers.length - 1] as ErrorHandler<E>
+    const middlewares = handlers.slice(0, -1) as MiddlewareHandler<E>[]
+    if (middlewares.length === 0) {
+      this.errorHandler = handler
+    } else {
+      this.errorHandler = (err, c) => {
+        const composed = compose(
+          [...middlewares, (context: Context<E>, _next: Next) => handler(err, context)].map(
+            (middleware) => [[middleware, undefined], undefined]
+          ) as [[Function, unknown], unknown][]
+        )
+        return composed(c).then((context) => context.res)
+      }
+    }
     return this
   }
 
   /**
    * `.notFound()` allows you to customize a Not Found Response.
    *
+   * You can also pass middleware handlers before the not-found handler so that
+   * the middleware runs only for 404 responses without registering it globally.
+   *
    * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
-   * @param {NotFoundHandler} handler - request handler for not-found
+   * @param {...(MiddlewareHandler | NotFoundHandler)} handlers - middleware handlers and a not-found handler
    * @returns {Hono} changed Hono instance
    *
    * @example
@@ -288,9 +322,36 @@ class Hono<
    *   return c.text('Custom 404 Message', 404)
    * })
    * ```
+   *
+   * @example
+   * ```ts
+   * app.notFound(
+   *   languageDetector(),
+   *   (c) => {
+   *     return c.html(render404Page(c.get('language')))
+   *   }
+   * )
+   * ```
    */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
-    this.#notFoundHandler = handler
+  notFound: {
+    (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath>
+    (
+      ...handlers: [MiddlewareHandler<E>, ...MiddlewareHandler<E>[], NotFoundHandler<E>]
+    ): Hono<E, S, BasePath, CurrentPath>
+  } = (...handlers: unknown[]) => {
+    const handler = handlers[handlers.length - 1] as NotFoundHandler<E>
+    const middlewares = handlers.slice(0, -1) as MiddlewareHandler<E>[]
+    if (middlewares.length === 0) {
+      this.#notFoundHandler = handler
+    } else {
+      const composed = compose(
+        [...middlewares, handler].map((middleware) => [[middleware, undefined], undefined]) as [
+          [Function, unknown],
+          unknown,
+        ][]
+      )
+      this.#notFoundHandler = (c) => composed(c).then((context) => context.res)
+    }
     return this
   }
 
