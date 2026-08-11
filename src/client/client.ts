@@ -78,7 +78,7 @@ class ClientRequestImpl {
         this.rBody = form
       }
 
-      if (args.json) {
+      if (args.json !== undefined) {
         this.rBody = JSON.stringify(args.json)
         this.cType = 'application/json'
       }
