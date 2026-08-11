@@ -1,95 +1,104 @@
-const mergeBuffers = (
-  buffer1: ArrayBuffer | undefined,
-  buffer2: Uint8Array<ArrayBuffer>
-): Uint8Array<ArrayBuffer> => {
-  if (!buffer1) {
-    return buffer2
-  }
-  const merged = new Uint8Array<ArrayBuffer>(
-    new ArrayBuffer(buffer1.byteLength + buffer2.byteLength)
-  )
-  merged.set(new Uint8Array(buffer1), 0)
-  merged.set(buffer2, buffer1.byteLength)
-  return merged
+/**
+ * An incremental SHA-1 hasher.
+ * `crypto.subtle.digest` is one-shot (there is no streaming Web Crypto API),
+ * so this is only available on runtimes that expose a streaming primitive.
+ */
+type IncrementalSha1 = {
+  update: (chunk: Uint8Array<ArrayBuffer>) => void
+  digestHex: () => string
 }
 
-const CHUNK_SIZE = 256 * 1024
+/**
+ * Returns an incremental SHA-1 hasher when the runtime exposes one.
+ *
+ * - Bun: `Bun.CryptoHasher`
+ * - Node.js: `node:crypto.createHash`, reached through
+ *   `process.getBuiltinModule` instead of a static `node:` import so edge
+ *   bundlers (e.g. Cloudflare Workers) can still skip it.
+ *
+ * Returns `null` on runtimes where Web Crypto is the only option (Cloudflare
+ * Workers, older Node.js, Deno), in which case the caller falls back to
+ * buffering the full body and hashing it once.
+ */
+const getIncrementalSha1 = (): IncrementalSha1 | null => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const global = globalThis as any
+
+  if (typeof global.Bun !== 'undefined' && global.Bun.CryptoHasher) {
+    const hasher = new global.Bun.CryptoHasher('sha1')
+    return {
+      update: (chunk) => hasher.update(chunk),
+      digestHex: () => hasher.digest('hex') as string,
+    }
+  }
+
+  const nodeCrypto = global?.process?.getBuiltinModule?.('node:crypto')
+  if (nodeCrypto?.createHash) {
+    const hasher = nodeCrypto.createHash('sha1')
+    return {
+      update: (chunk) => hasher.update(chunk),
+      digestHex: () => hasher.digest('hex') as string,
+    }
+  }
+
+  return null
+}
+
+const toHex = (buffer: ArrayBuffer) =>
+  Array.prototype.map.call(new Uint8Array(buffer), (x) => x.toString(16).padStart(2, '0')).join('')
 
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
-  generator: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
+  generator: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>,
+  useIncrementalSha1 = false
 ): Promise<string | null> => {
   if (!stream) {
     return null
   }
 
-  let result: ArrayBuffer | undefined = undefined
-  let chunk: Uint8Array<ArrayBuffer> | undefined
-  let chunkLength = 0
+  const reader = stream.getReader()
+  const sha1 = useIncrementalSha1 ? getIncrementalSha1() : null
 
-  const digest = async (body: Uint8Array<ArrayBuffer>) => {
-    result = await generator(mergeBuffers(result, body))
+  if (sha1) {
+    let totalLength = 0
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      totalLength += value.byteLength
+      sha1.update(value)
+    }
+    if (totalLength === 0) {
+      return null
+    }
+    return sha1.digestHex()
   }
 
-  const reader = stream.getReader()
+  // No incremental primitive is available (e.g. Web Crypto only on Workers) or
+  // a custom one-shot `generator` was provided: accumulate the full body and
+  // hash it once, so the digest always matches a real hash of the content.
+  const chunks: Uint8Array<ArrayBuffer>[] = []
+  let totalLength = 0
   for (;;) {
     const { value, done } = await reader.read()
     if (done) {
       break
     }
-
-    let offset = 0
-    while (offset < value.byteLength) {
-      const remaining = value.byteLength - offset
-
-      if (chunkLength === 0 && remaining >= CHUNK_SIZE) {
-        await digest(value.subarray(offset, offset + CHUNK_SIZE))
-        offset += CHUNK_SIZE
-        continue
-      }
-
-      const requiredLength = chunkLength + remaining
-      if (requiredLength < CHUNK_SIZE) {
-        if (!chunk) {
-          chunk = value.subarray(offset)
-        } else {
-          if (chunk.byteLength < requiredLength) {
-            const nextChunk = new Uint8Array<ArrayBuffer>(
-              new ArrayBuffer(Math.min(CHUNK_SIZE, Math.max(requiredLength, chunk.byteLength * 2)))
-            )
-            nextChunk.set(chunk.subarray(0, chunkLength))
-            chunk = nextChunk
-          }
-          chunk.set(value.subarray(offset), chunkLength)
-        }
-        chunkLength = requiredLength
-        break
-      }
-
-      const length = CHUNK_SIZE - chunkLength
-      if (chunk?.byteLength !== CHUNK_SIZE) {
-        const nextChunk = new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
-        if (chunk) {
-          nextChunk.set(chunk.subarray(0, chunkLength))
-        }
-        chunk = nextChunk
-      }
-      chunk.set(value.subarray(offset, offset + length), chunkLength)
-      await digest(chunk)
-      chunkLength = 0
-      offset += length
-    }
+    chunks.push(value)
+    totalLength += value.byteLength
   }
-
-  if (chunk && chunkLength > 0) {
-    await digest(chunk.subarray(0, chunkLength))
-  }
-
-  if (!result) {
+  if (totalLength === 0) {
     return null
   }
 
-  return Array.prototype.map
-    .call(new Uint8Array(result), (x) => x.toString(16).padStart(2, '0'))
-    .join('')
+  const fullBody = new Uint8Array<ArrayBuffer>(new ArrayBuffer(totalLength))
+  let offset = 0
+  for (const chunk of chunks) {
+    fullBody.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+
+  const result = await generator(fullBody)
+  return toHex(result)
 }

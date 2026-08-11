@@ -35,18 +35,20 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
   )
 }
 
+const defaultDigest = (body: Uint8Array<ArrayBuffer>) =>
+  crypto.subtle.digest(
+    {
+      name: 'SHA-1',
+    },
+    body
+  )
+
 function initializeGenerator(
   generator?: ETagOptions['generateDigest']
 ): ETagOptions['generateDigest'] | undefined {
   if (!generator) {
     if (crypto && crypto.subtle) {
-      generator = (body: Uint8Array<ArrayBuffer>) =>
-        crypto.subtle.digest(
-          {
-            name: 'SHA-1',
-          },
-          body
-        )
+      generator = defaultDigest
     }
   }
 
@@ -103,7 +105,10 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       const hash = await generateDigest(
         // This type casing avoids the type error for `deno publish`
         res.clone().body as ReadableStream<Uint8Array<ArrayBuffer>>,
-        generator
+        generator,
+        // The built-in SHA-1 digest can be computed incrementally (bounded
+        // memory) when the runtime exposes a streaming primitive.
+        generator === defaultDigest
       )
       if (hash === null) {
         return

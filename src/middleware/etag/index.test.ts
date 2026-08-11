@@ -161,6 +161,61 @@ describe('Etag Middleware', () => {
     expect(res2.headers.get('ETag')).toBe(res1.headers.get('ETag'))
   })
 
+  it('Should return an etag equal to the real SHA-1 of a body >= CHUNK_SIZE', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    // 300 KiB exceeds the 256 KiB digest chunk boundary.
+    const size = 300 * 1024
+    const body = new Uint8Array(size)
+    for (let i = 0; i < size; i++) {
+      body[i] = i % 256
+    }
+    app.get('/etag/large', (c) => c.body(body))
+
+    const res = await app.request('http://localhost/etag/large')
+    const etagHeader = res.headers.get('ETag')
+    expect(etagHeader).not.toBeFalsy()
+
+    const expected = await crypto.subtle.digest({ name: 'SHA-1' }, body)
+    const expectedHex = Array.prototype.map
+      .call(new Uint8Array(expected), (x) => x.toString(16).padStart(2, '0'))
+      .join('')
+    expect(etagHeader).toBe(`"${expectedHex}"`)
+  })
+
+  it('Should return an etag equal to the real digest for a custom generator and a body >= CHUNK_SIZE', async () => {
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        generateDigest: (body) =>
+          crypto.subtle.digest(
+            {
+              name: 'SHA-256',
+            },
+            body
+          ),
+      })
+    )
+    // 300 KiB exceeds the 256 KiB digest chunk boundary.
+    const size = 300 * 1024
+    const body = new Uint8Array(size)
+    for (let i = 0; i < size; i++) {
+      body[i] = i % 256
+    }
+    app.get('/etag/large-sha256', (c) => c.body(body))
+
+    const res = await app.request('http://localhost/etag/large-sha256')
+    const etagHeader = res.headers.get('ETag')
+    expect(etagHeader).not.toBeFalsy()
+
+    const expected = await crypto.subtle.digest({ name: 'SHA-256' }, body)
+    const expectedHex = Array.prototype.map
+      .call(new Uint8Array(expected), (x) => x.toString(16).padStart(2, '0'))
+      .join('')
+    expect(etagHeader).toBe(`"${expectedHex}"`)
+  })
+
   it('Should not return etag header when the stream is empty', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
