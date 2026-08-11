@@ -50,14 +50,14 @@ export const generateDigest = async (
     while (offset < value.byteLength) {
       const remaining = value.byteLength - offset
 
-      // Fast Path 1: Buffer is empty and incoming chunk is >= 256 KB
+      // Fast Path 1: Empty buffer and incoming chunk >= 256 KiB
       if (chunkLength === 0 && remaining >= CHUNK_SIZE) {
         await digest(value.subarray(offset, offset + CHUNK_SIZE))
         offset += CHUNK_SIZE
         continue
       }
 
-      // Fast Path 2: First partial chunk (0 allocations if stream ends here)
+      // Fast Path 2: First partial chunk (zero allocations)
       if (chunkLength === 0 && !chunk && !buf) {
         const length = Math.min(remaining, CHUNK_SIZE)
         chunk = value.subarray(offset, offset + length)
@@ -71,23 +71,38 @@ export const generateDigest = async (
         continue
       }
 
-      // Multi-chunk path: Lazily allocate 256 KB buffer once and accumulate
+      // Multi-chunk path: Allocate or grow buffer dynamically up to CHUNK_SIZE
+      const requiredLength = chunkLength + remaining
       if (!buf) {
-        buf = new Uint8Array<ArrayBuffer>(new ArrayBuffer(CHUNK_SIZE))
+        const initialSize = Math.min(
+          CHUNK_SIZE,
+          Math.max(requiredLength, chunk ? chunk.byteLength * 2 : 16384)
+        )
+        buf = new Uint8Array<ArrayBuffer>(new ArrayBuffer(initialSize))
         if (chunk && chunkLength > 0) {
           buf.set(chunk.subarray(0, chunkLength), 0)
           chunk = undefined
         }
+      } else if (buf.byteLength < requiredLength && buf.byteLength < CHUNK_SIZE) {
+        const nextSize = Math.min(
+          CHUNK_SIZE,
+          Math.max(requiredLength, buf.byteLength * 2)
+        )
+        const newBuf = new Uint8Array<ArrayBuffer>(new ArrayBuffer(nextSize))
+        newBuf.set(buf.subarray(0, chunkLength), 0)
+        buf = newBuf
       }
 
-      const length = Math.min(remaining, CHUNK_SIZE - chunkLength)
+      const length = Math.min(remaining, buf.byteLength - chunkLength)
       buf.set(value.subarray(offset, offset + length), chunkLength)
       chunkLength += length
       offset += length
 
-      if (chunkLength === CHUNK_SIZE) {
-        await digest(buf)
-        chunkLength = 0
+      if (chunkLength === CHUNK_SIZE || chunkLength === buf.byteLength) {
+        if (chunkLength === CHUNK_SIZE) {
+          await digest(buf)
+          chunkLength = 0
+        }
       }
     }
   }
