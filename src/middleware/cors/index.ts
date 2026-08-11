@@ -88,7 +88,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
   const findAllowMethods = ((optsAllowMethods) => {
     if (typeof optsAllowMethods === 'function') {
-      return optsAllowMethods
+      return async (origin: string, c: Context) => (await optsAllowMethods(origin, c)).join(',')
     } else if (Array.isArray(optsAllowMethods)) {
       const methodsStr = optsAllowMethods.join(',')
       return () => methodsStr
@@ -126,10 +126,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
       const allowMethods = await findAllowMethods(c.req.header('origin') || '', c)
       if (allowMethods) {
-        set(
-          'Access-Control-Allow-Methods',
-          typeof allowMethods === 'string' ? allowMethods : allowMethods.join(',')
-        )
+        set('Access-Control-Allow-Methods', allowMethods)
       }
 
       let headersStr = allowHeadersStr
