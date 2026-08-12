@@ -248,6 +248,14 @@ describe('Etag Middleware', () => {
     })
     expect(res.status).toBe(304)
 
+    // conditional GET with matching ETag among list, OWS before the comma (RFC 9110):
+    res = await app.request('http://localhost/etag/ghi', {
+      headers: {
+        'If-None-Match': `"mismatch 1", ${etagHeaderValue} , "mismatch 2"`,
+      },
+    })
+    expect(res.status).toBe(304)
+
     // conditional GET with `*` wildcard:
     res = await app.request('http://localhost/etag/ghi', {
       headers: {
