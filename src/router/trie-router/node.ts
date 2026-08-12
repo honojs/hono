@@ -27,6 +27,7 @@ export class Node<T> {
 
   #children: Record<string, Node<T>>
   #patterns: Pattern[]
+  #suffixWildcards: [string, Node<T>][] = []
   #order: number = 0
   #params: Record<string, string> = emptyParams
 
@@ -69,6 +70,8 @@ export class Node<T> {
       if (pattern) {
         curNode.#patterns.push(pattern)
         possibleKeys.push(pattern[1])
+      } else if (p.length > 1 && p.at(-1) === '*') {
+        curNode.#suffixWildcards.push([p.slice(0, -1), curNode.#children[key]])
       }
       curNode = curNode.#children[key]
     }
@@ -143,6 +146,13 @@ export class Node<T> {
             this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
           } else {
             tempNodes.push(nextNode)
+          }
+        }
+
+        for (let k = 0, len3 = node.#suffixWildcards.length; k < len3; k++) {
+          const [prefix, child] = node.#suffixWildcards[k]
+          if (part.startsWith(prefix)) {
+            this.#pushHandlerSets(handlerSets, child, method, node.#params)
           }
         }
 

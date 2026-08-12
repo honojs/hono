@@ -126,6 +126,19 @@ export const runTest = ({
         expect(res[0].handler).toEqual('get wildcard')
       })
 
+      it('Suffix wildcard', async () => {
+        router.add('GET', '/assets*', 'get assets')
+        let res = match('GET', '/assets')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get assets')
+        res = match('GET', '/assets-v2')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get assets')
+        res = match('GET', '/assets/app.js')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get assets')
+      })
+
       it('Default', async () => {
         router.add('GET', '/api/abc', 'get api')
         router.add('GET', '/api/*', 'fallback')
