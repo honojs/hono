@@ -181,8 +181,6 @@ describe('Secure Headers Middleware', () => {
           accelerometer: ['https://*.example.com'],
           gyroscope: ['src'],
           magnetometer: ['https://a.example.com', 'https://b.example.com'],
-          chUaFormFactors: ['self'],
-          mediaSession: ['self'],
           mediasession: ['self'],
           deferredFetch: ['none'],
         },
@@ -195,7 +193,7 @@ describe('Secure Headers Middleware', () => {
         'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
         'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
         'magnetometer=("https://a.example.com" "https://b.example.com"), ' +
-        'ch-ua-form-factors=(self), media-session=(self), mediasession=(self), deferred-fetch=()'
+        'mediasession=(self), deferred-fetch=()'
     )
   })
 
