@@ -1,0 +1,21 @@
+src/middleware/secure-headers/index.test.ts
+  s_85dc87409b328d::t_71d4b5bc6db9d9 196
+src/middleware/secure-headers/permissions-policy.ts
+  s_85dc87409b328d::t_6e18ea4c08ce48 1,45,49,57,67,72-75,78-80,90,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f6ea2bdf4533efab52c98927cc9a7be7d20d19cb",
+  "prompts": {},
+  "sessions": {
+    "s_85dc87409b328d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "834db007-d809-4e64-8f63-28b474923c8f",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
