@@ -187,13 +187,13 @@ export const checkOptionalParameter = (path: string): string[] | null => {
     if (segment !== '' && !/\:/.test(segment)) {
       basePath += '/' + segment
     } else if (/\:/.test(segment)) {
-      if (/\?/.test(segment)) {
+      if (segment.charCodeAt(segment.length - 1) === 63) {
         if (results.length === 0 && basePath === '') {
           results.push('/')
         } else {
           results.push(basePath)
         }
-        const optionalSegment = segment.replace('?', '')
+        const optionalSegment = segment.slice(0, -1)
         basePath += '/' + optionalSegment
         results.push(basePath)
       } else {
