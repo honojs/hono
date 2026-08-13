@@ -885,6 +885,20 @@ describe('Use custom fetch (app.request) method', () => {
     const res = await client.search.$get()
     expect(res.ok).toBe(true)
   })
+
+  it.each([false, 0, '', null])('Should send falsy JSON value: %j', async (json) => {
+    const app = new Hono().post(
+      '/json',
+      validator('json', (value) => value as boolean | number | string | null),
+      (c) => c.json(c.req.valid('json'))
+    )
+    const client = hc<typeof app>('', { fetch: app.request })
+
+    const res = await client.json.$post({ json })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toBe(json)
+  })
 })
 
 describe('Optional parameters in JSON response', () => {
