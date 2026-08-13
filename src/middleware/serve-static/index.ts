@@ -57,6 +57,13 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    // Only serve files for GET and HEAD requests.
+    // Otherwise, fall through to `next()` so middleware such as `methodNotAllowed`
+    // can respond with the appropriate status (e.g. 405).
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {

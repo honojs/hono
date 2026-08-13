@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { methodNotAllowed } from '../method-not-allowed'
 import { serveStatic as baseServeStatic } from '.'
 
 describe('Serve Static Middleware', () => {
@@ -241,6 +242,37 @@ describe('Serve Static Middleware', () => {
     } as Request)
     expect(res.status).toBe(200)
     expect(res.body).toBe(body)
+  })
+
+  it('Should skip non-GET/HEAD requests and call next() - /static/hello.html', async () => {
+    const app = new Hono().use('/*', serveStatic)
+
+    const res = await app.request('/static/hello.html', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+    expect(getContent).not.toBeCalled()
+  })
+
+  it('Should allow methodNotAllowed to fire for a POST request to a static file', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    app.use('/*', serveStatic)
+
+    // serveStatic is registered via `use()`, so the static path has no GET route
+    // for methodNotAllowed to infer an Allow header from. Falling through to a 404
+    // is the documented, accepted behavior for this case (see issue #5223).
+    const res = await app.request('/static/hello.html', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(getContent).not.toBeCalled()
+
+    // A path with a real GET route still produces 405 as before.
+    const res2 = await app.request('/api', { method: 'POST' })
+
+    expect(res2.status).toBe(405)
+    expect(res2.headers.get('Allow')).toBe('GET, HEAD')
   })
 
   describe('Changing root path', () => {
