@@ -23,7 +23,15 @@ interface PrettyOptions {
    * @default false
    */
   force?: boolean
+
+  /**
+   * Optional JSON replacer function for custom transformation.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  replacer?: (this: any, key: string, value: any) => any
 }
+
+const jsonContentTypeRegex = /^application\/(?:[a-z0-9._-]+\+)?json/i
 
 /**
  * Pretty JSON Middleware for Hono.
@@ -48,9 +56,10 @@ export const prettyJSON = (options?: PrettyOptions): MiddlewareHandler => {
   return async function prettyJSON(c, next) {
     const pretty = options?.force || c.req.query(targetQuery) || c.req.query(targetQuery) === ''
     await next()
-    if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
+    const contentType = c.res.headers.get('Content-Type')
+    if (pretty && contentType && jsonContentTypeRegex.test(contentType)) {
       const obj = await c.res.json()
-      c.res = new Response(JSON.stringify(obj, null, options?.space ?? 2), c.res)
+      c.res = new Response(JSON.stringify(obj, options?.replacer, options?.space ?? 2), c.res)
     }
   }
 }
