@@ -181,6 +181,8 @@ describe('Secure Headers Middleware', () => {
           accelerometer: ['https://*.example.com'],
           gyroscope: ['src'],
           magnetometer: ['https://a.example.com', 'https://b.example.com'],
+          mediasession: ['self'],
+          deferredFetch: ['none'],
         },
       })
     )
@@ -190,7 +192,8 @@ describe('Secure Headers Middleware', () => {
       'fullscreen=(self), bluetooth=(), payment=(self "example.com"), sync-xhr=(), camera=(), microphone=*, ' +
         'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
         'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
-        'magnetometer=("https://a.example.com" "https://b.example.com")'
+        'magnetometer=("https://a.example.com" "https://b.example.com"), ' +
+        'mediasession=(self), deferred-fetch=()'
     )
   })
 
