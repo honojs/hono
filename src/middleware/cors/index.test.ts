@@ -382,6 +382,17 @@ describe('CORS by Middleware', () => {
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
 
+  it('Does not set allow methods when function returns an empty array', async () => {
+    for (const allowMethods of [() => [], async () => []]) {
+      const app = new Hono()
+      app.use(cors({ allowMethods }))
+
+      const res = await app.request('http://localhost/', { method: 'OPTIONS' })
+
+      expect(res.headers.get('Access-Control-Allow-Methods')).toBeNull()
+    }
+  })
+
   it('Emits the wildcard, not the reflected origin, when credentials is true with wildcard origin', async () => {
     const res = await app.request('http://localhost/api10/abc', {
       headers: {

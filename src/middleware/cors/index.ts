@@ -69,6 +69,9 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     ...options,
   } satisfies CORSOptions
 
+  const exposeHeadersStr = opts.exposeHeaders?.length ? opts.exposeHeaders.join(',') : undefined
+  const allowHeadersStr = opts.allowHeaders?.length ? opts.allowHeaders.join(',') : undefined
+
   const findAllowOrigin = ((optsOrigin) => {
     if (typeof optsOrigin === 'string') {
       if (optsOrigin === '*') {
@@ -85,11 +88,12 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
   const findAllowMethods = ((optsAllowMethods) => {
     if (typeof optsAllowMethods === 'function') {
-      return optsAllowMethods
+      return async (origin: string, c: Context) => (await optsAllowMethods(origin, c)).join(',')
     } else if (Array.isArray(optsAllowMethods)) {
-      return () => optsAllowMethods
+      const methodsStr = optsAllowMethods.join(',')
+      return () => methodsStr
     } else {
-      return () => []
+      return () => ''
     }
   })(opts.allowMethods)
 
@@ -107,8 +111,8 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       set('Access-Control-Allow-Credentials', 'true')
     }
 
-    if (opts.exposeHeaders?.length) {
-      set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
+    if (exposeHeadersStr) {
+      set('Access-Control-Expose-Headers', exposeHeadersStr)
     }
 
     if (c.req.method === 'OPTIONS') {
@@ -121,19 +125,22 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       }
 
       const allowMethods = await findAllowMethods(c.req.header('origin') || '', c)
-      if (allowMethods.length) {
-        set('Access-Control-Allow-Methods', allowMethods.join(','))
+      if (allowMethods) {
+        set('Access-Control-Allow-Methods', allowMethods)
       }
 
-      let headers = opts.allowHeaders
-      if (!headers?.length) {
+      let headersStr = allowHeadersStr
+      if (!headersStr) {
         const requestHeaders = c.req.header('Access-Control-Request-Headers')
         if (requestHeaders) {
-          headers = requestHeaders.split(',').map((h) => h.trim())
+          headersStr = requestHeaders
+            .split(',')
+            .map((h) => h.trim())
+            .join(',')
         }
       }
-      if (headers?.length) {
-        set('Access-Control-Allow-Headers', headers.join(','))
+      if (headersStr) {
+        set('Access-Control-Allow-Headers', headersStr)
         c.res.headers.append('Vary', 'Access-Control-Request-Headers')
       }
 
