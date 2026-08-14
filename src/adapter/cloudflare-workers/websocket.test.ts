@@ -27,6 +27,15 @@ describe('upgradeWebSocket middleware', () => {
       }))
     )
   )
+
+  app.get(
+    '/ws-auto-close',
+    upgradeWebSocket(() => ({
+      onMessage(_evt, _ws) {
+        // no user onClose
+      },
+    }))
+  )
   it('Should receive message and readyState is valid', async () => {
     const sendingData = Math.random().toString()
     await app.request('/ws', {
@@ -158,5 +167,30 @@ describe('upgradeWebSocket middleware', () => {
 
     // @ts-expect-error mock method
     expect(server.close).toHaveBeenCalledWith(1000, 'done')
+  })
+
+  it('Should close the server WebSocket when the client closes and no onClose is provided', async () => {
+    // @ts-expect-error adding mock state/methods for the test
+    server.readyState = WebSocket.OPEN
+    // @ts-expect-error adding a mock method for the test
+    server.close = vi.fn()
+
+    await app.request('/ws-auto-close', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+
+    server.dispatchEvent(
+      Object.assign(new Event('close'), { code: 1000, reason: 'Normal Closure' })
+    )
+
+    // @ts-expect-error mock method
+    expect(server.close).toHaveBeenCalledWith(1000, 'Normal Closure')
+
+    // @ts-expect-error clean up mock state
+    delete server.readyState
+    // @ts-expect-error clean up mock method
+    delete server.close
   })
 })

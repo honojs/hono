@@ -33,9 +33,19 @@ export const upgradeWebSocket: UpgradeWebSocket<
 
   // note: cloudflare workers doesn't support 'open' event
 
-  if (events.onClose) {
-    server.addEventListener('close', (evt: CloseEvent) => events.onClose?.(evt, wsContext))
-  }
+  // Always attach a close listener. If a user onClose is provided we call it
+  // first, then close the server side of the WebSocketPair when it is still
+  // open. Without this, the Workers runtime keeps the request alive and reports
+  // that the Worker "will never generate a response" after the client
+  // disconnects (honojs/hono#4603). On runtimes with the
+  // `web_socket_auto_reply_to_close` compatibility flag, readyState is already
+  // CLOSED, so server.close() is a no-op.
+  server.addEventListener('close', (evt: CloseEvent) => {
+    events.onClose?.(evt, wsContext)
+    if (server.readyState === WebSocket.OPEN && typeof server.close === 'function') {
+      server.close(evt.code, evt.reason)
+    }
+  })
   if (events.onMessage) {
     server.addEventListener('message', (evt: MessageEvent) => events.onMessage?.(evt, wsContext))
   }
