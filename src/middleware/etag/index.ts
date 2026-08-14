@@ -121,14 +121,10 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
           ETag: etag,
         },
       })
-      const headersToDelete: string[] = []
-      c.res.headers.forEach((_, key) => {
+      for (const key of Array.from(c.res.headers.keys())) {
         if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {
-          headersToDelete.push(key)
+          c.res.headers.delete(key)
         }
-      })
-      for (let i = 0; i < headersToDelete.length; i++) {
-        c.res.headers.delete(headersToDelete[i])
       }
     } else {
       c.res.headers.set('ETag', etag)
