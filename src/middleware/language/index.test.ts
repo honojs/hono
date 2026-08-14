@@ -3,6 +3,23 @@ import { Hono } from '../../hono'
 import { DEFAULT_OPTIONS, detectors, normalizeLanguage } from './language'
 
 describe('languageDetector', () => {
+  it('Should be reusable in error and not-found handlers', async () => {
+    const detector = languageDetector({ supportedLanguages: ['en', 'ja'] })
+    const app = new Hono()
+      .onError(detector, (c) => c.text(`${c.get('language')}: ${c.error!.message}`, 500))
+      .onNotFound(detector, (c) => c.text(`${c.get('language')}: Not Found`, 404))
+      .get('/error', () => {
+        throw new Error('failed')
+      })
+
+    const error = await app.request('/error?lang=ja')
+    expect(error.status).toBe(500)
+    expect(await error.text()).toBe('ja: failed')
+    const notFound = await app.request('/missing?lang=ja')
+    expect(notFound.status).toBe(404)
+    expect(await notFound.text()).toBe('ja: Not Found')
+  })
+
   const createTestApp = (options = {}) => {
     const app = new Hono()
 

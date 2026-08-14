@@ -10,7 +10,7 @@ There are some breaking changes.
 
 ### Non-Error throws go to `onError`
 
-A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
+A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `c.error.cause`, and a thrown string is also used as `c.error.message`. It no longer propagates out of `app.fetch()`.
 
 ### `getColorEnabledAsync()` is removed
 

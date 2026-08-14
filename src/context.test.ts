@@ -1,4 +1,5 @@
 import { Context } from './context'
+import { GET_RESPONSE } from './context/constants'
 import { setCookie } from './helper/cookie'
 
 const makeResponseHeaderImmutable = (res: Response) => {
@@ -43,6 +44,28 @@ describe('Context', () => {
   let c: Context
   beforeEach(() => {
     c = new Context(req)
+  })
+
+  it('Should read the existing response without creating or finalizing one', () => {
+    c.header('Cache-Control', 'public')
+    expect(c[GET_RESPONSE]).toBeUndefined()
+    expect(c.finalized).toBe(false)
+
+    const res = c.text('OK', 200, { 'Cache-Control': 'no-store' })
+    c.res = res
+    expect(c[GET_RESPONSE]).toBe(res)
+    expect(c.res.headers.get('Cache-Control')).toBe('no-store')
+    expect(c.finalized).toBe(true)
+
+    c.res = undefined
+    expect(c[GET_RESPONSE]).toBeUndefined()
+    expect(c.finalized).toBe(true)
+  })
+
+  it('Should read an unfinalized response without finalizing it', () => {
+    const res = c.res
+    expect(c[GET_RESPONSE]).toBe(res)
+    expect(c.finalized).toBe(false)
   })
 
   it('c.text()', async () => {
