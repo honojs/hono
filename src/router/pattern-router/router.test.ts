@@ -13,6 +13,11 @@ describe('Pattern', () => {
         reason: 'PatternRouter allows trailing slashes',
         tests: ['Trailing slash > GET /book/'],
       },
+      {
+        reason:
+          'Below the root, PatternRouter ignores the prefix of a suffix wildcard, so `/a/b*` also matches `/a/c`',
+        tests: ['Suffix wildcard > Matches below the root'],
+      },
     ],
     newRouter: () => new PatternRouter(),
   })

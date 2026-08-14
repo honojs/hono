@@ -106,6 +106,35 @@ export const runTest = ({
       })
     })
 
+    describe('Suffix wildcard', () => {
+      it('Matches the rest of the path', async () => {
+        router.add('GET', '/assets*', 'get assets')
+
+        for (const path of ['/assets', '/assets/app.js', '/assets/nested/app.js']) {
+          const res = match('GET', path)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('get assets')
+        }
+      })
+
+      it('Does not match another prefix', async () => {
+        router.add('GET', '/assets*', 'get assets')
+        expect(match('GET', '/static/app.js').length).toBe(0)
+      })
+
+      it('Matches below the root', async () => {
+        router.add('GET', '/a/b*', 'get b')
+
+        for (const path of ['/a/b', '/a/b/c']) {
+          const res = match('GET', path)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('get b')
+        }
+
+        expect(match('GET', '/a/c').length).toBe(0)
+      })
+    })
+
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')

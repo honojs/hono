@@ -15,6 +15,18 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 
 const emptyParams = Object.create(null)
 
+// Byte offset of each part within the original path, so a match can look at the
+// rest of the path rather than a single part.
+const computePartOffsets = (path: string, parts: string[], len: number): number[] => {
+  const offsets = new Array(len)
+  let offset = path[0] === '/' ? 1 : 0
+  for (let i = 0; i < len; i++) {
+    offsets[i] = offset
+    offset += parts[i].length + 1
+  }
+  return offsets
+}
+
 const hasChildren = (children: Record<string, unknown>): boolean => {
   for (const _ in children) {
     return true
@@ -27,6 +39,8 @@ export class Node<T> {
 
   #children: Record<string, Node<T>>
   #patterns: Pattern[]
+  // '/assets*' => [['assets', node]]; the prefix matches the rest of the path
+  #suffixWildcards?: [string, Node<T>][]
   #order: number = 0
   #params: Record<string, string> = emptyParams
 
@@ -69,6 +83,9 @@ export class Node<T> {
       if (pattern) {
         curNode.#patterns.push(pattern)
         possibleKeys.push(pattern[1])
+      } else if (i === len - 1 && p.length > 1 && p.charCodeAt(p.length - 1) === 42 /* '*' */) {
+        // '/assets*' matches everything after the prefix, as the other routers do
+        ;(curNode.#suffixWildcards ??= []).push([p.slice(0, -1), curNode.#children[key]])
       }
       curNode = curNode.#children[key]
     }
@@ -146,6 +163,17 @@ export class Node<T> {
           }
         }
 
+        const suffixWildcards = node.#suffixWildcards
+        if (suffixWildcards !== undefined) {
+          partOffsets ??= computePartOffsets(path, parts, len)
+          const restPathString = path.substring(partOffsets[i])
+          for (let k = 0, len3 = suffixWildcards.length; k < len3; k++) {
+            if (restPathString.startsWith(suffixWildcards[k][0])) {
+              this.#pushHandlerSets(handlerSets, suffixWildcards[k][1], method, node.#params)
+            }
+          }
+        }
+
         for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
           const pattern = node.#patterns[k]
           const params = node.#params === emptyParams ? {} : { ...node.#params }
@@ -172,14 +200,7 @@ export class Node<T> {
 
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           if (matcher instanceof RegExp) {
-            if (partOffsets === null) {
-              partOffsets = new Array(len)
-              let offset = path[0] === '/' ? 1 : 0
-              for (let p = 0; p < len; p++) {
-                partOffsets[p] = offset
-                offset += parts[p].length + 1
-              }
-            }
+            partOffsets ??= computePartOffsets(path, parts, len)
             const restPathString = path.substring(partOffsets[i])
 
             const m = matcher.exec(restPathString)
