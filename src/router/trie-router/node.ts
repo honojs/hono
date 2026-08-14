@@ -20,7 +20,8 @@ export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[] = []
 
   #children: Record<string, Node<T>> = Object.create(null)
-  #patterns: (Pattern | string)[] = []
+  #patterns: Node<T>[] = []
+  #pattern?: Pattern | string
   #params: Record<string, string> = emptyParams
 
   insert(method: string, path: string, handler: T): void {
@@ -28,42 +29,32 @@ export class Node<T> {
     let curNode: Node<T> = this
     const parts = splitRoutingPath(path)
 
-    const possibleKeys: string[] = []
+    const possibleKeys = new Set<string>()
 
-    for (let i = 0, len = parts.length; i < len; i++) {
-      const p: string = parts[i]
-      const nextP = parts[i + 1]
+    let i = 0
+    for (const p of parts) {
+      const nextP = parts[++i]
       const pattern =
         getPattern(p, nextP) ||
-        (i === len - 1 && p.length > 1 && p.indexOf('*') === p.length - 1 ? p : null)
-      const key = Array.isArray(pattern) ? pattern[0] : pattern || p
+        (nextP === undefined && p && p.indexOf('*') === p.length - 1 ? p : null)
+      const isParam = Array.isArray(pattern)
+      const key = isParam ? pattern[0] : pattern || p
 
-      if (key in curNode.#children) {
-        if (typeof pattern === 'string' && !curNode.#patterns.includes(pattern)) {
-          curNode.#patterns.push(pattern)
-        }
-        curNode = curNode.#children[key]
-        if (Array.isArray(pattern)) {
-          possibleKeys.push(pattern[1])
-        }
-        continue
+      const child = (curNode.#children[key] ||= new Node())
+      if (pattern && !child.#pattern) {
+        child.#pattern = pattern
+        curNode.#patterns.push(child)
       }
-
-      curNode.#children[key] = new Node()
-
-      if (pattern) {
-        curNode.#patterns.push(pattern)
-        if (Array.isArray(pattern)) {
-          possibleKeys.push(pattern[1])
-        }
+      curNode = child
+      if (isParam) {
+        possibleKeys.add(pattern[1])
       }
-      curNode = curNode.#children[key]
     }
 
     curNode.#methods.push({
       [method]: {
         handler,
-        possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
+        possibleKeys: [...possibleKeys],
         score: ++order,
       },
     })
@@ -126,14 +117,13 @@ export class Node<T> {
           }
         }
 
-        for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
-          const pattern = node.#patterns[k]
+        for (const child of node.#patterns) {
+          const pattern = child.#pattern!
           const params = node.#params === emptyParams ? {} : { ...node.#params }
 
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
           if (typeof pattern === 'string') {
-            const child = node.#children[pattern]
             if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
               this.#pushHandlerSets(handlerSets, child, method, node.#params)
               if (pattern === '*') {
@@ -144,13 +134,11 @@ export class Node<T> {
             continue
           }
 
-          const [key, name, matcher] = pattern
+          const [, name, matcher] = pattern
 
           if (!part && matcher === true) {
             continue
           }
-
-          const child = node.#children[key]
 
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           if (matcher !== true) {
