@@ -55,6 +55,13 @@ describe('Get with a suffix wildcard', () => {
     expect(node.search('get', '/file.+js')[0]).toEqual([['file', {}]])
     expect(node.search('get', '/fileZZjs')[0]).toEqual([])
   })
+
+  it('registers the pattern when its child already exists', () => {
+    const node = new Node()
+    node.insert('get', '/assets*/x', 'literal')
+    node.insert('get', '/assets*', 'assets')
+    expect(node.search('get', '/assets/app.js')[0]).toEqual([['assets', {}]])
+  })
 })
 
 describe('Basic Usage', () => {

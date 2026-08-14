@@ -59,6 +59,9 @@ export class Node<T> {
       const key = Array.isArray(pattern) ? pattern[0] : pattern || p
 
       if (key in curNode.#children) {
+        if (typeof pattern === 'string' && !curNode.#patterns.includes(pattern)) {
+          curNode.#patterns.push(pattern)
+        }
         curNode = curNode.#children[key]
         if (Array.isArray(pattern)) {
           possibleKeys.push(pattern[1])
