@@ -4,11 +4,7 @@ import { Node } from './node'
 
 export class TrieRouter<T> implements Router<T> {
   name: string = 'TrieRouter'
-  #node: Node<T>
-
-  constructor() {
-    this.#node = new Node()
-  }
+  #node: Node<T> = new Node()
 
   add(method: string, path: string, handler: T) {
     const results = checkOptionalParameter(path)
