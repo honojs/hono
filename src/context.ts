@@ -26,6 +26,42 @@ type HeaderRecord =
 export type Data = string | ArrayBuffer | ReadableStream | Uint8Array<ArrayBuffer>
 
 /**
+ * Identity information for a user authenticated by Cloudflare Access.
+ */
+export interface CloudflareAccessIdentity extends Record<string, unknown> {
+  email?: string
+  name?: string
+  user_uuid?: string
+  account_id?: string
+  iat?: number
+  ip?: string
+  amr?: string[]
+  idp?: {
+    id: string
+    type: string
+  }
+  geo?: {
+    country: string
+  }
+  groups?: Array<{
+    id: string
+    name: string
+    email?: string
+  }>
+  devicePosture?: Record<string, unknown>
+  is_warp?: boolean
+  is_gateway?: boolean
+}
+
+/**
+ * Cloudflare Access authentication information for the current request.
+ */
+export interface CloudflareAccessContext {
+  readonly aud: string
+  getIdentity(): Promise<CloudflareAccessIdentity | undefined>
+}
+
+/**
  * Interface for the execution context in a web worker or similar environment.
  */
 export interface ExecutionContext {
@@ -49,6 +85,10 @@ export interface ExecutionContext {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   exports?: any
+  /**
+   * Cloudflare Access authentication information, when available.
+   */
+  readonly access?: CloudflareAccessContext
 }
 
 /**

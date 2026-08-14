@@ -37,7 +37,13 @@ export type {
  * Types for context, context variable map, context renderer, and execution context.
  */
 export { Context } from './context'
-export type { ContextVariableMap, ContextRenderer, ExecutionContext } from './context'
+export type {
+  CloudflareAccessContext,
+  CloudflareAccessIdentity,
+  ContextVariableMap,
+  ContextRenderer,
+  ExecutionContext,
+} from './context'
 /**
  * Type for HonoRequest.
  */
