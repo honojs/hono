@@ -83,6 +83,13 @@ export const methodNotAllowed = <E extends Env = Env>(
           continue
         }
 
+        // A trailing wildcard matches an arbitrary remainder of the path, so it is not
+        // evidence that a particular target resource exists. Including it would turn
+        // otherwise-unhandled requests in that namespace into 405s.
+        if (route.path.endsWith('*')) {
+          continue
+        }
+
         const methods = methodsByPath.get(route.path) ?? new Set<string>()
         methods.add(route.method)
 

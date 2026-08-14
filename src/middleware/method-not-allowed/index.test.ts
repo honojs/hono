@@ -197,6 +197,30 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('ignores trailing wildcard routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    app.get('/*', (c) => c.text('file'))
+    app.get('/files*', (c) => c.text('prefix'))
+
+    const postApi = await app.request('/api', { method: 'POST' })
+    expect(postApi.status).toBe(405)
+    expect(postApi.headers.get('Allow')).toBe('GET, HEAD')
+
+    const postMissing = await app.request('/missing', { method: 'POST' })
+    expect(postMissing.status).toBe(404)
+    expect(postMissing.headers.has('Allow')).toBe(false)
+
+    const postPrefixed = await app.request('/files/readme', { method: 'POST' })
+    expect(postPrefixed.status).toBe(404)
+    expect(postPrefixed.headers.has('Allow')).toBe(false)
+
+    const getWildcard = await app.request('/missing')
+    expect(getWildcard.status).toBe(200)
+    expect(await getWildcard.text()).toBe('file')
+  })
+
   it('does not invoke the error handler for a 405 response', async () => {
     const app = new Hono()
     const onError = vi.fn(() => new Response('error', { status: 500 }))
