@@ -473,6 +473,20 @@ describe('Routing', () => {
     expect(await res.text()).toBe('get /add-path-after-route-call')
   })
 
+  it('Should match a suffix wildcard after falling back to TrieRouter', async () => {
+    const app = new Hono()
+    const sub = new Hono()
+    sub.post('/items', (c) => c.text('items'))
+    sub.post('/:slug', (c) => c.text('slug'))
+    app.route('/api', sub)
+    app.get('/assets*', (c) => c.text('asset'))
+
+    const res = await app.request('http://localhost/assets/app.js')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('asset')
+    expect(app.router.name).toBe('SmartRouter + TrieRouter')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')

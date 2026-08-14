@@ -26,7 +26,7 @@ export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[]
 
   #children: Record<string, Node<T>>
-  #patterns: Pattern[]
+  #patterns: (Pattern | string)[]
   #order: number = 0
   #params: Record<string, string> = emptyParams
 
@@ -53,12 +53,14 @@ export class Node<T> {
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
       const nextP = parts[i + 1]
-      const pattern = getPattern(p, nextP)
-      const key = Array.isArray(pattern) ? pattern[0] : p
+      const pattern =
+        getPattern(p, nextP) ||
+        (i === len - 1 && p.length > 1 && p.indexOf('*') === p.length - 1 ? p : null)
+      const key = Array.isArray(pattern) ? pattern[0] : pattern || p
 
       if (key in curNode.#children) {
         curNode = curNode.#children[key]
-        if (pattern) {
+        if (Array.isArray(pattern)) {
           possibleKeys.push(pattern[1])
         }
         continue
@@ -68,7 +70,9 @@ export class Node<T> {
 
       if (pattern) {
         curNode.#patterns.push(pattern)
-        possibleKeys.push(pattern[1])
+        if (Array.isArray(pattern)) {
+          possibleKeys.push(pattern[1])
+        }
       }
       curNode = curNode.#children[key]
     }
@@ -152,12 +156,14 @@ export class Node<T> {
 
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
-          if (pattern === '*') {
-            const astNode = node.#children['*']
-            if (astNode) {
-              this.#pushHandlerSets(handlerSets, astNode, method, node.#params)
-              astNode.#params = params
-              tempNodes.push(astNode)
+          if (typeof pattern === 'string') {
+            const child = node.#children[pattern]
+            if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
+              this.#pushHandlerSets(handlerSets, child, method, node.#params)
+              if (pattern === '*') {
+                child.#params = params
+                tempNodes.push(child)
+              }
             }
             continue
           }
