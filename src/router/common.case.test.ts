@@ -122,6 +122,14 @@ export const runTest = ({
         expect(match('GET', '/static/app.js').length).toBe(0)
       })
 
+      it('Does not run a slash wildcard past its segment', async () => {
+        router.add('GET', '/assets/*', 'get assets')
+
+        expect(match('GET', '/assets').length).toBe(1)
+        expect(match('GET', '/assets/app.js').length).toBe(1)
+        expect(match('GET', '/assetsfoo').length).toBe(0)
+      })
+
       it('Matches below the root', async () => {
         router.add('GET', '/a/b*', 'get b')
 

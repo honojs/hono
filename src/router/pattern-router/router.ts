@@ -12,8 +12,13 @@ export class PatternRouter<T> implements Router<T> {
   add(method: string, path: string, handler: T) {
     const endsWithWildcard = path.at(-1) === '*'
     if (endsWithWildcard) {
-      path = path.slice(0, -2)
+      // Drop the `*` only. Removing two characters also took the last character
+      // of the segment, so `/a/b*` collapsed to `/a/` and matched anything else
+      // below `/a/`.
+      path = path.slice(0, -1)
     }
+    // `/assets/*` covers `/assets` and everything below it, but not `/assetsfoo`
+    const wildcardAfterSlash = endsWithWildcard && path.at(-1) === '/'
     if (path.at(-1) === '?') {
       path = path.slice(0, -1)
       this.add(method, path.replace(/\/[^/]+$/, ''), handler)
@@ -32,7 +37,9 @@ export class PatternRouter<T> implements Router<T> {
 
     try {
       this.#routes.push([
-        new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`),
+        new RegExp(
+          `^${parts.join('')}${endsWithWildcard ? (wildcardAfterSlash ? '(?:/|$)' : '') : '/?$'}`
+        ),
         method,
         handler,
       ])
