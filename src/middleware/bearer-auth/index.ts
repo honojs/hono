@@ -14,9 +14,12 @@ const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
+type ResponseMessageFunction = (
+  c: Context
+) => string | object | Response | Promise<string | object | Response>
 type CustomizedErrorResponseOptions = {
   wwwAuthenticateHeader?: string | object | MessageFunction
-  message?: string | object | MessageFunction
+  message?: string | object | Response | ResponseMessageFunction
 }
 
 type BearerAuthOptions<E extends Env = Env> =
@@ -29,17 +32,17 @@ type BearerAuthOptions<E extends Env = Env> =
       /**
        * @deprecated Use noAuthenticationHeader.message instead
        */
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
+      noAuthenticationHeaderMessage?: string | object | Response | ResponseMessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
       /**
        * @deprecated Use invalidAuthenticationHeader.message instead
        */
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMessage?: string | object | Response | ResponseMessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
       /**
        * @deprecated Use invalidToken.message instead
        */
-      invalidTokenMessage?: string | object | MessageFunction
+      invalidTokenMessage?: string | object | Response | ResponseMessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
   | {
@@ -51,17 +54,17 @@ type BearerAuthOptions<E extends Env = Env> =
       /**
        * @deprecated Use noAuthenticationHeader.message instead
        */
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
+      noAuthenticationHeaderMessage?: string | object | Response | ResponseMessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
       /**
        * @deprecated Use invalidAuthenticationHeader.message instead
        */
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMessage?: string | object | Response | ResponseMessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
       /**
        * @deprecated Use invalidToken.message instead
        */
-      invalidTokenMessage?: string | object | MessageFunction
+      invalidTokenMessage?: string | object | Response | ResponseMessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
 
@@ -78,11 +81,11 @@ type BearerAuthOptions<E extends Env = Env> =
  * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
- * @param {string | object | MessageFunction} [options.noAuthenticationHeader.message="Unauthorized"] - The no authentication header message.
+ * @param {string | object | Response | ResponseMessageFunction} [options.noAuthenticationHeader.message] - The no authentication header message. When a `Response` or a function returning a `Response` is provided, it is used as-is (the `WWW-Authenticate` header is added if missing).
  * @param {string | object | MessageFunction} [options.noAuthenticationHeader.wwwAuthenticateHeader="Bearer realm=\"\""] - The response header value for the WWW-Authenticate header when no authentication header is provided.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.message="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | Response | ResponseMessageFunction} [options.invalidAuthenticationHeader.message] - The invalid authentication header message. When a `Response` or a function returning a `Response` is provided, it is used as-is (the `WWW-Authenticate` header is added if missing).
  * @param {string | object | MessageFunction} [options.invalidAuthenticationHeader.wwwAuthenticateHeader="Bearer error=\"invalid_request\""] - The response header value for the WWW-Authenticate header when authentication header is invalid.
- * @param {string | object | MessageFunction} [options.invalidToken.message="Unauthorized"] - The invalid token message.
+ * @param {string | object | Response | ResponseMessageFunction} [options.invalidToken.message] - The invalid token message. When a `Response` or a function returning a `Response` is provided, it is used as-is (the `WWW-Authenticate` header is added if missing).
  * @param {string | object | MessageFunction} [options.invalidToken.wwwAuthenticateHeader="Bearer error=\"invalid_token\""] - The response header value for the WWW-Authenticate header when token is invalid.
  * @returns {MiddlewareHandler<E>} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
@@ -123,7 +126,7 @@ export const bearerAuth = <E extends Env = Env>(
     c: Context,
     status: ContentfulStatusCode,
     wwwAuthenticateHeader: string | object | MessageFunction,
-    messageOption: string | object | MessageFunction
+    messageOption: string | object | Response | ResponseMessageFunction
   ): Promise<Response> => {
     const wwwAuthenticateHeaderValue: string | object =
       typeof wwwAuthenticateHeader === 'function'
@@ -140,6 +143,16 @@ export const bearerAuth = <E extends Env = Env>(
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
+
+    if (responseMessage instanceof Response) {
+      if (!responseMessage.headers.has('WWW-Authenticate')) {
+        responseMessage.headers.set('WWW-Authenticate', headers['WWW-Authenticate'])
+      }
+      throw new HTTPException(responseMessage.status as ContentfulStatusCode, {
+        res: responseMessage,
+      })
+    }
+
     const res =
       typeof responseMessage === 'string'
         ? new Response(responseMessage, { status, headers })

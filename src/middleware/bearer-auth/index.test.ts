@@ -197,6 +197,45 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-no-authentication-header-message-response/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeader: {
+          message: () =>
+            new Response('Custom no authentication header message as response', {
+              status: 401,
+              headers: { 'content-type': 'text/plain' },
+            }),
+        },
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-message-response/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-message-response-with-www-authenticate/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeader: {
+          message: () =>
+            new Response('Custom no authentication header message as response', {
+              status: 401,
+              headers: { 'WWW-Authenticate': 'Bearer error="custom"' },
+            }),
+        },
+      })
+    )
+    app.get(
+      '/auth-custom-no-authentication-header-message-response-with-www-authenticate/*',
+      (c) => {
+        handlerExecuted = true
+        return c.text('auth')
+      }
+    )
+
+    app.use(
       '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string/*',
       bearerAuth({
         token: tokens,
@@ -326,6 +365,24 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-invalid-authentication-header-message-response/*',
+      bearerAuth({
+        token,
+        invalidAuthenticationHeader: {
+          message: () =>
+            new Response(JSON.stringify({ error: 'invalid_request' }), {
+              status: 400,
+              headers: { 'content-type': 'application/problem+json' },
+            }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-message-response/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
       '/auth-custom-invalid-token-wwwAuthenticateHeader-string/*',
       bearerAuth({
         token: tokens,
@@ -436,6 +493,24 @@ describe('Bearer Auth by Middleware', () => {
       })
     )
     app.get('/auth-custom-invalid-token-message-function-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-response/*',
+      bearerAuth({
+        token,
+        invalidToken: {
+          message: () =>
+            new Response(JSON.stringify({ error: 'invalid_token' }), {
+              status: 401,
+              headers: { 'content-type': 'application/problem+json' },
+            }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-response/*', (c) => {
       handlerExecuted = true
       return c.text('auth')
     })
@@ -717,6 +792,31 @@ describe('Bearer Auth by Middleware', () => {
     )
   })
 
+  it('Should not authorize - custom no authorization header message as Response', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-message-response'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('text/plain')
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer realm=""')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom no authentication header message as response')
+  })
+
+  it('Should not authorize - custom no authorization header message as Response with existing WWW-Authenticate header', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-message-response-with-www-authenticate'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer error="custom"')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom no authentication header message as response')
+  })
+
   it('Should not authorize - custom invalid authentication header wwwAuthenticateHeader as string', async () => {
     const req = new Request(
       'http://localhost/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string'
@@ -923,6 +1023,18 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
+  })
+
+  it('Should not authorize - custom invalid token message as Response', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-response')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/problem+json')
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer error="invalid_token"')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"error":"invalid_token"}')
   })
 })
 
