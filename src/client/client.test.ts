@@ -521,6 +521,53 @@ describe('Form - Undefined Values', () => {
   })
 })
 
+describe('Optional header and cookie values', () => {
+  const app = new Hono().get(
+    '/',
+    validator('header', () => {
+      return {} as {
+        'x-required': string
+        'x-optional'?: string
+      }
+    }),
+    validator('cookie', () => {
+      return {} as {
+        required: string
+        optional?: string
+      }
+    }),
+    (c) =>
+      c.json({
+        requiredHeader: c.req.header('x-required'),
+        optionalHeader: c.req.header('x-optional') ?? null,
+        cookies: parse(c.req.header('cookie') ?? ''),
+      })
+  )
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should skip undefined header and cookie values', async () => {
+    const res = await client.index.$get({
+      header: {
+        'x-required': 'header-value',
+        'x-optional': undefined,
+      },
+      cookie: {
+        required: 'cookie-value',
+        optional: undefined,
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      requiredHeader: 'header-value',
+      optionalHeader: null,
+      cookies: {
+        required: 'cookie-value',
+      },
+    })
+  })
+})
+
 describe('Infer the response/request type', () => {
   const app = new Hono()
   const route = app.get(
