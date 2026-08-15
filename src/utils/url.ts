@@ -10,6 +10,14 @@ export const splitPath = (path: string): string[] => {
   if (paths[0] === '') {
     paths.shift()
   }
+  // Split trailing suffix wildcard (e.g. /assets*) into ['assets', '*']
+  // so TrieRouter creates the '*' child node. Without this, 'assets*'
+  // is treated as a literal static key and never matches.
+  const last = paths.length - 1
+  const lastSeg = paths[last]
+  if (last >= 0 && lastSeg.length > 1 && lastSeg.endsWith('*')) {
+    paths.splice(last, 1, lastSeg.slice(0, -1), '*')
+  }
   return paths
 }
 

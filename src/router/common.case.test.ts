@@ -42,15 +42,15 @@ export const runTest = ({
         const res = matchRes.map((r) =>
           stash
             ? {
-                handler: r[0],
-                params: Object.keys(r[1]).reduce(
-                  (acc, key) => {
-                    acc[key] = stash[(r[1] as ParamIndexMap)[key]]
-                    return acc
-                  },
-                  Object.create(null) as Params
-                ),
-              }
+			      handler: r[0],
+			      params: Object.keys(r[1]).reduce(
+			        (acc, key) => {
+			          acc[key] = stash[(r[1] as ParamIndexMap)[key]]
+			          return acc
+			        },
+			        Object.create(null) as Params
+			      ),
+			    }
             : { handler: r[0], params: r[1] as Params }
         )
         return res
@@ -584,12 +584,37 @@ export const runTest = ({
       })
 
       it('GET /regex-abc/123/ghi', () => {
-        const res = match('GET', '/regex-abc/123/ghi')
-        expect(res.length).toBe(1)
-        expect(res[0].handler).toEqual('middleware')
-        expect(res[0].params['id']).toBe('123')
-      })
-    })
+			    const res = match('GET', '/regex-abc/123/ghi')
+			    expect(res.length).toBe(1)
+			    expect(res[0].handler).toEqual('middleware')
+			    expect(res[0].params['id']).toBe('123')
+            })
+          })
+
+          describe('Suffix wildcard with sub-app route', () => {
+                  beforeEach(() => {
+                    // https://github.com/honojs/hono/issues/5219
+                    router.add('POST', '/api/:slug', 'slug')
+                    router.add('GET', '/assets*', 'suffix-wildcard')
+                  })
+
+                  it('GET /assets/app.js', () => {
+                    const res = match('GET', '/assets/app.js')
+                    expect(res.length).toBe(1)
+                    expect(res[0].handler).toEqual('suffix-wildcard')
+                  })
+
+                  it('GET /assets', () => {
+                    const res = match('GET', '/assets')
+                    expect(res.length).toBe(1)
+                    expect(res[0].handler).toEqual('suffix-wildcard')
+                  })
+
+                  it('POST /api/:slug still works', () => {
+                    const res2 = match('POST', '/api/anything')
+                    expect(res2.some((r) => r.handler === 'slug')).toBe(true)
+                  })
+                })
 
     describe('Capture complex multiple directories', () => {
       beforeEach(() => {
