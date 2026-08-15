@@ -277,6 +277,64 @@ describe('Method Not Allowed Middleware', () => {
     })
   })
 
+  it('ignores trailing wildcard routes (path ending with *) when inferring allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('api'))
+    app.get('/*', (c) => c.text('fallback'))
+
+    // GET /api should be 200
+    const getRes = await app.request('/api')
+    expect(getRes.status).toBe(200)
+
+    // POST /api should be 405 (concrete route)
+    const postRes = await app.request('/api', { method: 'POST' })
+    expect(postRes.status).toBe(405)
+    expect(postRes.headers.get('Allow')).toBe('GET, HEAD')
+
+    // POST /missing should stay 404 (wildcard should not convert it to 405)
+    const postMissingRes = await app.request('/missing', { method: 'POST' })
+    expect(postMissingRes.status).toBe(404)
+    expect(postMissingRes.headers.has('Allow')).toBe(false)
+  })
+
+  it('ignores suffix wildcard routes (e.g. /assets*) when inferring allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('api'))
+    app.get('/assets*', (c) => c.text('static'))
+
+    // GET /assets/app.js should be 200 (wildcard serves it)
+    const getRes = await app.request('/assets/app.js')
+    expect(getRes.status).toBe(200)
+
+    // POST /api should be 405 (concrete route)
+    const postRes = await app.request('/api', { method: 'POST' })
+    expect(postRes.status).toBe(405)
+
+    // POST /assets/app.js should stay 404 (suffix wildcard should not convert it to 405)
+    const postAssetsRes = await app.request('/assets/app.js', { method: 'POST' })
+    expect(postAssetsRes.status).toBe(404)
+    expect(postAssetsRes.headers.has('Allow')).toBe(false)
+  })
+
+  it('still returns 405 for concrete routes alongside ignored wildcards', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/resource', (c) => c.text('GET'))
+    app.post('/resource', (c) => c.text('POST'))
+    app.get('/files/*', (c) => c.text('file'))
+
+    // DELETE /resource should be 405 (concrete routes)
+    const deleteRes = await app.request('/resource', { method: 'DELETE' })
+    expect(deleteRes.status).toBe(405)
+    expect(deleteRes.headers.get('Allow')).toBe('GET, HEAD, POST')
+
+    // DELETE /files/readme should stay 404 (trailing wildcard ignored)
+    const deleteFilesRes = await app.request('/files/readme', { method: 'DELETE' })
+    expect(deleteFilesRes.status).toBe(404)
+  })
+
   it('leaves a non-404 custom not-found response unchanged', async () => {
     const app = new Hono()
     app.use(methodNotAllowed({ app }))

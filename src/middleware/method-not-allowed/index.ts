@@ -83,6 +83,14 @@ export const methodNotAllowed = <E extends Env = Env>(
           continue
         }
 
+        // Trailing-wildcard routes (e.g. `GET /assets*` or `GET /*`) match an
+        // arbitrary remainder of the path, so they do not prove that a particular
+        // target resource exists.  Including them in the Allow map would convert
+        // every otherwise-unhandled request in that namespace from 404 to 405.
+        if (route.path.endsWith('*')) {
+          continue
+        }
+
         const methods = methodsByPath.get(route.path) ?? new Set<string>()
         methods.add(route.method)
 
