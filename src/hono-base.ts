@@ -245,6 +245,7 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
+   * @param {string} [path] - path to scope the error handler
    * @param {...MiddlewareHandler[]} handlers - middleware to run before the error handler
    * @param {ErrorHandler} handler - request handler for error
    * @returns {Hono} changed Hono instance
@@ -257,12 +258,16 @@ class Hono<
    * })
    * ```
    */
-  onError = (
-    ...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]
-  ): Hono<E, S, BasePath, CurrentPath> => {
+  onError: {
+    (...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]): Hono<E, S, BasePath, CurrentPath>
+    (
+      path: string,
+      ...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]
+    ): Hono<E, S, BasePath, CurrentPath>
+  } = (...handlers: (string | MiddlewareHandler<E> | ErrorHandler<E>)[]) => {
     const handler = handlers.pop() as ErrorHandler<E>
     handlers.push(((c: Context<E>) => handler(c.error!, c)) as MiddlewareHandler<E>)
-    return this.#addRoutes(METHOD_NAME_ERROR, handlers as H[])
+    return this.#addRoutes(METHOD_NAME_ERROR, handlers as (string | H)[])
   }
 
   /**
@@ -270,6 +275,7 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
+   * @param {string} [path] - path to scope the not-found handler
    * @param {...MiddlewareHandler[]} handlers - middleware to run before the not-found handler
    * @param {NotFoundHandler} handler - request handler for not-found
    * @returns {Hono} changed Hono instance
@@ -281,10 +287,16 @@ class Hono<
    * })
    * ```
    */
-  notFound = (
-    ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
-  ): Hono<E, S, BasePath, CurrentPath> => {
-    return this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers as H[])
+  notFound: {
+    (
+      ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
+    ): Hono<E, S, BasePath, CurrentPath>
+    (
+      path: string,
+      ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
+    ): Hono<E, S, BasePath, CurrentPath>
+  } = (...handlers: (string | MiddlewareHandler<E> | NotFoundHandler<E>)[]) => {
+    return this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers as (string | H)[])
   }
 
   /**
@@ -389,8 +401,9 @@ class Hono<
     this.routes.push(r)
   }
 
-  #addRoutes(method: string, handlers: H[]): this {
-    handlers.forEach((handler) => this.#addRoute(method, '*', handler))
+  #addRoutes(method: string, handlers: (string | H)[]): this {
+    const path = typeof handlers[0] === 'string' ? (handlers.shift() as string) : '*'
+    handlers.forEach((handler) => this.#addRoute(method, path, handler as H))
     return this
   }
 

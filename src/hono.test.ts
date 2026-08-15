@@ -1985,6 +1985,36 @@ describe('Hono with `app.route`', () => {
   })
 
   describe('onError with middleware', () => {
+    it('Should scope error handlers by path', async () => {
+      const app = new Hono()
+      const api = new Hono()
+
+      api.onError(
+        '/items/*',
+        async (c, next) => {
+          await next()
+          c.header('x-error-scope', 'items')
+        },
+        (error, c) => c.text(`items: ${error.message}`, 500)
+      )
+      api.get('/items/:id', () => {
+        throw new Error('failed')
+      })
+      api.get('/other', () => {
+        throw new Error('failed')
+      })
+      app.route('/api', api)
+      app.onError((error, c) => c.text(`app: ${error.message}`, 500))
+
+      let res = await app.request('/api/items/1')
+      expect(res.headers.get('x-error-scope')).toBe('items')
+      expect(await res.text()).toBe('items: failed')
+
+      res = await app.request('/api/other')
+      expect(res.headers.get('x-error-scope')).toBeNull()
+      expect(await res.text()).toBe('app: failed')
+    })
+
     it('Should compose middleware before the error handler', async () => {
       const app = new Hono()
       const calls: string[] = []
@@ -2203,6 +2233,19 @@ describe('Hono with `app.route`', () => {
   })
 
   describe('notFound with middleware', () => {
+    it('Should scope not-found handlers by path', async () => {
+      const app = new Hono()
+
+      app.notFound('/items/*', (c) => c.text('Items Not Found', 404))
+      app.notFound((c) => c.text('App Not Found', 404))
+
+      let res = await app.request('/items/missing')
+      expect(await res.text()).toBe('Items Not Found')
+
+      res = await app.request('/other')
+      expect(await res.text()).toBe('App Not Found')
+    })
+
     it('Should compose middleware before the not-found handler', async () => {
       const app = new Hono()
       const calls: string[] = []
