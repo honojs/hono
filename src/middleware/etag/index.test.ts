@@ -461,4 +461,33 @@ describe('Etag Middleware', () => {
       expect(res.headers.get('ETag')).toBeNull()
     })
   })
+
+  it('Should remove all non-retained headers on 304 without skipping any', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/multi-headers', (c) => {
+      c.header('X-Custom-1', 'val1')
+      c.header('X-Custom-2', 'val2')
+      c.header('X-Custom-3', 'val3')
+      c.header('X-Custom-4', 'val4')
+      c.header('Cache-Control', 'max-age=3600')
+      return c.text('Hono is hot')
+    })
+    const res1 = await app.request('http://localhost/etag/multi-headers')
+    const etagHeader = res1.headers.get('ETag')!
+    expect(res1.status).toBe(200)
+
+    const res2 = await app.request('http://localhost/etag/multi-headers', {
+      headers: {
+        'If-None-Match': etagHeader,
+      },
+    })
+    expect(res2.status).toBe(304)
+    expect(res2.headers.get('ETag')).toBe(etagHeader)
+    expect(res2.headers.get('Cache-Control')).toBe('max-age=3600')
+    expect(res2.headers.get('X-Custom-1')).toBeNull()
+    expect(res2.headers.get('X-Custom-2')).toBeNull()
+    expect(res2.headers.get('X-Custom-3')).toBeNull()
+    expect(res2.headers.get('X-Custom-4')).toBeNull()
+  })
 })
