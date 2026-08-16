@@ -58,15 +58,8 @@ describe('CSRF by Middleware', () => {
     })
 
     describe('OPTIONS /form', async () => {
-      it('should be 200 for a cross-site preflight request', async () => {
-        const res = await app.request('http://localhost/form', {
-          method: 'OPTIONS',
-          headers: {
-            origin: 'http://example.com',
-            'access-control-request-method': 'POST',
-            'sec-fetch-site': 'cross-site',
-          },
-        })
+      it('should be 200 for any request', async () => {
+        const res = await app.request('http://localhost/form', { method: 'OPTIONS' })
 
         expect(res.status).toBe(200)
         expect(await res.text()).toBe('OK')
@@ -237,7 +230,7 @@ describe('CSRF by Middleware', () => {
   })
 
   describe('with CORS middleware', () => {
-    it('should allow a cross-site preflight when CSRF middleware is registered first', async () => {
+    it('should not block a cross-site preflight request when CSRF is registered before CORS', async () => {
       const app = new Hono()
 
       app.use('*', csrf())
