@@ -74,6 +74,21 @@ describe('replaceUrlParams', () => {
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/2/1')
   })
+
+  it('Should replace correctly when parameter value contains $ characters', () => {
+    expect(replaceUrlParam('http://localhost/items/:id', { id: 'item$&' })).toBe(
+      'http://localhost/items/item$&'
+    )
+    expect(replaceUrlParam('http://localhost/items/:id', { id: '$100' })).toBe(
+      'http://localhost/items/$100'
+    )
+    expect(replaceUrlParam('http://localhost/users/:id', { id: 'test$`' })).toBe(
+      'http://localhost/users/test$`'
+    )
+    expect(replaceUrlParam('http://localhost/users/:id/posts', { id: "test$'" })).toBe(
+      "http://localhost/users/test$'/posts"
+    )
+  })
 })
 
 describe('buildSearchParams', () => {
