@@ -15,15 +15,18 @@ import type {
   FetchEventLike,
   H,
   HandlerInterface,
+  IntersectNonAnyTypes,
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
+  Next,
   NotFoundHandler,
   OnHandlerInterface,
   RouterRoute,
   Schema,
 } from './types'
+import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 const METHOD_NAME_NOT_FOUND = '@NOT_FOUND'
@@ -52,6 +55,21 @@ const getResponse = (context: Context): Response => {
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
+
+type FallbackHandlerInterface<
+  E extends Env,
+  S extends Schema,
+  BasePath extends string,
+  CurrentPath extends string,
+> = {
+  <E2 extends Env = E>(
+    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, '*'>, any, any>[]
+  ): Hono<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
+  <Path extends string, E2 extends Env = E>(
+    path: Path,
+    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, Path>, any, any>[]
+  ): Hono<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
+}
 
 export type HonoOptions<E extends Env> = {
   /**
@@ -122,6 +140,42 @@ class Hono<
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
 
+  /**
+   * `.catch()` adds middleware that runs when an error is caught.
+   * If every matching middleware calls `next()`, the error is passed to `.onError()`.
+   *
+   * @param {string} [path] - path to scope the error middleware
+   * @param {...MiddlewareHandler[]} handlers - middleware to run when handling an error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.catch('/api/*', async (c, next) => {
+   *   console.error(c.error)
+   *   await next()
+   * })
+   * ```
+   */
+  catch: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
+
+  /**
+   * `.catchNotFound()` adds middleware that runs when a not-found response is requested.
+   * If every matching middleware calls `next()`, the request is passed to `.notFound()`.
+   *
+   * @param {string} [path] - path to scope the not-found middleware
+   * @param {...MiddlewareHandler[]} handlers - middleware to run when handling not found
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.catchNotFound('/api/*', async (c, next) => {
+   *   c.header('x-not-found', 'true')
+   *   await next()
+   * })
+   * ```
+   */
+  catchNotFound: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
+
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -172,6 +226,11 @@ class Hono<
       return this as any
     }
 
+    this.catch = (...handlers: (string | H)[]) =>
+      this.#addRoutes(METHOD_NAME_ERROR, handlers) as any
+    this.catchNotFound = (...handlers: (string | H)[]) =>
+      this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers) as any
+
     const { strict, ...optionsWithoutStrict } = options
     Object.assign(this, optionsWithoutStrict)
     this.getPath = (strict ?? true) ? (options.getPath ?? getPath) : getPathNoStrict
@@ -182,9 +241,15 @@ class Hono<
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
+
+  #notFoundHandler: NotFoundHandler = notFoundHandler
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
+  private errorHandler: ErrorHandler = errorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -215,7 +280,23 @@ class Hono<
     app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
     const subApp = this.basePath(path)
-    app.routes.map((r) => subApp.#addRoute(r.method, r.path, r.handler, r.basePath))
+    app.routes.map((r) => {
+      let handler
+      if (app.errorHandler === errorHandler || r.method === METHOD_NAME_ERROR) {
+        handler = r.handler
+      } else {
+        handler = async (c: Context<E>, next: Next) => {
+          try {
+            return await r.handler(c, next)
+          } catch (err) {
+            return (c.res = await subApp.#handleError(err, c, app.errorHandler))
+          }
+        }
+        ;(handler as any)[COMPOSED_HANDLER] = r.handler
+      }
+
+      subApp.#addRoute(r.method, r.path, handler, r.basePath)
+    })
     return this
   }
 
@@ -245,8 +326,6 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
-   * @param {string} [path] - path to scope the error handler
-   * @param {...MiddlewareHandler[]} handlers - middleware to run before the error handler
    * @param {ErrorHandler} handler - request handler for error
    * @returns {Hono} changed Hono instance
    *
@@ -258,16 +337,9 @@ class Hono<
    * })
    * ```
    */
-  onError: {
-    (...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]): Hono<E, S, BasePath, CurrentPath>
-    (
-      path: string,
-      ...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]
-    ): Hono<E, S, BasePath, CurrentPath>
-  } = (...handlers: (string | MiddlewareHandler<E> | ErrorHandler<E>)[]) => {
-    const handler = handlers.pop() as ErrorHandler<E>
-    handlers.push(((c: Context<E>) => handler(c.error!, c)) as MiddlewareHandler<E>)
-    return this.#addRoutes(METHOD_NAME_ERROR, handlers as (string | H)[])
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+    this.errorHandler = handler
+    return this
   }
 
   /**
@@ -275,8 +347,6 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
-   * @param {string} [path] - path to scope the not-found handler
-   * @param {...MiddlewareHandler[]} handlers - middleware to run before the not-found handler
    * @param {NotFoundHandler} handler - request handler for not-found
    * @returns {Hono} changed Hono instance
    *
@@ -287,16 +357,9 @@ class Hono<
    * })
    * ```
    */
-  notFound: {
-    (
-      ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
-    ): Hono<E, S, BasePath, CurrentPath>
-    (
-      path: string,
-      ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
-    ): Hono<E, S, BasePath, CurrentPath>
-  } = (...handlers: (string | MiddlewareHandler<E> | NotFoundHandler<E>)[]) => {
-    return this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers as (string | H)[])
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
+    this.#notFoundHandler = handler
+    return this
   }
 
   /**
@@ -407,34 +470,49 @@ class Hono<
     return this
   }
 
-  #dispatchInternal(method: string, c: Context<E>): Response | Promise<Response> {
+  #dispatchInternal(
+    method: string,
+    c: Context<E>,
+    onError: ErrorHandler<E> = this.errorHandler
+  ): Response | Promise<Response> {
     const matchResult = this.router.match(method, c.req.path)
     const handlers = matchResult[0].filter(
       ([[, route]]) => route.method === method
     ) as (typeof matchResult)[0]
+    const fallback: NotFoundHandler<E> =
+      method === METHOD_NAME_ERROR ? (c) => onError(c.error!, c) : this.#notFoundHandler
     if (!handlers.length) {
-      return method === METHOD_NAME_ERROR ? errorHandler(c.error!, c) : notFoundHandler(c)
+      return fallback(c)
     }
     c.finalized = false
 
     const handleError = (err: unknown): Response | Promise<Response> => {
-      if (method === METHOD_NAME_ERROR || c.error) {
+      if (c.error) {
         throw err
       }
       return this.#handleError(err, c)
     }
 
-    const composed = compose(handlers, handleError, undefined, false)
+    const composed = compose(
+      handlers,
+      method === METHOD_NAME_ERROR ? onError : handleError,
+      fallback,
+      false
+    )
 
     return composed(c).then(getResponse).catch(handleError)
   }
 
-  #handleError = (err: unknown, c: Context<E>): Response | Promise<Response> => {
+  #handleError = (
+    err: unknown,
+    c: Context<E>,
+    onError: ErrorHandler<E> = this.errorHandler
+  ): Response | Promise<Response> => {
     if (!(err instanceof Error)) {
       throw err
     }
     c.error = err
-    return this.#dispatchInternal(METHOD_NAME_ERROR, c)
+    return this.#dispatchInternal(METHOD_NAME_ERROR, c, onError)
   }
 
   #notFound = (c: Context<E>): Response | Promise<Response> =>

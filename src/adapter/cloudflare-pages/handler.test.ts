@@ -79,8 +79,8 @@ describe('Adapter for Cloudflare Pages', () => {
     })
 
     const handler = handle(app)
-    // It does reject with the error if app is NOT "subApp"
-    await expect(handler(eventContext)).rejects.toThrowError('Custom Error')
+    // It does throw the error if app is NOT "subApp"
+    expect(() => handler(eventContext)).toThrowError('Custom Error')
   })
 })
 

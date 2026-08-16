@@ -201,8 +201,8 @@ describe('Method Not Allowed Middleware', () => {
     const app = new Hono()
     app.use(methodNotAllowed({ app }))
     app.get('/resource', (c) => c.text('GET'))
-    app.notFound((c) => c.text('Not Found', 404))
-    app.onError((_error, c) => c.text('Error', 500))
+    app.catchNotFound(async (_c, next) => next())
+    app.catch(async (_c, next) => next())
 
     const res = await app.request('/resource', { method: 'POST' })
 

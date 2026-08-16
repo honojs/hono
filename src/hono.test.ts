@@ -1887,6 +1887,10 @@ describe('Hono with `app.route`', () => {
       }
     })
 
+    app.onError((err, c) => {
+      return c.text('onError by app', 500)
+    })
+
     sub.get('/posts/:id', async (c, next) => {
       c.header('handler-chain', '1')
       await next()
@@ -1904,15 +1908,7 @@ describe('Hono with `app.route`', () => {
       return c.text('onError by sub', 500)
     })
 
-    app.get('/error', () => {
-      throw new Error('This is Error')
-    })
-
     app.route('/sub', sub)
-
-    app.onError((err, c) => {
-      return c.text('onError by app', 500)
-    })
 
     it('GET /posts/123 for sub', async () => {
       const res = await app.request('https://example.com/sub/posts/123')
@@ -1922,37 +1918,15 @@ describe('Hono with `app.route`', () => {
     })
 
     it('should be handled by app', async () => {
-      const res = await app.request('https://example.com/error')
-      expect(res.status).toBe(500)
-      expect(await res.text()).toBe('onError by app')
-    })
-
-    it('should be selected by path when app middleware throws', async () => {
       const res = await app.request('https://example.com/sub/ok?app-error=1')
       expect(res.status).toBe(500)
-      expect(await res.text()).toBe('onError by sub')
+      expect(await res.text()).toBe('onError by app')
     })
 
     it('should be handled by sub', async () => {
       const res = await app.request('https://example.com/sub/error')
       expect(res.status).toBe(500)
       expect(await res.text()).toBe('onError by sub')
-    })
-
-    it('should use a matching parent scope', async () => {
-      const nested = new Hono()
-      const parent = nested.basePath('/parent')
-      const child = parent.basePath('/child')
-
-      parent.onError((_error, c) => c.text('onError by parent', 500))
-      nested.onError((_error, c) => c.text('onError by root', 500))
-      child.get('/error', () => {
-        throw new Error('This is Error')
-      })
-
-      const res = await nested.request('/parent/child/error')
-      expect(res.status).toBe(500)
-      expect(await res.text()).toBe('onError by parent')
     })
   })
 
@@ -1984,18 +1958,18 @@ describe('Hono with `app.route`', () => {
     })
   })
 
-  describe('onError with middleware', () => {
-    it('Should scope error handlers by path', async () => {
+  describe('catch', () => {
+    it('Should scope error middleware by path', async () => {
       const app = new Hono()
       const api = new Hono()
 
-      api.onError(
+      api.catch(
         '/items/*',
         async (c, next) => {
           await next()
           c.header('x-error-scope', 'items')
         },
-        (error, c) => c.text(`items: ${error.message}`, 500)
+        async (c) => c.text(`items: ${c.error!.message}`, 500)
       )
       api.get('/items/:id', () => {
         throw new Error('failed')
@@ -2015,22 +1989,64 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('app: failed')
     })
 
-    it('Should compose middleware before the error handler', async () => {
+    it('Should run before a sub-application legacy error handler', async () => {
+      const app = new Hono()
+      const api = new Hono()
+      const calls: string[] = []
+
+      api.catch(async (_c, next) => {
+        calls.push('catch')
+        await next()
+      })
+      api.onError((error, c) => {
+        calls.push('onError')
+        return c.text(error.message, 500)
+      })
+      api.get('/error', () => {
+        throw new Error('Error')
+      })
+      app.route('/api', api)
+
+      const res = await app.request('/api/error')
+      expect(await res.text()).toBe('Error')
+      expect(calls).toEqual(['catch', 'onError'])
+    })
+
+    it('Should replace a response when a sub-application throws after next()', async () => {
+      const app = new Hono()
+      const api = new Hono()
+
+      api.use(async (_c, next) => {
+        await next()
+        throw new Error('Error after response')
+      })
+      api.get('/item', (c) => c.text('Item'))
+      api.onError((error, c) => c.text(error.message, 500))
+      app.route('/api', api)
+
+      const res = await app.request('/api/item')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Error after response')
+    })
+
+    it('Should compose multiple registrations before the legacy error handler', async () => {
       const app = new Hono()
       const calls: string[] = []
 
-      app.onError(
-        async (c, next) => {
-          calls.push(`before:${c.req.param('id')}:${c.error?.message}`)
-          await next()
-          calls.push(`after:${c.req.param('id')}`)
-          c.res.headers.set('x-error-middleware', 'true')
-        },
-        (err, c) => {
-          calls.push('handler')
-          return c.text(err.message, 500)
-        }
-      )
+      app.catch(async (c, next) => {
+        calls.push(`before:${c.req.param('id')}:${c.error?.message}`)
+        await next()
+        calls.push(`after:${c.req.param('id')}`)
+        c.res.headers.set('x-error-middleware', 'true')
+      })
+      app.catch(async (_c, next) => {
+        calls.push('second')
+        await next()
+      })
+      app.onError((err, c) => {
+        calls.push('handler')
+        return c.text(err.message, 500)
+      })
 
       app.get('/posts/:id', () => {
         throw new Error('This is Error')
@@ -2040,7 +2056,23 @@ describe('Hono with `app.route`', () => {
       expect(res.status).toBe(500)
       expect(res.headers.get('x-error-middleware')).toBe('true')
       expect(await res.text()).toBe('This is Error')
-      expect(calls).toEqual(['before:123:This is Error', 'handler', 'after:123'])
+      expect(calls).toEqual(['before:123:This is Error', 'second', 'handler', 'after:123'])
+    })
+
+    it('Should infer variables from middleware', async () => {
+      const setMessage: MiddlewareHandler<{
+        Variables: { message: string }
+      }> = async (c, next) => {
+        c.set('message', 'Caught')
+        await next()
+      }
+      const app = new Hono()
+        .catch(setMessage, async (c) => c.text(c.var.message, 500))
+        .get('/error', () => {
+          throw new Error('Error')
+        })
+
+      expect(await (await app.request('/error')).text()).toBe('Caught')
     })
 
     it('Should replace an existing response', async () => {
@@ -2051,16 +2083,53 @@ describe('Hono with `app.route`', () => {
         throw new Error('Error after response')
       })
       app.get('/posts/:id', (c) => c.text('OK'))
-      app.onError(
-        async (_c, next) => {
-          await next()
-        },
-        (err, c) => c.text(err.message, 500)
-      )
+      app.catch(async (_c, next) => {
+        await next()
+      })
+      app.onError((err, c) => c.text(err.message, 500))
 
       const res = await app.request('https://example.com/posts/123')
       expect(res.status).toBe(500)
       expect(await res.text()).toBe('Error after response')
+    })
+
+    it('Should allow middleware to return a response', async () => {
+      const app = new Hono()
+
+      app.catch(async (c) => c.text(`Caught: ${c.error!.message}`, 500))
+      app.onError((_error, c) => c.text('Legacy Error', 500))
+      app.get('/error', () => {
+        throw new Error('Error')
+      })
+
+      const res = await app.request('/error')
+      expect(await res.text()).toBe('Caught: Error')
+    })
+
+    it('Should pass errors thrown by middleware to the legacy error handler', async () => {
+      const app = new Hono()
+
+      app.catch(async () => {
+        throw new Error('Error in catch')
+      })
+      app.onError((error, c) => c.text(error.message, 500))
+      app.get('/error', () => {
+        throw new Error('Original error')
+      })
+
+      expect(await (await app.request('/error')).text()).toBe('Error in catch')
+    })
+
+    it('Should use the last legacy error handler', async () => {
+      const app = new Hono()
+
+      app.onError((_error, c) => c.text('First', 500))
+      app.onError((_error, c) => c.text('Second', 500))
+      app.get('/error', () => {
+        throw new Error('Error')
+      })
+
+      expect(await (await app.request('/error')).text()).toBe('Second')
     })
 
     it('Should preserve the route that threw after next()', async () => {
@@ -2154,23 +2223,6 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('404 Not Found by app')
     })
 
-    it('An error in sub notFound should be handled by sub onError', async () => {
-      const app = new Hono()
-      const sub = new Hono()
-
-      sub.get('/missing', (c) => c.notFound())
-      sub.notFound(() => {
-        throw new Error('Error in sub notFound')
-      })
-      sub.onError((error, c) => c.text(`${error.message}: onError by sub`, 500))
-      app.route('/sub', sub)
-      app.onError((_error, c) => c.text('onError by app', 500))
-
-      const res = await app.request('https://example.com/sub/missing')
-      expect(res.status).toBe(500)
-      expect(await res.text()).toBe('Error in sub notFound: onError by sub')
-    })
-
     it('Should preserve route metadata and resume upstream middleware for c.notFound()', async () => {
       const app = new Hono()
       const sub = new Hono()
@@ -2184,7 +2236,7 @@ describe('Hono with `app.route`', () => {
         }
       })
       sub.get('/posts/:id', (c) => c.notFound())
-      sub.notFound((c) => c.text(`sub: ${c.req.param('id')}`, 404))
+      sub.catchNotFound(async (c) => c.text(`sub: ${c.req.param('id')}`, 404))
       app.route('/sub', sub)
 
       const res = await app.request('/sub/posts/123')
@@ -2232,11 +2284,11 @@ describe('Hono with `app.route`', () => {
     })
   })
 
-  describe('notFound with middleware', () => {
-    it('Should scope not-found handlers by path', async () => {
+  describe('catchNotFound', () => {
+    it('Should scope not-found middleware by path', async () => {
       const app = new Hono()
 
-      app.notFound('/items/*', (c) => c.text('Items Not Found', 404))
+      app.catchNotFound('/items/*', async (c) => c.text('Items Not Found', 404))
       app.notFound((c) => c.text('App Not Found', 404))
 
       let res = await app.request('/items/missing')
@@ -2246,22 +2298,24 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('App Not Found')
     })
 
-    it('Should compose middleware before the not-found handler', async () => {
+    it('Should compose multiple registrations before the legacy not-found handler', async () => {
       const app = new Hono()
       const calls: string[] = []
 
-      app.notFound(
-        async (c, next) => {
-          calls.push(`before:${c.req.param('id')}`)
-          await next()
-          calls.push(`after:${c.req.param('id')}`)
-          c.res.headers.set('x-not-found-middleware', 'true')
-        },
-        (c) => {
-          calls.push('handler')
-          return c.text('Custom Not Found', 404)
-        }
-      )
+      app.catchNotFound(async (c, next) => {
+        calls.push(`before:${c.req.param('id')}`)
+        await next()
+        calls.push(`after:${c.req.param('id')}`)
+        c.res.headers.set('x-not-found-middleware', 'true')
+      })
+      app.catchNotFound(async (_c, next) => {
+        calls.push('second')
+        await next()
+      })
+      app.notFound((c) => {
+        calls.push('handler')
+        return c.text('Custom Not Found', 404)
+      })
 
       app.get('/posts/:id', (c) => c.notFound())
 
@@ -2269,20 +2323,31 @@ describe('Hono with `app.route`', () => {
       expect(res.status).toBe(404)
       expect(res.headers.get('x-not-found-middleware')).toBe('true')
       expect(await res.text()).toBe('Custom Not Found')
-      expect(calls).toEqual(['before:123', 'handler', 'after:123'])
+      expect(calls).toEqual(['before:123', 'second', 'handler', 'after:123'])
     })
 
     it('Should allow middleware to return a response', async () => {
       const app = new Hono()
 
-      app.notFound(
-        async (c) => c.text('Middleware Not Found', 404),
-        (c) => c.text('Handler Not Found', 404)
-      )
+      app.catchNotFound(async (c) => c.text('Middleware Not Found', 404))
+      app.notFound((c) => c.text('Handler Not Found', 404))
 
       const res = await app.request('https://example.com/missing')
       expect(res.status).toBe(404)
       expect(await res.text()).toBe('Middleware Not Found')
+    })
+
+    it('Should pass errors thrown by middleware to the error middleware', async () => {
+      const app = new Hono()
+
+      app.catchNotFound(async () => {
+        throw new Error('Error in catchNotFound')
+      })
+      app.catch(async (c) => c.text(c.error!.message, 500))
+
+      const res = await app.request('/missing')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Error in catchNotFound')
     })
 
     it('Should compose path-matched fallback routes in registration order', async () => {
@@ -2290,8 +2355,8 @@ describe('Hono with `app.route`', () => {
       const api = app.basePath('/api')
       const tenant = app.basePath('/:tenant')
 
-      api.notFound((c) => c.text('API Not Found', 404))
-      tenant.notFound((c) => c.text('Tenant Not Found', 404))
+      api.catchNotFound(async (c) => c.text('API Not Found', 404))
+      tenant.catchNotFound(async (c) => c.text('Tenant Not Found', 404))
       app.notFound((c) => c.text('App Not Found', 404))
       api.get('/missing', (c) => c.notFound())
       tenant.get('/missing', (c) => c.notFound())
@@ -2314,8 +2379,8 @@ describe('Hono with `app.route`', () => {
 
       const rootFirst = new Hono()
       const rootFirstApi = rootFirst.basePath('/api')
-      rootFirst.notFound((c) => c.text('App Not Found', 404))
-      rootFirstApi.notFound((c) => c.text('API Not Found', 404))
+      rootFirst.catchNotFound(async (c) => c.text('App Not Found', 404))
+      rootFirstApi.catchNotFound(async (c) => c.text('API Not Found', 404))
       rootFirstApi.get('/missing', (c) => c.notFound())
 
       res = await rootFirst.request('https://example.com/api/missing')
@@ -2324,8 +2389,8 @@ describe('Hono with `app.route`', () => {
       const nested = new Hono()
       const parent = nested.basePath('/parent')
       const child = parent.basePath('/child')
-      parent.notFound((c) => c.text('Parent Not Found', 404))
-      nested.notFound((c) => c.text('Root Not Found', 404))
+      parent.catchNotFound(async (c) => c.text('Parent Not Found', 404))
+      nested.catchNotFound(async (c) => c.text('Root Not Found', 404))
       child.get('/missing', (c) => c.notFound())
 
       res = await nested.request('https://example.com/parent/child/missing')
@@ -2337,12 +2402,21 @@ describe('Hono with `app.route`', () => {
 
       app
         .get('/a', async (_c, next) => next())
-        .notFound((c) => c.text('Not Found', 404))
-        .onError((_error, c) => c.text('Error', 500))
+        .catchNotFound(async (_c, next) => next())
+        .catch(async (_c, next) => next())
         .get((c) => c.text('A'))
 
       expect(await (await app.request('/a')).text()).toBe('A')
       expect((await app.request('/b')).status).toBe(404)
+    })
+
+    it('Should use the last legacy not-found handler', async () => {
+      const app = new Hono()
+
+      app.notFound((c) => c.text('First', 404))
+      app.notFound((c) => c.text('Second', 404))
+
+      expect(await (await app.request('/missing')).text()).toBe('Second')
     })
   })
 
@@ -2368,12 +2442,15 @@ describe('Hono with `app.route`', () => {
     }
     const app = new Hono({ router })
 
-    app.notFound(
+    app.catchNotFound(
       async (_c, next) => {
         await next()
       },
-      (c) => c.text('Not Found', 404)
+      async (c) => c.text('Not Found', 404)
     )
+    app.catch(async (_c, next) => {
+      await next()
+    })
     app.onError((error, c) => c.text(error.message, 500))
     app.get('/error', () => {
       throw new Error('Error')

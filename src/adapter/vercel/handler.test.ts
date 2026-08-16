@@ -33,6 +33,6 @@ describe('Adapter for Next.js', () => {
 
     const handler = handle(app)
     const req = new Request('http://localhost/api/error')
-    await expect(handler(req)).rejects.toThrowError('Custom Error')
+    expect(() => handler(req)).toThrowError('Custom Error')
   })
 })
