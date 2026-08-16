@@ -7,15 +7,9 @@ export class TrieRouter<T> implements Router<T> {
   #node: Node<T> = new Node()
 
   add(method: string, path: string, handler: T) {
-    const results = checkOptionalParameter(path)
-    if (results) {
-      for (let i = 0, len = results.length; i < len; i++) {
-        this.#node.insert(method, results[i], handler)
-      }
-      return
+    for (const result of checkOptionalParameter(path) || [path]) {
+      this.#node.insert(method, result, handler)
     }
-
-    this.#node.insert(method, path, handler)
   }
 
   match(method: string, path: string): Result<T> {
