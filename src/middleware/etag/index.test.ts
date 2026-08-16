@@ -1,6 +1,14 @@
 import { Hono } from '../../hono'
 import { RETAINED_304_HEADERS, etag } from '.'
 
+const createPatternedBody = (length: number) => {
+  const body = new Uint8Array(length)
+  for (let i = 0; i < body.byteLength; i++) {
+    body[i] = i % 256
+  }
+  return body
+}
+
 describe('Etag Middleware', () => {
   it('Should return etag header', async () => {
     const app = new Hono()
@@ -133,11 +141,12 @@ describe('Etag Middleware', () => {
   it('Should return the same etag regardless of ReadableStream chunk boundaries', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
+    const body = createPatternedBody(1_000_000)
     app.get('/etag/rs1', (c) => {
       return c.body(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new Uint8Array(1_000_000))
+            controller.enqueue(body)
             controller.close()
           },
         })
@@ -147,9 +156,9 @@ describe('Etag Middleware', () => {
       return c.body(
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new Uint8Array(1))
-            controller.enqueue(new Uint8Array(32_768))
-            controller.enqueue(new Uint8Array(967_231))
+            controller.enqueue(body.slice(0, 1))
+            controller.enqueue(body.slice(1, 32_769))
+            controller.enqueue(body.slice(32_769))
             controller.close()
           },
         })
@@ -158,7 +167,18 @@ describe('Etag Middleware', () => {
 
     const res1 = await app.request('http://localhost/etag/rs1')
     const res2 = await app.request('http://localhost/etag/rs2')
-    expect(res2.headers.get('ETag')).toBe(res1.headers.get('ETag'))
+    const expected = '"550563e0460b33a3540278a8446a70bb96eb5172"'
+    expect(res1.headers.get('ETag')).toBe(expected)
+    expect(res2.headers.get('ETag')).toBe(expected)
+  })
+
+  it('Should preserve the SHA-1 digest for bodies up to 256 KiB', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag', (c) => c.body(createPatternedBody(256 * 1024)))
+
+    const res = await app.request('http://localhost/etag')
+    expect(res.headers.get('ETag')).toBe('"37ef77696fc255bf53b4cdd014b223676f2dc8bb"')
   })
 
   it('Should not return etag header when the stream is empty', async () => {
