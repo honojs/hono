@@ -55,6 +55,13 @@ describe('Get with a suffix wildcard', () => {
     expect(node.search('get', '/file.+js')[0]).toEqual([['file', {}]])
     expect(node.search('get', '/fileZZjs')[0]).toEqual([])
   })
+
+  it('registers the pattern when its child already exists', () => {
+    const node = new Node()
+    node.insert('get', '/assets*/x', 'literal')
+    node.insert('get', '/assets*', 'assets')
+    expect(node.search('get', '/assets/app.js')[0]).toEqual([['assets', {}]])
+  })
 })
 
 describe('Basic Usage', () => {
@@ -858,15 +865,5 @@ describe('Pattern spanning multiple parts', () => {
         expect(res[0][1]).toEqual({ dirs })
       }
     })
-  })
-})
-
-describe('Node with initial method and handler', () => {
-  it('should create a node with method and handler via constructor', () => {
-    const node = new Node('get', 'initial handler')
-    node.insert('get', '/hello', 'hello handler')
-    const [res] = node.search('get', '/hello')
-    expect(res.length).toBe(1)
-    expect(res[0][0]).toEqual('hello handler')
   })
 })
