@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { methodNotAllowed } from '../method-not-allowed'
 import { serveStatic as baseServeStatic } from '.'
 
 describe('Serve Static Middleware', () => {
@@ -241,6 +242,31 @@ describe('Serve Static Middleware', () => {
     } as Request)
     expect(res.status).toBe(200)
     expect(res.body).toBe(body)
+  })
+
+  it('Should skip non-GET/HEAD requests and call next()', async () => {
+    const localApp = new Hono().use('/*', serveStatic)
+
+    const res = await localApp.request('/static/hello.html', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+    expect(getContent).not.toBeCalled()
+  })
+
+  it('Should not serve static files for POST when used with methodNotAllowed', async () => {
+    const localApp = new Hono()
+    localApp.use(methodNotAllowed({ app: localApp }))
+    localApp.get('/api', (c) => c.text('ok'))
+    localApp.use('/*', serveStatic)
+
+    const postStatic = await localApp.request('/static/hello.html', { method: 'POST' })
+    expect(postStatic.status).toBe(404)
+    expect(getContent).not.toBeCalled()
+
+    const postApi = await localApp.request('/api', { method: 'POST' })
+    expect(postApi.status).toBe(405)
+    expect(postApi.headers.get('Allow')).toBe('GET, HEAD')
   })
 
   describe('Changing root path', () => {

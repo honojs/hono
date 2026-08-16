@@ -57,6 +57,12 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    // Only GET and HEAD serve files. Other methods fall through so callers can
+    // return 405 (e.g. via methodNotAllowed) without a file-existence check.
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {

@@ -83,6 +83,13 @@ export const methodNotAllowed = <E extends Env = Env>(
           continue
         }
 
+        // Trailing-wildcard routes (e.g. `GET /*` or `GET /assets*`) match an arbitrary
+        // path remainder, so they do not prove that a particular resource exists.
+        // Including them would turn every otherwise-unhandled request into 405.
+        if (route.path.endsWith('*')) {
+          continue
+        }
+
         const methods = methodsByPath.get(route.path) ?? new Set<string>()
         methods.add(route.method)
 

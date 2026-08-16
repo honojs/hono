@@ -289,4 +289,42 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
     expect(await res.text()).toBe('Missing')
   })
+
+  it('ignores trailing wildcard routes when inferring allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('api'))
+    app.get('/*', (c) => c.text('fallback'))
+
+    expect((await app.request('/api')).status).toBe(200)
+
+    const postApi = await app.request('/api', { method: 'POST' })
+    expect(postApi.status).toBe(405)
+    expect(postApi.headers.get('Allow')).toBe('GET, HEAD')
+
+    // Wildcard must not convert an unmatched path into 405.
+    const postMissing = await app.request('/missing', { method: 'POST' })
+    expect(postMissing.status).toBe(404)
+    expect(postMissing.headers.has('Allow')).toBe(false)
+
+    // GET still reaches the wildcard handler.
+    expect((await app.request('/missing')).status).toBe(200)
+  })
+
+  it('ignores suffix wildcard routes when inferring allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('api'))
+    app.get('/assets*', (c) => c.text('static'))
+
+    expect((await app.request('/assets/app.js')).status).toBe(200)
+
+    const postApi = await app.request('/api', { method: 'POST' })
+    expect(postApi.status).toBe(405)
+    expect(postApi.headers.get('Allow')).toBe('GET, HEAD')
+
+    const postAssets = await app.request('/assets/app.js', { method: 'POST' })
+    expect(postAssets.status).toBe(404)
+    expect(postAssets.headers.has('Allow')).toBe(false)
+  })
 })
