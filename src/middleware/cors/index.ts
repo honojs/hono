@@ -117,7 +117,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
     if (c.req.method === 'OPTIONS') {
       if (opts.origin !== '*') {
-        set('Vary', 'Origin')
+        c.res.headers.append('Vary', 'Origin')
       }
 
       if (opts.maxAge != null) {

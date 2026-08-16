@@ -277,6 +277,34 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Vary')).toBe('X-Custom-Vary-Value, Origin')
   })
 
+  it('Append "Origin" to Vary header on OPTIONS preflight, if response has some Vary header', async () => {
+    const testApp = new Hono()
+    testApp.use('/api/*', async (c, next) => {
+      c.header('Vary', 'Accept-Encoding', { append: true })
+      await next()
+    })
+    testApp.use(
+      '/api/*',
+      cors({
+        origin: 'http://example.com',
+        allowHeaders: ['X-Custom-Header'],
+      })
+    )
+    testApp.all('/api/test', (c) => c.text('ok'))
+
+    const res = await testApp.request('http://localhost/api/test', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://example.com',
+        'Access-Control-Request-Headers': 'X-Custom-Header',
+      },
+    })
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding, Origin, Access-Control-Request-Headers')
+  })
+
   it('Allow origins by function', async () => {
     let req = new Request('http://localhost/api4/abc', {
       headers: {
