@@ -508,6 +508,10 @@ export class Context<
    *   c.header('X-Message', 'Hello!')
    *   c.header('Content-Type', 'text/plain')
    *
+   *   // Append multiple headers using the append option (e.g. Vary)
+   *   c.header('Vary', 'Accept-Encoding', { append: true })
+   *   c.header('Vary', 'User-Agent', { append: true })
+   *
    *   return c.body('Thank you for coming')
    * })
    * ```
