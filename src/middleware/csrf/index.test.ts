@@ -33,6 +33,7 @@ describe('CSRF by Middleware', () => {
 
     app.use('*', csrf())
     app.get('/form', (c) => c.html('<form></form>'))
+    app.options('/form', (c) => c.text('OK'))
     app.post('/form', simplePostHandler)
     app.put('/form', (c) => c.text('OK'))
     app.delete('/form', (c) => c.text('OK'))
@@ -52,6 +53,22 @@ describe('CSRF by Middleware', () => {
         const res = await app.request('http://localhost/form', { method: 'HEAD' })
 
         expect(res.status).toBe(200)
+      })
+    })
+
+    describe('OPTIONS /form', async () => {
+      it('should be 200 for a cross-site preflight request', async () => {
+        const res = await app.request('http://localhost/form', {
+          method: 'OPTIONS',
+          headers: {
+            origin: 'http://example.com',
+            'access-control-request-method': 'POST',
+            'sec-fetch-site': 'cross-site',
+          },
+        })
+
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('OK')
       })
     })
 
