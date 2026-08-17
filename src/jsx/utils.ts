@@ -7,6 +7,19 @@ const normalizeElementKeyMap: Map<string, string> = new Map([
   ['fetchPriority', 'fetchpriority'],
   ['noModule', 'nomodule'],
   ['formAction', 'formaction'],
+  ['strokeWidth', 'stroke-width'],
+  ['strokeLinecap', 'stroke-linecap'],
+  ['strokeLinejoin', 'stroke-linejoin'],
+  ['strokeDasharray', 'stroke-dasharray'],
+  ['strokeDashoffset', 'stroke-dashoffset'],
+  ['strokeMiterlimit', 'stroke-miterlimit'],
+  ['strokeOpacity', 'stroke-opacity'],
+  ['fillRule', 'fill-rule'],
+  ['fillOpacity', 'fill-opacity'],
+  ['clipPath', 'clip-path'],
+  ['clipRule', 'clip-rule'],
+  ['stopColor', 'stop-color'],
+  ['stopOpacity', 'stop-opacity'],
 ])
 export const normalizeIntrinsicElementKey = (key: string): string =>
   normalizeElementKeyMap.get(key) || key

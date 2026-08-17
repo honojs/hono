@@ -7,16 +7,29 @@ import {
 
 describe('normalizeIntrinsicElementKey', () => {
   test.each`
-    key                | expected
-    ${'className'}     | ${'class'}
-    ${'htmlFor'}       | ${'for'}
-    ${'crossOrigin'}   | ${'crossorigin'}
-    ${'httpEquiv'}     | ${'http-equiv'}
-    ${'itemProp'}      | ${'itemprop'}
-    ${'fetchPriority'} | ${'fetchpriority'}
-    ${'noModule'}      | ${'nomodule'}
-    ${'formAction'}    | ${'formaction'}
-    ${'href'}          | ${'href'}
+    key                  | expected
+    ${'className'}       | ${'class'}
+    ${'htmlFor'}         | ${'for'}
+    ${'crossOrigin'}     | ${'crossorigin'}
+    ${'httpEquiv'}       | ${'http-equiv'}
+    ${'itemProp'}        | ${'itemprop'}
+    ${'fetchPriority'}   | ${'fetchpriority'}
+    ${'noModule'}        | ${'nomodule'}
+    ${'formAction'}      | ${'formaction'}
+    ${'strokeWidth'}     | ${'stroke-width'}
+    ${'strokeLinecap'}   | ${'stroke-linecap'}
+    ${'strokeLinejoin'}  | ${'stroke-linejoin'}
+    ${'strokeDasharray'} | ${'stroke-dasharray'}
+    ${'strokeDashoffset'}| ${'stroke-dashoffset'}
+    ${'strokeMiterlimit'}| ${'stroke-miterlimit'}
+    ${'strokeOpacity'}   | ${'stroke-opacity'}
+    ${'fillRule'}        | ${'fill-rule'}
+    ${'fillOpacity'}     | ${'fill-opacity'}
+    ${'clipPath'}        | ${'clip-path'}
+    ${'clipRule'}        | ${'clip-rule'}
+    ${'stopColor'}       | ${'stop-color'}
+    ${'stopOpacity'}     | ${'stop-opacity'}
+    ${'href'}            | ${'href'}
   `('should convert $key to $expected', ({ key, expected }) => {
     expect(normalizeIntrinsicElementKey(key)).toBe(expected)
   })
