@@ -57,7 +57,7 @@ describe('accepts', () => {
   test('should return default support if no matched support', () => {
     const c = {
       req: {
-        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp',
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
@@ -68,6 +68,54 @@ describe('accepts', () => {
     }
     const result = accepts(c, options)
     expect(result).toBe('text/html')
+  })
+
+  test('should match wildcard subtype application/*', () => {
+    const c = {
+      req: {
+        header: () => 'application/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json', 'text/html'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/json')
+  })
+
+  test('should match global wildcard */*', () => {
+    const c = {
+      req: {
+        header: () => 'text/plain, */*;q=0.5',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/json')
+  })
+
+  test('should prefer exact match over wildcard match at same quality factor', () => {
+    const c = {
+      req: {
+        header: () => '*/*, application/json',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html', 'application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/json')
   })
 
   test('should return default support if no accept header', () => {
