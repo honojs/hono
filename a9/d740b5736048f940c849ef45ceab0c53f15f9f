@@ -1,0 +1,19 @@
+src/router/common.case.test.ts
+  s_817d52e145e411::t_11e492adf67fbd 425-447
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a9d740b5736048f940c849ef45ceab0c53f15f9f",
+  "prompts": {},
+  "sessions": {
+    "s_817d52e145e411": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a791b7b-5c69-49f1-8036-c13cbf1c4a14",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
