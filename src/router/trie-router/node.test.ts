@@ -37,6 +37,33 @@ describe('Get with * including JS reserved words', () => {
   })
 })
 
+describe('Get with a suffix wildcard', () => {
+  const node = new Node()
+  node.insert('get', '/assets*', 'assets')
+
+  it.each(['/assets', '/assets-v2', '/assets/app.js'])('matches %s', (path) => {
+    expect(node.search('get', path)[0]).toEqual([['assets', {}]])
+  })
+
+  it('does not match a shorter prefix', () => {
+    expect(node.search('get', '/asset')[0]).toEqual([])
+  })
+
+  it('treats regular expression characters in the prefix literally', () => {
+    const node = new Node()
+    node.insert('get', '/file.+*', 'file')
+    expect(node.search('get', '/file.+js')[0]).toEqual([['file', {}]])
+    expect(node.search('get', '/fileZZjs')[0]).toEqual([])
+  })
+
+  it('registers the pattern when its child already exists', () => {
+    const node = new Node()
+    node.insert('get', '/assets*/x', 'literal')
+    node.insert('get', '/assets*', 'assets')
+    expect(node.search('get', '/assets/app.js')[0]).toEqual([['assets', {}]])
+  })
+})
+
 describe('Basic Usage', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')
@@ -838,15 +865,5 @@ describe('Pattern spanning multiple parts', () => {
         expect(res[0][1]).toEqual({ dirs })
       }
     })
-  })
-})
-
-describe('Node with initial method and handler', () => {
-  it('should create a node with method and handler via constructor', () => {
-    const node = new Node('get', 'initial handler')
-    node.insert('get', '/hello', 'hello handler')
-    const [res] = node.search('get', '/hello')
-    expect(res.length).toBe(1)
-    expect(res[0][0]).toEqual('hello handler')
   })
 })

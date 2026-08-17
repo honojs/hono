@@ -14,74 +14,50 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 }
 
 const emptyParams = Object.create(null)
-
-const hasChildren = (children: Record<string, unknown>): boolean => {
-  for (const _ in children) {
-    return true
-  }
-  return false
-}
+let order = 0
 
 export class Node<T> {
-  #methods: Record<string, HandlerSet<T>>[]
+  #methods: Record<string, HandlerSet<T>>[] = []
 
-  #children: Record<string, Node<T>>
-  #patterns: Pattern[]
-  #order: number = 0
+  #children: Record<string, Node<T>> = Object.create(null)
+  #patterns: Node<T>[] = []
+  #pattern?: Pattern | string
   #params: Record<string, string> = emptyParams
 
-  constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
-    this.#children = children || Object.create(null)
-    this.#methods = []
-    if (method && handler) {
-      const m: Record<string, HandlerSet<T>> = Object.create(null)
-      m[method] = { handler, possibleKeys: [], score: 0 }
-      this.#methods = [m]
-    }
-    this.#patterns = []
-  }
-
-  insert(method: string, path: string, handler: T): Node<T> {
-    this.#order = ++this.#order
-
+  insert(method: string, path: string, handler: T): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
     const parts = splitRoutingPath(path)
 
-    const possibleKeys: string[] = []
+    const possibleKeys = new Set<string>()
 
-    for (let i = 0, len = parts.length; i < len; i++) {
-      const p: string = parts[i]
-      const nextP = parts[i + 1]
-      const pattern = getPattern(p, nextP)
-      const key = Array.isArray(pattern) ? pattern[0] : p
+    let i = 0
+    for (const p of parts) {
+      const nextP = parts[++i]
+      const pattern =
+        getPattern(p, nextP) ||
+        (nextP === undefined && p && p.indexOf('*') === p.length - 1 ? p : null)
+      const isParam = Array.isArray(pattern)
+      const key = isParam ? pattern[0] : pattern || p
 
-      if (key in curNode.#children) {
-        curNode = curNode.#children[key]
-        if (pattern) {
-          possibleKeys.push(pattern[1])
-        }
-        continue
+      const child = (curNode.#children[key] ||= new Node())
+      if (pattern && !child.#pattern) {
+        child.#pattern = pattern
+        curNode.#patterns.push(child)
       }
-
-      curNode.#children[key] = new Node()
-
-      if (pattern) {
-        curNode.#patterns.push(pattern)
-        possibleKeys.push(pattern[1])
+      curNode = child
+      if (isParam) {
+        possibleKeys.add(pattern[1])
       }
-      curNode = curNode.#children[key]
     }
 
     curNode.#methods.push({
       [method]: {
         handler,
-        possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
-        score: this.#order,
+        possibleKeys: [...possibleKeys],
+        score: ++order,
       },
     })
-
-    return curNode
   }
 
   #pushHandlerSets(
@@ -94,18 +70,13 @@ export class Node<T> {
     for (let i = 0, len = node.#methods.length; i < len; i++) {
       const m = node.#methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
-      const processedSet: Record<number, boolean> = {}
-      if (handlerSet !== undefined) {
+      if (handlerSet) {
         handlerSet.params = Object.create(null)
         handlerSets.push(handlerSet)
-        if (nodeParams !== emptyParams || (params && params !== emptyParams)) {
-          for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
-            const key = handlerSet.possibleKeys[i]
-            const processed = processedSet[handlerSet.score]
-            handlerSet.params[key] =
-              params?.[key] && !processed ? params[key] : (nodeParams[key] ?? params?.[key])
-            processedSet[handlerSet.score] = true
-          }
+        for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
+          const key = handlerSet.possibleKeys[i]
+          handlerSet.params[key] =
+            params?.[key] && !i ? params[key] : (nodeParams[key] ?? params?.[key])
         }
       }
     }
@@ -146,41 +117,40 @@ export class Node<T> {
           }
         }
 
-        for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
-          const pattern = node.#patterns[k]
+        for (const child of node.#patterns) {
+          const pattern = child.#pattern!
           const params = node.#params === emptyParams ? {} : { ...node.#params }
 
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
-          if (pattern === '*') {
-            const astNode = node.#children['*']
-            if (astNode) {
-              this.#pushHandlerSets(handlerSets, astNode, method, node.#params)
-              astNode.#params = params
-              tempNodes.push(astNode)
+          if (typeof pattern === 'string') {
+            if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
+              this.#pushHandlerSets(handlerSets, child, method, node.#params)
+              if (pattern === '*') {
+                child.#params = params
+                tempNodes.push(child)
+              }
             }
             continue
           }
 
-          const [key, name, matcher] = pattern
+          const [, name, matcher] = pattern
 
-          if (!part && !(matcher instanceof RegExp)) {
+          if (!part && matcher === true) {
             continue
           }
 
-          const child = node.#children[key]
-
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
-          if (matcher instanceof RegExp) {
-            if (partOffsets === null) {
-              partOffsets = new Array(len)
+          if (matcher !== true) {
+            if (!partOffsets) {
+              partOffsets = []
               let offset = path[0] === '/' ? 1 : 0
               for (let p = 0; p < len; p++) {
                 partOffsets[p] = offset
                 offset += parts[p].length + 1
               }
             }
-            const restPathString = path.substring(partOffsets[i])
+            const restPathString = path.slice(partOffsets[i])
 
             const m = matcher.exec(restPathString)
             if (m) {
@@ -198,11 +168,12 @@ export class Node<T> {
                 )
               }
 
-              if (hasChildren(child.#children)) {
+              for (const _ in child.#children) {
                 child.#params = params
                 const componentCount = m[0].match(/\//g)?.length ?? 0
                 const targetCurNodes = (curNodesQueue[componentCount] ||= [])
                 targetCurNodes.push(child)
+                break
               }
 
               continue
@@ -234,7 +205,7 @@ export class Node<T> {
       curNodes = shifted ? tempNodes.concat(shifted) : tempNodes
     }
 
-    if (handlerSets.length > 1) {
+    if (handlerSets[1]) {
       handlerSets.sort((a, b) => {
         return a.score - b.score
       })
