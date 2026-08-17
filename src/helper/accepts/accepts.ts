@@ -22,7 +22,7 @@ const matchType = (acceptType: string, supportedType: string): boolean => {
   if (acceptType === supportedType) {
     return true
   }
-  if (acceptType === '*/*') {
+  if (acceptType === '*/*' || acceptType === '*') {
     return true
   }
   if (acceptType.endsWith('/*')) {
@@ -34,7 +34,7 @@ const matchType = (acceptType: string, supportedType: string): boolean => {
 }
 
 const getSpecificity = (type: string): number => {
-  if (type === '*/*') {
+  if (type === '*/*' || type === '*') {
     return 1
   }
   if (type.endsWith('/*')) {

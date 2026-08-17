@@ -102,6 +102,22 @@ describe('accepts', () => {
     expect(result).toBe('application/json')
   })
 
+  test('should match single asterisk wildcard *', () => {
+    const c = {
+      req: {
+        header: () => '*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept-Encoding',
+      supports: ['gzip', 'deflate'],
+      default: 'identity',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('gzip')
+  })
+
   test('should prefer exact match over wildcard match at same quality factor', () => {
     const c = {
       req: {
