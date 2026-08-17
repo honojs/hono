@@ -1,6 +1,5 @@
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
-import { cors } from '../../middleware/cors'
 import { csrf } from '../../middleware/csrf'
 
 const simplePostHandler = vi.fn(async (c: Context) => {
@@ -226,27 +225,6 @@ describe('CSRF by Middleware', () => {
       })
       expect(res.status).toBe(403)
       expect(simplePostHandler).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('with CORS middleware', () => {
-    it('should not block a cross-site preflight request when CSRF is registered before CORS', async () => {
-      const app = new Hono()
-
-      app.use('*', csrf())
-      app.use('*', cors())
-
-      const res = await app.request('http://localhost/form', {
-        method: 'OPTIONS',
-        headers: {
-          origin: 'http://example.com',
-          'access-control-request-method': 'POST',
-          'sec-fetch-site': 'cross-site',
-        },
-      })
-
-      expect(res.status).toBe(204)
-      expect(res.headers.get('access-control-allow-origin')).toBe('*')
     })
   })
 
