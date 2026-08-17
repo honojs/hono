@@ -42,11 +42,7 @@ export class LinearRouter<T> implements Router<T> {
           const endsWithStar = routePath.charCodeAt(routePath.length - 1) === 42
           const prefixPath = endsWithStar ? routePath.slice(0, -1) : routePath
 
-          if (
-            endsWithStar &&
-            prefixPath.charCodeAt(prefixPath.length - 1) === 47 &&
-            path + '/' === prefixPath
-          ) {
+          if (routePath.endsWith('/*') && path + '/' === prefixPath) {
             handlers.push([handler, emptyParams])
             continue
           }
