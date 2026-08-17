@@ -422,6 +422,29 @@ export const runTest = ({
       })
     })
 
+    describe('Trailing wildcard after a middle wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/a/*/b/*', 'b')
+      })
+
+      it('GET /a/x/b', async () => {
+        const res = match('GET', '/a/x/b')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('b')
+      })
+
+      it('GET /a/x/b/c', async () => {
+        const res = match('GET', '/a/x/b/c')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('b')
+      })
+
+      it('GET /a/x/bz', async () => {
+        const res = match('GET', '/a/x/bz')
+        expect(res.length).toBe(0)
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')

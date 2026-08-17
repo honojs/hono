@@ -40,14 +40,10 @@ export class LinearRouter<T> implements Router<T> {
           }
         } else if (hasStar && !hasLabel) {
           const endsWithStar = routePath.charCodeAt(routePath.length - 1) === 42
-          const prefixPath = endsWithStar ? routePath.slice(0, -1) : routePath
-
-          if (routePath.endsWith('/*') && path + '/' === prefixPath) {
-            handlers.push([handler, emptyParams])
-            continue
-          }
-
-          const parts = prefixPath.split(splitByStarRe)
+          const endsWithSlashStar = routePath.endsWith('/*')
+          const parts = (
+            endsWithStar ? routePath.slice(0, endsWithSlashStar ? -2 : -1) : routePath
+          ).split(splitByStarRe)
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -58,7 +54,11 @@ export class LinearRouter<T> implements Router<T> {
             }
             pos += part.length
             if (j === lastIndex) {
-              if (
+              if (endsWithSlashStar) {
+                if (pos !== path.length && path.charCodeAt(pos) !== 47) {
+                  continue ROUTES_LOOP
+                }
+              } else if (
                 !endsWithStar &&
                 pos !== path.length &&
                 !(pos === path.length - 1 && path.charCodeAt(pos) === 47)
