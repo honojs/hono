@@ -186,19 +186,16 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
     }
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(
-        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
+        opts.args[0]?.param ? replaceUrlParam(url, opts.args[0].param) : url,
         'ws'
       )
       const targetUrl = new URL(webSocketUrl)
 
       const queryParams: Record<string, string | string[]> | undefined = opts.args[0]?.query
       if (queryParams) {
-        Object.entries(queryParams).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((item) => targetUrl.searchParams.append(key, item))
-          } else {
-            targetUrl.searchParams.set(key, value)
-          }
+        const searchParams = buildSearchParamsOption(queryParams)
+        searchParams.forEach((value, key) => {
+          targetUrl.searchParams.append(key, value)
         })
       }
       const establishWebSocket = (...args: ConstructorParameters<typeof WebSocket>) => {
