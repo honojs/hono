@@ -1,0 +1,21 @@
+src/router/pattern-router/router.test.ts
+  s_817d52e145e411::t_e3d34252a5759d 28-71
+src/router/pattern-router/router.ts
+  s_817d52e145e411::t_6d31ce14b31203 13-15,33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6c2f464d86cc1e7f5e4ea522836a4930abf02120",
+  "prompts": {},
+  "sessions": {
+    "s_817d52e145e411": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a791b7b-5c69-49f1-8036-c13cbf1c4a14",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
