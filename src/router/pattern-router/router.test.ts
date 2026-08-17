@@ -25,6 +25,50 @@ describe('Pattern', () => {
       }).toThrowError(UnsupportedPathError)
     })
   })
+  describe('Suffix wildcard', () => {
+    const router = new PatternRouter<string>()
+    router.add('GET', '/assets*', 'assets')
+
+    it('GET /assets/app.js', () => {
+      const [res] = router.match('GET', '/assets/app.js')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('assets')
+    })
+
+    it('GET /assets', () => {
+      const [res] = router.match('GET', '/assets')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('assets')
+    })
+
+    it('GET /asset', () => {
+      const [res] = router.match('GET', '/asset')
+      expect(res.length).toBe(0)
+    })
+  })
+
+  describe('Trailing wildcard', () => {
+    const router = new PatternRouter<string>()
+    router.add('GET', '/path/*', 'path')
+
+    it('GET /path', () => {
+      const [res] = router.match('GET', '/path')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('path')
+    })
+
+    it('GET /path/to/file', () => {
+      const [res] = router.match('GET', '/path/to/file')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('path')
+    })
+
+    it('GET /pathfoo', () => {
+      const [res] = router.match('GET', '/pathfoo')
+      expect(res.length).toBe(0)
+    })
+  })
+
   describe('Trailing slash', () => {
     const router = new PatternRouter<string>()
 
