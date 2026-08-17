@@ -197,6 +197,30 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('ignores routes ending in a wildcard when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('api'))
+    app.get('/*', (c) => c.text('static'))
+
+    // the wildcard says nothing about whether a resource exists there
+    expect((await app.request('/missing', { method: 'POST' })).status).toBe(404)
+    expect((await app.request('/anything', { method: 'PUT' })).status).toBe(404)
+
+    // a route registered for the path still reports its methods
+    const res = await app.request('/api', { method: 'POST' })
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
+  it('ignores a suffix wildcard route', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/assets*', (c) => c.text('assets'))
+
+    expect((await app.request('/assets/app.js', { method: 'POST' })).status).toBe(404)
+  })
+
   it('does not invoke the error handler for a 405 response', async () => {
     const app = new Hono()
     const onError = vi.fn(() => new Response('error', { status: 500 }))

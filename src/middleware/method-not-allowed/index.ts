@@ -83,6 +83,12 @@ export const methodNotAllowed = <E extends Env = Env>(
           continue
         }
 
+        // A trailing wildcard matches any remainder of the path, so it is not
+        // evidence that the requested resource exists.
+        if (route.path.endsWith('*')) {
+          continue
+        }
+
         const methods = methodsByPath.get(route.path) ?? new Set<string>()
         methods.add(route.method)
 
