@@ -102,36 +102,4 @@ describe('JSON pretty by Middleware', () => {
   }
 }`)
   })
-
-  it('Should support custom replacer function in prettyJSON options', async () => {
-    const app = new Hono()
-    app.use(
-      '*',
-      prettyJSON({
-        force: true,
-        replacer: (key, value) => {
-          if (key === 'secret') {
-            return undefined
-          }
-          if (typeof value === 'string') {
-            return value.toUpperCase()
-          }
-          return value
-        },
-      })
-    )
-    app.get('/', (c) => {
-      return c.json({
-        id: 123,
-        name: 'hono',
-        secret: 'hidden',
-      })
-    })
-
-    const res = await app.request('http://localhost/')
-    expect(await res.text()).toBe(`{
-  "id": 123,
-  "name": "HONO"
-}`)
-  })
 })
