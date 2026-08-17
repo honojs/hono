@@ -370,6 +370,58 @@ export const runTest = ({
       })
     })
 
+    describe('Suffix wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/assets*', 'assets')
+      })
+
+      it('GET /assets', async () => {
+        const res = match('GET', '/assets')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('assets')
+      })
+
+      it('GET /assets-v2', async () => {
+        const res = match('GET', '/assets-v2')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('assets')
+      })
+
+      it('GET /assets/app.js', async () => {
+        const res = match('GET', '/assets/app.js')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('assets')
+      })
+
+      it('GET /asset', async () => {
+        const res = match('GET', '/asset')
+        expect(res.length).toBe(0)
+      })
+    })
+
+    describe('Trailing wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/path/*', 'path')
+      })
+
+      it('GET /path', async () => {
+        const res = match('GET', '/path')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('path')
+      })
+
+      it('GET /path/to/file', async () => {
+        const res = match('GET', '/path/to/file')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('path')
+      })
+
+      it('GET /pathfoo', async () => {
+        const res = match('GET', '/pathfoo')
+        expect(res.length).toBe(0)
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')
