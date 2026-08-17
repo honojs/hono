@@ -2647,15 +2647,15 @@ export type TypedResponse<
 }
 
 type MergeTypedResponse<T> =
-  T extends Promise<void>
-    ? T
-    : T extends Promise<infer T2>
-      ? T2 extends TypedResponse
-        ? T2
+  T extends Promise<infer T2>
+    ? T2 extends TypedResponse
+      ? T2
+      : T2 extends Promise<any>
+        ? MergeTypedResponse<T2>
         : TypedResponse
-      : T extends TypedResponse
-        ? T
-        : TypedResponse
+    : T extends TypedResponse
+      ? T
+      : TypedResponse
 
 type ExtractTypedResponseOnly<T> = T extends TypedResponse ? T : never
 

@@ -916,6 +916,21 @@ describe('Optional parameters in JSON response', () => {
   })
 })
 
+describe('Arrow function returning a Promise (Issue #4765)', () => {
+  it('Should correctly infer RPC response type when handler returns a Promise chain directly', async () => {
+    const app = new Hono().get('/', (c) =>
+      Promise.resolve({ hello: 'world' }).then((d) => c.json(d))
+    )
+    type AppType = typeof app
+    const client = hc<AppType>('', { fetch: app.request })
+    const res = await client.index.$get()
+    const data = await res.json()
+    expectTypeOf(data).toEqualTypeOf<{
+      hello: string
+    }>()
+  })
+})
+
 describe('ClientResponse<T>.json() returns a Union type correctly', () => {
   const condition = () => true
   const app = new Hono().get('/', async (c) => {
