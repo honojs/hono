@@ -346,6 +346,30 @@ describe('DOM', () => {
       expect(ref).toBeCalledTimes(1)
       expect(cleanup).toBeCalledTimes(1)
     })
+
+    it('ref cleanup function on ref change', async () => {
+      const cleanup1 = vi.fn()
+      const ref1 = vi.fn().mockReturnValue(cleanup1)
+      const ref2 = vi.fn()
+      const App = () => {
+        const [swapped, setSwapped] = useState(false)
+        return (
+          <>
+            <div ref={swapped ? ref2 : ref1} />
+            <button onClick={() => setSwapped(true)}>switch</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div><button>switch</button>')
+      expect(ref1).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      expect(cleanup1).not.toHaveBeenCalled()
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div></div><button>switch</button>')
+      expect(cleanup1).toBeCalledTimes(1)
+      expect(ref2).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+    })
   })
 
   describe('child component', () => {
