@@ -72,6 +72,12 @@ describe('Param', () => {
     expect(req.param('name')).toBe('key')
   })
 
+  test('param() on un-matched HonoRequest', () => {
+    const req = new HonoRequest(new Request('http://localhost/'))
+    expect(req.param('id')).toBeUndefined()
+    expect(req.param()).toEqual({})
+  })
+
   test('req.param() without ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
