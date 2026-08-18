@@ -479,6 +479,50 @@ export const runTest = ({
         const res = match('POST', '/all/abc')
         expect(res.map(({ handler }) => handler)).toEqual(['middleware', 'handler'])
       })
+
+      it('GET /posts/2024/comments with nested braces', async () => {
+        router = newRouter()
+        router.add('GET', '/posts/:year{[0-9]{4}}/*', 'middleware')
+        router.add('GET', '/posts/:yr{[0-9]{4}}/comments', 'handler')
+        const res = match('GET', '/posts/2024/comments')
+        expect(res).toEqual([
+          { handler: 'middleware', params: { year: '2024' } },
+          { handler: 'handler', params: { yr: '2024' } },
+        ])
+      })
+
+      it('GET /files/foo/detail with regexp meta characters', async () => {
+        router = newRouter()
+        router.add('GET', '/files/:kind{(?:foo|bar)}/*', 'middleware')
+        router.add('GET', '/files/:type{(?:foo|bar)}/detail', 'handler')
+        const res = match('GET', '/files/foo/detail')
+        expect(res).toEqual([
+          { handler: 'middleware', params: { kind: 'foo' } },
+          { handler: 'handler', params: { type: 'foo' } },
+        ])
+      })
+
+      it('GET /user/123/profile with the default pattern', async () => {
+        router = newRouter()
+        router.add('GET', '/user/:userId{[^/]+}/*', 'middleware')
+        router.add('GET', '/user/:id/profile', 'handler')
+        const res = match('GET', '/user/123/profile')
+        expect(res).toEqual([
+          { handler: 'middleware', params: { userId: '123' } },
+          { handler: 'handler', params: { id: '123' } },
+        ])
+      })
+
+      it('GET /user/123/profile with the default pattern in reverse registration order', async () => {
+        router = newRouter()
+        router.add('GET', '/user/:id/profile', 'handler')
+        router.add('GET', '/user/:userId{[^/]+}/*', 'middleware')
+        const res = match('GET', '/user/123/profile')
+        expect(res).toEqual([
+          { handler: 'handler', params: { id: '123' } },
+          { handler: 'middleware', params: { userId: '123' } },
+        ])
+      })
     })
 
     describe('Trailing wildcard after a middle wildcard', () => {

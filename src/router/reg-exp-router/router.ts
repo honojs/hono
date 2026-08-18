@@ -20,14 +20,16 @@ type HandlerWithMetadata<T> = [T, string] // [handler, path]
 let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
-    `^${path.replace(/\/:[^/{}]+(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()])/g, (match, metaChar) =>
-      metaChar
-        ? `\\${metaChar}`
-        : match === '/*'
-          ? TAIL_WILDCARD_REG_EXP_STR
-          : match === '*'
-            ? ONLY_WILDCARD_REG_EXP_STR
-            : `/:${LABEL_REG_EXP_STR}`
+    `^${path.replace(
+      /\/:[^/{}]+(?:\{\[\^\/]\+})?(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()?{}|])/g,
+      (match, metaChar) =>
+        metaChar
+          ? `\\${metaChar}`
+          : match === '/*'
+            ? TAIL_WILDCARD_REG_EXP_STR
+            : match === '*'
+              ? ONLY_WILDCARD_REG_EXP_STR
+              : `/:${LABEL_REG_EXP_STR}`
     )}$`
   ))
 }
