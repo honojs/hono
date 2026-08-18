@@ -86,11 +86,12 @@ export class RegExpRouter<T> implements Router<T> {
     if (path === '/*') {
       path = '*'
     }
+    const methods = method === METHOD_NAME_ALL ? Object.keys(middleware) : [method]
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
-      for (const m of Object.keys(middleware)) {
-        if ((method === METHOD_NAME_ALL || method === m) && !middleware[m][path]) {
+      for (const m of methods) {
+        if (!middleware[m][path]) {
           this.#insertPath(m, path)
           middleware[m][path] =
             findMiddleware(middleware[m], path) ||
@@ -99,11 +100,9 @@ export class RegExpRouter<T> implements Router<T> {
         }
       }
       for (const handlerMap of [middleware, routes]) {
-        for (const m of Object.keys(handlerMap)) {
-          if (method === METHOD_NAME_ALL || method === m) {
-            for (const p in handlerMap[m]) {
-              re.test(p) && handlerMap[m][p].push([handler, path])
-            }
+        for (const m of methods) {
+          for (const p in handlerMap[m]) {
+            re.test(p) && handlerMap[m][p].push([handler, path])
           }
         }
       }
@@ -113,17 +112,15 @@ export class RegExpRouter<T> implements Router<T> {
 
     const paths = checkOptionalParameter(path) || [path]
     for (const path of paths) {
-      for (const m of Object.keys(routes)) {
-        if (method === METHOD_NAME_ALL || method === m) {
-          if (!routes[m][path]) {
-            this.#insertPath(m, path)
-            routes[m][path] =
-              findMiddleware(middleware[m], path) ||
-              findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-              []
-          }
-          routes[m][path].push([handler, path])
+      for (const m of methods) {
+        if (!routes[m][path]) {
+          this.#insertPath(m, path)
+          routes[m][path] =
+            findMiddleware(middleware[m], path) ||
+            findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+            []
         }
+        routes[m][path].push([handler, path])
       }
     }
   }
