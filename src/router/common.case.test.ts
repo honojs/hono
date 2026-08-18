@@ -444,6 +444,41 @@ export const runTest = ({
         expect(res[0]).toEqual({ handler: 'middleware', params: { name: 'abc' } })
         expect(res[1]).toEqual({ handler: 'handler', params: { id: 'abc' } })
       })
+
+      it('GET /abc/sub', async () => {
+        const res = match('GET', '/abc/sub')
+        expect(res).toEqual([{ handler: 'middleware', params: { name: 'abc' } }])
+      })
+    })
+
+    describe('Trailing wildcard after a pattern label', () => {
+      beforeEach(() => {
+        router.add('GET', '/:name{[a-z]+}/*', 'middleware')
+        router.add('GET', '/:id{[a-z]+}', 'handler')
+      })
+
+      it('GET /abc', async () => {
+        const res = match('GET', '/abc')
+        expect(res.length).toBe(2)
+        expect(res[0]).toEqual({ handler: 'middleware', params: { name: 'abc' } })
+        expect(res[1]).toEqual({ handler: 'handler', params: { id: 'abc' } })
+      })
+
+      it('GET /reverse/abc in reverse registration order', async () => {
+        router = newRouter()
+        router.add('GET', '/reverse/:id{[a-z]+}', 'handler')
+        router.add('GET', '/reverse/:name{[a-z]+}/*', 'middleware')
+        const res = match('GET', '/reverse/abc')
+        expect(res.map(({ handler }) => handler)).toEqual(['handler', 'middleware'])
+      })
+
+      it('POST /all/abc with ALL middleware', async () => {
+        router = newRouter()
+        router.add('ALL', '/all/:name{[a-z]+}/*', 'middleware')
+        router.add('POST', '/all/:id{[a-z]+}', 'handler')
+        const res = match('POST', '/all/abc')
+        expect(res.map(({ handler }) => handler)).toEqual(['middleware', 'handler'])
+      })
     })
 
     describe('Trailing wildcard after a middle wildcard', () => {
