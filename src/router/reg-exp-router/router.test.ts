@@ -171,6 +171,24 @@ describe('RegExpRouter', () => {
         expect(res[0][0]).toBe('/a*')
       }
     })
+
+    it('Should apply a tail wildcard registered without a leading slash before the *', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/api*', 'wildcard')
+      router.add('GET', '/api/foo', 'foo')
+
+      const [res] = router.match('GET', '/api/foo')
+      expect(res.map((r) => r[0])).toEqual(['wildcard', 'foo'])
+    })
+
+    it('Should apply a tail wildcard registered after the concrete path, without a leading slash before the *', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/api/foo', 'foo')
+      router.add('GET', '/api*', 'wildcard')
+
+      const [res] = router.match('GET', '/api/foo')
+      expect(res.map((r) => r[0])).toEqual(['foo', 'wildcard'])
+    })
   })
 
   describe('Single character regexp pattern', () => {
