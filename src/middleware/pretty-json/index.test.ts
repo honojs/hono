@@ -102,4 +102,21 @@ describe('JSON pretty by Middleware', () => {
   }
 }`)
   })
+
+  it('Should not touch responses with non-JSON content-types', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/text', (c) => c.text('{"message":"Hono!"}'))
+    app.get('/json-seq', (c) => {
+      return c.body('{"message":"Hono!"}', 200, {
+        'Content-Type': 'application/json-seq',
+      })
+    })
+
+    const textRes = await app.request('http://localhost/text')
+    expect(await textRes.text()).toBe('{"message":"Hono!"}')
+
+    const jsonSeqRes = await app.request('http://localhost/json-seq')
+    expect(await jsonSeqRes.text()).toBe('{"message":"Hono!"}')
+  })
 })

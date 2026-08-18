@@ -25,7 +25,7 @@ interface PrettyOptions {
   force?: boolean
 }
 
-const jsonContentTypeRegex = /^application\/(?:[a-z0-9._-]+\+)?json/i
+const jsonContentTypeRegex = /^application\/(?:[a-z0-9._-]+\+)?json(?=$|[;\s])/i
 
 /**
  * Pretty JSON Middleware for Hono.
