@@ -12,6 +12,7 @@ describe('LinearRouter', () => {
           'Capture regex pattern has trailing wildcard > GET /foo/bar/file.html',
           'Capture regex param with trailing wildcard on empty remainder > GET /123',
           'Capture regex param with trailing wildcard and sibling route > GET /regex-abc/123/ghi',
+          'Trailing wildcard after a label > GET /abc',
           'Complex > Parameter with {.*} regexp',
         ],
       },
