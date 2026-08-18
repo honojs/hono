@@ -3798,3 +3798,29 @@ describe('Catch-all route with empty segment', () => {
     expect(json).toEqual({ type: 'string', value: '' })
   })
 })
+
+describe('Middleware with a wildcard not preceded by a slash', () => {
+  const app = new Hono()
+
+  app.use('/assets*', async (c, next) => {
+    await next()
+    c.res.headers.append('x-mw', 'hit')
+  })
+
+  app.get('/assets/app.js', (c) => c.text('app.js'))
+  app.get('/assets-v2', (c) => c.text('v2'))
+
+  it('Should run the middleware for a sub path', async () => {
+    const res = await app.request('http://localhost/assets/app.js')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('app.js')
+    expect(res.headers.get('x-mw')).toBe('hit')
+  })
+
+  it('Should run the middleware for a suffix in the same segment, like a route does', async () => {
+    const res = await app.request('http://localhost/assets-v2')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('v2')
+    expect(res.headers.get('x-mw')).toBe('hit')
+  })
+})

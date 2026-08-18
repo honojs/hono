@@ -262,4 +262,61 @@ describe('RegExpRouter', () => {
       }
     })
   })
+
+  describe('Middleware with a trailing wildcard without a slash', () => {
+    it('Should be applied to a route registered afterwards', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/a*', 'middleware')
+      router.add('GET', '/a/b', 'handler')
+
+      const [res] = router.match('GET', '/a/b')
+      expect(res.map(([h]) => h)).toEqual(['middleware', 'handler'])
+    })
+
+    it('Should be applied to a route registered beforehand', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/a/b', 'handler')
+      router.add('ALL', '/a*', 'middleware')
+
+      const [res] = router.match('GET', '/a/b')
+      // handlers run in registration order, as with a slash-prefixed wildcard
+      expect(res.map(([h]) => h)).toEqual(['handler', 'middleware'])
+    })
+
+    it('Should match a suffix in the same segment as a route does', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/a*', 'route')
+      router.add('ALL', '/a*', 'middleware')
+
+      const [res] = router.match('GET', '/a-v2')
+      expect(res.map(([h]) => h)).toEqual(['route', 'middleware'])
+    })
+
+    it('Should match the path without the suffix like a route does', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/a*', 'middleware')
+      router.add('GET', '/a', 'handler')
+
+      const [res] = router.match('GET', '/a')
+      expect(res.map(([h]) => h)).toEqual(['middleware', 'handler'])
+    })
+
+    it('Should not match a path that only differs before the suffix', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/a*', 'middleware')
+      router.add('GET', '/b/a', 'handler')
+
+      const [res] = router.match('GET', '/b/a')
+      expect(res.map(([h]) => h)).toEqual(['handler'])
+    })
+
+    it('Should keep the tail wildcard behavior for a slash-prefixed star', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/a/*', 'middleware')
+      router.add('GET', '/a-v2', 'handler')
+
+      const [res] = router.match('GET', '/a-v2')
+      expect(res.map(([h]) => h)).toEqual(['handler'])
+    })
+  })
 })

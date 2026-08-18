@@ -13,12 +13,15 @@ import { Trie } from './trie'
 type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
 
 let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
+// A wildcard not preceded by a slash (e.g. `/path*`) matches any trailing
+// characters, like a route with the same pattern does. A slash-prefixed
+// wildcard (e.g. `/path/*`) matches the path itself or any sub path.
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     path === '*'
       ? ''
-      : `^${path.replace(/\/\*$|([.\\+*[^\]$()])/g, (_, metaChar) =>
-          metaChar ? `\\${metaChar}` : '(?:|/.*)'
+      : `^${path.replace(/\/\*$|\*$|([.\\+*[^\]$()])/g, (match, metaChar) =>
+          metaChar ? `\\${metaChar}` : match === '/*' ? '(?:|/.*)' : '.*'
         )}$`
   ))
 }
