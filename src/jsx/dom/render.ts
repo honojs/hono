@@ -187,9 +187,7 @@ const applyProps = (
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
-        if (oldAttributes?.[key] && oldAttributes[key] !== value) {
-          refCleanupMap.get(container)?.()
-        }
+        refCleanupMap.get(container)?.()
         let cleanup
         if (typeof value === 'function') {
           cleanup = value(container) || (() => value(null))
