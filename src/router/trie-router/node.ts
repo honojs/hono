@@ -1,3 +1,4 @@
+import { createNullObject } from '../../internal/utils'
 import type { Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
@@ -13,13 +14,13 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
-const emptyParams = Object.create(null)
+const emptyParams = createNullObject()
 let order = 0
 
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[] = []
 
-  #children: Record<string, Node<T>> = Object.create(null)
+  #children: Record<string, Node<T>> = createNullObject()
   #patterns: Node<T>[] = []
   #pattern?: Pattern | string
   #params: Record<string, string> = emptyParams
@@ -71,7 +72,7 @@ export class Node<T> {
       const m = node.#methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       if (handlerSet) {
-        handlerSet.params = Object.create(null)
+        handlerSet.params = createNullObject()
         handlerSets.push(handlerSet)
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
           const key = handlerSet.possibleKeys[i]
