@@ -397,6 +397,16 @@ export const runTest = ({
         const res = match('GET', '/asset')
         expect(res.length).toBe(0)
       })
+
+      it.each([
+        ['/assets*', '/assets/app.js'],
+        ['/assets/app.js', '/assets*'],
+      ])('associates %s before %s', async (first, second) => {
+        router.add('POST', first, first)
+        router.add('POST', second, second)
+        const res = match('POST', '/assets/app.js')
+        expect(res.map(({ handler }) => handler)).toEqual([first, second])
+      })
     })
 
     describe('Trailing wildcard', () => {
