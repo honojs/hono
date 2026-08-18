@@ -487,6 +487,21 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should apply a wildcard middleware to a route using a different label name', async () => {
+    const app = new Hono()
+    app.use('/:name/*', async (c, next) => {
+      c.header('X-Name', c.req.param('name'))
+      await next()
+    })
+    app.get('/:id', (c) => c.text(`id=${c.req.param('id')}`))
+
+    const res = await app.request('http://localhost/abc')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Name')).toBe('abc')
+    expect(await res.text()).toBe('id=abc')
+    expect(app.router.name).toBe('SmartRouter + RegExpRouter')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')

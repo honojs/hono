@@ -422,6 +422,29 @@ export const runTest = ({
       })
     })
 
+    describe('Trailing wildcard after a label', () => {
+      beforeEach(() => {
+        router.add('GET', '/:name/*', 'middleware')
+        router.add('GET', '/:id', 'handler')
+      })
+
+      it('GET /abc', async () => {
+        const res = match('GET', '/abc')
+        expect(res.length).toBe(2)
+        expect(res[0].handler).toEqual('middleware')
+        expect(res[0].params).toEqual({ name: 'abc' })
+        expect(res[1].handler).toEqual('handler')
+        expect(res[1].params).toEqual({ id: 'abc' })
+      })
+
+      it('GET /abc/sub', async () => {
+        const res = match('GET', '/abc/sub')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('middleware')
+        expect(res[0].params).toEqual({ name: 'abc' })
+      })
+    })
+
     describe('Trailing wildcard after a middle wildcard', () => {
       beforeEach(() => {
         router.add('GET', '/a/*/b/*', 'b')

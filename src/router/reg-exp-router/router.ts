@@ -10,15 +10,19 @@ import { match, emptyParam } from './matcher'
 import { PATH_ERROR } from './node'
 import { Trie } from './trie'
 
-type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
+type HandlerWithMetadata<T> = [T, number, string[]?] // [handler, paramCount, paramNames]
 
 let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
+
+// a plain :label matches any segment, so its name does not affect what a wildcard covers;
+// :label{[0-9]+} stays a literal because it matches a narrower set
+const PLAIN_LABEL_REG_EXP_STR = '/:[^/]+'
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     path === '*'
       ? ''
-      : `^${path.replace(/\/\*$|([.\\+*[^\]$()])/g, (_, metaChar) =>
-          metaChar ? `\\${metaChar}` : '(?:|/.*)'
+      : `^${path.replace(/\/:[^/{}]+(?=\/|$)|\/\*$|([.\\+*[^\]$()])/g, (match, metaChar) =>
+          metaChar ? `\\${metaChar}` : match === '/*' ? '(?:|/.*)' : PLAIN_LABEL_REG_EXP_STR
         )}$`
   ))
 }
@@ -91,6 +95,9 @@ export class RegExpRouter<T> implements Router<T> {
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
+      // The path this handler is registered for may use different label names than the
+      // paths it is associated with, so carry its own names to build the param map.
+      const paramNames = path.match(/\/:[^/{}]+/g)?.map((label) => label.slice(2))
       Object.keys(middleware).forEach((m) => {
         if ((method === METHOD_NAME_ALL || method === m) && !middleware[m][path]) {
           this.#insertPath(m, path)
@@ -103,7 +110,7 @@ export class RegExpRouter<T> implements Router<T> {
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            re.test(p) && middleware[m][p].push([handler, paramCount])
+            re.test(p) && middleware[m][p].push([handler, paramCount, paramNames])
           })
         }
       })
@@ -111,7 +118,7 @@ export class RegExpRouter<T> implements Router<T> {
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(routes[m]).forEach(
-            (p) => re.test(p) && routes[m][p].push([handler, paramCount])
+            (p) => re.test(p) && routes[m][p].push([handler, paramCount, paramNames])
           )
         }
       })
@@ -174,12 +181,12 @@ export class RegExpRouter<T> implements Router<T> {
           continue
         }
         const paramAssoc = pathData[1]
-        handlerData[pathData[0]] = handlers.map(([h, paramCount]) => {
+        handlerData[pathData[0]] = handlers.map(([h, paramCount, paramNames]) => {
           const paramIndexMap: ParamIndexMap = Object.create(null)
           paramCount -= 1
           for (; paramCount >= 0; paramCount--) {
             const [key, value] = paramAssoc[paramCount]
-            paramIndexMap[key] = value
+            paramIndexMap[paramNames?.[paramCount] ?? key] = value
           }
           return [h, paramIndexMap]
         })
