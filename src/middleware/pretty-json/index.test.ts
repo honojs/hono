@@ -73,4 +73,50 @@ describe('JSON pretty by Middleware', () => {
   "message": "Hono!"
 }`)
   })
+
+  it('Should return pretty JSON output for structured JSON content-types (+json)', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/problem', (c) => {
+      return c.newResponse(JSON.stringify({ type: 'about:blank', title: 'Bad Request' }), 400, {
+        'Content-Type': 'application/problem+json',
+      })
+    })
+    app.get('/jsonapi', (c) => {
+      return c.newResponse(JSON.stringify({ data: { id: '1', type: 'articles' } }), 200, {
+        'Content-Type': 'application/vnd.api+json',
+      })
+    })
+
+    const problemRes = await app.request('http://localhost/problem')
+    expect(await problemRes.text()).toBe(`{
+  "type": "about:blank",
+  "title": "Bad Request"
+}`)
+
+    const jsonApiRes = await app.request('http://localhost/jsonapi')
+    expect(await jsonApiRes.text()).toBe(`{
+  "data": {
+    "id": "1",
+    "type": "articles"
+  }
+}`)
+  })
+
+  it('Should not touch responses with non-JSON content-types', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/text', (c) => c.text('{"message":"Hono!"}'))
+    app.get('/json-seq', (c) => {
+      return c.body('{"message":"Hono!"}', 200, {
+        'Content-Type': 'application/json-seq',
+      })
+    })
+
+    const textRes = await app.request('http://localhost/text')
+    expect(await textRes.text()).toBe('{"message":"Hono!"}')
+
+    const jsonSeqRes = await app.request('http://localhost/json-seq')
+    expect(await jsonSeqRes.text()).toBe('{"message":"Hono!"}')
+  })
 })

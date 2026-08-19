@@ -346,6 +346,85 @@ describe('DOM', () => {
       expect(ref).toBeCalledTimes(1)
       expect(cleanup).toBeCalledTimes(1)
     })
+
+    it('ref cleanup on ref prop change', async () => {
+      const cleanup1 = vi.fn()
+      const ref1 = vi.fn().mockReturnValue(cleanup1)
+      const cleanup2 = vi.fn()
+      const ref2 = vi.fn().mockReturnValue(cleanup2)
+
+      const App = () => {
+        const [currentRef, setCurrentRef] = useState(() => ref1)
+        return (
+          <>
+            <div ref={currentRef} />
+            <button onClick={() => setCurrentRef(() => ref2)}>switch</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(ref1).toHaveBeenCalledTimes(1)
+      expect(ref1).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      expect(cleanup1).toHaveBeenCalledTimes(0)
+      expect(ref2).toHaveBeenCalledTimes(0)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+
+      expect(cleanup1).toHaveBeenCalledTimes(1)
+      expect(ref2).toHaveBeenCalledTimes(1)
+      expect(ref2).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      expect(cleanup2).toHaveBeenCalledTimes(0)
+    })
+
+    it('does not call ref cleanup when ref reference does not change on re-render', async () => {
+      const cleanup = vi.fn()
+      const ref = vi.fn().mockReturnValue(cleanup)
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <>
+            <div ref={ref} />
+            <button onClick={() => setCount(count + 1)}>rerender</button>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(ref).toHaveBeenCalledTimes(1)
+      expect(cleanup).toHaveBeenCalledTimes(0)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+
+      expect(ref).toHaveBeenCalledTimes(1)
+      expect(cleanup).toHaveBeenCalledTimes(0)
+    })
+
+    it('ref cleanup on ref prop removal', async () => {
+      const cleanup = vi.fn()
+      const ref = vi.fn().mockReturnValue(cleanup)
+
+      const App = () => {
+        const [hasRef, setHasRef] = useState(true)
+        return (
+          <>
+            <div {...(hasRef ? { ref } : {})} />
+            <button onClick={() => setHasRef(false)}>remove</button>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(ref).toHaveBeenCalledTimes(1)
+      expect(cleanup).toHaveBeenCalledTimes(0)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+
+      expect(cleanup).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('child component', () => {
