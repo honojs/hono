@@ -17,8 +17,8 @@ function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     path === '*'
       ? ''
-      : `^${path.replace(/\/\*$|([.\\+*[^\]$()])/g, (_, metaChar) =>
-          metaChar ? `\\${metaChar}` : '(?:|/.*)'
+      : `^${path.replace(/\/\*$|\*$|([.\\+*[^\]$()])/g, (match, metaChar) =>
+          metaChar ? `\\${metaChar}` : match === '/*' ? '(?:|/.*)' : '.*'
         )}$`
   ))
 }

@@ -158,6 +158,36 @@ describe('RegExpRouter', () => {
       expect(res[1][0]).toBe('wildcard')
     })
 
+    it('Should apply middleware registered with a tail wildcard that has no preceding slash', () => {
+      // https://github.com/honojs/hono/issues/5258
+      // `/assets*` is a valid route pattern, but `findMiddleware` used to escape the
+      // `*` literally, so middleware registered this way never matched any request.
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/assets*', 'middleware')
+      router.add('GET', '/assets/app.js', 'handler')
+
+      const [res] = router.match('GET', '/assets/app.js')
+      expect(res.map(([handler]) => handler)).toEqual(['middleware', 'handler'])
+    })
+
+    it('Should match a tail wildcard without a preceding slash as a prefix', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/assets*', 'middleware')
+      router.add('GET', '/assets-v2/app.js', 'handler')
+
+      const [res] = router.match('GET', '/assets-v2/app.js')
+      expect(res.map(([handler]) => handler)).toEqual(['middleware', 'handler'])
+    })
+
+    it('Should not let a tail wildcard with a preceding slash match a sibling prefix', () => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', '/assets/*', 'middleware')
+      router.add('GET', '/assets-v2/app.js', 'handler')
+
+      const [res] = router.match('GET', '/assets-v2/app.js')
+      expect(res.map(([handler]) => handler)).toEqual(['handler'])
+    })
+
     it('Should prioritize the only wildcard over the tail wildcard regardless of the order', () => {
       for (const paths of [
         ['/a*', '/a/*'],
