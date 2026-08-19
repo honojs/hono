@@ -1,6 +1,6 @@
-const LABEL_REG_EXP_STR = '[^/]+'
-const ONLY_WILDCARD_REG_EXP_STR = '.*'
-const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
+export const LABEL_REG_EXP_STR = '[^/]+'
+export const ONLY_WILDCARD_REG_EXP_STR = '.*'
+export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
 export const PATH_ERROR = Symbol()
 
 export type ParamAssocArray = [string, number][]
