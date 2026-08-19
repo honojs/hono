@@ -1772,3 +1772,129 @@ describe('PEM parsing', async () => {
     expect(verified).toEqual(payload)
   })
 })
+
+describe('JWT public key import cache', () => {
+  const uniqueSecret = (label: string): string =>
+    `jwt-import-cache-${label}-${Math.random().toString(36).slice(2)}`
+
+  it('imports a string secret only once across verify() calls', async () => {
+    const secret = uniqueSecret('once')
+    const payload = { n: 1 }
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    const spy = vi.spyOn(crypto.subtle, 'importKey')
+    try {
+      await expect(JWT.verify(tok, secret, AlgorithmTypes.HS256)).resolves.toEqual(payload)
+      const afterFirst = spy.mock.calls.length
+      expect(afterFirst).toBeGreaterThan(0)
+      await expect(JWT.verify(tok, secret, AlgorithmTypes.HS256)).resolves.toEqual(payload)
+      expect(spy.mock.calls.length).toBe(afterFirst)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('imports again when the string secret changes', async () => {
+    const secretA = uniqueSecret('miss-a')
+    const secretB = uniqueSecret('miss-b')
+    const payload = { n: 1 }
+    const tokA = await JWT.sign(payload, secretA, AlgorithmTypes.HS256)
+    const tokB = await JWT.sign(payload, secretB, AlgorithmTypes.HS256)
+    const spy = vi.spyOn(crypto.subtle, 'importKey')
+    try {
+      await JWT.verify(tokA, secretA, AlgorithmTypes.HS256)
+      const afterFirst = spy.mock.calls.length
+      await JWT.verify(tokB, secretB, AlgorithmTypes.HS256)
+      expect(spy.mock.calls.length).toBeGreaterThan(afterFirst)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('does not re-import on signature mismatch', async () => {
+    const secret = uniqueSecret('mismatch')
+    const tok = await JWT.sign({ n: 1 }, secret, AlgorithmTypes.HS256)
+    const parts = tok.split('.')
+    const sig = parts[2]
+    const badTok = `${parts[0]}.${parts[1]}.${(sig[0] === 'A' ? 'B' : 'A') + sig.slice(1)}`
+    const spy = vi.spyOn(crypto.subtle, 'importKey')
+    try {
+      await expect(JWT.verify(badTok, secret, AlgorithmTypes.HS256)).rejects.toBeInstanceOf(
+        JwtTokenSignatureMismatched
+      )
+      const afterFirst = spy.mock.calls.length
+      expect(afterFirst).toBeGreaterThan(0)
+      await expect(JWT.verify(badTok, secret, AlgorithmTypes.HS256)).rejects.toBeInstanceOf(
+        JwtTokenSignatureMismatched
+      )
+      expect(spy.mock.calls.length).toBe(afterFirst)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('does not cache JWK objects', async () => {
+    const secret = uniqueSecret('jwk-obj')
+    const payload = { n: 1 }
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      utf8Encoder.encode(secret),
+      { name: 'HMAC', hash: { name: 'SHA-256' } },
+      true,
+      ['sign', 'verify']
+    )
+    const jwk = (await crypto.subtle.exportKey('jwk', cryptoKey)) as HonoJsonWebKey
+    const spy = vi.spyOn(crypto.subtle, 'importKey')
+    try {
+      await expect(JWT.verify(tok, jwk, AlgorithmTypes.HS256)).resolves.toEqual(payload)
+      const afterFirst = spy.mock.calls.length
+      expect(afterFirst).toBeGreaterThan(0)
+      await expect(JWT.verify(tok, jwk, AlgorithmTypes.HS256)).resolves.toEqual(payload)
+      expect(spy.mock.calls.length).toBeGreaterThan(afterFirst)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('evicts the oldest string secret once 16 keys are cached', async () => {
+    const secrets = Array.from({ length: 17 }, (_, i) => uniqueSecret(`cap-${i}`))
+    const tokens = await Promise.all(
+      secrets.map((secret) => JWT.sign({ i: secret }, secret, AlgorithmTypes.HS256))
+    )
+    const spy = vi.spyOn(crypto.subtle, 'importKey')
+    try {
+      for (let i = 0; i < 17; i++) {
+        await JWT.verify(tokens[i], secrets[i], AlgorithmTypes.HS256)
+      }
+      const afterFill = spy.mock.calls.length
+      await JWT.verify(tokens[0], secrets[0], AlgorithmTypes.HS256)
+      expect(spy.mock.calls.length).toBeGreaterThan(afterFill)
+      const afterOldest = spy.mock.calls.length
+      await JWT.verify(tokens[16], secrets[16], AlgorithmTypes.HS256)
+      expect(spy.mock.calls.length).toBe(afterOldest)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('verifies concurrent distinct secrets without crossing keys', async () => {
+    const secretA = uniqueSecret('conc-a')
+    const secretB = uniqueSecret('conc-b')
+    const tokA = await JWT.sign({ s: 'a' }, secretA, AlgorithmTypes.HS256)
+    const tokB = await JWT.sign({ s: 'b' }, secretB, AlgorithmTypes.HS256)
+
+    const [payloadA, payloadB] = await Promise.all([
+      JWT.verify(tokA, secretA, AlgorithmTypes.HS256),
+      JWT.verify(tokB, secretB, AlgorithmTypes.HS256),
+    ])
+    expect(payloadA).toEqual({ s: 'a' })
+    expect(payloadB).toEqual({ s: 'b' })
+
+    await expect(JWT.verify(tokA, secretB, AlgorithmTypes.HS256)).rejects.toBeInstanceOf(
+      JwtTokenSignatureMismatched
+    )
+    await expect(JWT.verify(tokB, secretA, AlgorithmTypes.HS256)).rejects.toBeInstanceOf(
+      JwtTokenSignatureMismatched
+    )
+  })
+})
