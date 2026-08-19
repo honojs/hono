@@ -401,6 +401,30 @@ describe('DOM', () => {
       expect(ref).toHaveBeenCalledTimes(1)
       expect(cleanup).toHaveBeenCalledTimes(0)
     })
+
+    it('ref cleanup on ref prop removal', async () => {
+      const cleanup = vi.fn()
+      const ref = vi.fn().mockReturnValue(cleanup)
+
+      const App = () => {
+        const [hasRef, setHasRef] = useState(true)
+        return (
+          <>
+            <div {...(hasRef ? { ref } : {})} />
+            <button onClick={() => setHasRef(false)}>remove</button>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(ref).toHaveBeenCalledTimes(1)
+      expect(cleanup).toHaveBeenCalledTimes(0)
+
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+
+      expect(cleanup).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('child component', () => {
