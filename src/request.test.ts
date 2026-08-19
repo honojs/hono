@@ -39,6 +39,13 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
+  test('req.param() on an unmatched request', () => {
+    const req = new HonoRequest(new Request('http://localhost/'))
+
+    expect(req.param('id')).toBeUndefined()
+    expect(req.param()).toEqual({})
+  })
+
   test('req.param() should return empty string for zero-length match', () => {
     // Simulate a route like '/:remaining{.*}' matching '/'
     const rawRequest = new Request('http://localhost/')
