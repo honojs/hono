@@ -1787,6 +1787,13 @@ describe('Custom buildSearchParams', () => {
     expect(url.href).toBe('http://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2')
   })
 
+  it('Should use default buildSearchParams in $url() when custom one is not provided', () => {
+    const client = hc<AppType>('http://localhost')
+    const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
+  })
+
   it('Should use custom buildSearchParams in $ws() method', () => {
     const webSocketMock = vi.fn()
     const client = hc<AppType>('http://localhost', {
