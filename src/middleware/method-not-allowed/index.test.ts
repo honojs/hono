@@ -197,6 +197,31 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('ignores trailing wildcard routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    // Catch-all GET routes, e.g. those registered by `app.get('/*', serveStatic())`
+    // or `app.get('/assets/*', serveStatic({ root: './public' }))`.
+    app.get('/*', (_c, next) => next())
+    app.get('/assets/*', (_c, next) => next())
+
+    // A root-level wildcard must not make an unhandled path report 405 instead of 404.
+    const missing = await app.request('/missing', { method: 'POST' })
+    expect(missing.status).toBe(404)
+    expect(missing.headers.has('Allow')).toBe(false)
+
+    // A prefixed wildcard must be ignored just the same.
+    const missingAsset = await app.request('/assets/missing.js', { method: 'POST' })
+    expect(missingAsset.status).toBe(404)
+    expect(missingAsset.headers.has('Allow')).toBe(false)
+
+    // A concrete route still advertises its allowed methods.
+    const real = await app.request('/api', { method: 'POST' })
+    expect(real.status).toBe(405)
+    expect(real.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
   it('does not invoke the error handler for a 405 response', async () => {
     const app = new Hono()
     const onError = vi.fn(() => new Response('error', { status: 500 }))
