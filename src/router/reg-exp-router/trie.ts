@@ -1,4 +1,4 @@
-import { createNullObject } from '../../internal/utils'
+import { createNullObject } from '../utils'
 import type { Context, ParamAssocArray } from './node'
 import { Node } from './node'
 

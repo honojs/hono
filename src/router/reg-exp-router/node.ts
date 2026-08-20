@@ -1,4 +1,4 @@
-import { createNullObject } from '../../internal/utils'
+import { createNullObject } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
 export const ONLY_WILDCARD_REG_EXP_STR = '.*'

@@ -1,4 +1,4 @@
-import { createNullObject } from '../../internal/utils'
+import { createNullObject } from '../utils'
 import type { Router } from '../../router'
 import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
