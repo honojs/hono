@@ -1,4 +1,3 @@
-import { createNullObject } from '../utils'
 import type { Router } from '../../router'
 import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
@@ -6,6 +5,7 @@ import {
   UnsupportedPathError,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
+import { createNullObject } from '../utils'
 import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
 import { match, emptyParam } from './matcher'
 import {

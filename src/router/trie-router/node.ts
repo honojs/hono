@@ -1,8 +1,8 @@
-import { createNullObject } from '../utils'
 import type { Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { getPattern, splitPath, splitRoutingPath } from '../../utils/url'
+import { createNullObject } from '../utils'
 
 type HandlerSet<T> = {
   handler: T
