@@ -176,6 +176,30 @@ describe('Body Limit Middleware', () => {
       expect(await res.text()).toBe(smallContent)
     })
 
+    it('should not bypass the limit when Content-Length is not a number', async () => {
+      // A non-numeric Content-Length makes parseInt return NaN, and `NaN > maxSize`
+      // is false, which previously skipped the check and let an oversized body
+      // through. The limit must still be enforced against the actual bytes.
+      const largeContent = 'this is a large content that exceeds 10 bytes'
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(largeContent))
+          controller.close()
+        },
+      })
+
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Content-Length': 'not-a-number',
+        },
+        body: stream,
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(413)
+    })
+
     it('should handle only Transfer-Encoding header correctly', async () => {
       const content = 'test'
       const stream = new ReadableStream({

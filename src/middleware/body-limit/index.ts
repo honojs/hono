@@ -68,9 +68,16 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
     const hasContentLength = c.req.raw.headers.has('content-length')
 
     if (hasContentLength && !hasTransferEncoding) {
-      // Only Content-Length present - we can trust it
+      // Only Content-Length present - we can trust it when it is a valid number.
+      // A non-numeric Content-Length (e.g. "abc") makes parseInt return NaN, and
+      // `NaN > maxSize` is false, which would silently skip the limit and let the
+      // handler read an unbounded body. Fall through to the streaming check, which
+      // enforces the limit against the actual bytes, whenever the header is not a
+      // usable number.
       const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
-      return contentLength > maxSize ? onError(c) : next()
+      if (!Number.isNaN(contentLength)) {
+        return contentLength > maxSize ? onError(c) : next()
+      }
     }
 
     // Transfer-Encoding present (chunked) or no length headers.
