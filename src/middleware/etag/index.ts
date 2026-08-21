@@ -32,10 +32,7 @@ const stripWeak = (tag: string) => tag.replace(/^W\//, '')
 function etagMatches(etag: string, ifNoneMatch: string | null) {
   return (
     ifNoneMatch != null &&
-    ifNoneMatch
-      .trim()
-      .split(/\s*,\s*/)
-      .some((t) => stripWeak(t) === stripWeak(etag))
+    ifNoneMatch.split(',').some((t) => stripWeak(t.trim()) === stripWeak(etag))
   )
 }
 
