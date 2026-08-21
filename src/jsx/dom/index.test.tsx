@@ -114,6 +114,25 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('<h1>Hello</h1>')
   })
 
+  it('runs effect cleanup when rendering null', async () => {
+    const cleanup = vi.fn()
+    const App = () => {
+      useEffect(() => cleanup, [])
+      return <div>Hello</div>
+    }
+
+    render(<App />, root)
+    await new Promise((resolve) => setTimeout(resolve))
+    expect(root.innerHTML).toBe('<div>Hello</div>')
+    expect(cleanup).not.toHaveBeenCalled()
+
+    render(null, root)
+    await Promise.resolve()
+
+    expect(root.innerHTML).toBe('')
+    expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
   it('render text directly', () => {
     const App = () => <>{'Hello'}</>
     render(<App />, root)

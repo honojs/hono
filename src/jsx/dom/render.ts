@@ -795,9 +795,18 @@ export const renderNode = (node: NodeObject, container: Container): void => {
   container.replaceChildren(fragment)
 }
 
+const renderedRoots: WeakMap<Container, NodeObject> = new WeakMap()
+
 export const render = (jsxNode: Child, container: Container): void => {
+  const previousRoot = renderedRoots.get(container)
+  if (previousRoot) {
+    removeNode(previousRoot)
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
+  const root = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
+  renderNode(root, container)
+  renderedRoots.set(container, root)
 }
 
 export const flushSync = (callback: () => void): void => {
