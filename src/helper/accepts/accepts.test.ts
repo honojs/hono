@@ -134,6 +134,22 @@ describe('accepts', () => {
     expect(result).toBe('application/json')
   })
 
+  test('should prefer subtype wildcard over global wildcard and exact match over subtype wildcard at same quality factor', () => {
+    const c = {
+      req: {
+        header: () => '*/*, text/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json', 'text/plain'],
+      default: 'application/json',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/plain')
+  })
+
   test('should return default support if no accept header', () => {
     const c = {
       req: {
