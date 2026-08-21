@@ -95,7 +95,19 @@ export class StreamingApi {
   abort() {
     if (!this.aborted) {
       this.aborted = true
-      this.abortSubscribers.forEach((subscriber) => subscriber())
+      this.abortSubscribers.forEach((subscriber) => {
+        try {
+          const result = subscriber()
+          if (result instanceof Promise) {
+            result.catch(() => {
+              // Do nothing. A rejecting abort listener must not crash the runtime.
+            })
+          }
+        } catch {
+          // Do nothing. A throwing abort listener must not prevent the remaining
+          // listeners, including the built-in reader cancel, from running.
+        }
+      })
     }
   }
 }
