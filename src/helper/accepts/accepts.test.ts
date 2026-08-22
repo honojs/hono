@@ -57,7 +57,7 @@ describe('accepts', () => {
   test('should return default support if no matched support', () => {
     const c = {
       req: {
-        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp',
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
@@ -86,7 +86,7 @@ describe('accepts', () => {
     expect(result).toBe('application/json')
   })
 
-  test('should match global wildcard */*', () => {
+  test('should return default support for global wildcard */*', () => {
     const c = {
       req: {
         header: () => 'text/plain, */*;q=0.5',
@@ -99,10 +99,10 @@ describe('accepts', () => {
       default: 'text/html',
     }
     const result = accepts(c, options)
-    expect(result).toBe('application/json')
+    expect(result).toBe('text/html')
   })
 
-  test('should match single asterisk wildcard *', () => {
+  test('should return default support for single asterisk wildcard *', () => {
     const c = {
       req: {
         header: () => '*',
@@ -115,7 +115,7 @@ describe('accepts', () => {
       default: 'identity',
     }
     const result = accepts(c, options)
-    expect(result).toBe('gzip')
+    expect(result).toBe('identity')
   })
 
   test('should prefer exact match over wildcard match at same quality factor', () => {
@@ -134,7 +134,7 @@ describe('accepts', () => {
     expect(result).toBe('application/json')
   })
 
-  test('should prefer subtype wildcard over global wildcard and exact match over subtype wildcard at same quality factor', () => {
+  test('should match subtype wildcard while global wildcard falls through to default', () => {
     const c = {
       req: {
         header: () => '*/*, text/*',

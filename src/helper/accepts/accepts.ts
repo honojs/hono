@@ -23,7 +23,7 @@ const matchType = (acceptType: string, supportedType: string): boolean => {
     return true
   }
   if (acceptType === '*/*' || acceptType === '*') {
-    return true
+    return false
   }
   if (acceptType.endsWith('/*')) {
     const [acceptMain] = acceptType.split('/')
