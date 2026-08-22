@@ -90,7 +90,7 @@ class ClientRequestImpl {
 
     let methodUpperCase = this.method.toUpperCase()
 
-    const headerValues: Record<string, string> = {
+    const headerValues: Record<string, string | undefined> = {
       ...args?.header,
       ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
@@ -98,16 +98,26 @@ class ClientRequestImpl {
     if (args?.cookie) {
       const cookies: string[] = []
       for (const [key, value] of Object.entries(args.cookie)) {
+        if (value === undefined) {
+          continue
+        }
         cookies.push(serialize(key, value))
       }
-      headerValues['Cookie'] = cookies.join('; ')
+      if (cookies.length > 0) {
+        headerValues['Cookie'] = cookies.join('; ')
+      }
     }
 
     if (this.cType) {
       headerValues['Content-Type'] = this.cType
     }
 
-    const headers = new Headers(headerValues ?? undefined)
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(headerValues)) {
+      if (value !== undefined) {
+        headers.set(key, value)
+      }
+    }
     let url = this.url
 
     url = removeIndexString(url)
