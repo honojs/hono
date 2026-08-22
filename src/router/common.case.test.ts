@@ -106,6 +106,40 @@ export const runTest = ({
       })
     })
 
+    describe('Mid-path wildcard', () => {
+      it('Matches the rest of a part', async () => {
+        router.add('GET', '/x*/y', 'get x')
+
+        for (const path of ['/xz/y', '/xzz/y']) {
+          const res = match('GET', path)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('get x')
+        }
+      })
+
+      it('Requires at least one character', async () => {
+        router.add('GET', '/x*/y', 'get x')
+        expect(match('GET', '/x/y').length).toBe(0)
+      })
+
+      it('Does not run past the part it is in', async () => {
+        router.add('GET', '/x*/y', 'get x')
+        expect(match('GET', '/x/z/y').length).toBe(0)
+        expect(match('GET', '/xz/z/y').length).toBe(0)
+      })
+
+      it('Matches below the root', async () => {
+        router.add('GET', '/a/b*/c', 'get b')
+
+        const res = match('GET', '/a/bz/c')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get b')
+
+        expect(match('GET', '/a/b/c').length).toBe(0)
+        expect(match('GET', '/a/b/z/c').length).toBe(0)
+      })
+    })
+
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
