@@ -168,6 +168,18 @@ export const mergePath: (...paths: string[]) => string = (
   }`
 }
 
+export const absolutePath = <T extends string>(path: T): T => {
+  return `/@@@${path}` as T
+}
+
+export const isAbsolutePath = (path: string): boolean => {
+  return path.startsWith('/@@@')
+}
+
+export const getRoutePath = (path: string): string => {
+  return path.startsWith('/@@@') ? path.slice(4) : path
+}
+
 export const checkOptionalParameter = (path: string): string[] | null => {
   /*
     If path is `/api/animals/:type?` it will return:
