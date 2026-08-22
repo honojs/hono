@@ -36,6 +36,12 @@ export async function signing(
   return await crypto.subtle.sign(algorithm, cryptoKey, data)
 }
 
+// String/PEM secrets are reused across requests; skip importKey after the first
+// call. Cap the map so Jwt.verify() cannot cache unbounded request-derived
+// material. JWK objects are not cached: mutation would keep the old CryptoKey.
+const MAX_CACHED_STRING_PUBLIC_KEYS = 16
+const cachedStringPublicKeys = new Map<string, CryptoKey>()
+
 export async function verifying(
   publicKey: SignatureKey,
   alg: SignatureAlgorithm,
@@ -43,7 +49,25 @@ export async function verifying(
   data: BufferSource
 ): Promise<boolean> {
   const algorithm = getKeyAlgorithm(alg)
-  const cryptoKey = await importPublicKey(publicKey, algorithm)
+  let cryptoKey: CryptoKey
+  if (typeof publicKey === 'string') {
+    const cacheKey = `${alg}\0${publicKey}`
+    const cached = cachedStringPublicKeys.get(cacheKey)
+    if (cached) {
+      cryptoKey = cached
+    } else {
+      cryptoKey = await importPublicKey(publicKey, algorithm)
+      if (cachedStringPublicKeys.size >= MAX_CACHED_STRING_PUBLIC_KEYS) {
+        const oldest = cachedStringPublicKeys.keys().next().value
+        if (oldest !== undefined) {
+          cachedStringPublicKeys.delete(oldest)
+        }
+      }
+      cachedStringPublicKeys.set(cacheKey, cryptoKey)
+    }
+  } else {
+    cryptoKey = await importPublicKey(publicKey, algorithm)
+  }
   return await crypto.subtle.verify(algorithm, cryptoKey, signature, data)
 }
 
