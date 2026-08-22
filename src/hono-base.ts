@@ -4,7 +4,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compose } from './compose'
+import { compose, defaultHandlerWrapper } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
 import type { Router } from './router'
@@ -15,6 +15,7 @@ import type {
   FetchEventLike,
   H,
   HandlerInterface,
+  HandlerWrapper,
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
@@ -84,6 +85,25 @@ export type HonoOptions<E extends Env> = {
    * ```
    */
   getPath?: GetPath<E>
+  /**
+   * `handlerWrapper` intercepts every matched handler / middleware execution.
+   * The default wrapper just invokes the handler. Replace it for tracing, timing, etc.
+   *
+   * @example
+   * ```ts
+   * const app = new Hono({
+   *   handlerWrapper: async (c, next, route) => {
+   *     const start = performance.now()
+   *     try {
+   *       return await route.handler(c, next)
+   *     } finally {
+   *       console.log(`${route.path} ${route.handler.name}: ${performance.now() - start}ms`)
+   *     }
+   *   },
+   * })
+   * ```
+   */
+  handlerWrapper?: HandlerWrapper
 }
 
 type MountOptionHandler = (c: Context) => unknown
@@ -180,6 +200,7 @@ class Hono<
     })
     clone.errorHandler = this.errorHandler
     clone.#notFoundHandler = this.#notFoundHandler
+    clone.handlerWrapper = this.handlerWrapper
     clone.routes = this.routes
     return clone
   }
@@ -187,6 +208,9 @@ class Hono<
   #notFoundHandler: NotFoundHandler = notFoundHandler
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
+  // Public and not `#` or `private`: it is set via `Object.assign` in the constructor,
+  // and a Hono instance must remain assignable to `HonoOptions` for extended classes
+  handlerWrapper: HandlerWrapper = defaultHandlerWrapper
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -431,9 +455,13 @@ class Hono<
     if (matchResult[0].length === 1) {
       let res: ReturnType<H>
       try {
-        res = matchResult[0][0][0][0](c, async () => {
-          c.res = await this.#notFoundHandler(c)
-        })
+        res = this.handlerWrapper(
+          c,
+          async () => {
+            c.res = await this.#notFoundHandler(c)
+          },
+          matchResult[0][0][0][1]
+        ) as ReturnType<H>
       } catch (err) {
         return this.#handleError(err, c)
       }
@@ -448,7 +476,12 @@ class Hono<
         : (res ?? this.#notFoundHandler(c))
     }
 
-    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
+    const composed = compose(
+      matchResult[0],
+      this.errorHandler,
+      this.#notFoundHandler,
+      this.handlerWrapper
+    )
 
     return (async () => {
       try {
