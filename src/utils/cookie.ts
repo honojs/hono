@@ -153,7 +153,7 @@ export const parseSigned = async (
 
   for (const [key, value] of Object.entries(parse(cookie, name))) {
     const signatureStartPos = value.lastIndexOf('.')
-    if (signatureStartPos < 1) {
+    if (signatureStartPos < 0) {
       continue
     }
 
