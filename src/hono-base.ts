@@ -86,15 +86,6 @@ export type HonoOptions<E extends Env> = {
   getPath?: GetPath<E>
 }
 
-type MountOptionHandler = (c: Context) => unknown
-type MountReplaceRequest = (originalRequest: Request) => Request
-type MountOptions =
-  | MountOptionHandler
-  | {
-      optionHandler?: MountOptionHandler
-      replaceRequest?: MountReplaceRequest | false
-    }
-
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -291,95 +282,6 @@ class Hono<
    */
   notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.#notFoundHandler = handler
-    return this
-  }
-
-  /**
-   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#mount}
-   *
-   * @param {string} path - base Path
-   * @param {Function} applicationHandler - other Request Handler
-   * @param {MountOptions} [options] - options of `.mount()`
-   * @returns {Hono} mounted Hono instance
-   *
-   * @example
-   * ```ts
-   * import { Router as IttyRouter } from 'itty-router'
-   * import { Hono } from 'hono'
-   * // Create itty-router application
-   * const ittyRouter = IttyRouter()
-   * // GET /itty-router/hello
-   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
-   *
-   * const app = new Hono()
-   * app.mount('/itty-router', ittyRouter.handle)
-   * ```
-   *
-   * @example
-   * ```ts
-   * const app = new Hono()
-   * // Send the request to another application without modification.
-   * app.mount('/app', anotherApp, {
-   *   replaceRequest: (req) => req,
-   * })
-   * ```
-   */
-  mount(
-    path: string,
-    applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
-    options?: MountOptions
-  ): Hono<E, S, BasePath, CurrentPath> {
-    // handle options
-    let replaceRequest: MountReplaceRequest | undefined
-    let optionHandler: MountOptionHandler | undefined
-    if (options) {
-      if (typeof options === 'function') {
-        optionHandler = options
-      } else {
-        optionHandler = options.optionHandler
-        if (options.replaceRequest === false) {
-          replaceRequest = (request) => request
-        } else {
-          replaceRequest = options.replaceRequest
-        }
-      }
-    }
-
-    // prepare handlers for request
-    const getOptions: (c: Context) => unknown[] = optionHandler
-      ? (c) => {
-          const options = optionHandler!(c)
-          return Array.isArray(options) ? options : [options]
-        }
-      : (c) => {
-          let executionContext: ExecutionContext | undefined = undefined
-          try {
-            executionContext = c.executionCtx
-          } catch {} // Do nothing
-          return [c.env, executionContext]
-        }
-    replaceRequest ||= (() => {
-      const mergedPath = mergePath(this._basePath, path)
-      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
-      return (request) => {
-        const url = new URL(request.url)
-        url.pathname = this.getPath(request).slice(pathPrefixLength) || '/'
-        return new Request(url, request)
-      }
-    })()
-
-    const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
-
-      if (res) {
-        return res
-      }
-
-      await next()
-    }
-    this.#addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
     return this
   }
 
