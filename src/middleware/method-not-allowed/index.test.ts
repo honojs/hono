@@ -197,6 +197,52 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('ignores trailing wildcard routes when inferring allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    app.get('/*', (c) => c.text('wildcard'))
+
+    const res = await app.request('/nonexistent', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(res.headers.has('Allow')).toBe(false)
+
+    const res2 = await app.request('/api', { method: 'POST' })
+
+    expect(res2.status).toBe(405)
+    expect(res2.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
+  it('ignores wildcard routes with prefix like /static/*', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/static/*', (c) => c.text('static'))
+    app.get('/api/resource', (c) => c.text('GET'))
+
+    const res = await app.request('/static/other.txt', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(res.headers.has('Allow')).toBe(false)
+
+    const res2 = await app.request('/api/resource', { method: 'POST' })
+
+    expect(res2.status).toBe(405)
+    expect(res2.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
+  it('still returns 405 for non-wildcard routes when wildcard exists', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/resource', (c) => c.text('GET'))
+    app.get('/*', (c) => c.text('wildcard'))
+
+    const res = await app.request('/resource', { method: 'POST' })
+
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
   it('does not invoke the error handler for a 405 response', async () => {
     const app = new Hono()
     const onError = vi.fn(() => new Response('error', { status: 500 }))

@@ -30,7 +30,14 @@ const ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS) as (keyof typeof ENCODINGS
 const DEFAULT_DOCUMENT = 'index.html'
 
 /**
- * This middleware is not directly used by the user. Create a wrapper specifying `getContent()` by the environment such as Deno or Bun.
+ * Serve Static middleware.
+ *
+ * Serves static files from the given root. Only `GET` and `HEAD` requests are
+ * handled; other methods fall through to `next()` so downstream middleware
+ * (e.g. `methodNotAllowed`) can respond with `405 Method Not Allowed`.
+ *
+ * This middleware is not directly used by the user. Create a wrapper specifying
+ * `getContent()` by the environment such as Deno or Bun.
  */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
@@ -54,6 +61,10 @@ export const serveStatic = <E extends Env = Env>(
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
+      return next()
+    }
+
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
       return next()
     }
 

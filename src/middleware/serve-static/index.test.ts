@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { methodNotAllowed } from '../method-not-allowed'
 import { serveStatic as baseServeStatic } from '.'
 
 describe('Serve Static Middleware', () => {
@@ -241,6 +242,65 @@ describe('Serve Static Middleware', () => {
     } as Request)
     expect(res.status).toBe(200)
     expect(res.body).toBe(body)
+  })
+
+  it('Should skip non-GET/HEAD requests and not call getContent', async () => {
+    const getContent = vi.fn(async () => 'file')
+    const app = new Hono().use('*', baseServeStatic({ getContent }))
+
+    const res = await app.request('/static/hello.html', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(getContent).not.toBeCalled()
+  })
+
+  it('Should skip various non-GET/HEAD methods', async () => {
+    const getContent = vi.fn(async () => 'file')
+    const app = new Hono().use('*', baseServeStatic({ getContent }))
+
+    for (const method of ['PUT', 'DELETE', 'PATCH', 'OPTIONS', 'POST']) {
+      getContent.mockClear()
+      const res = await app.request('/static/hello.html', { method })
+      expect(res.status).toBe(404)
+      expect(getContent).not.toBeCalled()
+    }
+  })
+
+  it('Should still serve HEAD requests', async () => {
+    const getContent = vi.fn(async () => 'file-content')
+    const app = new Hono().use('*', baseServeStatic({ getContent }))
+
+    const res = await app.request('/static/hello.html', { method: 'HEAD' })
+
+    expect(res.status).toBe(200)
+    expect(getContent).toBeCalled()
+  })
+
+  it('Should allow methodNotAllowed to handle POST to existing route while static falls through', async () => {
+    const getContent = vi.fn(async (path) => {
+      if (path.includes('hello.html')) {
+        return 'file-content'
+      }
+      return null
+    })
+    const serveStatic = baseServeStatic({ getContent })
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    app.use('/*', serveStatic)
+
+    const res1 = await app.request('/static/hello.html', { method: 'POST' })
+    expect(res1.status).toBe(404)
+    expect(getContent).not.toBeCalled()
+
+    getContent.mockClear()
+    const res2 = await app.request('/api', { method: 'POST' })
+    expect(res2.status).toBe(405)
+    expect(res2.headers.get('Allow')).toBe('GET, HEAD')
+
+    const res3 = await app.request('/static/hello.html')
+    expect(res3.status).toBe(200)
+    expect(getContent).toBeCalled()
   })
 
   describe('Changing root path', () => {

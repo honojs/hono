@@ -27,6 +27,13 @@ type MethodNotAllowedOptions<E extends Env> = {
  * Returns a `405 Method Not Allowed` response with an `Allow` header when the request path
  * matches a registered route but the request method is not supported.
  *
+ * Routes with a trailing wildcard (e.g. `/*`, `/static/*`) are ignored when
+ * inferring allowed methods, because a wildcard match does not reliably prove
+ * that a concrete resource exists. This prevents every unhandled request in a
+ * wildcard namespace from being converted from `404 Not Found` to `405`.
+ *
+ * `ALL` and explicit `HEAD` routes are also ignored for `Allow` inference.
+ *
  * @param {MethodNotAllowedOptions} options - The options for the middleware.
  * @param {Hono} options.app - The Hono instance used by the application.
  * @param {MethodNotAllowedHandler} [options.onMethodNotAllowed] - Generates the response, including its `Allow` header.
@@ -80,6 +87,10 @@ export const methodNotAllowed = <E extends Env = Env>(
         // Hono does not distinguish middleware registered with `app.use()` from handlers
         // registered with `app.all()`, so `ALL` routes cannot contribute to the Allow header.
         if (route.method === METHOD_NAME_ALL || route.method === 'HEAD') {
+          continue
+        }
+
+        if (route.path.endsWith('*')) {
           continue
         }
 
