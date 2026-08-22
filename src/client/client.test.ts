@@ -566,6 +566,28 @@ describe('Optional header and cookie values', () => {
       },
     })
   })
+
+  it('Should not send a Cookie header if all cookie values are undefined', async () => {
+    const app = new Hono().get(
+      '/',
+      validator('cookie', () => {
+        return {} as {
+          optional?: string
+        }
+      }),
+      (c) => c.json({ cookieHeader: c.req.header('cookie') ?? null })
+    )
+    const client = hc<typeof app>('', { fetch: app.request })
+
+    const res = await client.index.$get({
+      cookie: {
+        optional: undefined,
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ cookieHeader: null })
+  })
 })
 
 describe('Infer the response/request type', () => {
