@@ -70,6 +70,19 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() with undefined and null', async () => {
+    const resNull = c.json(null)
+    expect(await resNull.text()).toBe('null')
+
+    // undefined must not return an invalid empty string under application/json
+    const resUndefined = c.json(undefined as unknown as string)
+    expect(await resUndefined.text()).toBe('null')
+
+    // Cloned response parses valid JSON null
+    const resParsed = c.json(undefined as unknown as string)
+    expect(await resParsed.json()).toBe(null)
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
