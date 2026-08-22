@@ -64,8 +64,12 @@ export const compose = <E extends Env = Env>(
         }
       }
 
-      if (res && (context.finalized === false || isError)) {
-        context.res = res
+      if (res) {
+        // Allow middleware to override error responses even after context is finalized
+        // This enables middleware to handle errors gracefully (e.g., redirecting)
+        if (context.finalized === false || isError || (context.error && res !== context.res)) {
+          context.res = res
+        }
       }
       return context
     }
