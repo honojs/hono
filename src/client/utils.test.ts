@@ -101,6 +101,27 @@ describe('buildSearchParams', () => {
     const searchParams = buildSearchParams(query)
     expect(searchParams.toString()).toBe('id=123&type=test&tag=a&tag=b')
   })
+
+  it('Should skip an undefined entry inside an array, as it does for a top-level value', () => {
+    // `['a', undefined, 'b']` used to serialise as `tag=a&tag=undefined&tag=b`,
+    // sending the literal string "undefined" to the server.
+    const searchParams = buildSearchParams({
+      tag: ['a', undefined as unknown as string, 'b'],
+    })
+    expect(searchParams.toString()).toBe('tag=a&tag=b')
+  })
+
+  it('Should keep an empty string in an array', () => {
+    const searchParams = buildSearchParams({ tag: ['a', '', 'b'] })
+    expect(searchParams.toString()).toBe('tag=a&tag=&tag=b')
+  })
+
+  it('Should drop an array whose entries are all undefined', () => {
+    const searchParams = buildSearchParams({
+      tag: [undefined, undefined] as unknown as string[],
+    })
+    expect(searchParams.toString()).toBe('')
+  })
 })
 
 describe('replaceUrlProtocol', () => {

@@ -33,6 +33,9 @@ export const buildSearchParams = (query: Record<string, string | string[]>) => {
 
     if (Array.isArray(v)) {
       for (const v2 of v) {
+        if (v2 === undefined) {
+          continue
+        }
         searchParams.append(k, v2)
       }
     } else {

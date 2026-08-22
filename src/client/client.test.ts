@@ -1784,6 +1784,31 @@ describe('WebSocket Provider Integration', () => {
   })
 })
 
+describe('Query arrays containing undefined', () => {
+  // A validator whose query field is an optional union gives the client an input
+  // type of `(string | undefined)[] | undefined`, so this compiles with no cast.
+  const app = new Hono().get(
+    '/search',
+    validator('query', () => ({}) as { tag: (string | undefined)[] | undefined }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+
+  it('Should not send the literal string "undefined" for an absent entry', async () => {
+    let requestedUrl = ''
+    const client = hc<AppType>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+
+    await client.search.$get({ query: { tag: ['a', undefined, 'b'] } })
+
+    expect(requestedUrl).toBe('http://localhost/search?tag=a&tag=b')
+  })
+})
+
 describe('Custom buildSearchParams', () => {
   const app = new Hono()
   const route = app.get(
