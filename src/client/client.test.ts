@@ -1919,6 +1919,36 @@ describe('Custom buildSearchParams', () => {
 
     expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
   })
+
+  it('Should use custom buildSearchParams in $ws() method', () => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>('http://localhost', {
+      buildSearchParams: customBuildSearchParams,
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    // @ts-expect-error search route does not explicitly define $ws in mock AppType
+    client.search.$ws({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(webSocketMock).toHaveBeenCalledWith(
+      'ws://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2',
+      undefined
+    )
+  })
+
+  it('Should filter out undefined query parameters in $ws()', () => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>('http://localhost', {
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    // @ts-expect-error search route does not explicitly define $ws in mock AppType
+    client.search.$ws({ query: { q: 'test', tags: undefined as any } })
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/search?q=test', undefined)
+  })
 })
 
 describe('ApplyGlobalResponse Type Helper', () => {
