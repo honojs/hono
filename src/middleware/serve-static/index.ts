@@ -57,6 +57,12 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    // Static files can only be retrieved. Other methods are passed through so that
+    // subsequent handlers, `notFound()`, or `methodNotAllowed()` can handle them.
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {

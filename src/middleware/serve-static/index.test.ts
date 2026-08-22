@@ -243,6 +243,36 @@ describe('Serve Static Middleware', () => {
     expect(res.body).toBe(body)
   })
 
+  describe('Request methods', () => {
+    const app = new Hono()
+    app.use('/static/*', baseServeStatic({ getContent }))
+
+    it.each(['POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])(
+      'Should not serve the content for %s',
+      async (method) => {
+        const res = await app.request('/static/hello.html', { method })
+        expect(res.status).toBe(404)
+        expect(getContent).not.toHaveBeenCalled()
+      }
+    )
+
+    it('Should serve the content for HEAD', async () => {
+      const res = await app.request('/static/hello.html', { method: 'HEAD' })
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    })
+
+    it('Should let a later handler take over the request', async () => {
+      const app = new Hono()
+      app.use('/*', baseServeStatic({ getContent }))
+      app.post('/hello.html', (c) => c.text('posted'))
+
+      const res = await app.request('/hello.html', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('posted')
+    })
+  })
+
   describe('Changing root path', () => {
     it('Should return the content with absolute root path', async () => {
       const app = new Hono()
