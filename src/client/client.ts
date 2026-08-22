@@ -69,6 +69,9 @@ class ClientRequestImpl {
           }
           if (Array.isArray(v)) {
             for (const v2 of v) {
+              if (v2 === undefined) {
+                continue
+              }
               form.append(k, v2)
             }
           } else {
