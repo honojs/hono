@@ -70,6 +70,86 @@ describe('accepts', () => {
     expect(result).toBe('text/html')
   })
 
+  test('should match wildcard subtype application/*', () => {
+    const c = {
+      req: {
+        header: () => 'application/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json', 'text/html'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/json')
+  })
+
+  test('should return default support for global wildcard */*', () => {
+    const c = {
+      req: {
+        header: () => 'text/plain, */*;q=0.5',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should return default support for single asterisk wildcard *', () => {
+    const c = {
+      req: {
+        header: () => '*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept-Encoding',
+      supports: ['gzip', 'deflate'],
+      default: 'identity',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('identity')
+  })
+
+  test('should prefer exact match over wildcard match at same quality factor', () => {
+    const c = {
+      req: {
+        header: () => '*/*, application/json',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html', 'application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/json')
+  })
+
+  test('should match subtype wildcard while global wildcard falls through to default', () => {
+    const c = {
+      req: {
+        header: () => '*/*, text/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json', 'text/plain'],
+      default: 'application/json',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/plain')
+  })
+
   test('should return default support if no accept header', () => {
     const c = {
       req: {
