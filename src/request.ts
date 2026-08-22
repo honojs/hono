@@ -485,9 +485,10 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
   const body = await req[cacheKey]()
   const headers = req.header()
   if (body instanceof FormData) {
-    // The FormData is re-serialized with a fresh multipart boundary, so the original
-    // Content-Type header no longer matches. Let the Request constructor generate it.
+    // The FormData is re-serialized, so the original content headers no longer
+    // describe the body. Let the runtime generate them for the new representation.
     delete headers['content-type']
+    delete headers['content-length']
   }
 
   const requestInit: RequiredRequestInit = {
