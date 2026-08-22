@@ -1841,6 +1841,66 @@ describe('Query arrays containing undefined', () => {
   })
 })
 
+describe('Empty serialized query', () => {
+  const app = new Hono().get(
+    '/search',
+    validator('query', () => ({}) as { q?: string }),
+    (c) => c.json({ ok: true })
+  )
+  const input = { query: { q: undefined } }
+
+  it('Should omit the query delimiter when no query values are serialized', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+
+    await client.search.$get(input)
+
+    expect(requestedUrl).toBe('http://localhost/search')
+    expect(client.search.$url(input).href).toBe('http://localhost/search')
+    expect(client.search.$path(input)).toBe('/search')
+  })
+
+  it('Should omit the query delimiter when a custom serializer returns no values', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      buildSearchParams: () => new URLSearchParams(),
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+    const customInput = { query: { q: 'ignored' } }
+
+    await client.search.$get(customInput)
+
+    expect(requestedUrl).toBe('http://localhost/search')
+    expect(client.search.$url(customInput).href).toBe('http://localhost/search')
+    expect(client.search.$path(customInput)).toBe('/search')
+  })
+
+  it('Should preserve empty-string query values', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+    const emptyStringInput = { query: { q: '' } }
+
+    await client.search.$get(emptyStringInput)
+
+    expect(requestedUrl).toBe('http://localhost/search?q=')
+    expect(client.search.$url(emptyStringInput).href).toBe('http://localhost/search?q=')
+    expect(client.search.$path(emptyStringInput)).toBe('/search?q=')
+  })
+})
+
 describe('Custom buildSearchParams', () => {
   const app = new Hono()
   const route = app.get(
