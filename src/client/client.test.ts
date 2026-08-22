@@ -521,6 +521,38 @@ describe('Form - Undefined Values', () => {
   })
 })
 
+describe('Form arrays containing undefined', () => {
+  const app = new Hono().post(
+    '/',
+    validator('form', () => ({}) as { tag: (string | undefined)[] | undefined }),
+    async (c) => {
+      const body = await c.req.parseBody({ all: true })
+      return c.json({ tag: body['tag'] })
+    }
+  )
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should not send the literal string "undefined" for an absent entry', async () => {
+    const res = await client.index.$post({
+      form: {
+        tag: ['a', undefined, 'b'],
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ tag: ['a', 'b'] })
+  })
+
+  it('Should keep an empty string in an array', async () => {
+    const res = await client.index.$post({
+      form: {
+        tag: ['a', '', 'b'],
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ tag: ['a', '', 'b'] })
+  })
+})
+
 describe('Optional header and cookie values', () => {
   const app = new Hono().get(
     '/',
