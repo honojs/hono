@@ -1,0 +1,21 @@
+src/client/client.test.ts
+  s_f3264626e02e01::t_0949fed43c6736 524-555
+src/client/client.ts
+  s_f3264626e02e01::t_8d9cdfe76dab08 72-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8de5803c81055f87f7086d7e1ce82f423acc87aa",
+  "prompts": {},
+  "sessions": {
+    "s_f3264626e02e01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "580d7524-88ae-45e2-a30f-0fc2399ae243",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
