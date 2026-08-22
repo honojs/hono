@@ -9,13 +9,15 @@ import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
  * @param {[[Function, unknown], unknown][] | [[Function]][]} middleware - An array of middleware functions and their corresponding parameters.
  * @param {ErrorHandler<E>} [onError] - An optional error handler function.
  * @param {NotFoundHandler<E>} [onNotFound] - An optional not-found handler function.
+ * @param {boolean} [updateRouteIndex] - Whether to update the matched route index.
  *
  * @returns {(context: Context, next?: Next) => Promise<Context>} - A composed middleware function.
  */
 export const compose = <E extends Env = Env>(
   middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
-  onNotFound?: NotFoundHandler<E>
+  onNotFound?: NotFoundHandler<E>,
+  updateRouteIndex: boolean = true
 ): ((context: Context, next?: Next) => Promise<Context>) => {
   return (context, next) => {
     let index = -1
@@ -37,31 +39,31 @@ export const compose = <E extends Env = Env>(
 
       let res
       let isError = false
-      let handler
+      const entry = middleware[i]
+      const handler = entry ? entry[0][0] : (i === middleware.length && next) || undefined
 
-      if (middleware[i]) {
-        handler = middleware[i][0][0]
-        context.req.routeIndex = i
-      } else {
-        handler = (i === middleware.length && next) || undefined
+      if (entry) {
+        if (updateRouteIndex) {
+          context.req.routeIndex = i
+        }
       }
 
       if (handler) {
         try {
           res = await handler(context, () => dispatch(i + 1))
         } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err
-            res = await onError(err, context)
-            isError = true
-          } else {
+          if (updateRouteIndex) {
+            context.req.routeIndex = i
+          }
+          if (!(err instanceof Error) || !onError) {
             throw err
           }
+          context.error = err
+          res = await onError(err, context)
+          isError = true
         }
-      } else {
-        if (context.finalized === false && onNotFound) {
-          res = await onNotFound(context)
-        }
+      } else if (context.finalized === false && onNotFound) {
+        res = await onNotFound(context)
       }
 
       if (res && (context.finalized === false || isError)) {

@@ -197,6 +197,19 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('ignores internal routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/resource', (c) => c.text('GET'))
+    app.catchNotFound(async (_c, next) => next())
+    app.catch(async (_c, next) => next())
+
+    const res = await app.request('/resource', { method: 'POST' })
+
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET, HEAD')
+  })
+
   it('does not invoke the error handler for a 405 response', async () => {
     const app = new Hono()
     const onError = vi.fn(() => new Response('error', { status: 500 }))
