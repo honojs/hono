@@ -593,6 +593,34 @@ describe('cloneRawRequest', () => {
     expect(formData.get('file')).toBeInstanceOf(File)
   })
 
+  test('drops stale content length when cloning consumed multipart request', async () => {
+    const boundary = 'boundary'
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="foo"',
+      '',
+      'bar',
+      `--${boundary}--`,
+      '',
+    ].join('\r\n')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': new TextEncoder().encode(body).byteLength.toString(),
+        },
+        body,
+      })
+    )
+    await req.formData()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.headers.has('Content-Length')).toBe(false)
+    expect((await clonedReq.formData()).get('foo')).toBe('bar')
+  })
+
   test('clones GET request without body', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
