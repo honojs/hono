@@ -354,7 +354,7 @@ describe('parseResponse', async () => {
       await expect(
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
-      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+      ).rejects.toThrowErrorMatchingInlineSnapshot(`[DetailedError: 404 Not Found]`)
     }),
     it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
       type ResultType = Awaited<
