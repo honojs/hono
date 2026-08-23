@@ -11,8 +11,18 @@ export interface SSEMessage {
 }
 
 export class SSEStreamingApi extends StreamingApi {
-  constructor(writable: WritableStream, readable: ReadableStream) {
+  /**
+   * The value of the `Last-Event-ID` request header sent by the client, or
+   * `undefined` when it was not sent. When an `EventSource` reconnects, the
+   * browser sends this header automatically with the `id` of the last event
+   * it received, so a handler can use it to resume the event stream instead
+   * of replaying everything.
+   */
+  lastEventId?: string
+
+  constructor(writable: WritableStream, readable: ReadableStream, lastEventId?: string) {
     super(writable, readable)
+    this.lastEventId = lastEventId
   }
 
   async writeSSE(message: SSEMessage) {
@@ -76,7 +86,7 @@ export const streamSSE = (
   onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
 ): Response => {
   const { readable, writable } = new TransformStream()
-  const stream = new SSEStreamingApi(writable, readable)
+  const stream = new SSEStreamingApi(writable, readable, c.req.header('Last-Event-ID'))
 
   // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
   if (isOldBunVersion()) {

@@ -428,4 +428,47 @@ describe('SSE Streaming helper', () => {
     // Two \r should produce an empty line in between
     expect(decodedValue).toBe('event: test-double-cr\ndata: Left\ndata: \ndata: Right\n\n')
   })
+
+  it('Exposes the Last-Event-ID request header as stream.lastEventId', async () => {
+    const req = new Request('http://localhost/', { headers: { 'Last-Event-ID': '41' } })
+    const c = new Context(req)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: `resumed from ${stream.lastEventId}` })
+    })
+    expect(await res.text()).toBe('data: resumed from 41\n\n')
+  })
+
+  it('stream.lastEventId is undefined when the header is not sent', async () => {
+    const req = new Request('http://localhost/')
+    const c = new Context(req)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: `lastEventId=${String(stream.lastEventId)}` })
+    })
+    expect(await res.text()).toBe('data: lastEventId=undefined\n\n')
+  })
+
+  it('writeSSE() after the client disconnects resolves as a no-op', async () => {
+    let handlerDone = false
+    const wroteWhileAborted: boolean[] = []
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: 'one', id: '1' })
+      await stream.sleep(10) // the test cancels the reader during this window
+      for (let i = 2; i <= 4; i++) {
+        // Must neither throw nor hang even though the client is gone.
+        await stream.writeSSE({ data: `after-abort-${i}`, id: String(i) })
+        wroteWhileAborted.push(stream.aborted)
+      }
+      handlerDone = true
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(new TextDecoder().decode(value)).toBe('data: one\nid: 1\n\n')
+    await reader.cancel()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(handlerDone).toBe(true)
+    expect(wroteWhileAborted).toEqual([true, true, true])
+  })
 })
