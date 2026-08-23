@@ -12,11 +12,8 @@ export interface SSEMessage {
 
 export class SSEStreamingApi extends StreamingApi {
   /**
-   * The value of the `Last-Event-ID` request header sent by the client, or
-   * `undefined` when it was not sent. When an `EventSource` reconnects, the
-   * browser sends this header automatically with the `id` of the last event
-   * it received, so a handler can use it to resume the event stream instead
-   * of replaying everything.
+   * The `Last-Event-ID` request header sent by an `EventSource` on reconnect
+   * (the id of the last event it received), or `undefined` when absent.
    */
   lastEventId?: string
 

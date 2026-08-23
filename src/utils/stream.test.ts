@@ -220,7 +220,7 @@ describe('StreamingApi', () => {
     api.abort()
     expect(api.aborted).toBe(true)
 
-    // Must resolve immediately without enqueuing anything nor throwing.
+    // Must resolve immediately without enqueuing anything or throwing.
     await expect(api.write('after')).resolves.toBe(api)
     await expect(api.writeln('after')).resolves.toBe(api)
     const { value, done } = await Promise.race([
@@ -240,7 +240,7 @@ describe('StreamingApi', () => {
     api.write('first')
     await reader.read()
 
-    await reader.cancel() // client disconnect -> abort()
+    await reader.cancel()
     expect(api.aborted).toBe(true)
 
     // Writing after the disconnect neither throws nor hangs.

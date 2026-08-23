@@ -213,8 +213,8 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
   let handlerDone = false
   let writesAfterAbort = 0
 
-  // Resume-capable feed: replays only the events after the Last-Event-ID cursor,
-  // exactly like an EventSource reconnect would expect.
+  // Replays only the events after the Last-Event-ID cursor, as an EventSource
+  // reconnect would expect.
   app.get('/feed', (c) =>
     streamSSE(c, async (stream) => {
       const cursor = Number(stream.lastEventId ?? 0)
@@ -224,13 +224,10 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
     })
   )
 
-  app.get('/abrupt', (c) => {
-    handlerDone = false
-    writesAfterAbort = 0
-    return streamSSE(c, async (stream) => {
+  app.get('/abrupt', (c) =>
+    streamSSE(c, async (stream) => {
       await stream.writeSSE({ data: 'one', id: '1' })
-      // The client disconnects during this window; keep producing —
-      // writes after the disconnect must be safe no-ops.
+      // The client disconnects during this window; keep producing.
       await stream.sleep(20)
       for (let i = 2; i <= 4; i++) {
         await stream.writeSSE({ data: `dropped-${i}`, id: String(i) })
@@ -238,9 +235,14 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
       }
       handlerDone = true
     })
-  })
+  )
 
   const agent = createAgent(app)
+
+  beforeEach(() => {
+    handlerDone = false
+    writesAfterAbort = 0
+  })
 
   const readEvents = async (res: Response, count: number): Promise<string[]> => {
     const reader = res.body!.getReader()
@@ -256,9 +258,9 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
       const frames = buffer.split('\n\n')
       buffer = frames.pop() ?? ''
       for (const frame of frames) {
-        const data = /^data: (.*)$/m.exec(frame)
-        if (data) {
-          out.push(data[1])
+        const data = /^data: (.*)$/m.exec(frame)?.[1]
+        if (data !== undefined) {
+          out.push(data)
         }
       }
     }
@@ -272,8 +274,7 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
     expect(await readEvents(first, 2)).toEqual(['alpha', 'beta'])
     await first.body!.cancel()
 
-    // Reconnect with Last-Event-ID: 2 (the id of the last event received):
-    // only the events after the cursor are replayed.
+    // Reconnect with the id of the last received event: only later events replay.
     const second = await agent.get('/feed', { headers: { 'Last-Event-ID': '2' } })
     expect(await readEvents(second, 2)).toEqual(['gamma', 'delta'])
     await second.body!.cancel()
@@ -292,8 +293,7 @@ describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
     controller.abort()
     await res.body!.cancel().catch(() => {})
 
-    // The handler keeps writing after the disconnect: those writes are no-ops
-    // and the handler must complete instead of hanging or crashing.
+    // Writes after the disconnect are no-ops; the handler must still complete.
     const deadline = Date.now() + 2000
     while (!handlerDone && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 10))

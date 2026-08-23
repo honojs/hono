@@ -442,7 +442,7 @@ describe('SSE Streaming helper', () => {
     const req = new Request('http://localhost/')
     const c = new Context(req)
     const res = streamSSE(c, async (stream) => {
-      await stream.writeSSE({ data: `lastEventId=${String(stream.lastEventId)}` })
+      await stream.writeSSE({ data: `lastEventId=${stream.lastEventId}` })
     })
     expect(await res.text()).toBe('data: lastEventId=undefined\n\n')
   })

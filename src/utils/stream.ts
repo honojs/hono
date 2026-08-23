@@ -47,10 +47,8 @@ export class StreamingApi {
 
   async write(input: Uint8Array | string): Promise<StreamingApi> {
     if (this.aborted) {
-      // Once the stream is aborted, the client is gone and the writable may
-      // already be errored or about to be. Writing is defined as a no-op:
-      // it never touches the writer, so it can neither throw nor hang,
-      // regardless of how the runtime propagates the cancellation.
+      // The client is gone and the writable may be errored; depending on the
+      // runtime, writing can throw or hang, so writes after abort are no-ops.
       return this
     }
     try {
