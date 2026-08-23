@@ -482,11 +482,12 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     })
   }
 
-  const body = await req[cacheKey]()
+  let body: BodyInit = await req[cacheKey]()
   const headers = req.header()
-  if (body instanceof FormData) {
-    // The FormData is re-serialized, so the original content headers no longer
-    // describe the body. Let the runtime generate them for the new representation.
+  if (cacheKey === 'json') {
+    body = JSON.stringify(body)
+    delete headers['content-length']
+  } else if (body instanceof FormData) {
     delete headers['content-type']
     delete headers['content-length']
   }

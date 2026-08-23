@@ -621,6 +621,24 @@ describe('cloneRawRequest', () => {
     expect((await clonedReq.formData()).get('foo')).toBe('bar')
   })
 
+  test('clones request when external code populated bodyCache.json', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ foo: 'bar' }),
+      })
+    )
+    await req.raw.json()
+    req.bodyCache.json = Promise.resolve({ foo: 'bar' })
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(await clonedReq.json()).toEqual({ foo: 'bar' })
+  })
+
   test('clones GET request without body', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
