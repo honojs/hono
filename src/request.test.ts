@@ -650,8 +650,6 @@ describe('cloneRawRequest', () => {
         body,
       })
     )
-    // Reading a urlencoded body through formData() is legal, but the cache
-    // now holds a FormData while the original media type is still urlencoded.
     await req.formData()
 
     const clonedReq = await cloneRawRequest(req)

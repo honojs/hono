@@ -489,22 +489,16 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     delete headers['content-length']
   } else if (body instanceof FormData) {
     const contentType = headers['content-type']
-    // A urlencoded body read through formData() is cached as a FormData, but
-    // re-serializing it would flip the media type to multipart. Keep the
-    // original urlencoded encoding instead of letting the runtime choose.
     const isURLEncoded = contentType
       ? contentType.trim().toLowerCase().startsWith('application/x-www-form-urlencoded')
       : false
     if (isURLEncoded) {
-      // A urlencoded body never contains files, but stay defensive anyway.
       body = new URLSearchParams(
         [...(body as FormData).entries()].map(([k, v]) => [k, typeof v === 'string' ? v : v.name])
       )
     } else {
       delete headers['content-type']
     }
-    // The FormData is re-serialized, so the original content headers no longer
-    // describe the body. Let the runtime generate them for the new representation.
     delete headers['content-length']
   }
 
