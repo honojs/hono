@@ -203,8 +203,9 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
       return result.slice(baseUrl.replace(/\/+$/, '').length).replace(/^\/?/, '/')
     }
     if (method === 'ws') {
+      const normalizedUrl = removeIndexString(url)
       const webSocketUrl = replaceUrlProtocol(
-        opts.args[0]?.param ? replaceUrlParam(url, opts.args[0].param) : url,
+        opts.args[0]?.param ? replaceUrlParam(normalizedUrl, opts.args[0].param) : normalizedUrl,
         'ws'
       )
       const targetUrl = new URL(webSocketUrl)

@@ -1548,25 +1548,37 @@ describe('WebSocket URL Protocol Translation', () => {
   it('Translates HTTP to ws', async () => {
     const client = hc<AppType>('http://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Translates HTTPS to wss', async () => {
     const client = hc<AppType>('https://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
   })
 
   it('Keeps ws unchanged', async () => {
     const client = hc<AppType>('ws://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Keeps wss unchanged', async () => {
     const client = hc<AppType>('wss://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
+  })
+
+  it('Preserves an index path parameter value', async () => {
+    const dynamicRoute = new Hono().get(
+      '/:id',
+      upgradeWebSocket(() => ({}))
+    )
+    const client = hc<typeof dynamicRoute>('http://localhost')
+
+    client[':id'].$ws({ param: { id: 'index' } })
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
   })
 })
 
@@ -1608,7 +1620,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         tag: ['a', 'b'],
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test&tag=a&tag=b')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=123&type=test&tag=a&tag=b')
   })
 
   it('Translates HTTPS to wss and includes query parameters', async () => {
@@ -1619,7 +1631,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=456&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=456&type=secure')
   })
 
   it('Keeps ws unchanged and includes query parameters', async () => {
@@ -1630,7 +1642,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'plain',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=789&type=plain')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=789&type=plain')
   })
 
   it('Keeps wss unchanged and includes query parameters', async () => {
@@ -1641,7 +1653,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=1011&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=1011&type=secure')
   })
 })
 
@@ -1796,13 +1808,13 @@ describe('WebSocket Provider Integration', () => {
       description: 'should initialize the WebSocket provider correctly',
       url: 'http://localhost',
       query: undefined,
-      expectedUrl: 'ws://localhost/index',
+      expectedUrl: 'ws://localhost/',
     },
     {
       description: 'should correctly add query parameters to the WebSocket URL',
       url: 'http://localhost',
       query: { id: '123', type: 'test', tag: ['a', 'b'] },
-      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+      expectedUrl: 'ws://localhost/?id=123&type=test&tag=a&tag=b',
     },
   ])('$description', ({ url, expectedUrl, query }) => {
     const webSocketMock = vi.fn()
