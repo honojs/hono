@@ -289,4 +289,41 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
     expect(await res.text()).toBe('Missing')
   })
+
+  it('ignores trailing wildcard routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/static/*', (c) => c.text('static'))
+
+    const res = await app.request('/static/file.txt', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(res.headers.has('Allow')).toBe(false)
+  })
+
+  it('ignores root wildcard route when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/*', (c) => c.text('catch-all'))
+
+    const res = await app.request('/unregistered', { method: 'POST' })
+
+    expect(res.status).toBe(404)
+    expect(res.headers.has('Allow')).toBe(false)
+  })
+
+  it('still returns 405 for an exact route even if a trailing wildcard route is also registered', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/static/*', (c) => c.text('static wildcard'))
+    app.get('/static/file.txt', (c) => c.text('specific file'))
+
+    const wildcardRes = await app.request('/static/other.txt', { method: 'POST' })
+    expect(wildcardRes.status).toBe(404)
+    expect(wildcardRes.headers.has('Allow')).toBe(false)
+
+    const exactRes = await app.request('/static/file.txt', { method: 'POST' })
+    expect(exactRes.status).toBe(405)
+    expect(exactRes.headers.get('Allow')).toBe('GET, HEAD')
+  })
 })
