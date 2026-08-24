@@ -95,7 +95,13 @@ export class StreamingApi {
   abort() {
     if (!this.aborted) {
       this.aborted = true
-      this.abortSubscribers.forEach((subscriber) => subscriber())
+      this.abortSubscribers.forEach((subscriber) => {
+        try {
+          void Promise.resolve(subscriber()).catch(() => {})
+        } catch {
+          // Ignore synchronous listener errors.
+        }
+      })
     }
   }
 }

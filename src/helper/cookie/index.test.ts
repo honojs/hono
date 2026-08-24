@@ -67,8 +67,8 @@ describe('Cookie Middleware', () => {
       const res = new Response('Signed fortune cookie')
       if (typeof fortuneCookie !== 'undefined' && typeof fruitCookie !== 'undefined') {
         // just examples for tests sake
-        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
-        res.headers.set('Fruit-Cookie', fruitCookie || 'INVALID')
+        res.headers.set('Fortune-Cookie', fortuneCookie === false ? 'INVALID' : fortuneCookie)
+        res.headers.set('Fruit-Cookie', fruitCookie === false ? 'INVALID' : fruitCookie)
       }
       return res
     })
@@ -79,7 +79,7 @@ describe('Cookie Middleware', () => {
       const res = new Response('Signed fortune cookie')
       if (typeof fortuneCookie !== 'undefined') {
         // just an example for tests sake
-        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
+        res.headers.set('Fortune-Cookie', fortuneCookie === false ? 'INVALID' : fortuneCookie)
       }
       return res
     })
@@ -122,6 +122,15 @@ describe('Cookie Middleware', () => {
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
+    })
+
+    it('Get signed cookie with empty string value', async () => {
+      const secret = 'secret lucky charm'
+      const emptySignedCookie = await generateSignedCookie('fortune_cookie', '', secret)
+      const req = new Request('http://localhost/cookie-signed-get-one')
+      req.headers.set('Cookie', emptySignedCookie)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('')
     })
 
     describe('get null if the value is undefined', () => {
