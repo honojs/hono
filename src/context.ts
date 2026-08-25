@@ -551,10 +551,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string | symbol, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string | symbol, value: unknown) => {
+  > = (key: PropertyKey, value: unknown) => {
     this.#var ??= new Map()
     this.#var.set(key, value)
   }
@@ -576,10 +576,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string | symbol, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string | symbol) => {
+  > = (key: PropertyKey) => {
     return this.#var ? this.#var.get(key) : undefined
   }
 
