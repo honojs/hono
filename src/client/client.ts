@@ -187,16 +187,17 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     if (method === 'url' || method === 'path') {
-      let result = url
+      // Strip the synthetic `index` segment before substituting params, so that a param
+      // whose value is `index` is not mistaken for one.
+      let result = removeIndexString(url)
       if (opts.args[0]) {
         if (opts.args[0].param) {
-          result = replaceUrlParam(url, opts.args[0].param)
+          result = replaceUrlParam(result, opts.args[0].param)
         }
         if (opts.args[0].query) {
           result = appendQueryParams(result, buildSearchParamsOption(opts.args[0].query))
         }
       }
-      result = removeIndexString(result)
       if (method === 'url') {
         return new URL(result)
       }
