@@ -149,6 +149,11 @@ describe('Context', () => {
     c.set('foo', 'bar')
     expect(c.get('foo')).toBe('bar')
     expect(c.get('foo2')).toBe(undefined)
+
+    const sym = Symbol('foo')
+    expect(c.get(sym)).toBe(undefined)
+    c.set(sym, 'symbol-value')
+    expect(c.get(sym)).toBe('symbol-value')
   })
 
   it('c.var', async () => {

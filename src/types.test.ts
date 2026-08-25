@@ -1971,6 +1971,45 @@ describe('ContextVariableMap type tests', () => {
     // @ts-expect-error the value of payload should be string
     expectTypeOf(c.set('payload', 123))
   })
+
+  it('Should accept symbol keys with c.get and c.set when c is Context<any>', () => {
+    const c = new Context(new Request('http://localhost'))
+    const sym = Symbol('foo')
+    c.set(sym, { data: 'test' })
+    expectTypeOf(c.get(sym)).toEqualTypeOf<any>()
+
+    const mw = createMiddleware(async (c, next) => {
+      const symKey = Symbol('middleware-key')
+      c.set(symKey, 'hello')
+      expectTypeOf(c.get(symKey)).toEqualTypeOf<any>()
+      await next()
+    })
+
+    const appAny = new Hono<any>()
+    appAny.get('/', (c) => {
+      const symKey = Symbol('route-key')
+      c.set(symKey, 123)
+      expectTypeOf(c.get(symKey)).toEqualTypeOf<any>()
+      return c.text('ok')
+    })
+  })
+
+  it('Should accept symbol keys when declared in Variables generic', () => {
+    const symKey = Symbol('typed-key')
+    const app = new Hono<{
+      Variables: {
+        [symKey]: number
+      }
+    }>()
+
+    app.get('/', (c) => {
+      c.set(symKey, 42)
+      expectTypeOf(c.get(symKey)).toEqualTypeOf<number>()
+      // @ts-expect-error value should be number
+      c.set(symKey, 'invalid')
+      return c.text('ok')
+    })
+  })
 })
 
 /**
