@@ -1,7 +1,7 @@
 import { describe, expectTypeOf } from 'vitest'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import { jwt } from '.'
+import { jwt, sign } from '.'
 import type { JwtVariables } from '.'
 
 describe('JWT', () => {
@@ -797,6 +797,34 @@ describe('JWT', () => {
       expect(res.headers.get('WWW-Authenticate')).toBe(
         'Bearer realm="my \\"quoted\\" api",error="invalid_request",error_description="no authorization included in request"'
       )
+    })
+
+    it('Should accept token within clock leeway when configured in verification options', async () => {
+      const app = new Hono()
+      app.use(
+        '/auth/*',
+        jwt({
+          secret: 'a-secret',
+          alg: 'HS256',
+          verification: {
+            leeway: 60,
+          },
+        })
+      )
+      app.get('/auth/*', (c) => c.text('ok'))
+
+      const now = Math.floor(Date.now() / 1000)
+      const token = await sign(
+        { sub: 'user123', iat: now + 10, exp: now + 3600 },
+        'a-secret',
+        'HS256'
+      )
+      const req = new Request('http://localhost/auth/page')
+      req.headers.set('Authorization', `Bearer ${token}`)
+      const res = await app.request(req)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('ok')
     })
   })
 })
