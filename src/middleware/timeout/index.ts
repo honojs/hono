@@ -41,14 +41,16 @@ export const timeout = (
 ): MiddlewareHandler => {
   return async function timeout(context, next) {
     let timer: number | undefined
+    const nextPromise = next()
     const timeoutPromise = new Promise<void>((_, reject) => {
       timer = setTimeout(() => {
+        nextPromise.catch(() => {})
         reject(typeof exception === 'function' ? exception(context) : exception)
       }, duration) as unknown as number
     })
 
     try {
-      await Promise.race([next(), timeoutPromise])
+      await Promise.race([nextPromise, timeoutPromise])
     } finally {
       if (timer !== undefined) {
         clearTimeout(timer)

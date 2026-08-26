@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
@@ -66,5 +67,38 @@ describe('Timeout API', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toContain('This should not show up')
+  })
+
+  it('Should propagate error if handler rejects before timeout', async () => {
+    const customApp = new Hono()
+    customApp.use('/fast-error', timeout(500))
+    customApp.get('/fast-error', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      throw new Error('Immediate failure')
+    })
+
+    const res = await customApp.request('http://localhost/fast-error')
+    expect(res.status).toBe(500)
+  })
+
+  it('Should not trigger unhandledRejection when handler rejects after timeout', async () => {
+    const unhandledRejectionHandler = vi.fn()
+    process.on('unhandledRejection', unhandledRejectionHandler)
+
+    const customApp = new Hono()
+    customApp.use('/late-error', timeout(50))
+    customApp.get('/late-error', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      throw new Error('Delayed background failure')
+    })
+
+    const res = await customApp.request('http://localhost/late-error')
+    expect(res.status).toBe(504)
+
+    // Wait for background task to reject
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    expect(unhandledRejectionHandler).not.toHaveBeenCalled()
+    process.removeListener('unhandledRejection', unhandledRejectionHandler)
   })
 })
