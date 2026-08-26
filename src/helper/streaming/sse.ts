@@ -31,6 +31,12 @@ export class SSEStreamingApi extends StreamingApi {
       }
     }
 
+    if (message.retry !== undefined) {
+      if (typeof message.retry !== 'number' || !Number.isFinite(message.retry)) {
+        throw new Error('retry must be a finite number')
+      }
+    }
+
     const sseData =
       [
         message.event && `event: ${message.event}`,

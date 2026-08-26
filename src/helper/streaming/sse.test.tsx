@@ -389,6 +389,30 @@ describe('SSE Streaming helper', () => {
     expect(onError).toBeCalledTimes(1)
   })
 
+  it('Should throw error if retry is a string with CR/LF', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({
+          data: 'hello',
+          retry: '0\r\nevent: admin\r\ndata: pwned' as unknown as number,
+        })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(decodedValue).not.toContain('event: admin')
+    expect(onError).toBeCalledTimes(1)
+  })
+
   it('Should throw error if id contains \\r', async () => {
     const onError = vi.fn()
     const res = streamSSE(
