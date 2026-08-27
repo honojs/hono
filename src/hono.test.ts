@@ -7,6 +7,8 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { LinearRouter } from './router/linear-router'
+import { PatternRouter } from './router/pattern-router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
@@ -304,6 +306,23 @@ describe('Options', () => {
         router: new RegExpRouter(),
       })
       expect(app.router instanceof RegExpRouter).toBe(true)
+    })
+
+    describe('`**` is treated the same as a trailing `*` on every router', () => {
+      // A trailing `*` already matches every remaining segment, so `**` (written
+      // out of habit from other routers) should behave identically instead of
+      // 404ing on routers whose own wildcard matching only strips one `*`.
+      it.each([
+        ['RegExpRouter', RegExpRouter],
+        ['TrieRouter', TrieRouter],
+        ['PatternRouter', PatternRouter],
+        ['LinearRouter', LinearRouter],
+      ])('%s matches /auth/** against /auth/hello', async (_name, Router) => {
+        const app = new Hono({ router: new Router() })
+        app.get('/auth/**', (c) => c.text('ok'))
+        const res = await app.request('/auth/hello')
+        expect(res.status).toBe(200)
+      })
     })
   })
 

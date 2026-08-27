@@ -1,5 +1,6 @@
 import {
   checkOptionalParameter,
+  collapseWildcard,
   getPath,
   getPathNoStrict,
   getPattern,
@@ -232,6 +233,22 @@ describe('url', () => {
     })
     it('Should be `/`', () => {
       expect(mergePath('/', '/')).toBe('/')
+    })
+  })
+
+  describe('collapseWildcard', () => {
+    it('collapses a trailing run of two or more `*` into one', () => {
+      expect(collapseWildcard('/api/**')).toBe('/api/*')
+      expect(collapseWildcard('/api/***')).toBe('/api/*')
+      expect(collapseWildcard('**')).toBe('*')
+    })
+    it('leaves a single trailing `*` unchanged', () => {
+      expect(collapseWildcard('/api/*')).toBe('/api/*')
+      expect(collapseWildcard('*')).toBe('*')
+    })
+    it('leaves paths without a trailing `*` unchanged', () => {
+      expect(collapseWildcard('/api/hello')).toBe('/api/hello')
+      expect(collapseWildcard('/api/*/hello')).toBe('/api/*/hello')
     })
   })
 
