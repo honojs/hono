@@ -409,6 +409,30 @@ describe('SSE Streaming helper', () => {
     expect(onError).toBeCalledTimes(1)
   })
 
+  it('Should throw error if retry contains \\r\\n', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async (stream) => {
+        await stream.writeSSE({
+          data: 'test',
+          retry: '0\r\nevent: injected' as unknown as number,
+        })
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toContain('event: error')
+    expect(decodedValue).not.toContain('event: injected')
+    expect(onError).toBeCalledTimes(1)
+  })
+
   it('Check streamSSE handles consecutive \\r correctly', async () => {
     const res = streamSSE(c, async (stream) => {
       await stream.writeSSE({
