@@ -117,6 +117,11 @@ describe('url', () => {
       expect(path).toBe('/hello/')
     })
 
+    it('getPath - file URL', () => {
+      expect(getPath(new Request('file:///test'))).toBe('/test')
+      expect(getPath(new Request('file:///path/to/file'))).toBe('/path/to/file')
+    })
+
     it.each([
       'http:/example.com/hello', // invalid HTTP URL
       'http:///hello', // invalid HTTP URL

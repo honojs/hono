@@ -105,7 +105,7 @@ export const tryDecodeURI = (str: string): string => tryDecode(str, decodeURI)
 
 export const getPath = (request: Request): string => {
   const url = request.url
-  const start = url.indexOf('/', url.indexOf(':') + 4)
+  const start = url.indexOf('/', url.indexOf(':') + (url.startsWith('file:') ? 3 : 4))
   let i = start
   for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)
