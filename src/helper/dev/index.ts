@@ -25,15 +25,17 @@ const handlerName = (handler: Function): string => {
 }
 
 export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
-  return hono.routes.map(({ path, method, handler }: RouterRoute) => {
-    const targetHandler = findTargetHandler(handler)
-    return {
-      path,
-      method,
-      name: handlerName(targetHandler),
-      isMiddleware: isMiddleware(targetHandler),
-    }
-  })
+  return hono.routes
+    .filter(({ method }) => method[0] !== '@')
+    .map(({ path, method, handler }: RouterRoute) => {
+      const targetHandler = findTargetHandler(handler)
+      return {
+        path,
+        method,
+        name: handlerName(targetHandler),
+        isMiddleware: isMiddleware(targetHandler),
+      }
+    })
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions): void => {

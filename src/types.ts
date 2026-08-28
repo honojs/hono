@@ -59,6 +59,8 @@ export interface RouterRoute {
   path: string
   method: string
   handler: H
+  /** Number of application boundaries crossed by `route()`. */
+  depth?: number
 }
 
 ////////////////////////////////////////

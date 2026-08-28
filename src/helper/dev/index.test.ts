@@ -41,6 +41,8 @@ describe('inspectRoutes()', () => {
     const subApp = new Hono()
 
     subApp.get('/', (c) => c.json(0))
+    subApp.catch(async (_c, next) => next())
+    subApp.catchNotFound(async (_c, next) => next())
     subApp.onError((_, c) => c.json(0))
 
     const mainApp = new Hono()
