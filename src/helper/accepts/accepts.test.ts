@@ -190,6 +190,38 @@ describe('accepts', () => {
     const result = accepts(c, options)
     expect(result).toBe('application/xml')
   })
+
+  test('should not match entries explicitly rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should skip q=0 entries and match the remaining ones', () => {
+    const c = {
+      req: {
+        header: () => 'text/html;q=0.5, application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'application/octet-stream',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/octet-stream')
+  })
 })
 
 describe('Usage', () => {

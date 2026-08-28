@@ -92,6 +92,36 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('ja')
     })
 
+    it('should not detect a language explicitly rejected with q=0', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should skip q=0 languages before falling back to the default', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0,de;q=0.8',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
     it('should match after multiple truncations', async () => {
       const app = createTestApp({
         supportedLanguages: ['zh-Hant', 'en'],
