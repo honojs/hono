@@ -105,15 +105,24 @@ export class Node<T> {
         const node = curNodes[j]
         const nextNode = node.#children[part]
 
+        // A pattern node is also stored in `#children` under its key, so a part that is
+        // literally that key arrives here as well as in the pattern loop below. Each job below
+        // leaves pattern nodes to that loop, and the set it leaves differs per job.
         if (nextNode) {
           nextNode.#params = node.#params
           if (isLast) {
-            // '/hello/*' => match '/hello'
-            if (nextNode.#children['*']) {
+            // '/hello/*' => match '/hello'. The loop makes this push itself when an array
+            // pattern matches, and never for a string one.
+            if (nextNode.#children['*'] && !Array.isArray(nextNode.#pattern)) {
               this.#pushHandlerSets(handlerSets, nextNode.#children['*'], method, node.#params)
             }
-            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
-          } else {
+            // The loop matches any pattern node whose pattern accepts the part.
+            if (nextNode.#pattern === undefined) {
+              this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
+            }
+          } else if (nextNode.#pattern !== '*' && !Array.isArray(nextNode.#pattern)) {
+            // The loop descends through `*` and parameters itself, but not through a
+            // prefixed wildcard.
             tempNodes.push(nextNode)
           }
         }
