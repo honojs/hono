@@ -516,6 +516,47 @@ describe('Context header', () => {
   })
 })
 
+describe('c.preparedHeaders', () => {
+  const req = new Request('http://localhost/')
+
+  it('Should be undefined when no header has been set', () => {
+    const c = new Context(req)
+    expect(c.preparedHeaders).toBeUndefined()
+  })
+
+  it('Should expose the headers set with c.header()', () => {
+    const c = new Context(req)
+    c.header('X-Message', 'Hello')
+    expect(c.preparedHeaders?.get('X-Message')).toBe('Hello')
+  })
+
+  it('Should not create a Response, unlike c.res', () => {
+    const respond = (observe?: (c: Context) => void) => {
+      const c = new Context(req)
+      observe?.(c)
+      return c.text('Hi')
+    }
+
+    const untouched = respond().headers.get('Content-Type')
+
+    // reading c.preparedHeaders leaves the response exactly as it was
+    expect(respond((c) => void c.preparedHeaders).headers.get('Content-Type')).toBe(untouched)
+
+    // reading c.res materialises one, which is what this getter exists to avoid
+    expect(respond((c) => void c.res).headers.get('Content-Type')).not.toBe(untouched)
+  })
+
+  it('Should follow c.header() once a Response has been materialised', () => {
+    const c = new Context(req)
+    c.header('X-Before', 'a')
+    void c.res
+    c.header('X-After', 'b')
+    expect(c.preparedHeaders).toBe(c.res.headers)
+    expect(c.preparedHeaders?.get('X-Before')).toBe('a')
+    expect(c.preparedHeaders?.get('X-After')).toBe('b')
+  })
+})
+
 describe('Pass a ResponseInit to respond methods', () => {
   const req = new Request('http://localhost/')
   let c: Context
