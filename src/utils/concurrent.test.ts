@@ -37,6 +37,38 @@ describe('concurrent execution', () => {
     expect(results).toEqual(expectedResults)
   })
 
+  describe('with a rejecting job', () => {
+    test('releases the slot and rejects the caller when the job is not queued', async () => {
+      const pool = createPool({ concurrency: 2 })
+
+      await expect(pool.run(() => Promise.reject(new Error('boom')))).rejects.toThrow('boom')
+
+      // If the slot from the failed job were never released, these would hang forever.
+      const results = await Promise.all([pool.run(async () => 1), pool.run(async () => 2)])
+      expect(results).toEqual([1, 2])
+    })
+
+    test('propagates the rejection to a queued caller instead of hanging', async () => {
+      const pool = createPool({ concurrency: 1 })
+
+      let releaseFirst: () => void
+      const firstDone = new Promise<void>((r) => {
+        releaseFirst = r
+      })
+      const first = pool.run(async () => {
+        await firstDone
+        return 'first'
+      })
+      // Queued immediately since concurrency is 1 and the first job is still running.
+      const second = pool.run(() => Promise.reject(new Error('queued-boom')))
+
+      releaseFirst!()
+
+      await expect(first).resolves.toBe('first')
+      await expect(second).rejects.toThrow('queued-boom')
+    })
+  })
+
   describe('with interval', () => {
     test.each`
       concurrency | interval

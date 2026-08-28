@@ -29,26 +29,50 @@ export const createPool = ({
   const run = async <T>(
     fn: () => T,
     promise?: Promise<T>,
-    resolve?: (result: T) => void
+    resolve?: (result: T) => void,
+    reject?: (reason: unknown) => void
   ): Promise<T> => {
     if (pool.size >= (concurrency as number)) {
-      promise ||= new Promise<T>((r) => (resolve = r))
-      setTimeout(() => run(fn, promise, resolve))
+      if (!promise) {
+        promise = new Promise<T>((res, rej) => {
+          resolve = res
+          reject = rej
+        })
+      }
+      setTimeout(() => {
+        // `run`'s own returned promise settles to the same state as `promise` (which the
+        // caller already awaits with its own handler), so swallow it here to avoid a
+        // duplicate unhandled-rejection warning when the job fails.
+        run(fn, promise, resolve, reject).catch(() => {})
+      })
       return promise
     }
     const marker = {}
     pool.add(marker)
-    const result = await fn()
-    if (interval) {
-      setTimeout(() => pool.delete(marker), interval)
-    } else {
-      pool.delete(marker)
+    const release = () => {
+      if (interval) {
+        setTimeout(() => pool.delete(marker), interval)
+      } else {
+        pool.delete(marker)
+      }
     }
-    if (resolve) {
-      resolve(result)
-      return promise as Promise<T>
-    } else {
-      return result
+    try {
+      const result = await fn()
+      release()
+      if (resolve) {
+        resolve(result)
+        return promise as Promise<T>
+      } else {
+        return result
+      }
+    } catch (e) {
+      release()
+      if (reject) {
+        reject(e)
+        return promise as Promise<T>
+      } else {
+        throw e
+      }
     }
   }
   return { run }
