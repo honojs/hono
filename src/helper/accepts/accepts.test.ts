@@ -70,6 +70,54 @@ describe('accepts', () => {
     expect(result).toBe('text/html')
   })
 
+  test('should not match a type the client rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should fall through a q=0 type to the next acceptable one', () => {
+    const c = {
+      req: {
+        header: () => 'application/json;q=0, text/html;q=0.5',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json', 'text/html'],
+      default: 'application/xml',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should not match a subtype wildcard the client rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/*;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
   test('should match wildcard subtype application/*', () => {
     const c = {
       req: {

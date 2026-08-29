@@ -77,6 +77,36 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('fr')
     })
 
+    it('should not detect a language the client rejected with q=0', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should skip a q=0 language and detect the next acceptable one', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr', 'es'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0, es;q=0.5',
+        },
+      })
+      expect(await res.text()).toBe('es')
+    })
+
     it('should fallback to language code when locale code is not in supportedLanguages', async () => {
       const app = createTestApp({
         supportedLanguages: ['en', 'ja'],

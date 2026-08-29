@@ -158,7 +158,12 @@ export function detectFromHeader(c: Context, options: DetectorOptions): string |
     }
 
     const languages = parseAcceptLanguage(acceptLanguage)
-    for (const { lang } of languages) {
+    // `q=0` means the language is explicitly not acceptable (RFC 9110 §12.5.4), so skip
+    // it and fall through to the next source or the fallback rather than detecting it.
+    for (const { lang, q } of languages) {
+      if (q === 0) {
+        continue
+      }
       const normalizedLang = normalizeLanguage(lang, options)
       if (normalizedLang) {
         return normalizedLang
