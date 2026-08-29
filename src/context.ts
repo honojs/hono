@@ -397,6 +397,16 @@ export class Context<
   }
 
   /**
+   * Pending response headers that were set via `.header()`, if any.
+   * Unlike `.res`, reading `preparedHeaders` does not instantiate or allocate a Response instance.
+   *
+   * @returns {Headers | undefined} The prepared Headers instance or undefined if no headers have been set.
+   */
+  get preparedHeaders(): Headers | undefined {
+    return this.#preparedHeaders
+  }
+
+  /**
    * @see {@link https://hono.dev/docs/api/context#res}
    * The Response object for the current request.
    */

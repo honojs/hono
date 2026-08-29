@@ -1,5 +1,6 @@
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
+import { Hono } from './hono'
 
 const makeResponseHeaderImmutable = (res: Response) => {
   Object.defineProperty(res, 'headers', {
@@ -584,6 +585,62 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = await c.html('<h1>foo</h1>', originalResponse)
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
+  })
+
+  describe('c.preparedHeaders', () => {
+    it('should return undefined when no headers are prepared', () => {
+      expect(c.preparedHeaders).toBeUndefined()
+    })
+
+    it('should return Headers instance after c.header() is called', () => {
+      c.header('X-Custom-Header', 'custom-value')
+      expect(c.preparedHeaders).toBeInstanceOf(Headers)
+      expect(c.preparedHeaders?.get('X-Custom-Header')).toBe('custom-value')
+    })
+
+    it('should allow reading prepared headers without materializing c.res or breaking fast path', async () => {
+      expect(c.preparedHeaders).toBeUndefined()
+      // Calling c.text() after inspecting c.preparedHeaders should still take the fast path
+      const res = c.text('hello')
+      expect(await res.text()).toBe('hello')
+      expect(res.headers.get('content-type')).toBe('text/plain;charset=UTF-8')
+    })
+
+    it('should reflect multiple headers and append option', () => {
+      c.header('X-Foo', 'bar')
+      c.header('Vary', 'Accept-Encoding', { append: true })
+      c.header('Vary', 'User-Agent', { append: true })
+      expect(c.preparedHeaders?.get('X-Foo')).toBe('bar')
+      expect(c.preparedHeaders?.get('Vary')).toBe('Accept-Encoding, User-Agent')
+    })
+
+    it('should reflect deleted headers with undefined value', () => {
+      c.header('X-Temp', 'val')
+      expect(c.preparedHeaders?.get('X-Temp')).toBe('val')
+      c.header('X-Temp', undefined)
+      expect(c.preparedHeaders?.get('X-Temp')).toBeNull()
+    })
+
+    it('should work seamlessly in middleware without setting finalized or altering text fast path', async () => {
+      let inspectedHeaders: Headers | undefined
+      let finalizedState: boolean | undefined
+
+      const app = new Hono()
+      app.use(async (ctx, next) => {
+        ctx.header('x-from-middleware', 'yes')
+        inspectedHeaders = ctx.preparedHeaders
+        finalizedState = ctx.finalized
+        await next()
+      })
+      app.get('/', (ctx) => ctx.text('hi'))
+
+      const res = await app.request('/')
+      expect(finalizedState).toBe(false)
+      expect(inspectedHeaders).toBeInstanceOf(Headers)
+      expect(inspectedHeaders?.get('x-from-middleware')).toBe('yes')
+      expect(res.headers.get('x-from-middleware')).toBe('yes')
+      expect(await res.text()).toBe('hi')
+    })
   })
 })
 
