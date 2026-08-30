@@ -166,6 +166,38 @@ describe('accepts', () => {
     expect(result).toBe('text/html')
   })
 
+  test('should not match types with q=0 (RFC 9110 §12.4.2 explicitly-not-acceptable)', () => {
+    const c = {
+      req: {
+        header: () => 'application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should skip q=0 entries and still match an acceptable type', () => {
+    const c = {
+      req: {
+        header: () => 'text/html, application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html', 'application/json'],
+      default: 'application/octet-stream',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
   test('should return matched support with custom match function', () => {
     const c = {
       req: {

@@ -53,6 +53,10 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string =
   })
 
   for (const accept of sortedAccepts) {
+    // RFC 9110 §12.4.2: q=0 means explicitly not acceptable; skip these entries
+    if (accept.q === 0) {
+      continue
+    }
     const matched = supports.find((supported) => matchType(accept.type, supported))
     if (matched) {
       return matched

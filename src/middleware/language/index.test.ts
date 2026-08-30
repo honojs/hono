@@ -168,6 +168,36 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('ja')
     })
 
+    it('should not match languages with q=0 (RFC 9110 §12.4.2 explicitly-not-acceptable)', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should skip q=0 languages and still match an acceptable language', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'en, fr;q=0',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
     it('should handle malformed Accept-Language headers', async () => {
       const app = createTestApp({
         supportedLanguages: ['en', 'fr'],

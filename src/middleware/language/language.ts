@@ -158,7 +158,11 @@ export function detectFromHeader(c: Context, options: DetectorOptions): string |
     }
 
     const languages = parseAcceptLanguage(acceptLanguage)
-    for (const { lang } of languages) {
+    for (const { lang, q } of languages) {
+      // RFC 9110 §12.4.2: q=0 means explicitly not acceptable; skip these entries
+      if (q === 0) {
+        continue
+      }
       const normalizedLang = normalizeLanguage(lang, options)
       if (normalizedLang) {
         return normalizedLang
