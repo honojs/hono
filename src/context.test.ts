@@ -70,6 +70,28 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.json() with undefined', async () => {
+    const res = c.json(undefined)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
+    expect(await res.text()).toBe('null')
+
+    const res2 = c.json(undefined)
+    expect(await res2.json()).toBe(null)
+
+    const res3 = c.json(undefined, 201, { 'X-Custom': 'Message' })
+    expect(res3.status).toBe(201)
+    expect(res3.headers.get('Content-Type')).toMatch('application/json')
+    expect(res3.headers.get('X-Custom')).toBe('Message')
+    expect(await res3.text()).toBe('null')
+
+    const resFunc = c.json((() => {}) as unknown as string)
+    expect(await resFunc.text()).toBe('null')
+
+    const resSymbol = c.json(Symbol('foo') as unknown as string)
+    expect(await resSymbol.text()).toBe('null')
+  })
+
   it('c.html()', async () => {
     const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
