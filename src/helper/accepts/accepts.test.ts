@@ -234,6 +234,40 @@ describe('Usage', () => {
     expect(req4.headers.get('Content-Encoding')).toBeNull()
   })
 
+  test('should not match a type the client rejected with q=0', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['application/json'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', { headers: { Accept: 'application/json;q=0' } })
+    expect(await res.text()).toBe('text/html')
+  })
+
+  test('should skip q=0 entries and match the next acceptable type', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['application/json', 'text/plain'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', {
+      headers: { Accept: 'application/json;q=0,text/plain;q=0.5' },
+    })
+    expect(await res.text()).toBe('text/plain')
+  })
+
   test('decide language by Accept-Language header', async () => {
     const app = new Hono()
     const SUPPORTED_LANGS = ['en', 'ja', 'zh']
