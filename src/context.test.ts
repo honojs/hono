@@ -1,5 +1,6 @@
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
+import { Hono } from './hono'
 
 const makeResponseHeaderImmutable = (res: Response) => {
   Object.defineProperty(res, 'headers', {
@@ -554,6 +555,50 @@ describe('c.preparedHeaders', () => {
     expect(c.preparedHeaders).toBe(c.res.headers)
     expect(c.preparedHeaders?.get('X-Before')).toBe('a')
     expect(c.preparedHeaders?.get('X-After')).toBe('b')
+  })
+
+  it('Should reflect the append option', () => {
+    const c = new Context(req)
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Vary', 'User-Agent', { append: true })
+    expect(c.preparedHeaders?.get('Vary')).toBe('Accept-Encoding, User-Agent')
+  })
+
+  it('Should reflect a header removed with an undefined value', () => {
+    const c = new Context(req)
+    c.header('X-Temp', 'val')
+    c.header('X-Temp', undefined)
+    expect(c.preparedHeaders?.get('X-Temp')).toBeNull()
+  })
+
+  it('Should create an empty Headers when deleting a header that was never set', () => {
+    // header() unconditionally does #preparedHeaders ??= new Headers() before
+    // the delete, even when there is nothing to delete
+    const c = new Context(req)
+    c.header('X-Never-Set', undefined)
+    expect(c.preparedHeaders).toBeInstanceOf(Headers)
+    expect(c.preparedHeaders?.get('X-Never-Set')).toBeNull()
+  })
+
+  it('Should work from middleware without forcing finalized or breaking the fast path', async () => {
+    let inspected: Headers | undefined
+    let finalizedDuringMiddleware: boolean | undefined
+
+    const app = new Hono()
+    app.use(async (ctx, next) => {
+      ctx.header('X-From-Middleware', 'yes')
+      inspected = ctx.preparedHeaders
+      finalizedDuringMiddleware = ctx.finalized
+      await next()
+    })
+    app.get('/', (ctx) => ctx.text('hi'))
+
+    const res = await app.request('/')
+
+    expect(finalizedDuringMiddleware).toBe(false)
+    expect(inspected?.get('X-From-Middleware')).toBe('yes')
+    expect(res.headers.get('X-From-Middleware')).toBe('yes')
+    expect(await res.text()).toBe('hi')
   })
 })
 
