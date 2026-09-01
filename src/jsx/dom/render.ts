@@ -542,17 +542,29 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
 
         let oldChild: NodeObject | undefined
         if (oldVChildren && oldVChildren.length) {
-          const i = oldVChildren.findIndex(
-            isNodeString(child)
-              ? (c) => isNodeString(c)
-              : child.key !== undefined
-                ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
-                : (c) => c.tag === (child as Node).tag
-          )
+          const first = oldVChildren[0]
+          const isMatchFirst = isNodeString(child)
+            ? isNodeString(first)
+            : child.key !== undefined
+              ? (first as Node).key === (child as Node).key &&
+                (first as Node).tag === (child as Node).tag
+              : (first as Node).tag === (child as Node).tag
 
-          if (i !== -1) {
-            oldChild = oldVChildren[i] as NodeObject
-            oldVChildren.splice(i, 1)
+          if (isMatchFirst) {
+            oldChild = oldVChildren.shift() as NodeObject
+          } else {
+            const i = oldVChildren.findIndex(
+              isNodeString(child)
+                ? (c) => isNodeString(c)
+                : child.key !== undefined
+                  ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+                  : (c) => c.tag === (child as Node).tag
+            )
+
+            if (i !== -1) {
+              oldChild = oldVChildren[i] as NodeObject
+              oldVChildren.splice(i, 1)
+            }
           }
         }
 

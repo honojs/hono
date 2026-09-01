@@ -1707,6 +1707,59 @@ describe('DOM', () => {
     )
   })
 
+  it('reconciles large keyed list updates and reordering efficiently', async () => {
+    let findIndexCalls = 0
+    const originalFindIndex = Array.prototype.findIndex
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Array.prototype.findIndex = function (this: unknown[], ...args: [any]) {
+      findIndexCalls++
+      return originalFindIndex.apply(this, args)
+    }
+
+    try {
+      const ListApp = () => {
+        const [items, setItems] = useState(() => Array.from({ length: 100 }, (_, i) => `item-${i}`))
+        return (
+          <div>
+            <ul>
+              {items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <button id='reverse' onClick={() => setItems((prev) => [...prev].reverse())}>
+              reverse
+            </button>
+            <button id='update' onClick={() => setItems((prev) => [...prev])}>
+              update
+            </button>
+          </div>
+        )
+      }
+
+      render(<ListApp />, root)
+      expect(root.querySelectorAll('li')).toHaveLength(100)
+      expect(root.querySelector('li')?.textContent).toBe('item-0')
+
+      findIndexCalls = 0
+      const updateBtn = root.querySelector('#update') as HTMLButtonElement
+      updateBtn.click()
+      await Promise.resolve()
+
+      expect(findIndexCalls).toBe(0)
+      expect(root.querySelectorAll('li')).toHaveLength(100)
+      expect(root.querySelector('li')?.textContent).toBe('item-0')
+
+      const reverseBtn = root.querySelector('#reverse') as HTMLButtonElement
+      reverseBtn.click()
+      await Promise.resolve()
+
+      expect(root.querySelectorAll('li')).toHaveLength(100)
+      expect(root.querySelector('li')?.textContent).toBe('item-99')
+    } finally {
+      Array.prototype.findIndex = originalFindIndex
+    }
+  })
+
   it('swap deferent type of child component', async () => {
     const Even = () => <p>Even</p>
     const Odd = () => <div>Odd</div>
