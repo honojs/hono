@@ -83,6 +83,99 @@ export class Node<T> {
     }
   }
 
+  #matchWildcardPattern(
+    handlerSets: HandlerParamsSet<T>[],
+    tempNodes: Node<T>[],
+    child: Node<T>,
+    pattern: string,
+    part: string,
+    method: string,
+    nodeParams: Record<string, string>,
+    params: Record<string, string>
+  ): void {
+    // Wildcard
+    // '/hello/*/foo' => match /hello/bar/foo
+    if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
+      this.#pushHandlerSets(handlerSets, child, method, nodeParams)
+      if (pattern === '*') {
+        child.#params = params
+        tempNodes.push(child)
+      }
+    }
+  }
+
+  #matchParamPattern(
+    handlerSets: HandlerParamsSet<T>[],
+    tempNodes: Node<T>[],
+    curNodesQueue: Node<T>[][],
+    child: Node<T>,
+    name: string,
+    matcher: true | RegExp,
+    part: string,
+    isLast: boolean,
+    path: string,
+    partIndex: number,
+    parts: string[],
+    method: string,
+    nodeParams: Record<string, string>,
+    params: Record<string, string>,
+    partOffsets: number[] | null
+  ): number[] | null {
+    if (!part && matcher === true) {
+      return partOffsets
+    }
+
+    // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
+    if (matcher !== true) {
+      if (!partOffsets) {
+        partOffsets = []
+        let offset = path[0] === '/' ? 1 : 0
+        const len = parts.length
+        for (let p = 0; p < len; p++) {
+          partOffsets[p] = offset
+          offset += parts[p].length + 1
+        }
+      }
+      const restPathString = path.slice(partOffsets[partIndex])
+
+      const m = matcher.exec(restPathString)
+      if (m) {
+        params[name] = m[0]
+        this.#pushHandlerSets(handlerSets, child, method, nodeParams, params)
+
+        // '/:id{[0-9]+}/*' => match '/123'
+        if (m[0].length === restPathString.length && child.#children['*']) {
+          this.#pushHandlerSets(handlerSets, child.#children['*'], method, nodeParams, params)
+        }
+
+        for (const _ in child.#children) {
+          child.#params = params
+          const componentCount = m[0].match(/\//g)?.length ?? 0
+          const targetCurNodes = (curNodesQueue[componentCount] ||= [])
+          targetCurNodes.push(child)
+          break
+        }
+
+        return partOffsets
+      }
+    }
+
+    if (matcher === true || matcher.test(part)) {
+      params[name] = part
+      if (isLast) {
+        this.#pushHandlerSets(handlerSets, child, method, params, nodeParams)
+        if (child.#children['*']) {
+          this.#pushHandlerSets(handlerSets, child.#children['*'], method, params, nodeParams)
+        }
+      } else {
+        child.#params = params
+        tempNodes.push(child)
+      }
+    }
+
+    return partOffsets
+  }
+
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
     this.#params = emptyParams
@@ -122,83 +215,39 @@ export class Node<T> {
           const pattern = child.#pattern!
           const params = node.#params === emptyParams ? {} : { ...node.#params }
 
-          // Wildcard
-          // '/hello/*/foo' => match /hello/bar/foo
           if (typeof pattern === 'string') {
-            if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
-              this.#pushHandlerSets(handlerSets, child, method, node.#params)
-              if (pattern === '*') {
-                child.#params = params
-                tempNodes.push(child)
-              }
-            }
+            this.#matchWildcardPattern(
+              handlerSets,
+              tempNodes,
+              child,
+              pattern,
+              part,
+              method,
+              node.#params,
+              params
+            )
             continue
           }
 
           const [, name, matcher] = pattern
 
-          if (!part && matcher === true) {
-            continue
-          }
-
-          // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
-          if (matcher !== true) {
-            if (!partOffsets) {
-              partOffsets = []
-              let offset = path[0] === '/' ? 1 : 0
-              for (let p = 0; p < len; p++) {
-                partOffsets[p] = offset
-                offset += parts[p].length + 1
-              }
-            }
-            const restPathString = path.slice(partOffsets[i])
-
-            const m = matcher.exec(restPathString)
-            if (m) {
-              params[name] = m[0]
-              this.#pushHandlerSets(handlerSets, child, method, node.#params, params)
-
-              // '/:id{[0-9]+}/*' => match '/123'
-              if (m[0].length === restPathString.length && child.#children['*']) {
-                this.#pushHandlerSets(
-                  handlerSets,
-                  child.#children['*'],
-                  method,
-                  node.#params,
-                  params
-                )
-              }
-
-              for (const _ in child.#children) {
-                child.#params = params
-                const componentCount = m[0].match(/\//g)?.length ?? 0
-                const targetCurNodes = (curNodesQueue[componentCount] ||= [])
-                targetCurNodes.push(child)
-                break
-              }
-
-              continue
-            }
-          }
-
-          if (matcher === true || matcher.test(part)) {
-            params[name] = part
-            if (isLast) {
-              this.#pushHandlerSets(handlerSets, child, method, params, node.#params)
-              if (child.#children['*']) {
-                this.#pushHandlerSets(
-                  handlerSets,
-                  child.#children['*'],
-                  method,
-                  params,
-                  node.#params
-                )
-              }
-            } else {
-              child.#params = params
-              tempNodes.push(child)
-            }
-          }
+          partOffsets = this.#matchParamPattern(
+            handlerSets,
+            tempNodes,
+            curNodesQueue,
+            child,
+            name,
+            matcher,
+            part,
+            isLast,
+            path,
+            i,
+            parts,
+            method,
+            node.#params,
+            params,
+            partOffsets
+          )
         }
       }
 

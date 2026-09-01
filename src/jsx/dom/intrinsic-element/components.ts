@@ -55,139 +55,149 @@ export const composeRef = <T>(
 
 let blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
 let createdElements: Record<string, HTMLElement> = Object.create(null)
-const documentMetadataTag = (
+
+/**
+ * Find an existing matching element in the document head based on de-dupe keys,
+ * or create and cache a new one. Returns the element plus whether it was created.
+ */
+const findOrCreateElement = (
   tag: string,
   props: Props,
-  preserveNodeType: PreserveNodeType | undefined,
-  supportSort: boolean,
-  supportBlocking: boolean
-) => {
-  if (props?.itemProp) {
+  deDupeByKey: boolean,
+  deDupeKeys: string[]
+): { element: HTMLElement | null; created: boolean; existingElements?: NodeListOf<HTMLElement> } => {
+  if (!deDupeByKey) {
     return {
-      tag,
-      props,
-      type: tag,
-      ref: props.ref,
+      element: null,
+      created: false,
+      existingElements: document.head.querySelectorAll<HTMLElement>(tag),
     }
   }
 
-  const head = document.head
-
-  let { onLoad, onError, precedence, blocking, ...restProps } = props
-  let element: HTMLElement | null = null
-  let created = false
-
-  const deDupeKeys = deDupeKeyMap[tag]
-  const deDupeByKey = shouldDeDupeByKey(tag, supportSort)
   const isDeDupeCandidateLink = (e: HTMLElement) =>
     e.getAttribute('rel') === 'stylesheet' && e.getAttribute(dataPrecedenceAttr) !== null
-  let existingElements: NodeListOf<HTMLElement> | undefined = undefined
-  if (deDupeByKey) {
-    const tags = head.querySelectorAll<HTMLElement>(tag)
-    LOOP: for (const e of tags) {
-      if (tag === 'link' && !isDeDupeCandidateLink(e)) {
-        continue
+  const tags = document.head.querySelectorAll<HTMLElement>(tag)
+  let element: HTMLElement | null = null
+  LOOP: for (const e of tags) {
+    if (tag === 'link' && !isDeDupeCandidateLink(e)) {
+      continue
+    }
+    for (const key of deDupeKeys) {
+      if (e.getAttribute(key) === props[key]) {
+        element = e
+        break LOOP
       }
+    }
+  }
+
+  let created = false
+  if (!element) {
+    const cacheKey = deDupeKeys.reduce(
+      (acc, key) => (props[key] === undefined ? acc : `${acc}-${key}-${props[key]}`),
+      tag
+    )
+    created = !createdElements[cacheKey]
+    element = createdElements[cacheKey] ||= (() => {
+      const e = document.createElement(tag)
       for (const key of deDupeKeys) {
-        if (e.getAttribute(key) === props[key]) {
-          element = e
-          break LOOP
+        if (props[key] !== undefined) {
+          e.setAttribute(key, props[key] as string)
         }
       }
-    }
-
-    if (!element) {
-      const cacheKey = deDupeKeys.reduce(
-        (acc, key) => (props[key] === undefined ? acc : `${acc}-${key}-${props[key]}`),
-        tag
-      )
-      created = !createdElements[cacheKey]
-      element = createdElements[cacheKey] ||= (() => {
-        const e = document.createElement(tag)
-        for (const key of deDupeKeys) {
-          if (props[key] !== undefined) {
-            e.setAttribute(key, props[key] as string)
-          }
-        }
-        if (props.rel) {
-          e.setAttribute('rel', props.rel)
-        }
-        return e
-      })()
-    }
-  } else {
-    existingElements = head.querySelectorAll<HTMLElement>(tag)
+      if (props.rel) {
+        e.setAttribute('rel', props.rel)
+      }
+      return e
+    })()
   }
 
-  precedence = supportSort ? (precedence ?? '') : undefined
-  if (supportSort) {
-    restProps[dataPrecedenceAttr] = precedence
-  }
+  return { element, created }
+}
 
-  const insert = useCallback(
-    (e: HTMLElement) => {
-      if (deDupeByKey) {
-        if (tag === 'link' && precedence !== undefined) {
-          let found = false
-          for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
-            const existingPrecedence = existingElement.getAttribute(dataPrecedenceAttr)
-            if (existingPrecedence === null) {
-              head.insertBefore(e, existingElement)
-              return
-            }
-            if (found && existingPrecedence !== precedence) {
-              head.insertBefore(e, existingElement)
-              return
-            }
-            if (existingPrecedence === precedence) {
-              found = true
-            }
-          }
-
-          // if sentinel is not found, append to the end
-          head.appendChild(e)
+/**
+ * Insert an element into the document head honoring de-dupe/precedence ordering.
+ */
+const insertElement = (
+  tag: string,
+  e: HTMLElement,
+  deDupeByKey: boolean,
+  precedence: string | undefined,
+  existingElements: NodeListOf<HTMLElement> | undefined
+) => {
+  const head = document.head
+  if (deDupeByKey) {
+    if (tag === 'link' && precedence !== undefined) {
+      let found = false
+      for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
+        const existingPrecedence = existingElement.getAttribute(dataPrecedenceAttr)
+        if (existingPrecedence === null) {
+          head.insertBefore(e, existingElement)
           return
         }
-
-        let found = false
-        for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
-          if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
-            head.insertBefore(e, existingElement)
-            return
-          }
-          if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
-            found = true
-          }
+        if (found && existingPrecedence !== precedence) {
+          head.insertBefore(e, existingElement)
+          return
         }
-
-        // if sentinel is not found, append to the end
-        head.appendChild(e)
-      } else if (tag === 'link') {
-        if (!head.contains(e)) {
-          head.appendChild(e)
+        if (existingPrecedence === precedence) {
+          found = true
         }
-      } else if (existingElements) {
-        let found = false
-        for (const existingElement of existingElements!) {
-          if (existingElement === e) {
-            found = true
-            break
-          }
-        }
-        if (!found) {
-          // newly created element
-          head.insertBefore(
-            e,
-            head.contains(existingElements[0]) ? existingElements[0] : head.querySelector(tag)
-          )
-        }
-        existingElements = undefined
       }
-    },
-    [deDupeByKey, precedence, tag]
-  )
 
-  const ref = composeRef(props.ref, (e: HTMLElement) => {
+      // if sentinel is not found, append to the end
+      head.appendChild(e)
+      return
+    }
+
+    let found = false
+    for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
+      if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
+        head.insertBefore(e, existingElement)
+        return
+      }
+      if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
+        found = true
+      }
+    }
+
+    // if sentinel is not found, append to the end
+    head.appendChild(e)
+  } else if (tag === 'link') {
+    if (!head.contains(e)) {
+      head.appendChild(e)
+    }
+  } else if (existingElements) {
+    let found = false
+    for (const existingElement of existingElements!) {
+      if (existingElement === e) {
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      // newly created element
+      head.insertBefore(
+        e,
+        head.contains(existingElements[0]) ? existingElements[0] : head.querySelector(tag)
+      )
+    }
+  }
+}
+
+/**
+ * Build the ref callback that inserts the element and wires onLoad/onError promises.
+ */
+const createElementRef = (
+  tag: string,
+  props: Props,
+  deDupeKeys: string[],
+  insert: (e: HTMLElement) => void,
+  created: boolean,
+  existingElements: NodeListOf<HTMLElement> | undefined,
+  preserveNodeType: PreserveNodeType | undefined,
+  onLoad: ((this: GlobalEventHandlers, ev: Event) => unknown) | undefined,
+  onError: ((this: GlobalEventHandlers, ev: Event) => unknown) | undefined
+) => {
+  return composeRef(props.ref, (e: HTMLElement) => {
     const key = deDupeKeys[0]
 
     if (preserveNodeType === 2) {
@@ -219,19 +229,89 @@ const documentMetadataTag = (
     }
     promise.catch(() => {})
   })
+}
 
-  if (supportBlocking && blocking === 'render') {
-    const key = deDupeKeyMap[tag][0]
-    if (key && props[key]) {
-      const value = props[key]
-      const promise = (blockingPromiseMap[value] ||= new Promise<Event>((resolve, reject) => {
-        insert(element as HTMLElement)
-        element!.addEventListener('load', resolve)
-        element!.addEventListener('error', reject)
-      }))
-      use(promise)
+/**
+ * If blocking === 'render', suspend rendering until the element finishes loading.
+ */
+const handleBlocking = (
+  tag: string,
+  props: Props,
+  element: HTMLElement | null,
+  insert: (e: HTMLElement) => void,
+  supportBlocking: boolean
+) => {
+  if (!supportBlocking) {
+    return
+  }
+  const { blocking } = props
+  if (blocking !== 'render') {
+    return
+  }
+  const key = deDupeKeyMap[tag][0]
+  if (key && props[key]) {
+    const value = props[key]
+    const promise = (blockingPromiseMap[value] ||= new Promise<Event>((resolve, reject) => {
+      insert(element as HTMLElement)
+      element!.addEventListener('load', resolve)
+      element!.addEventListener('error', reject)
+    }))
+    use(promise)
+  }
+}
+
+const documentMetadataTag = (
+  tag: string,
+  props: Props,
+  preserveNodeType: PreserveNodeType | undefined,
+  supportSort: boolean,
+  supportBlocking: boolean
+) => {
+  if (props?.itemProp) {
+    return {
+      tag,
+      props,
+      type: tag,
+      ref: props.ref,
     }
   }
+
+  const head = document.head
+
+  let { onLoad, onError, precedence, blocking, ...restProps } = props
+  const deDupeKeys = deDupeKeyMap[tag]
+  const deDupeByKey = shouldDeDupeByKey(tag, supportSort)
+
+  const { element, created, existingElements } = findOrCreateElement(
+    tag,
+    props,
+    deDupeByKey,
+    deDupeKeys
+  )
+
+  precedence = supportSort ? (precedence ?? '') : undefined
+  if (supportSort) {
+    restProps[dataPrecedenceAttr] = precedence
+  }
+
+  const insert = useCallback(
+    (e: HTMLElement) => insertElement(tag, e, deDupeByKey, precedence, existingElements),
+    [deDupeByKey, precedence, tag]
+  )
+
+  const ref = createElementRef(
+    tag,
+    props,
+    deDupeKeys,
+    insert,
+    created,
+    existingElements,
+    preserveNodeType,
+    onLoad,
+    onError
+  )
+
+  handleBlocking(tag, props, element, insert, supportBlocking)
 
   const jsxNode = {
     tag,

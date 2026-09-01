@@ -119,46 +119,13 @@ export const bearerAuth = <E extends Env = Env>(
   const tokenRegexp = new RegExp(`^${TOKEN_STRINGS}$`)
   const wwwAuthenticatePrefix = prefix === '' ? '' : `${prefix} `
 
-  const throwHTTPException = async (
-    c: Context,
-    status: ContentfulStatusCode,
-    wwwAuthenticateHeader: string | object | MessageFunction,
-    messageOption: string | object | MessageFunction
-  ): Promise<Response> => {
-    const wwwAuthenticateHeaderValue: string | object =
-      typeof wwwAuthenticateHeader === 'function'
-        ? await wwwAuthenticateHeader(c)
-        : wwwAuthenticateHeader
-
-    const headers = {
-      'WWW-Authenticate':
-        typeof wwwAuthenticateHeaderValue === 'string'
-          ? wwwAuthenticateHeaderValue
-          : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeaderValue)
-              .map(([key, value]) => `${key}="${value}"`)
-              .join(',')}`,
-    }
-    const responseMessage =
-      typeof messageOption === 'function' ? await messageOption(c) : messageOption
-    const res =
-      typeof responseMessage === 'string'
-        ? new Response(responseMessage, { status, headers })
-        : new Response(JSON.stringify(responseMessage), {
-            status,
-            headers: {
-              ...headers,
-              'content-type': 'application/json',
-            },
-          })
-    throw new HTTPException(status, { res })
-  }
-
   return async function bearerAuth(c, next) {
     const headerToken = c.req.header(options.headerName || HEADER)
     if (!headerToken) {
       // No Authorization header
       await throwHTTPException(
         c,
+        wwwAuthenticatePrefix,
         401,
         options.noAuthenticationHeader?.wwwAuthenticateHeader ||
           `${wwwAuthenticatePrefix}realm="${realm}"`,
@@ -167,22 +134,13 @@ export const bearerAuth = <E extends Env = Env>(
           'Unauthorized'
       )
     } else {
-      let tokenValue: string | undefined
+      const tokenValue = extractTokenValue(headerToken, prefix, tokenRegexp)
 
-      if (prefix === '') {
-        tokenValue = headerToken
-      } else {
-        const headerLower = headerToken.toLowerCase()
-        const prefixLower = prefix.toLowerCase()
-        if (headerLower.startsWith(prefixLower) && headerToken[prefix.length] === ' ') {
-          tokenValue = headerToken.slice(prefix.length).trimStart()
-        }
-      }
-
-      if (!tokenValue || !tokenRegexp.test(tokenValue)) {
+      if (!tokenValue) {
         // Invalid Request
         await throwHTTPException(
           c,
+          wwwAuthenticatePrefix,
           400,
           options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
             `${wwwAuthenticatePrefix}error="invalid_request"`,
@@ -190,32 +148,105 @@ export const bearerAuth = <E extends Env = Env>(
             options.invalidAuthenticationHeaderMessage ||
             'Bad Request'
         )
-      } else {
-        let equal = false
-        if ('verifyToken' in options) {
-          equal = await options.verifyToken(tokenValue, c)
-        } else if (typeof options.token === 'string') {
-          equal = await timingSafeEqual(options.token, tokenValue, options.hashFunction)
-        } else if (Array.isArray(options.token) && options.token.length > 0) {
-          for (const token of options.token) {
-            if (await timingSafeEqual(token, tokenValue, options.hashFunction)) {
-              equal = true
-              break
-            }
-          }
-        }
-        if (!equal) {
-          // Invalid Token
-          await throwHTTPException(
-            c,
-            401,
-            options.invalidToken?.wwwAuthenticateHeader ||
-              `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
-          )
-        }
+      } else if (!(await verifyToken(options, tokenValue, c))) {
+        // Invalid Token
+        await throwHTTPException(
+          c,
+          wwwAuthenticatePrefix,
+          401,
+          options.invalidToken?.wwwAuthenticateHeader ||
+            `${wwwAuthenticatePrefix}error="invalid_token"`,
+          options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
+        )
       }
     }
     await next()
   }
+}
+
+/**
+ * Extracts the raw token value from an Authorization header value.
+ * Returns `undefined` when the header cannot be parsed into a valid token.
+ */
+function extractTokenValue(
+  headerToken: string,
+  prefix: string,
+  tokenRegexp: RegExp
+): string | undefined {
+  let tokenValue: string | undefined
+
+  if (prefix === '') {
+    tokenValue = headerToken
+  } else {
+    const headerLower = headerToken.toLowerCase()
+    const prefixLower = prefix.toLowerCase()
+    if (headerLower.startsWith(prefixLower) && headerToken[prefix.length] === ' ') {
+      tokenValue = headerToken.slice(prefix.length).trimStart()
+    }
+  }
+
+  return tokenValue && tokenRegexp.test(tokenValue) ? tokenValue : undefined
+}
+
+/**
+ * Verifies a raw token value against the configured tokens or verifyToken function.
+ */
+async function verifyToken<E extends Env = Env>(
+  options: BearerAuthOptions<E>,
+  tokenValue: string,
+  c: Context
+): Promise<boolean> {
+  if ('verifyToken' in options) {
+    return options.verifyToken(tokenValue, c as Context<E>)
+  }
+  if (typeof options.token === 'string') {
+    return timingSafeEqual(options.token, tokenValue, options.hashFunction)
+  }
+  if (Array.isArray(options.token)) {
+    for (const token of options.token) {
+      if (await timingSafeEqual(token, tokenValue, options.hashFunction)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Builds and throws an HTTPException carrying the given status code,
+ * custom headers, and response message.
+ */
+async function throwHTTPException(
+  c: Context,
+  wwwAuthenticatePrefix: string,
+  status: ContentfulStatusCode,
+  wwwAuthenticateHeader: string | object | MessageFunction,
+  messageOption: string | object | MessageFunction
+): Promise<never> {
+  const wwwAuthenticateHeaderValue: string | object =
+    typeof wwwAuthenticateHeader === 'function'
+      ? await wwwAuthenticateHeader(c)
+      : wwwAuthenticateHeader
+
+  const headers = {
+    'WWW-Authenticate':
+      typeof wwwAuthenticateHeaderValue === 'string'
+        ? wwwAuthenticateHeaderValue
+        : `${wwwAuthenticatePrefix}${Object.entries(wwwAuthenticateHeaderValue)
+            .map(([key, value]) => `${key}="${value}"`)
+            .join(',')}`,
+  }
+  const responseMessage =
+    typeof messageOption === 'function' ? await messageOption(c) : messageOption
+  const res =
+    typeof responseMessage === 'string'
+      ? new Response(responseMessage, { status, headers })
+      : new Response(JSON.stringify(responseMessage), {
+          status,
+          headers: {
+            ...headers,
+            'content-type': 'application/json',
+          },
+        })
+  throw new HTTPException(status, { res })
 }

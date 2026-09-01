@@ -190,6 +190,52 @@ export const cache = (options: {
   cacheableStatusCodes?: StatusCode[]
   onCacheNotAvailable?: ((reason: string) => void) | false
 }): MiddlewareHandler => {
+  const cacheKeyRequest = async (c: Context): Promise<CacheKeyRequest | undefined> => {
+    if (c.req.method !== 'QUERY') {
+      return { method: 'GET' }
+    }
+    const digest = await createQueryDigest(c, maxQueryBodySize)
+    if (digest === undefined) {
+      return undefined
+    }
+    return { method: 'QUERY', digest }
+  }
+
+  const buildCacheKey = async (
+    c: Context,
+    request: CacheKeyRequest
+  ): Promise<string> => {
+    let key = c.req.url
+    if (options.keyGenerator) {
+      key = await options.keyGenerator(c)
+    }
+    const varyHeaders: [string, string][] = []
+    if (varyDirectives) {
+      for (const directive of varyDirectives) {
+        const value = c.req.raw.headers.get(directive) ?? ''
+        varyHeaders.push([directive, value])
+      }
+    }
+    return createCacheKey(key, c.req.url, request, varyHeaders)
+  }
+
+  const cacheName = (c: Context): Promise<string> | string =>
+    typeof options.cacheName === 'function' ? options.cacheName(c) : options.cacheName
+
+  const putResponseInCache = async (
+    c: Context,
+    key: string,
+    wait: boolean
+  ): Promise<void> => {
+    const store = await caches.open(await cacheName(c))
+    const res = c.res.clone()
+    if (wait) {
+      await store.put(key, res)
+    } else {
+      c.executionCtx.waitUntil(store.put(key, res))
+    }
+  }
+
   if (!globalThis.caches) {
     reportCacheNotAvailable(
       options.onCacheNotAvailable,
@@ -272,33 +318,15 @@ export const cache = (options: {
       return
     }
 
-    let cacheKeyRequest: CacheKeyRequest = { method: 'GET' }
-    if (c.req.method === 'QUERY') {
-      const digest = await createQueryDigest(c, maxQueryBodySize)
-      if (digest === undefined) {
-        await next()
-        return
-      }
-      cacheKeyRequest = { method: 'QUERY', digest }
+    const request = await cacheKeyRequest(c)
+    if (!request) {
+      await next()
+      return
     }
+    const key = await buildCacheKey(c, request)
 
-    let key = c.req.url
-    if (options.keyGenerator) {
-      key = await options.keyGenerator(c)
-    }
-    const varyHeaders: [string, string][] = []
-    if (varyDirectives) {
-      for (const directive of varyDirectives) {
-        const value = c.req.raw.headers.get(directive) ?? ''
-        varyHeaders.push([directive, value])
-      }
-    }
-    key = createCacheKey(key, c.req.url, cacheKeyRequest, varyHeaders)
-
-    const cacheName =
-      typeof options.cacheName === 'function' ? await options.cacheName(c) : options.cacheName
-    const cache = await caches.open(cacheName)
-    const response = await cache.match(key)
+    const store = await caches.open(await cacheName(c))
+    const response = await store.match(key)
     if (response) {
       return new Response(response.body, response)
     }
@@ -314,11 +342,6 @@ export const cache = (options: {
       return
     }
 
-    const res = c.res.clone()
-    if (options.wait) {
-      await cache.put(key, res)
-    } else {
-      c.executionCtx.waitUntil(cache.put(key, res))
-    }
+    await putResponseInCache(c, key, options.wait)
   }
 }

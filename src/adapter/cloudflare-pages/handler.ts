@@ -58,47 +58,61 @@ export function handleMiddleware<E extends Env = {}, P extends string = any, I e
   >
 ): PagesFunction<E['Bindings']> {
   return async (executionCtx) => {
-    const context = new Context(executionCtx.request, {
-      env: { ...executionCtx.env, eventContext: executionCtx },
-      executionCtx,
-    })
-
-    let response: Response | void = undefined
-
-    try {
-      response = await middleware(context, async () => {
-        try {
-          context.res = await executionCtx.next()
-        } catch (error) {
-          if (error instanceof Error) {
-            context.error = error
-          } else {
-            throw error
-          }
-        }
-      })
-    } catch (error) {
-      if (error instanceof Error) {
-        context.error = error
-      } else {
-        throw error
-      }
-    }
+    const context = createContext(executionCtx)
+    const response = await runMiddleware(middleware, context, executionCtx)
 
     if (response) {
       return response
     }
 
-    if (context.error instanceof HTTPException) {
-      return context.error.getResponse()
-    }
-
-    if (context.error) {
-      throw context.error
-    }
-
-    return context.res
+    return resolveResponse(context)
   }
+}
+
+function createContext(executionCtx: EventContext): Context {
+  return new Context(executionCtx.request, {
+    env: { ...executionCtx.env, eventContext: executionCtx },
+    executionCtx,
+  })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function runMiddleware(
+  middleware: MiddlewareHandler<any, any, any>,
+  context: Context,
+  executionCtx: EventContext
+): Promise<Response | void> {
+  try {
+    return await middleware(context, async () => {
+      try {
+        context.res = await executionCtx.next()
+      } catch (error) {
+        setError(context, error)
+      }
+    })
+  } catch (error) {
+    setError(context, error)
+  }
+}
+
+function setError(context: Context, error: unknown) {
+  if (error instanceof Error) {
+    context.error = error
+  } else {
+    throw error
+  }
+}
+
+function resolveResponse(context: Context): Response {
+  if (context.error instanceof HTTPException) {
+    return context.error.getResponse()
+  }
+
+  if (context.error) {
+    throw context.error
+  }
+
+  return context.res
 }
 
 declare abstract class FetcherLike {

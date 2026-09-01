@@ -19,11 +19,11 @@ import {
   JwtSymmetricAlgorithmNotAllowed,
   JwtTokenAudience,
   JwtTokenExpired,
-  JwtTokenInvalid,
   JwtTokenIssuedAt,
   JwtTokenIssuer,
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
+  JwtTokenInvalid,
 } from './types'
 import type { JWTPayload } from './types'
 import { utf8Decoder, utf8Encoder } from './utf8'
@@ -93,11 +93,14 @@ export type VerifyOptionsWithAlg = {
   alg: SignatureAlgorithm
 } & VerifyOptions
 
-export const verify = async (
-  token: string,
-  publicKey: SignatureKey,
+type ParsedVerifyOptions = Required<
+  Pick<VerifyOptions, 'nbf' | 'exp' | 'iat'>
+> &
+  Pick<VerifyOptions, 'iss' | 'aud'> & { alg: SignatureAlgorithm }
+
+const parseOptions = (
   algOrOptions: SignatureAlgorithm | VerifyOptionsWithAlg
-): Promise<JWTPayload> => {
+): ParsedVerifyOptions => {
   if (!algOrOptions) {
     throw new JwtAlgorithmRequired()
   }
@@ -115,64 +118,92 @@ export const verify = async (
     throw new JwtAlgorithmRequired()
   }
 
-  const tokenParts = token.split('.')
-  if (tokenParts.length !== 3) {
-    throw new JwtTokenInvalid(token)
-  }
+  return { alg, iss, nbf, exp, iat, aud }
+}
 
-  const { header, payload } = decode(token)
+const validateHeader = (
+  token: string,
+  header: TokenHeader,
+  alg: SignatureAlgorithm
+): void => {
   if (!isTokenHeader(header)) {
     throw new JwtHeaderInvalid(header)
   }
   if (header.alg !== alg) {
     throw new JwtAlgorithmMismatch(alg, header.alg)
   }
-  const now = Math.floor(Date.now() / 1000)
-  if (nbf && payload.nbf !== undefined) {
+}
+
+const validateNotBefore = (token: string, payload: JWTPayload, now: number): void => {
+  if (payload.nbf !== undefined) {
     if (typeof payload.nbf !== 'number' || !Number.isFinite(payload.nbf) || payload.nbf > now) {
       throw new JwtTokenNotBefore(token)
     }
   }
-  if (exp && payload.exp !== undefined) {
+}
+
+const validateExpiration = (token: string, payload: JWTPayload, now: number): void => {
+  if (payload.exp !== undefined) {
     if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || payload.exp <= now) {
       throw new JwtTokenExpired(token)
     }
   }
-  if (iat && payload.iat !== undefined) {
+}
+
+const validateIssuedAt = (payload: JWTPayload, now: number): void => {
+  if (payload.iat !== undefined) {
     if (typeof payload.iat !== 'number' || !Number.isFinite(payload.iat) || now < payload.iat) {
       throw new JwtTokenIssuedAt(now, payload.iat)
     }
   }
-  if (iss) {
-    if (!payload.iss) {
-      throw new JwtTokenIssuer(iss, null)
-    }
-    if (typeof iss === 'string' && payload.iss !== iss) {
-      throw new JwtTokenIssuer(iss, payload.iss)
-    }
-    if (iss instanceof RegExp && !iss.test(payload.iss)) {
-      throw new JwtTokenIssuer(iss, payload.iss)
-    }
+}
+
+const validateIssuer = (iss: string | RegExp | undefined, payload: JWTPayload): void => {
+  if (!iss) {
+    return
+  }
+  if (!payload.iss) {
+    throw new JwtTokenIssuer(iss, null)
+  }
+  if (typeof iss === 'string' && payload.iss !== iss) {
+    throw new JwtTokenIssuer(iss, payload.iss)
+  }
+  if (iss instanceof RegExp && !iss.test(payload.iss)) {
+    throw new JwtTokenIssuer(iss, payload.iss)
+  }
+}
+
+const validateAudience = (
+  aud: string | string[] | RegExp | undefined,
+  payload: JWTPayload
+): void => {
+  if (!aud) {
+    return
+  }
+  if (!payload.aud) {
+    throw new JwtPayloadRequiresAud(payload)
   }
 
-  if (aud) {
-    if (!payload.aud) {
-      throw new JwtPayloadRequiresAud(payload)
-    }
-
-    const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
-    const matched = audiences.some((payloadAud): boolean =>
-      aud instanceof RegExp
-        ? aud.test(payloadAud)
-        : typeof aud === 'string'
-          ? payloadAud === aud
-          : Array.isArray(aud) && aud.includes(payloadAud)
-    )
-    if (!matched) {
-      throw new JwtTokenAudience(aud, payload.aud)
-    }
+  const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud]
+  const matched = audiences.some((payloadAud): boolean =>
+    aud instanceof RegExp
+      ? aud.test(payloadAud)
+      : typeof aud === 'string'
+        ? payloadAud === aud
+        : Array.isArray(aud) && aud.includes(payloadAud)
+  )
+  if (!matched) {
+    throw new JwtTokenAudience(aud, payload.aud)
   }
+}
 
+const verifySignature = async (
+  token: string,
+  publicKey: SignatureKey,
+  alg: SignatureAlgorithm,
+  payload: JWTPayload
+): Promise<void> => {
+  const tokenParts = token.split('.')
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
   const verified = await verifying(
     publicKey,
@@ -183,6 +214,37 @@ export const verify = async (
   if (!verified) {
     throw new JwtTokenSignatureMismatched(token)
   }
+}
+
+export const verify = async (
+  token: string,
+  publicKey: SignatureKey,
+  algOrOptions: SignatureAlgorithm | VerifyOptionsWithAlg
+): Promise<JWTPayload> => {
+  const { alg, iss, nbf, exp, iat, aud } = parseOptions(algOrOptions)
+
+  const tokenParts = token.split('.')
+  if (tokenParts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
+
+  const { header, payload } = decode(token)
+  validateHeader(token, header, alg)
+
+  const now = Math.floor(Date.now() / 1000)
+  if (nbf) {
+    validateNotBefore(token, payload, now)
+  }
+  if (exp) {
+    validateExpiration(token, payload, now)
+  }
+  if (iat) {
+    validateIssuedAt(payload, now)
+  }
+  validateIssuer(iss, payload)
+  validateAudience(aud, payload)
+
+  await verifySignature(token, publicKey, alg, payload)
 
   return payload
 }

@@ -136,6 +136,64 @@ export type ClassNameSlug = (hash: string, label: string, styleString: string) =
  */
 export type OnInvalidSlug = (slug: string) => void
 
+/**
+ * Extract the comment label from the head of the first CSS template segment.
+ */
+const extractLabel = (strings: TemplateStringsArray): string =>
+  strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
+
+/**
+ * Append a simple value (string, number, or raw CSS string) to the style string.
+ */
+const appendSimpleValue = (styleString: string, value: string | number | CssEscapedString): string => {
+  if (typeof value === 'string') {
+    if (/([\\"'\/])/.test(value)) {
+      return styleString + value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
+    } else {
+      return styleString + value
+    }
+  } else if (typeof value === 'number') {
+    return styleString + value
+  } else {
+    return styleString + value[CSS_ESCAPED]
+  }
+}
+
+/**
+ * Append a CssClassName value to the style string, populating selectors /
+ * external class name collections. Returns the updated style string.
+ */
+const appendClassNameValue = (
+  styleString: string,
+  value: CssClassName,
+  nextString: string | undefined,
+  selectors: CssClassName[],
+  externalClassNames: string[]
+): string => {
+  if (value[CLASS_NAME].startsWith('@keyframes ')) {
+    selectors.push(value)
+    return styleString + ` ${value[CLASS_NAME].substring(11)} `
+  }
+
+  if (nextString?.match(/^\s*{/)) {
+    // assume this value is a class name
+    selectors.push(value)
+    return styleString + `.${value[CLASS_NAME]}`
+  }
+
+  selectors.push(...value[SELECTORS])
+  externalClassNames.push(...value[EXTERNAL_CLASS_NAMES])
+  let inlineStyle = value[STYLE_STRING]
+  const valueLen = inlineStyle.length
+  if (valueLen > 0) {
+    const lastChar = inlineStyle[valueLen - 1]
+    if (lastChar !== ';' && lastChar !== '}') {
+      inlineStyle += ';'
+    }
+  }
+  return styleString + `${inlineStyle || ''}`
+}
+
 export const buildStyleString = (
   strings: TemplateStringsArray,
   values: CssVariableType[]
@@ -143,7 +201,7 @@ export const buildStyleString = (
   const selectors: CssClassName[] = []
   const externalClassNames: string[] = []
 
-  const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
+  const label = extractLabel(strings)
   let styleString = ''
   for (let i = 0, len = strings.length; i < len; i++) {
     styleString += strings[i]
@@ -156,41 +214,22 @@ export const buildStyleString = (
       vArray = [vArray]
     }
     for (let j = 0, len = vArray.length; j < len; j++) {
-      let value = vArray[j]
+      const value = vArray[j]
       if (typeof value === 'boolean' || value === null || value === undefined) {
         continue
       }
-      if (typeof value === 'string') {
-        if (/([\\"'\/])/.test(value)) {
-          styleString += value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
-        } else {
-          styleString += value
-        }
-      } else if (typeof value === 'number') {
-        styleString += value
-      } else if ((value as CssEscapedString)[CSS_ESCAPED]) {
-        styleString += (value as CssEscapedString)[CSS_ESCAPED]
-      } else if ((value as CssClassName)[CLASS_NAME].startsWith('@keyframes ')) {
-        selectors.push(value as CssClassName)
-        styleString += ` ${(value as CssClassName)[CLASS_NAME].substring(11)} `
+      if ((value as CssEscapedString)[CSS_ESCAPED] !== undefined) {
+        styleString = appendSimpleValue(styleString, value as CssEscapedString)
+      } else if (typeof value === 'string' || typeof value === 'number') {
+        styleString = appendSimpleValue(styleString, value as string | number)
       } else {
-        if (strings[i + 1]?.match(/^\s*{/)) {
-          // assume this value is a class name
-          selectors.push(value as CssClassName)
-          value = `.${(value as CssClassName)[CLASS_NAME]}`
-        } else {
-          selectors.push(...(value as CssClassName)[SELECTORS])
-          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
-          value = (value as CssClassName)[STYLE_STRING]
-          const valueLen = value.length
-          if (valueLen > 0) {
-            const lastChar = value[valueLen - 1]
-            if (lastChar !== ';' && lastChar !== '}') {
-              value += ';'
-            }
-          }
-        }
-        styleString += `${value || ''}`
+        styleString = appendClassNameValue(
+          styleString,
+          value as CssClassName,
+          strings[i + 1],
+          selectors,
+          externalClassNames
+        )
       }
     }
   }

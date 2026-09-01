@@ -170,13 +170,19 @@ export const parseSigned = async (
   return parsedCookie
 }
 
-const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+/**
+ * Validates the cookie name format against the valid token rules.
+ */
+const _validateCookieName = (name: string): void => {
   if (!validCookieNameRegEx.test(name)) {
     throw new Error('Invalid cookie name')
   }
+}
 
-  let cookie = `${name}=${value}`
-
+/**
+ * Enforces the __Secure- / __Host- prefix constraints.
+ */
+const _validateCookiePrefixConstraints = (name: string, opt: CookieOptions): void => {
   if (name.startsWith('__Secure-') && !opt.secure) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
@@ -187,29 +193,54 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     if (!opt.secure) {
       throw new Error('__Host- Cookie must have Secure attributes')
     }
-
     if (opt.path !== '/') {
       throw new Error('__Host- Cookie must have Path attributes with "/"')
     }
-
     if (opt.domain) {
       throw new Error('__Host- Cookie must not have Domain attributes')
     }
   }
+}
 
+/**
+ * Validates that string option values are free of injection characters and that
+ * maxAge / expires do not exceed the 400-day limit.
+ */
+const _validateCookieOptionValues = (opt: CookieOptions): void => {
   for (const key of ['domain', 'path', 'sameSite', 'priority'] as (keyof CookieOptions)[]) {
     if (opt[key] && /[;\r\n]/.test(opt[key] as string)) {
       throw new Error(`${key} must not contain ";", "\\r", or "\\n"`)
     }
   }
 
-  if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
+  if (typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     if (opt.maxAge > 34560000) {
       // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.6.2
       throw new Error(
         'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
       )
     }
+  }
+
+  if (opt.expires && opt.expires.getTime() - Date.now() > 34560000_000) {
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
+    throw new Error(
+      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+    )
+  }
+
+  if (opt.partitioned && !opt.secure) {
+    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
+    throw new Error('Partitioned Cookie must have Secure attributes')
+  }
+}
+
+/**
+ * Appends all cookie attribute segments to the base "name=value" string and returns
+ * the completed Set-Cookie header value.
+ */
+const _buildCookieAttributes = (cookie: string, opt: CookieOptions): string => {
+  if (typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     cookie += `; Max-Age=${opt.maxAge | 0}`
   }
 
@@ -222,12 +253,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.expires) {
-    if (opt.expires.getTime() - Date.now() > 34560000_000) {
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-5.5
-      throw new Error(
-        'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
-      )
-    }
     cookie += `; Expires=${opt.expires.toUTCString()}`
   }
 
@@ -248,14 +273,20 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.partitioned) {
-    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.1
-    if (!opt.secure) {
-      throw new Error('Partitioned Cookie must have Secure attributes')
-    }
     cookie += '; Partitioned'
   }
 
   return cookie
+}
+
+/**
+ * Serializes a cookie name/value pair with the given options into a Set-Cookie header string.
+ */
+const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+  _validateCookieName(name)
+  _validateCookiePrefixConstraints(name, opt)
+  _validateCookieOptionValues(opt)
+  return _buildCookieAttributes(`${name}=${value}`, opt)
 }
 
 export const serialize = <Name extends string>(

@@ -23,6 +23,51 @@ export const compose = <E extends Env = Env>(
     return dispatch(0)
 
     /**
+     * Apply an error handler to the caught error and return its response.
+     *
+     * @param {unknown} err - The error thrown while running a handler.
+     * @returns {Promise<Response | undefined>} - The error handler response, if applicable.
+     */
+    async function translateError(err: unknown): Promise<Response | undefined> {
+      if (err instanceof Error && onError) {
+        context.error = err
+        return await onError(err, context)
+      }
+      throw err
+    }
+
+    /**
+     * Execute a single middleware/handler and route any errors through the error handler.
+     *
+     * @param {Function} handler - The handler to run.
+     * @param {number} i - The current dispatch index.
+     * @returns {Promise<{ res?: Response; isError: boolean }>} - The result of running the handler.
+     */
+    async function runHandler(
+      handler: Function,
+      i: number
+    ): Promise<{ res?: Response; isError: boolean }> {
+      try {
+        return { res: await handler(context, () => dispatch(i + 1)), isError: false }
+      } catch (err) {
+        const res = await translateError(err)
+        return { res, isError: res !== undefined }
+      }
+    }
+
+    /**
+     * Resolve the not-found handler response when there is no handler for the index.
+     *
+     * @returns {Promise<Response | undefined>} - The not-found response, if applicable.
+     */
+    async function runNotFound(): Promise<Response | undefined> {
+      if (context.finalized === false && onNotFound) {
+        return await onNotFound(context)
+      }
+      return undefined
+    }
+
+    /**
      * Dispatch the middleware functions.
      *
      * @param {number} i - The current index in the middleware array.
@@ -35,33 +80,20 @@ export const compose = <E extends Env = Env>(
       }
       index = i
 
-      let res
+      let res: Response | undefined
       let isError = false
-      let handler
 
       if (middleware[i]) {
-        handler = middleware[i][0][0]
         context.req.routeIndex = i
+        const result = await runHandler(middleware[i][0][0], i)
+        res = result.res
+        isError = result.isError
+      } else if (i === middleware.length && next) {
+        const result = await runHandler(next, i)
+        res = result.res
+        isError = result.isError
       } else {
-        handler = (i === middleware.length && next) || undefined
-      }
-
-      if (handler) {
-        try {
-          res = await handler(context, () => dispatch(i + 1))
-        } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err
-            res = await onError(err, context)
-            isError = true
-          } else {
-            throw err
-          }
-        }
-      } else {
-        if (context.finalized === false && onNotFound) {
-          res = await onNotFound(context)
-        }
+        res = await runNotFound()
       }
 
       if (res && (context.finalized === false || isError)) {

@@ -14,10 +14,89 @@ import {
   shouldDeDupeByKey,
 } from './common'
 
-const metaTagMap: WeakMap<
-  object,
-  Record<string, [string, Props, string | undefined][]>
-> = new WeakMap()
+type HeadTag = [string, Props, string | undefined]
+type HeadMap = Record<string, HeadTag[]>
+
+const metaTagMap: WeakMap<object, HeadMap> = new WeakMap()
+
+const checkDuped = (
+  tagName: string,
+  props: Props,
+  precedence: string | undefined,
+  tags: HeadTag[]
+): boolean => {
+  const deDupeKeys = deDupeKeyMap[tagName]
+  const deDupeByKey = shouldDeDupeByKey(tagName, precedence !== undefined)
+  if (!deDupeByKey) {
+    return false
+  }
+  for (const [, tagProps] of tags) {
+    if (
+      tagName === 'link' &&
+      !(tagProps.rel === 'stylesheet' && tagProps[dataPrecedenceAttr] !== undefined)
+    ) {
+      continue
+    }
+    for (const key of deDupeKeys) {
+      if ((tagProps?.[key] ?? null) === props?.[key]) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+const mutateTags = (
+  tagName: string,
+  tag: string,
+  props: Props,
+  precedence: string | undefined,
+  tags: HeadTag[],
+  duped: boolean
+): void => {
+  if (duped) {
+    return
+  }
+  if (shouldDeDupeByKey(tagName, precedence !== undefined) || tagName === 'link') {
+    tags.push([tag, props, precedence])
+  } else {
+    tags.unshift([tag, props, precedence])
+  }
+}
+
+const insertTagsIntoHead = (
+  buffer: string[],
+  tags: HeadTag[],
+  tagName: string,
+  precedence: string | undefined
+): void => {
+  let insertTags
+  if (tagName === 'link' || precedence !== undefined) {
+    const precedences: string[] = []
+    insertTags = tags
+      .map(([tag, , tagPrecedence], index) => {
+        if (tagPrecedence === undefined) {
+          return [tag, Number.MAX_SAFE_INTEGER, index] as [string, number, number]
+        }
+        let order = precedences.indexOf(tagPrecedence as string)
+        if (order === -1) {
+          precedences.push(tagPrecedence as string)
+          order = precedences.length - 1
+        }
+        return [tag, order, index] as [string, number, number]
+      })
+      .sort((a, b) => a[1] - b[1] || a[2] - b[2])
+      .map(([tag]) => tag)
+  } else {
+    insertTags = tags.map(([tag]) => tag)
+  }
+
+  insertTags.forEach((tag) => {
+    buffer[0] = buffer[0].replaceAll(tag, '')
+  })
+  buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
+}
+
 const insertIntoHead: (
   tagName: string,
   tag: string,
@@ -33,60 +112,15 @@ const insertIntoHead: (
     metaTagMap.set(context, map)
     const tags = (map[tagName] ||= [])
 
-    let duped = false
-    const deDupeKeys = deDupeKeyMap[tagName]
-    const deDupeByKey = shouldDeDupeByKey(tagName, precedence !== undefined)
-    if (deDupeByKey) {
-      LOOP: for (const [, tagProps] of tags) {
-        if (
-          tagName === 'link' &&
-          !(tagProps.rel === 'stylesheet' && tagProps[dataPrecedenceAttr] !== undefined)
-        ) {
-          continue
-        }
-        for (const key of deDupeKeys) {
-          if ((tagProps?.[key] ?? null) === props?.[key]) {
-            duped = true
-            break LOOP
-          }
-        }
-      }
-    }
+    const duped = checkDuped(tagName, props, precedence, tags)
 
     if (duped) {
       buffer[0] = buffer[0].replaceAll(tag, '')
-    } else if (deDupeByKey || tagName === 'link') {
-      tags.push([tag, props, precedence])
-    } else {
-      tags.unshift([tag, props, precedence])
     }
+    mutateTags(tagName, tag, props, precedence, tags, duped)
 
     if (buffer[0].indexOf('</head>') !== -1) {
-      let insertTags
-      if (tagName === 'link' || precedence !== undefined) {
-        const precedences: string[] = []
-        insertTags = tags
-          .map(([tag, , tagPrecedence], index) => {
-            if (tagPrecedence === undefined) {
-              return [tag, Number.MAX_SAFE_INTEGER, index] as [string, number, number]
-            }
-            let order = precedences.indexOf(tagPrecedence as string)
-            if (order === -1) {
-              precedences.push(tagPrecedence as string)
-              order = precedences.length - 1
-            }
-            return [tag, order, index] as [string, number, number]
-          })
-          .sort((a, b) => a[1] - b[1] || a[2] - b[2])
-          .map(([tag]) => tag)
-      } else {
-        insertTags = tags.map(([tag]) => tag)
-      }
-
-      insertTags.forEach((tag) => {
-        buffer[0] = buffer[0].replaceAll(tag, '')
-      })
-      buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
+      insertTagsIntoHead(buffer, tags, tagName, precedence)
     }
   }
 

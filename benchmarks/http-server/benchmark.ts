@@ -90,89 +90,104 @@ const setupTemp = () => {
   writeFileSync(join(TEMP_DIR, 'body.json'), '{"hello":"world"}')
 }
 
-const buildVersion = async (version: string, name: string) => {
-  console.log(`📦 Preparing ${name} (${version})...`)
+// Prepares git state by checking out the requested version
+// Returns a function that restores the original git state
+const prepareGitState = async (version: string) => {
+  if (version === 'current') {
+    return () => {}
+  }
+
+  await runCommand('git fetch origin', HONO_ROOT)
 
   let needsRestore = false
   let stashRef = ''
-
-  if (version === 'current') {
-    // No build needed - use src directly
-  } else {
-    // Ensure we have the latest remote refs
-    await runCommand('git fetch origin', HONO_ROOT)
-
-    try {
-      const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
-      needsRestore = stashResult.stdout.includes('Saved working directory')
-      if (needsRestore) {
-        stashRef = 'stash@{0}'
-      }
-    } catch {
-      // No changes to stash
+  try {
+    const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
+    needsRestore = stashResult.stdout.includes('Saved working directory')
+    if (needsRestore) {
+      stashRef = 'stash@{0}'
     }
-
-    await runCommand(`git checkout ${version}`, HONO_ROOT)
-    await runCommand('bun install --frozen-lockfile', HONO_ROOT)
-    // No build needed - use src directly
+  } catch {
+    // No changes to stash
   }
 
+  await runCommand(`git checkout ${version}`, HONO_ROOT)
+  await runCommand('bun install --frozen-lockfile', HONO_ROOT)
+
+  return async () => {
+    await runCommand('git checkout -', HONO_ROOT)
+    if (needsRestore) {
+      await runCommand(`git stash pop ${stashRef}`, HONO_ROOT)
+    }
+  }
+}
+
+// Copies the current source into a version directory and creates the app entry point
+const createVersionApp = async (name: string) => {
   const versionDir = join(TEMP_DIR, name)
   mkdirSync(versionDir, { recursive: true })
   await runCommand(`cp -r ${HONO_ROOT}/src ${versionDir}/src`, process.cwd())
 
   const appPath = join(versionDir, 'app.ts')
   writeFileSync(appPath, getAppTemplate())
+  return appPath
+}
+
+// Starts the server and validates that all benchmark endpoints respond correctly
+const testAppEndpoints = async (appPath: string, name: string) => {
+  console.log(`🧪 Testing endpoints for ${name}...`)
+  const server = spawn('bun', [appPath], {
+    cwd: TEMP_DIR,
+    env: { ...process.env, NODE_ENV: 'production' },
+  })
+  await sleep(2000)
+
+  try {
+    const res1 = await fetch('http://127.0.0.1:3000/')
+    if ((await res1.text()) !== 'Hi') {
+      throw new Error('[GET /] test failed')
+    }
+
+    const res2 = await fetch('http://127.0.0.1:3000/id/1?name=bun')
+    if (res2.headers.get('x-powered-by') !== 'benchmark' || (await res2.text()) !== '1 bun') {
+      throw new Error('[GET /id/:id] test failed')
+    }
+
+    const body = JSON.stringify({ hello: 'world' })
+    const res3 = await fetch('http://127.0.0.1:3000/json', {
+      method: 'POST',
+      body,
+      headers: { 'content-type': 'application/json', 'content-length': body.length.toString() },
+    })
+    if (
+      !res3.headers.get('content-type')?.includes('application/json') ||
+      (await res3.text()) !== body
+    ) {
+      throw new Error('[POST /json] test failed')
+    }
+
+    console.log(`  ✅ Tests passed for ${name}`)
+  } finally {
+    server.kill()
+    await sleep(1000)
+  }
+}
+
+const buildVersion = async (version: string, name: string) => {
+  console.log(`📦 Preparing ${name} (${version})...`)
+
+  const restoreGitState = await prepareGitState(version)
+  const appPath = await createVersionApp(name)
 
   // Test endpoints (optional)
   if (!skipTests) {
-    console.log(`🧪 Testing endpoints for ${name}...`)
-    const server = spawn('bun', [appPath], {
-      cwd: TEMP_DIR,
-      env: { ...process.env, NODE_ENV: 'production' },
-    })
-    await sleep(2000)
-
-    try {
-      const res1 = await fetch('http://127.0.0.1:3000/')
-      if ((await res1.text()) !== 'Hi') {
-        throw new Error('[GET /] test failed')
-      }
-
-      const res2 = await fetch('http://127.0.0.1:3000/id/1?name=bun')
-      if (res2.headers.get('x-powered-by') !== 'benchmark' || (await res2.text()) !== '1 bun') {
-        throw new Error('[GET /id/:id] test failed')
-      }
-
-      const body = JSON.stringify({ hello: 'world' })
-      const res3 = await fetch('http://127.0.0.1:3000/json', {
-        method: 'POST',
-        body,
-        headers: { 'content-type': 'application/json', 'content-length': body.length.toString() },
-      })
-      if (
-        !res3.headers.get('content-type')?.includes('application/json') ||
-        (await res3.text()) !== body
-      ) {
-        throw new Error('[POST /json] test failed')
-      }
-
-      console.log(`  ✅ Tests passed for ${name}`)
-    } finally {
-      server.kill()
-      await sleep(1000)
-    }
+    await testAppEndpoints(appPath, name)
   } else {
     console.log(`  ⏭️ Skipping endpoint tests for ${name}`)
   }
 
   // Restore git state
-  if (version !== 'current' && needsRestore) {
-    await runCommand('git checkout -', HONO_ROOT)
-    await runCommand(`git stash pop ${stashRef}`, HONO_ROOT)
-  } else if (version !== 'current') {
-    await runCommand('git checkout -', HONO_ROOT)
-  }
+  await restoreGitState()
 
   return appPath
 }
