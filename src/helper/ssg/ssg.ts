@@ -361,6 +361,103 @@ export interface ToSSGAdaptorInterface<
   (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
 }
 
+type CollectedHooks = {
+  beforeRequestHooks: BeforeRequestHook[]
+  afterResponseHooks: AfterResponseHook[]
+  afterGenerateHooks: AfterGenerateHook[]
+}
+
+const appendHook = <T>(hooks: T[], hooksToAdd?: T | T[]): void => {
+  if (!hooksToAdd) {
+    return
+  }
+  hooks.push(...(Array.isArray(hooksToAdd) ? hooksToAdd : [hooksToAdd]))
+}
+
+const collectHooks = (options?: ToSSGOptions, plugins?: SSGPlugin[]): CollectedHooks => {
+  const beforeRequestHooks: BeforeRequestHook[] = []
+  const afterResponseHooks: AfterResponseHook[] = []
+  const afterGenerateHooks: AfterGenerateHook[] = []
+  appendHook(beforeRequestHooks, options?.beforeRequestHook)
+  appendHook(afterResponseHooks, options?.afterResponseHook)
+  appendHook(afterGenerateHooks, options?.afterGenerateHook)
+  for (const plugin of plugins ?? [defaultPlugin()]) {
+    appendHook(beforeRequestHooks, plugin.beforeRequestHook)
+    appendHook(afterResponseHooks, plugin.afterResponseHook)
+    appendHook(afterGenerateHooks, plugin.afterGenerateHook)
+  }
+  return { beforeRequestHooks, afterResponseHooks, afterGenerateHooks }
+}
+
+const generateContentSavePromises = async (
+  app: Hono<any, any, any>,
+  fsModule: FileSystemModule,
+  options: ToSSGOptions,
+  beforeRequestHooks: BeforeRequestHook[],
+  afterResponseHooks: AfterResponseHook[]
+): Promise<Promise<string | undefined>[]> => {
+  const outputDir = options.dir ?? DEFAULT_OUTPUT_DIR
+  const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY
+
+  const combinedBeforeRequestHook = combineBeforeRequestHooks(
+    beforeRequestHooks.length > 0 ? beforeRequestHooks : [(req) => req]
+  )
+  const combinedAfterResponseHook = combineAfterResponseHooks(
+    afterResponseHooks.length > 0 ? afterResponseHooks : [(req) => req]
+  )
+
+  const getInfoPromises: Promise<unknown>[] = []
+  const savePromises: Promise<string | undefined>[] = []
+  const getInfoGen = fetchRoutesContent(
+    app,
+    combinedBeforeRequestHook,
+    combinedAfterResponseHook,
+    concurrency
+  )
+  for (const getInfo of getInfoGen) {
+    getInfoPromises.push(
+      getInfo.then((getContentGen) => {
+        if (!getContentGen) {
+          return
+        }
+        for (const content of getContentGen) {
+          savePromises.push(
+            saveContentToFile(content, fsModule, outputDir, options.extensionMap).catch((e) => e)
+          )
+        }
+      })
+    )
+  }
+  await Promise.all(getInfoPromises)
+  return savePromises
+}
+
+const writeFiles = async (savePromises: Promise<string | undefined>[]): Promise<string[]> => {
+  const files: string[] = []
+  for (const savePromise of savePromises) {
+    const fileOrError = await savePromise
+    if (typeof fileOrError === 'string') {
+      files.push(fileOrError)
+    } else if (fileOrError) {
+      throw fileOrError
+    }
+  }
+  return files
+}
+
+const runAfterGenerateHooks = async (
+  afterGenerateHooks: AfterGenerateHook[],
+  result: ToSSGResult,
+  fsModule: FileSystemModule,
+  options?: ToSSGOptions
+): Promise<void> => {
+  if (afterGenerateHooks.length === 0) {
+    return
+  }
+  const combinedAfterGenerateHooks = combineAfterGenerateHooks(afterGenerateHooks, fsModule, options)
+  await combinedAfterGenerateHooks(result, fsModule, options)
+}
+
 /**
  * @experimental
  * `toSSG` is an experimental feature.
@@ -368,104 +465,24 @@ export interface ToSSGAdaptorInterface<
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined
-  const getInfoPromises: Promise<unknown>[] = []
-  const savePromises: Promise<string | undefined>[] = []
-  const plugins = options?.plugins || [defaultPlugin()]
-  const beforeRequestHooks: BeforeRequestHook[] = []
-  const afterResponseHooks: AfterResponseHook[] = []
-  const afterGenerateHooks: AfterGenerateHook[] = []
-  if (options?.beforeRequestHook) {
-    beforeRequestHooks.push(
-      ...(Array.isArray(options.beforeRequestHook)
-        ? options.beforeRequestHook
-        : [options.beforeRequestHook])
-    )
-  }
-  if (options?.afterResponseHook) {
-    afterResponseHooks.push(
-      ...(Array.isArray(options.afterResponseHook)
-        ? options.afterResponseHook
-        : [options.afterResponseHook])
-    )
-  }
-  if (options?.afterGenerateHook) {
-    afterGenerateHooks.push(
-      ...(Array.isArray(options.afterGenerateHook)
-        ? options.afterGenerateHook
-        : [options.afterGenerateHook])
-    )
-  }
-  for (const plugin of plugins) {
-    if (plugin.beforeRequestHook) {
-      beforeRequestHooks.push(
-        ...(Array.isArray(plugin.beforeRequestHook)
-          ? plugin.beforeRequestHook
-          : [plugin.beforeRequestHook])
-      )
-    }
-    if (plugin.afterResponseHook) {
-      afterResponseHooks.push(
-        ...(Array.isArray(plugin.afterResponseHook)
-          ? plugin.afterResponseHook
-          : [plugin.afterResponseHook])
-      )
-    }
-    if (plugin.afterGenerateHook) {
-      afterGenerateHooks.push(
-        ...(Array.isArray(plugin.afterGenerateHook)
-          ? plugin.afterGenerateHook
-          : [plugin.afterGenerateHook])
-      )
-    }
-  }
+  const { beforeRequestHooks, afterResponseHooks, afterGenerateHooks } = collectHooks(
+    options,
+    options?.plugins
+  )
   try {
-    const outputDir = options?.dir ?? DEFAULT_OUTPUT_DIR
-    const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
-
-    const combinedBeforeRequestHook = combineBeforeRequestHooks(
-      beforeRequestHooks.length > 0 ? beforeRequestHooks : [(req) => req]
-    )
-    const combinedAfterResponseHook = combineAfterResponseHooks(
-      afterResponseHooks.length > 0 ? afterResponseHooks : [(req) => req]
-    )
-    const getInfoGen = fetchRoutesContent(
+    const savePromises = await generateContentSavePromises(
       app,
-      combinedBeforeRequestHook,
-      combinedAfterResponseHook,
-      concurrency
+      fs,
+      options ?? {},
+      beforeRequestHooks,
+      afterResponseHooks
     )
-    for (const getInfo of getInfoGen) {
-      getInfoPromises.push(
-        getInfo.then((getContentGen) => {
-          if (!getContentGen) {
-            return
-          }
-          for (const content of getContentGen) {
-            savePromises.push(
-              saveContentToFile(content, fs, outputDir, options?.extensionMap).catch((e) => e)
-            )
-          }
-        })
-      )
-    }
-    await Promise.all(getInfoPromises)
-    const files: string[] = []
-    for (const savePromise of savePromises) {
-      const fileOrError = await savePromise
-      if (typeof fileOrError === 'string') {
-        files.push(fileOrError)
-      } else if (fileOrError) {
-        throw fileOrError
-      }
-    }
+    const files = await writeFiles(savePromises)
     result = { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
     result = { success: false, files: [], error: errorObj }
   }
-  if (afterGenerateHooks.length > 0) {
-    const combinedAfterGenerateHooks = combineAfterGenerateHooks(afterGenerateHooks, fs, options)
-    await combinedAfterGenerateHooks(result, fs, options)
-  }
+  await runAfterGenerateHooks(afterGenerateHooks, result, fs, options)
   return result
 }

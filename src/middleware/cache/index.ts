@@ -152,6 +152,102 @@ const createQueryDigest = async (
   }
 }
 
+const resolveCacheKeyRequest = async (
+  c: Context,
+  maxQueryBodySize: number
+): Promise<CacheKeyRequest | undefined> => {
+  if (c.req.method !== 'QUERY') {
+    return { method: 'GET' }
+  }
+  const digest = await createQueryDigest(c, maxQueryBodySize)
+  if (digest === undefined) {
+    return undefined
+  }
+  return { method: 'QUERY', digest }
+}
+
+const buildCacheKey = async (
+  c: Context,
+  request: CacheKeyRequest,
+  keyGenerator: ((c: Context) => Promise<string> | string) | undefined,
+  varyDirectives: Set<string> | undefined
+): Promise<string> => {
+  let key = c.req.url
+  if (keyGenerator) {
+    key = await keyGenerator(c)
+  }
+  const varyHeaders: [string, string][] = []
+  if (varyDirectives) {
+    for (const directive of varyDirectives) {
+      const value = c.req.raw.headers.get(directive) ?? ''
+      varyHeaders.push([directive, value])
+    }
+  }
+  return createCacheKey(key, c.req.url, request, varyHeaders)
+}
+
+const resolveCacheName = (
+  c: Context,
+  cacheName: string | ((c: Context) => Promise<string> | string)
+): Promise<string> | string =>
+  typeof cacheName === 'function' ? cacheName(c) : cacheName
+
+const putResponseInCache = async (
+  c: Context,
+  key: string,
+  wait: boolean,
+  cacheName: string | ((c: Context) => Promise<string> | string)
+): Promise<void> => {
+  const store = await caches.open(await resolveCacheName(c, cacheName))
+  const res = c.res.clone()
+  if (wait) {
+    await store.put(key, res)
+  } else {
+    c.executionCtx.waitUntil(store.put(key, res))
+  }
+}
+
+const addCacheHeaders = (
+  c: Context,
+  responseVary: string[],
+  cacheControlDirectives: string[] | undefined,
+  varyDirectives: Set<string> | undefined
+): void => {
+  if (cacheControlDirectives) {
+    const existingDirectives =
+      c.res.headers
+        .get('Cache-Control')
+        ?.split(',')
+        // Directive names are case-insensitive (RFC 7234 §5.2); lower-case so
+        // the case-insensitive de-dup check below matches handler-set names
+        // like `Max-Age`.
+        .map((d) => d.trim().split('=', 1)[0].toLowerCase()) ?? []
+    for (const directive of cacheControlDirectives) {
+      let [name, value] = directive.trim().split('=', 2)
+      name = name.toLowerCase()
+      if (!existingDirectives.includes(name)) {
+        c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, { append: true })
+      }
+    }
+  }
+
+  if (varyDirectives) {
+    if (responseVary.length === 0) {
+      c.header('Vary', Array.from(varyDirectives).join(', '))
+    } else {
+      const merged = new Set(varyDirectives)
+      for (const directive of responseVary) {
+        merged.add(directive)
+      }
+      if (merged.has('*')) {
+        c.header('Vary', '*')
+      } else {
+        c.header('Vary', Array.from(merged).join(', '))
+      }
+    }
+  }
+}
+
 /**
  * Cache Middleware for Hono.
  *
@@ -190,52 +286,6 @@ export const cache = (options: {
   cacheableStatusCodes?: StatusCode[]
   onCacheNotAvailable?: ((reason: string) => void) | false
 }): MiddlewareHandler => {
-  const cacheKeyRequest = async (c: Context): Promise<CacheKeyRequest | undefined> => {
-    if (c.req.method !== 'QUERY') {
-      return { method: 'GET' }
-    }
-    const digest = await createQueryDigest(c, maxQueryBodySize)
-    if (digest === undefined) {
-      return undefined
-    }
-    return { method: 'QUERY', digest }
-  }
-
-  const buildCacheKey = async (
-    c: Context,
-    request: CacheKeyRequest
-  ): Promise<string> => {
-    let key = c.req.url
-    if (options.keyGenerator) {
-      key = await options.keyGenerator(c)
-    }
-    const varyHeaders: [string, string][] = []
-    if (varyDirectives) {
-      for (const directive of varyDirectives) {
-        const value = c.req.raw.headers.get(directive) ?? ''
-        varyHeaders.push([directive, value])
-      }
-    }
-    return createCacheKey(key, c.req.url, request, varyHeaders)
-  }
-
-  const cacheName = (c: Context): Promise<string> | string =>
-    typeof options.cacheName === 'function' ? options.cacheName(c) : options.cacheName
-
-  const putResponseInCache = async (
-    c: Context,
-    key: string,
-    wait: boolean
-  ): Promise<void> => {
-    const store = await caches.open(await cacheName(c))
-    const res = c.res.clone()
-    if (wait) {
-      await store.put(key, res)
-    } else {
-      c.executionCtx.waitUntil(store.put(key, res))
-    }
-  }
-
   if (!globalThis.caches) {
     reportCacheNotAvailable(
       options.onCacheNotAvailable,
@@ -273,42 +323,6 @@ export const cache = (options: {
   )
   const maxQueryBodySize = options.maxQueryBodySize ?? defaultMaxQueryBodySize
 
-  const addHeader = (c: Context, responseVary: string[]) => {
-    if (cacheControlDirectives) {
-      const existingDirectives =
-        c.res.headers
-          .get('Cache-Control')
-          ?.split(',')
-          // Directive names are case-insensitive (RFC 7234 §5.2); lower-case so
-          // the case-insensitive de-dup check below matches handler-set names
-          // like `Max-Age`.
-          .map((d) => d.trim().split('=', 1)[0].toLowerCase()) ?? []
-      for (const directive of cacheControlDirectives) {
-        let [name, value] = directive.trim().split('=', 2)
-        name = name.toLowerCase()
-        if (!existingDirectives.includes(name)) {
-          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, { append: true })
-        }
-      }
-    }
-
-    if (varyDirectives) {
-      if (responseVary.length === 0) {
-        c.header('Vary', Array.from(varyDirectives).join(', '))
-      } else {
-        const merged = new Set(varyDirectives)
-        for (const directive of responseVary) {
-          merged.add(directive)
-        }
-        if (merged.has('*')) {
-          c.header('Vary', '*')
-        } else {
-          c.header('Vary', Array.from(merged).join(', '))
-        }
-      }
-    }
-  }
-
   return async function cache(c, next) {
     if (
       (c.req.method !== 'GET' && c.req.method !== 'QUERY') ||
@@ -318,14 +332,14 @@ export const cache = (options: {
       return
     }
 
-    const request = await cacheKeyRequest(c)
+    const request = await resolveCacheKeyRequest(c, maxQueryBodySize)
     if (!request) {
       await next()
       return
     }
-    const key = await buildCacheKey(c, request)
+    const key = await buildCacheKey(c, request, options.keyGenerator, varyDirectives)
 
-    const store = await caches.open(await cacheName(c))
+    const store = await caches.open(await resolveCacheName(c, options.cacheName))
     const response = await store.match(key)
     if (response) {
       return new Response(response.body, response)
@@ -336,12 +350,12 @@ export const cache = (options: {
       return
     }
     const responseVary = parseVaryDirectives(c.res.headers.get('Vary'))
-    addHeader(c, responseVary)
+    addCacheHeaders(c, responseVary, cacheControlDirectives, varyDirectives)
 
     if (shouldSkipCache(c.res, varyDirectives, responseVary)) {
       return
     }
 
-    await putResponseInCache(c, key, options.wait)
+    await putResponseInCache(c, key, options.wait, options.cacheName)
   }
 }

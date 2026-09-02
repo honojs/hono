@@ -24,6 +24,26 @@ import {
 } from '../../helper/css/common'
 export { rawCssString } from '../../helper/css/common'
 
+// Scans forward from a quote character and returns the index of the character
+// after the closing (matching, escaped-aware) quote so that quoted snippets are
+// skipped as a unit.
+const skipQuotedContent = (rule: string, i: number): number => {
+  const quote = rule[i]
+  let j = i + 1
+  for (; j < rule.length; j++) {
+    if (rule[j] === '\\') {
+      j++
+      continue
+    }
+    if (rule[j] === quote) {
+      break
+    }
+  }
+  return j
+}
+
+// Splits a rule into balanced top-level blocks (e.g. nested keyframes). Braces
+// are tracked by depth, and each block that returns to depth 0 is pushed.
 const splitRule = (rule: string): string[] => {
   const result: string[] = []
   let startPos = 0
@@ -32,19 +52,8 @@ const splitRule = (rule: string): string[] => {
     const char = rule[i]
 
     // consume quote
-
     if (char === "'" || char === '"') {
-      const quote = char
-      i++
-      for (; i < len; i++) {
-        if (rule[i] === '\\') {
-          i++
-          continue
-        }
-        if (rule[i] === quote) {
-          break
-        }
-      }
+      i = skipQuotedContent(rule, i)
       continue
     }
 
@@ -74,7 +83,11 @@ interface CreateCssJsxDomObjectsType {
   ]
 }
 
-export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
+// Locates the style sheet whose id matches the given one and inserts CSS rules
+// into it, avoiding duplicates and deferring work until the sheet is present.
+const createCssRuleInserter = (
+  id: string
+): ((className: string, styleString: string) => void) => {
   let styleSheet: CSSStyleSheet | null | undefined = undefined
   const findStyleSheet = (): [CSSStyleSheet, Set<string>] | [] => {
     if (!styleSheet) {
@@ -111,6 +124,12 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
       })
     }
   }
+
+  return insertRule
+}
+
+export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
+  const insertRule = createCssRuleInserter(id)
 
   const cssObject = {
     toString(this: CssClassName): string {

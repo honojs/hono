@@ -229,49 +229,49 @@ const _decodeURI = (value: string): string => {
   return tryDecodeURIComponent(value)
 }
 
-const _getQueryParam = (
-  url: string,
-  key?: string,
-  multiple?: boolean
-): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+const _stripHash = (url: string): string => {
   const hashIndex = url.indexOf('#', 8)
-  if (hashIndex !== -1) {
-    url = url.slice(0, hashIndex)
+  return hashIndex === -1 ? url : url.slice(0, hashIndex)
+}
+
+// Optimized path for a single, unencoded key when the query string needs no decoding.
+const _getUnencodedKeyParam = (url: string, key: string): string | undefined => {
+  let keyIndex = url.indexOf('?', 8)
+  if (keyIndex === -1) {
+    return undefined
   }
 
-  let encoded
-
-  if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
-    // optimized for unencoded key
-
-    let keyIndex = url.indexOf('?', 8)
-    if (keyIndex === -1) {
-      return undefined
-    }
-    if (!url.startsWith(key, keyIndex + 1)) {
-      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
-    }
-    while (keyIndex !== -1) {
-      const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex + key.length + 2
-        const endIndex = url.indexOf('&', valueIndex)
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
-        return ''
-      }
-      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
-    }
-
-    encoded = /[%+]/.test(url)
-    if (!encoded) {
-      return undefined
-    }
-    // fallback to default routine
+  // If the key is not the first param, look for it preceded by '&'.
+  if (!url.startsWith(key, keyIndex + 1)) {
+    keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
   }
 
-  const results: Record<string, string> | Record<string, string[]> = Object.create(null)
-  encoded ??= /[%+]/.test(url)
+  while (keyIndex !== -1) {
+    const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
+    if (trailingKeyCode === 61) {
+      const valueIndex = keyIndex + key.length + 2
+      const endIndex = url.indexOf('&', valueIndex)
+      return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+    } else if (trailingKeyCode === 38 || isNaN(trailingKeyCode)) {
+      // Trailed by '&' or end of string => the key has no value.
+      return ''
+    }
+    keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
+  }
+
+  // No direct match. The caller decides whether decoding is needed to retry via the
+  // general query-string parser.
+  return undefined
+}
+
+const _hasEncodedChars = (url: string): boolean => /[%+]/.test(url)
+
+type ParsedQueryParam = { name: string; value: string }
+
+// Splits a query string into its decoded key/value pairs, skipping empty key names.
+const _parseQueryParams = (url: string): ParsedQueryParam[] => {
+  const params: ParsedQueryParam[] = []
+  const encoded = _hasEncodedChars(url)
 
   let keyIndex = url.indexOf('?', 8)
   while (keyIndex !== -1) {
@@ -294,7 +294,7 @@ const _getQueryParam = (
       continue
     }
 
-    let value
+    let value: string
     if (valueIndex === -1) {
       value = ''
     } else {
@@ -304,17 +304,70 @@ const _getQueryParam = (
       }
     }
 
-    if (multiple) {
-      if (!(results[name] && Array.isArray(results[name]))) {
-        results[name] = []
-      }
-      ;(results[name] as string[]).push(value)
-    } else {
-      results[name] ??= value
-    }
+    params.push({ name, value })
   }
 
-  return key ? results[key] : results
+  return params
+}
+
+// Accumulates one decoded name/value pair into the result object.
+const _storeQueryParam = (
+  results: Record<string, string> | Record<string, string[]>,
+  name: string,
+  value: string,
+  multiple: boolean
+): void => {
+  if (multiple) {
+    const target = results as Record<string, string[]>
+    if (!Array.isArray(target[name])) {
+      target[name] = []
+    }
+    target[name].push(value)
+  } else {
+    const target = results as Record<string, string>
+    if (target[name] === undefined) {
+      target[name] = value
+    }
+  }
+}
+
+// General routine that parses every key/value pair.
+const _parseQueryString = (
+  url: string,
+  multiple: boolean
+): Record<string, string> | Record<string, string[]> => {
+  const results: Record<string, string> | Record<string, string[]> = Object.create(null)
+
+  for (const { name, value } of _parseQueryParams(url)) {
+    _storeQueryParam(results, name, value, multiple)
+  }
+
+  return results
+}
+
+const _getQueryParam = (
+  url: string,
+  key?: string,
+  multiple?: boolean
+): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  url = _stripHash(url)
+
+  // Optimized for a single, unencoded key.
+  if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
+    const result = _getUnencodedKeyParam(url, key)
+    if (result !== undefined) {
+      return result
+    }
+    // If the url had no encodable characters it definitively has no match.
+    if (!_hasEncodedChars(url)) {
+      return undefined
+    }
+    // Otherwise fall through to the general routine in case decoding is needed.
+  }
+
+  const results = _parseQueryString(url, !!multiple)
+
+  return key ? (results as Record<string, string>)[key] : results
 }
 
 export const getQueryParam: (

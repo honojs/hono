@@ -217,57 +217,89 @@ export class JSXNode implements HtmlEscaped {
       tag === 'svg' || (nameSpaceContext && useContext(nameSpaceContext) === 'svg')
         ? (key) => toSVGAttributeName(normalizeIntrinsicElementKey(key))
         : (key) => normalizeIntrinsicElementKey(key)
+
+    children = this.renderPropsToBuffer(tag, props, normalizeKey, buffer, children)
+
+    this.renderChildrenToBuffer(tag, children, buffer)
+  }
+
+  private renderPropsToBuffer(
+    tag: string,
+    props: Props,
+    normalizeKey: (key: string) => string,
+    buffer: StringBufferWithCallbacks,
+    children: Child[]
+  ): Child[] {
     for (let [key, v] of Object.entries(props)) {
       key = normalizeKey(key)
-      if (!isValidAttributeName(key)) {
+      if (!isValidAttributeName(key) || key === 'children') {
         continue
       }
-      if (key === 'children') {
-        // skip children
-      } else if (key === 'style' && typeof v === 'object') {
-        // object to style strings
-        let styleStr = ''
-        styleObjectForEach(v, (property, value) => {
-          if (value != null) {
-            styleStr += `${styleStr ? ';' : ''}${property}:${value}`
-          }
-        })
-        buffer[0] += ' style="'
-        escapeToBuffer(styleStr, buffer)
-        buffer[0] += '"'
-      } else if (typeof v === 'string') {
-        buffer[0] += ` ${key}="`
-        escapeToBuffer(v, buffer)
-        buffer[0] += '"'
-      } else if (v === null || v === undefined) {
-        // Do nothing
-      } else if (typeof v === 'number' || (v as HtmlEscaped).isEscaped) {
-        buffer[0] += ` ${key}="${v}"`
-      } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
-        if (v) {
-          buffer[0] += ` ${key}=""`
-        }
+      if (key === 'style' && typeof v === 'object') {
+        this.writeStyleAttributeToBuffer(v, buffer)
       } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
           throw new Error('Can only set one of `children` or `props.dangerouslySetInnerHTML`.')
         }
-
         children = [raw(v.__html)]
-      } else if (v instanceof Promise) {
-        buffer[0] += ` ${key}="`
-        buffer.unshift('"', v)
-      } else if (typeof v === 'function') {
-        if (!key.startsWith('on') && key !== 'ref') {
-          throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
-        }
-        // maybe event handler for client components, just ignore in server components
       } else {
-        buffer[0] += ` ${key}="`
-        escapeToBuffer(v.toString(), buffer)
-        buffer[0] += '"'
+        this.writeAttributeValueToBuffer(tag, key, v, buffer)
       }
     }
+    return children
+  }
 
+  private writeAttributeValueToBuffer(
+    tag: string,
+    key: string,
+    v: unknown,
+    buffer: StringBufferWithCallbacks
+  ): void {
+    if (typeof v === 'string') {
+      buffer[0] += ` ${key}="`
+      escapeToBuffer(v, buffer)
+      buffer[0] += '"'
+    } else if (v === null || v === undefined) {
+      // Do nothing
+    } else if (typeof v === 'number' || (v as HtmlEscaped).isEscaped) {
+      buffer[0] += ` ${key}="${v}"`
+    } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
+      if (v) {
+        buffer[0] += ` ${key}=""`
+      }
+    } else if (v instanceof Promise) {
+      buffer[0] += ` ${key}="`
+      buffer.unshift('"', v)
+    } else if (typeof v === 'function') {
+      if (!key.startsWith('on') && key !== 'ref') {
+        throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
+      }
+      // maybe event handler for client components, just ignore in server components
+    } else {
+      buffer[0] += ` ${key}="`
+      escapeToBuffer(v.toString(), buffer)
+      buffer[0] += '"'
+    }
+  }
+
+  private writeStyleAttributeToBuffer(v: unknown, buffer: StringBufferWithCallbacks): void {
+    // object to style strings
+    let styleStr = ''
+    styleObjectForEach(v, (property, value) => {
+      if (value != null) {
+        styleStr += `${styleStr ? ';' : ''}${property}:${value}`
+      }
+    })
+    buffer[0] += ' style="'
+    escapeToBuffer(styleStr, buffer)
+    buffer[0] += '"'
+  }
+
+  private renderChildrenToBuffer(
+    tag: string,
+    children: Child[],
+    buffer: StringBufferWithCallbacks
+  ): void {
     if (emptyTags.includes(tag as string) && children.length === 0) {
       buffer[0] += '/>'
       return

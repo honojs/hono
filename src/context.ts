@@ -605,11 +605,10 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  #newResponse(
-    data: Data | null,
+  #buildResponseHeaders(
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
-  ): Response {
+  ): Headers | undefined {
     let responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders
 
     if (typeof arg === 'object' && arg.headers) {
@@ -648,6 +647,15 @@ export class Context<
       }
     }
 
+    return responseHeaders
+  }
+
+  #newResponse(
+    data: Data | null,
+    arg?: StatusCode | ResponseOrInit,
+    headers?: HeaderRecord
+  ): Response {
+    const responseHeaders = this.#buildResponseHeaders(arg, headers)
     const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
     return createResponseInstance(data, {
       status,

@@ -63,46 +63,75 @@ const skipInvalidAcceptValue = (acceptHeader: string, startIndex: number): numbe
   return i
 }
 
-const getNextParam = (
+// Parses the key portion of a param (up to '='), returns [nextIndex, key, earlyExit, earlyHasNext]
+// earlyExit=true means we should return early with the given hasNext value
+const parseParamKey = (
   acceptHeader: string,
   startIndex: number
-): [number, string | undefined, string | undefined, boolean] => {
-  startIndex = consumeWhitespace(acceptHeader, startIndex)
+): [number, string | undefined, boolean, boolean] => {
   let i = startIndex
-  let key: string | undefined
-  let value: string | undefined
-  let hasNext = false
   while (i < acceptHeader.length) {
     const char = acceptHeader.charCodeAt(i)
     if (char === 61) {
       // '=' => end of key
-      key = acceptHeader.slice(startIndex, ignoreTrailingWhitespace(acceptHeader, i))
-      i++
-      break
+      const key = acceptHeader.slice(startIndex, ignoreTrailingWhitespace(acceptHeader, i))
+      return [i + 1, key, false, false]
     }
     if (char === 59) {
       // ';' => invalid empty param, continue parsing params
-      return [i + 1, undefined, undefined, true]
+      return [i + 1, undefined, true, true]
     }
     if (char === 44) {
       // ',' => invalid empty param, move to next accept value
-      return [i + 1, undefined, undefined, false]
+      return [i + 1, undefined, true, false]
     }
     i++
   }
-  if (key === undefined) {
-    return [i, undefined, undefined, false]
-  }
+  // reached end without finding '='
+  return [i, undefined, true, false]
+}
 
-  i = consumeWhitespace(acceptHeader, i)
-  if (acceptHeader.charCodeAt(i) === 61) {
-    // '=' is invalid as a value, so return undefined
-    const skipResult = skipInvalidParam(acceptHeader, i + 1)
-    return [skipResult[0], key, undefined, skipResult[1]]
+// Parses a quoted param value starting at the opening '"'
+// Returns [nextIndex, value or undefined, hasNext, done]
+// done=true means caller should return immediately
+const parseQuotedParamValue = (
+  acceptHeader: string,
+  key: string,
+  paramStartIndex: number,
+  i: number
+): [number, string | undefined, boolean] => {
+  // i is positioned just after the closing '"'
+  let nextIndex = consumeWhitespace(acceptHeader, i)
+  const nextChar = acceptHeader.charCodeAt(nextIndex)
+  if (nextIndex < acceptHeader.length && !(nextChar === 59 || nextChar === 44)) {
+    // not ';' or ',' => invalid trailing chars
+    const skipResult = skipInvalidParam(acceptHeader, nextIndex)
+    return [skipResult[0], undefined, skipResult[1]]
   }
+  let value = acceptHeader.slice(paramStartIndex + 1, i - 1)
+  if (value.includes('\\')) {
+    value = value.replace(/\\(.)/g, '$1')
+  }
+  if (nextChar === 44) {
+    // ',' => end of accept value
+    return [nextIndex + 1, value, false]
+  }
+  const hasNext = nextChar === 59
+  return [hasNext ? nextIndex + 1 : nextIndex, value, hasNext]
+}
 
+// Scans characters of an unquoted (or opening-quoted) param value.
+// Returns [nextIndex, key, value or undefined, hasNext].
+const scanParamValueChars = (
+  acceptHeader: string,
+  key: string,
+  paramStartIndex: number
+): [number, string | undefined, string | undefined, boolean] => {
   let inQuotes = false
-  const paramStartIndex = i
+  let i = paramStartIndex
+  let value: string | undefined
+  let hasNext = false
+
   while (i < acceptHeader.length) {
     const char = acceptHeader.charCodeAt(i)
 
@@ -110,30 +139,15 @@ const getNextParam = (
       // '\' => escape
       i++
     } else if (char === 34) {
-      // '"' => start of quotes
+      // '"' => quote boundary
       if (inQuotes) {
-        let nextIndex = consumeWhitespace(acceptHeader, i + 1)
-        const nextChar = acceptHeader.charCodeAt(nextIndex)
-        if (nextIndex < acceptHeader.length && !(nextChar === 59 || nextChar === 44)) {
-          // not ';' or ',' => invalid trailing chars
-          const skipResult = skipInvalidParam(acceptHeader, nextIndex)
-          return [skipResult[0], key, undefined, skipResult[1]]
-        }
-        value = acceptHeader.slice(paramStartIndex + 1, i)
-        if (value.includes('\\')) {
-          value = value.replace(/\\(.)/g, '$1')
-        }
-        if (nextChar === 44) {
-          // ',' => end of accept value
-          return [nextIndex + 1, key, value, false]
-        }
-        if (nextChar === 59) {
-          // ';' => has next param
-          hasNext = true
-          nextIndex++
-        }
-        i = nextIndex
-        break
+        const [nextI, parsedValue, parsedHasNext] = parseQuotedParamValue(
+          acceptHeader,
+          key,
+          paramStartIndex,
+          i + 1
+        )
+        return [nextI, key, parsedValue, parsedHasNext]
       }
       inQuotes = true
     } else if (!inQuotes && (char === 59 || char === 44)) {
@@ -154,6 +168,36 @@ const getNextParam = (
     value ?? acceptHeader.slice(paramStartIndex, ignoreTrailingWhitespace(acceptHeader, i)),
     hasNext,
   ]
+}
+
+// Parses the value portion of a param (after '='), handling both quoted and unquoted values
+const parseParamValue = (
+  acceptHeader: string,
+  key: string,
+  startIndex: number
+): [number, string | undefined, string | undefined, boolean] => {
+  startIndex = consumeWhitespace(acceptHeader, startIndex)
+  if (acceptHeader.charCodeAt(startIndex) === 61) {
+    // '=' is invalid as a value
+    const skipResult = skipInvalidParam(acceptHeader, startIndex + 1)
+    return [skipResult[0], key, undefined, skipResult[1]]
+  }
+
+  return scanParamValueChars(acceptHeader, key, startIndex)
+}
+
+const getNextParam = (
+  acceptHeader: string,
+  startIndex: number
+): [number, string | undefined, string | undefined, boolean] => {
+  startIndex = consumeWhitespace(acceptHeader, startIndex)
+
+  const [afterKey, key, earlyExit, earlyHasNext] = parseParamKey(acceptHeader, startIndex)
+  if (earlyExit || key === undefined) {
+    return [afterKey, undefined, undefined, earlyHasNext]
+  }
+
+  return parseParamValue(acceptHeader, key, afterKey)
 }
 
 const getNextAcceptValue = (

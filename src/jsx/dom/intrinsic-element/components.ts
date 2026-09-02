@@ -117,57 +117,64 @@ const findOrCreateElement = (
 /**
  * Insert an element into the document head honoring de-dupe/precedence ordering.
  */
-const insertElement = (
+const insertDeDupeElement = (
   tag: string,
   e: HTMLElement,
-  deDupeByKey: boolean,
-  precedence: string | undefined,
-  existingElements: NodeListOf<HTMLElement> | undefined
+  precedence: string | undefined
 ) => {
   const head = document.head
-  if (deDupeByKey) {
-    if (tag === 'link' && precedence !== undefined) {
-      let found = false
-      for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
-        const existingPrecedence = existingElement.getAttribute(dataPrecedenceAttr)
-        if (existingPrecedence === null) {
-          head.insertBefore(e, existingElement)
-          return
-        }
-        if (found && existingPrecedence !== precedence) {
-          head.insertBefore(e, existingElement)
-          return
-        }
-        if (existingPrecedence === precedence) {
-          found = true
-        }
-      }
-
-      // if sentinel is not found, append to the end
-      head.appendChild(e)
-      return
-    }
-
+  if (tag === 'link' && precedence !== undefined) {
     let found = false
     for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
-      if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
+      const existingPrecedence = existingElement.getAttribute(dataPrecedenceAttr)
+      if (existingPrecedence === null) {
         head.insertBefore(e, existingElement)
         return
       }
-      if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
+      if (found && existingPrecedence !== precedence) {
+        head.insertBefore(e, existingElement)
+        return
+      }
+      if (existingPrecedence === precedence) {
         found = true
       }
     }
 
     // if sentinel is not found, append to the end
     head.appendChild(e)
-  } else if (tag === 'link') {
+    return
+  }
+
+  let found = false
+  for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
+    if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
+      head.insertBefore(e, existingElement)
+      return
+    }
+    if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
+      found = true
+    }
+  }
+
+  // if sentinel is not found, append to the end
+  head.appendChild(e)
+}
+
+const insertNonDeDupeElement = (
+  tag: string,
+  e: HTMLElement,
+  existingElements: NodeListOf<HTMLElement> | undefined
+) => {
+  const head = document.head
+  if (tag === 'link') {
     if (!head.contains(e)) {
       head.appendChild(e)
     }
-  } else if (existingElements) {
+    return
+  }
+  if (existingElements) {
     let found = false
-    for (const existingElement of existingElements!) {
+    for (const existingElement of existingElements) {
       if (existingElement === e) {
         found = true
         break
@@ -180,6 +187,20 @@ const insertElement = (
         head.contains(existingElements[0]) ? existingElements[0] : head.querySelector(tag)
       )
     }
+  }
+}
+
+const insertElement = (
+  tag: string,
+  e: HTMLElement,
+  deDupeByKey: boolean,
+  precedence: string | undefined,
+  existingElements: NodeListOf<HTMLElement> | undefined
+) => {
+  if (deDupeByKey) {
+    insertDeDupeElement(tag, e, precedence)
+  } else {
+    insertNonDeDupeElement(tag, e, existingElements)
   }
 }
 
