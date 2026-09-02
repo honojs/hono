@@ -1,3 +1,4 @@
+import { once } from 'node:events'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
@@ -129,10 +130,19 @@ const streamToNodeStream = async (
 ): Promise<void> => {
   let readResult = await reader.read()
   while (!readResult.done) {
-    writer.write(readResult.value)
+    const drained = writer.write(readResult.value)
+    if (!drained) {
+      // The writable's buffer is full (e.g. the 16KiB highWaterMark of the
+      // Lambda response stream): wait until it has drained before writing on,
+      // otherwise large responses are buffered without bound.
+      await once(writer, 'drain')
+    }
     readResult = await reader.read()
   }
   writer.end()
+  // Wait until all written data is flushed, so that the Lambda runtime does
+  // not freeze the execution environment before the response is complete.
+  await once(writer, 'finish')
 }
 
 export const streamHandle = <

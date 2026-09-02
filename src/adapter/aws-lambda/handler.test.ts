@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
@@ -7,8 +8,9 @@ import {
   handle,
   isContentEncodingBinary,
   defaultIsContentTypeBinary,
+  streamHandle,
 } from './handler'
-import type { ApiGatewayRequestContextV2 } from './types'
+import type { ApiGatewayRequestContextV2, LambdaContext } from './types'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
@@ -629,5 +631,113 @@ describe('V2 request context authorizer', () => {
     >()
     // A JWT authorizer reports no scopes as `null`.
     expectTypeOf<null>().toMatchTypeOf<NonNullable<typeof authorizer.jwt>['scopes']>()
+  })
+})
+
+describe('streamHandle', () => {
+  // A minimal Node.js-writable-like stream that simulates the 16KiB
+  // highWaterMark behavior of the Lambda response stream: writes that exceed
+  // it return false and 'drain' is only emitted on a later tick, and 'finish'
+  // is only emitted on a later tick after end().
+  class MockResponseStream extends EventEmitter {
+    writes: number[] = []
+    maxBuffered = 0
+    writesWhileDrainPending = 0
+    finishEmitted = false
+
+    private buffered = 0
+    private drainPending = false
+    private ended = false
+
+    write(chunk: Uint8Array | string): boolean {
+      const size = typeof chunk === 'string' ? chunk.length : chunk.byteLength
+      this.writes.push(size)
+      if (this.drainPending) {
+        this.writesWhileDrainPending++
+      }
+      this.buffered += size
+      this.maxBuffered = Math.max(this.maxBuffered, this.buffered)
+      if (this.buffered > 16 * 1024) {
+        this.drainPending = true
+        setTimeout(() => {
+          this.buffered = 0
+          this.drainPending = false
+          this.emit('drain')
+        }, 0)
+        return false
+      }
+      return true
+    }
+
+    end(cb?: () => void): void {
+      if (this.ended) {
+        cb?.()
+        return
+      }
+      this.ended = true
+      setTimeout(() => {
+        this.finishEmitted = true
+        this.emit('finish')
+        cb?.()
+      }, 0)
+    }
+  }
+
+  const mockContext = { callbackWaitsForEmptyEventLoop: false } as unknown as LambdaContext
+
+  // The Lambda runtime globals do not exist under vitest.
+  const setupRuntime = () => {
+    ;(globalThis as unknown as Record<string, unknown>).awslambda = {
+      streamifyResponse: (lambdaHandler: unknown) => lambdaHandler,
+      HttpResponseStream: {
+        from: (stream: unknown) => stream,
+      },
+    }
+  }
+
+  it('Should pause writing while the response stream applies backpressure (2MiB response)', async () => {
+    setupRuntime()
+    const app = new Hono()
+    app.post('/my/path', (c) => {
+      const chunk = new Uint8Array(64 * 1024).fill(97)
+      const body = new ReadableStream({
+        start(controller) {
+          for (let i = 0; i < 32; i++) {
+            controller.enqueue(chunk)
+          }
+          controller.close()
+        },
+      })
+      return c.body(body)
+    })
+
+    const handler = streamHandle(app)
+    const stream = new MockResponseStream()
+    await (handler as unknown as (...args: unknown[]) => Promise<void>)(
+      baseV2Event,
+      stream,
+      mockContext
+    )
+
+    // Nothing may be written while the stream is full, and the whole 2MiB
+    // body must never be buffered at once.
+    expect(stream.writesWhileDrainPending).toBe(0)
+    expect(stream.maxBuffered).toBeLessThanOrEqual(128 * 1024)
+  })
+
+  it('Should resolve only after the response stream emits finish', async () => {
+    setupRuntime()
+    const app = new Hono()
+    app.post('/my/path', (c) => c.text('Hello from Lambda'))
+
+    const handler = streamHandle(app)
+    const stream = new MockResponseStream()
+    await (handler as unknown as (...args: unknown[]) => Promise<void>)(
+      baseV2Event,
+      stream,
+      mockContext
+    )
+
+    expect(stream.finishEmitted).toBe(true)
   })
 })
