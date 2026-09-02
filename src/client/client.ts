@@ -147,12 +147,8 @@ class ClientRequestImpl {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
-  baseUrl: Prefix,
-  options?: ClientRequestOptions
-) =>
-  createProxy(function proxyCallback(opts) {
+const createCallback = (baseUrl: string, options?: ClientRequestOptions): Callback =>
+  function proxyCallback(opts) {
     const buildSearchParamsOption = options?.buildSearchParams ?? buildSearchParams
     const parts = [...opts.path]
     const lastParts = parts.slice(-3).reverse()
@@ -246,4 +242,10 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
       return req.fetch(opts.args[0], args)
     }
     return req
-  }, []) as UnionToIntersection<Client<T, Prefix>>
+  }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
+  baseUrl: Prefix,
+  options?: ClientRequestOptions
+) => createProxy(createCallback(baseUrl, options), []) as UnionToIntersection<Client<T, Prefix>>
