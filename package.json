@@ -682,7 +682,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260210.1",
     "@vitest/coverage-v8": "^4.1.7",
     "bun-types": "^1.2.20",
-    "editorconfig-checker": "6.1.1",
+    "editorconfig-checker": "6.2.0",
     "esbuild": "^0.27.1",
     "eslint": "^9.39.3",
     "jsdom": "22.1.0",
