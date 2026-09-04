@@ -1,0 +1,21 @@
+bun.lock
+  s_b198be1da6d691::t_fd9a27ee8f0df7 16,770
+package.json
+  s_b198be1da6d691::t_60db583675a8a4 685
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a5018d3b6dcea6ca58a319fbdd0aa332ed9f0b21",
+  "prompts": {},
+  "sessions": {
+    "s_b198be1da6d691": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "78b60d71-0396-45d2-a373-ba3a868d3304",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
