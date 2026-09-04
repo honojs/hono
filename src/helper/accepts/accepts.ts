@@ -53,6 +53,9 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string =
   })
 
   for (const accept of sortedAccepts) {
+    if (accept.q === 0) {
+      continue
+    }
     const matched = supports.find((supported) => matchType(accept.type, supported))
     if (matched) {
       return matched
