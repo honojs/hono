@@ -517,6 +517,33 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
       : node.vC
         ? [...node.vC]
         : undefined
+    // Build index maps for O(1) lookup of old children by key+tag and by tag-only
+    const oldKeyedMap: Map<string, Node> | undefined = oldVChildren ? new Map() : undefined
+    const oldUnkeyedMap: Map<string | Function, Node[]> | undefined = oldVChildren
+      ? new Map()
+      : undefined
+    const oldTextNodes: Node[] = []
+    if (oldVChildren) {
+      for (let j = 0; j < oldVChildren.length; j++) {
+        const old = oldVChildren[j]
+        if (isNodeString(old)) {
+          oldTextNodes.push(old)
+        } else if (old.key !== undefined) {
+          // Keyed nodes: composite key of key + tag for uniqueness
+          const mapKey = `${old.key}:${typeof old.tag === 'function' ? old.tag : old.tag}`
+          oldKeyedMap!.set(mapKey, old)
+        } else {
+          // Unkeyed nodes: group by tag
+          const tag = old.tag
+          const arr = oldUnkeyedMap!.get(tag)
+          if (arr) {
+            arr.push(old)
+          } else {
+            oldUnkeyedMap!.set(tag, [old])
+          }
+        }
+      }
+    }
     const vChildren: Node[] = []
     let prevNode: Node | undefined
     for (let i = 0; i < children.length; i++) {
@@ -541,18 +568,23 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
         }
 
         let oldChild: NodeObject | undefined
-        if (oldVChildren && oldVChildren.length) {
-          const i = oldVChildren.findIndex(
-            isNodeString(child)
-              ? (c) => isNodeString(c)
-              : child.key !== undefined
-                ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
-                : (c) => c.tag === (child as Node).tag
-          )
-
-          if (i !== -1) {
-            oldChild = oldVChildren[i] as NodeObject
-            oldVChildren.splice(i, 1)
+        if (oldVChildren) {
+          if (isNodeString(child)) {
+            if (oldTextNodes.length) {
+              oldChild = oldTextNodes.shift() as NodeObject
+            }
+          } else if (child.key !== undefined) {
+            const mapKey = `${child.key}:${typeof child.tag === 'function' ? child.tag : child.tag}`
+            const found = oldKeyedMap!.get(mapKey)
+            if (found) {
+              oldChild = found as NodeObject
+              oldKeyedMap!.delete(mapKey)
+            }
+          } else {
+            const arr = oldUnkeyedMap!.get(child.tag)
+            if (arr && arr.length) {
+              oldChild = arr.shift() as NodeObject
+            }
           }
         }
 
@@ -604,7 +636,22 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
         prevNode = child
       }
     }
-    node.vR = buildWithPreviousChildren ? [...node.vC, ...(oldVChildren || [])] : oldVChildren || []
+    // Collect remaining unmatched old children for removal
+    const remainingOld: Node[] = []
+    for (let j = 0; j < oldTextNodes.length; j++) {
+      remainingOld.push(oldTextNodes[j])
+    }
+    if (oldKeyedMap) {
+      oldKeyedMap.forEach((n) => remainingOld.push(n))
+    }
+    if (oldUnkeyedMap) {
+      oldUnkeyedMap.forEach((arr) => {
+        for (let j = 0; j < arr.length; j++) {
+          remainingOld.push(arr[j])
+        }
+      })
+    }
+    node.vR = buildWithPreviousChildren ? [...node.vC, ...remainingOld] : remainingOld
     node.vC = vChildren
     if (buildWithPreviousChildren) {
       delete node.pC

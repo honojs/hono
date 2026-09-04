@@ -1707,6 +1707,147 @@ describe('DOM', () => {
     )
   })
 
+  it('large keyed list - reverse preserves DOM identity', async () => {
+    const N = 100
+    const initial = Array.from({ length: N }, (_, i) => `item-${i}`)
+    let setItems: (items: string[]) => void = () => {}
+    const App = () => {
+      const [items, _setItems] = useState(initial)
+      setItems = _setItems
+      return (
+        <div>
+          {items.map((item) => (
+            <div key={item}>{item}</div>
+          ))}
+        </div>
+      )
+    }
+    render(<App />, root)
+    // Capture DOM element references before reverse
+    const divsBefore = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsBefore).toHaveLength(N)
+    expect(divsBefore[0].textContent).toBe('item-0')
+    expect(divsBefore[N - 1].textContent).toBe(`item-${N - 1}`)
+
+    // Reverse the list
+    setItems([...initial].reverse())
+    await Promise.resolve()
+
+    const divsAfter = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsAfter).toHaveLength(N)
+    // Content should be reversed
+    expect(divsAfter[0].textContent).toBe(`item-${N - 1}`)
+    expect(divsAfter[N - 1].textContent).toBe('item-0')
+    // DOM identity must be preserved — same element nodes, just reordered
+    for (let i = 0; i < N; i++) {
+      expect(divsAfter[i]).toBe(divsBefore[N - 1 - i])
+    }
+  })
+
+  it('large keyed list - no-op re-render preserves DOM identity', async () => {
+    const N = 100
+    const items = Array.from({ length: N }, (_, i) => `item-${i}`)
+    let rerender: () => void = () => {}
+    const App = () => {
+      const [, setTick] = useState(0)
+      rerender = () => setTick((t) => t + 1)
+      return (
+        <div>
+          {items.map((item) => (
+            <div key={item}>{item}</div>
+          ))}
+        </div>
+      )
+    }
+    render(<App />, root)
+    const divsBefore = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsBefore).toHaveLength(N)
+
+    // Re-render with same list
+    rerender()
+    await Promise.resolve()
+
+    const divsAfter = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsAfter).toHaveLength(N)
+    // Every element should be the exact same DOM node
+    for (let i = 0; i < N; i++) {
+      expect(divsAfter[i]).toBe(divsBefore[i])
+    }
+  })
+
+  it('large keyed list - first/last swap preserves DOM identity', async () => {
+    const N = 100
+    const initial = Array.from({ length: N }, (_, i) => `item-${i}`)
+    let setItems: (items: string[]) => void = () => {}
+    const App = () => {
+      const [items, _setItems] = useState(initial)
+      setItems = _setItems
+      return (
+        <div>
+          {items.map((item) => (
+            <div key={item}>{item}</div>
+          ))}
+        </div>
+      )
+    }
+    render(<App />, root)
+    const divsBefore = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+
+    // Swap first and last
+    const swapped = [...initial]
+    swapped[0] = initial[N - 1]
+    swapped[N - 1] = initial[0]
+    setItems(swapped)
+    await Promise.resolve()
+
+    const divsAfter = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsAfter).toHaveLength(N)
+    // First and last swapped
+    expect(divsAfter[0]).toBe(divsBefore[N - 1])
+    expect(divsAfter[N - 1]).toBe(divsBefore[0])
+    // Middle elements unchanged
+    for (let i = 1; i < N - 1; i++) {
+      expect(divsAfter[i]).toBe(divsBefore[i])
+    }
+  })
+
+  it('large keyed list - random shuffle preserves all DOM elements', async () => {
+    const N = 50
+    const initial = Array.from({ length: N }, (_, i) => `item-${i}`)
+    let setItems: (items: string[]) => void = () => {}
+    const App = () => {
+      const [items, _setItems] = useState(initial)
+      setItems = _setItems
+      return (
+        <div>
+          {items.map((item) => (
+            <div key={item}>{item}</div>
+          ))}
+        </div>
+      )
+    }
+    render(<App />, root)
+    const divsBefore = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    const elemByKey = new Map<string, Element>()
+    divsBefore.forEach((el) => elemByKey.set(el.textContent!, el))
+
+    // Shuffle using deterministic seed-like pattern
+    const shuffled = [...initial]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = (i * 7 + 3) % (i + 1)
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    setItems(shuffled)
+    await Promise.resolve()
+
+    const divsAfter = Array.from(root.querySelector('div')!.querySelectorAll(':scope > div'))
+    expect(divsAfter).toHaveLength(N)
+    // Every element should be the same DOM node, just reordered
+    for (let i = 0; i < N; i++) {
+      expect(divsAfter[i]).toBe(elemByKey.get(shuffled[i]))
+    }
+  })
+
   it('swap deferent type of child component', async () => {
     const Even = () => <p>Even</p>
     const Odd = () => <div>Odd</div>
