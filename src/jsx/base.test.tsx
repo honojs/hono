@@ -36,7 +36,7 @@ describe('cloneElement', () => {
   })
 
   it('should preserve self-closing empty tag when cloned', () => {
-    const element = <img src="foo.png" />
+    const element = <img src='foo.png' />
     const clonedElement = cloneElement(element, { alt: 'bar' })
     expect(element.toString()).toBe('<img src="foo.png"/>')
     expect(clonedElement.toString()).toBe('<img src="foo.png" alt="bar"/>')
