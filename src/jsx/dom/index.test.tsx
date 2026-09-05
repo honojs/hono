@@ -1707,6 +1707,296 @@ describe('DOM', () => {
     )
   })
 
+  it('preserves keyed child identity and state when reordering', async () => {
+    let reverse: () => void = () => {}
+    const Row = ({ id }: { id: string }) => {
+      const [count, setCount] = useState(0)
+      return (
+        <button data-id={id} onClick={() => setCount(count + 1)}>
+          {id}:{count}
+        </button>
+      )
+    }
+    const App = () => {
+      const [ids, setIds] = useState(['a', 'b', 'c'])
+      reverse = () => setIds((ids) => [...ids].reverse())
+      return ids.map((id) => <Row key={id} id={id} />)
+    }
+
+    render(<App />, root)
+    const initialRows = Object.fromEntries(
+      [...root.querySelectorAll<HTMLButtonElement>('button')].map((element) => [
+        element.dataset.id,
+        element,
+      ])
+    )
+
+    initialRows.b.click()
+    await Promise.resolve()
+    reverse()
+    await Promise.resolve()
+
+    const reorderedRows = [...root.querySelectorAll<HTMLButtonElement>('button')]
+    expect(reorderedRows.map((element) => element.textContent)).toEqual(['c:0', 'b:1', 'a:0'])
+    expect(reorderedRows[0]).toBe(initialRows.c)
+    expect(reorderedRows[1]).toBe(initialRows.b)
+    expect(reorderedRows[2]).toBe(initialRows.a)
+  })
+
+  it('reuses duplicate keyed children in their previous order', async () => {
+    let rotate: () => void = () => {}
+    const Row = ({ label }: { label: string }) => {
+      const [initialLabel] = useState(label)
+      return <div>{`${label}:${initialLabel}`}</div>
+    }
+    const App = () => {
+      const [labels, setLabels] = useState(['other', 'first', 'second'])
+      rotate = () => setLabels(['first', 'second', 'other'])
+      return labels.map((label) => (
+        <Row key={label === 'other' ? 'other' : 'duplicate'} label={label} />
+      ))
+    }
+
+    render(<App />, root)
+    const initialRows = [...root.querySelectorAll('div')]
+    rotate()
+    await Promise.resolve()
+
+    const reorderedRows = [...root.querySelectorAll('div')]
+    expect(reorderedRows.map((element) => element.textContent)).toEqual([
+      'first:first',
+      'second:second',
+      'other:other',
+    ])
+    expect(reorderedRows[0]).toBe(initialRows[1])
+    expect(reorderedRows[1]).toBe(initialRows[2])
+    expect(reorderedRows[2]).toBe(initialRows[0])
+  })
+
+  it.each([
+    {
+      consumedBy: 'an earlier keyed child',
+      before: [2, 1, 5, 1],
+      after: [9, 2, 1, 1],
+      matches: [-1, 0, 1, 3],
+      statefulIndex: 3,
+      removedIndices: [2],
+    },
+    {
+      consumedBy: 'an earlier unkeyed child',
+      before: ['other', 1, 1, 1, 3],
+      after: [1, undefined, 1, 1],
+      matches: [1, 2, 3, -1],
+      statefulIndex: 2,
+      removedIndices: [0, 4],
+    },
+  ])(
+    'does not reuse children already consumed by $consumedBy',
+    async ({ before, after, matches, statefulIndex, removedIndices }) => {
+      let reorder: () => void = () => {}
+      const Other = () => <button>Other</button>
+      const Row = () => {
+        const [count, setCount] = useState(0)
+        return <button onClick={() => setCount(count + 1)}>{count}</button>
+      }
+      const App = () => {
+        const [keys, setKeys] = useState<Array<number | string | undefined>>(before)
+        reorder = () => setKeys(after)
+        return keys.map((key) => (key === 'other' ? <Other /> : <Row key={key} />))
+      }
+
+      render(<App />, root)
+      const initialRows = [...root.querySelectorAll('button')]
+      initialRows[statefulIndex].click()
+      await Promise.resolve()
+      reorder()
+      await Promise.resolve()
+
+      const reorderedRows = [...root.querySelectorAll('button')]
+      expect(reorderedRows).toHaveLength(matches.length)
+      matches.forEach((oldIndex, newIndex) => {
+        if (oldIndex === -1) {
+          expect(initialRows.includes(reorderedRows[newIndex])).toBe(false)
+        } else {
+          expect(reorderedRows[newIndex]).toBe(initialRows[oldIndex])
+        }
+        expect(reorderedRows[newIndex].textContent).toBe(oldIndex === statefulIndex ? '1' : '0')
+      })
+      removedIndices.forEach((index) => {
+        expect(initialRows[index].isConnected).toBe(false)
+      })
+    }
+  )
+
+  it('preserves existing keyed children when prepending', async () => {
+    let prepend: () => void = () => {}
+    const App = () => {
+      const [ids, setIds] = useState(['a', 'b'])
+      prepend = () => setIds(['x', 'a', 'b'])
+      return ids.map((id) => <div key={id}>{id}</div>)
+    }
+
+    render(<App />, root)
+    const initialRows = [...root.querySelectorAll('div')]
+    prepend()
+    await Promise.resolve()
+
+    const prependedRows = [...root.querySelectorAll('div')]
+    expect(prependedRows.map((element) => element.textContent)).toEqual(['x', 'a', 'b'])
+    expect(prependedRows[1]).toBe(initialRows[0])
+    expect(prependedRows[2]).toBe(initialRows[1])
+  })
+
+  it('unmounts a keyed child removed from the middle', async () => {
+    let removeMiddle: () => void = () => {}
+    const cleanup = vi.fn()
+    const ref = vi.fn().mockReturnValue(cleanup)
+    const App = () => {
+      const [ids, setIds] = useState(['a', 'b', 'c'])
+      removeMiddle = () => setIds(['a', 'c'])
+      return ids.map((id) => (
+        <div key={id} ref={id === 'b' ? ref : undefined}>
+          {id}
+        </div>
+      ))
+    }
+
+    render(<App />, root)
+    const initialRows = [...root.querySelectorAll('div')]
+    removeMiddle()
+    await Promise.resolve()
+
+    const remainingRows = [...root.querySelectorAll('div')]
+    expect(remainingRows.map((element) => element.textContent)).toEqual(['a', 'c'])
+    expect(remainingRows[0]).toBe(initialRows[0])
+    expect(remainingRows[1]).toBe(initialRows[2])
+    expect(initialRows[1].isConnected).toBe(false)
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  it('cleans up removed keyed children in their previous order', async () => {
+    let remove: () => void = () => {}
+    const cleanedUp: string[] = []
+    const Row = ({ id }: { id: string }) => {
+      useLayoutEffect(
+        () => () => {
+          cleanedUp.push(id)
+        },
+        []
+      )
+      return <div>{id}</div>
+    }
+    const App = () => {
+      const [ids, setIds] = useState(['a', 'b', 'c', 'd'])
+      remove = () => setIds(['b'])
+      return ids.map((id) => <Row key={id} id={id} />)
+    }
+
+    render(<App />, root)
+    const initialRows = [...root.children]
+    remove()
+    await Promise.resolve()
+
+    expect(root.children).toHaveLength(1)
+    expect(root.firstElementChild).toBe(initialRows[1])
+    expect(cleanedUp).toEqual(['a', 'c', 'd'])
+    expect(initialRows.filter((row) => row.isConnected)).toHaveLength(1)
+  })
+
+  it('allows an unkeyed child to reuse a keyed child with the same tag', async () => {
+    let removeKeyedSiblings: () => void = () => {}
+    const Row = ({ label }: { label: string }) => {
+      const [initialLabel] = useState(label)
+      return <div>{`${label}:${initialLabel}`}</div>
+    }
+    const App = () => {
+      const [showSingle, setShowSingle] = useState(false)
+      removeKeyedSiblings = () => setShowSingle(true)
+      return showSingle ? (
+        <Row label='replacement' />
+      ) : (
+        [<Row key='keyed' label='keyed' />, <Row label='unkeyed' />]
+      )
+    }
+
+    render(<App />, root)
+    const initialRows = [...root.querySelectorAll('div')]
+    removeKeyedSiblings()
+    await Promise.resolve()
+
+    const replacement = root.querySelector('div') as HTMLDivElement
+    expect(replacement.textContent).toBe('replacement:keyed')
+    expect(replacement).toBe(initialRows[0])
+    expect(initialRows[1].isConnected).toBe(false)
+  })
+
+  it('preserves unkeyed elements and text when removing a leading sibling', async () => {
+    let hideHeading: () => void = () => {}
+    const App = () => {
+      const [showHeading, setShowHeading] = useState(true)
+      hideHeading = () => setShowHeading(false)
+      return [
+        showHeading && <h2>Heading</h2>,
+        <p>First paragraph</p>,
+        'First text',
+        <span>First span</span>,
+        <p>Second paragraph</p>,
+        'Second text',
+        <span>Second span</span>,
+      ]
+    }
+
+    render(<App />, root)
+    const initialNodes = [...root.childNodes]
+    hideHeading()
+    await Promise.resolve()
+
+    expect(root.childNodes).toHaveLength(initialNodes.length - 1)
+    initialNodes.slice(1).forEach((node, i) => {
+      expect(root.childNodes[i]).toBe(node)
+    })
+    expect(initialNodes[0].isConnected).toBe(false)
+  })
+
+  it('resumes unkeyed matching after a keyed sibling consumes the next candidate', async () => {
+    let reorder: () => void = () => {}
+    const App = () => {
+      const [updated, setUpdated] = useState(false)
+      reorder = () => setUpdated(true)
+      return updated
+        ? [<p>A</p>, <p key='b'>B</p>, <p>C</p>, <p>D</p>, <span>X</span>, <span>Y</span>]
+        : [<h2>Heading</h2>, <p key='a'>A</p>, <p key='b'>B</p>, <p>C</p>]
+    }
+
+    render(<App />, root)
+    const initialNodes = [...root.children]
+    reorder()
+    await Promise.resolve()
+
+    expect(root.innerHTML).toBe('<p>A</p><p>B</p><p>C</p><p>D</p><span>X</span><span>Y</span>')
+    initialNodes.slice(1).forEach((node, i) => {
+      expect(root.children[i]).toBe(node)
+    })
+    expect(initialNodes[0].isConnected).toBe(false)
+  })
+
+  it('does not reuse children with NaN keys', async () => {
+    let rerender: () => void = () => {}
+    const App = () => {
+      const [count, setCount] = useState(0)
+      rerender = () => setCount((count) => count + 1)
+      return <div key={Number.NaN}>{count}</div>
+    }
+
+    render(<App />, root)
+    const initialChild = root.firstElementChild
+    rerender()
+    await Promise.resolve()
+
+    expect(root.textContent).toBe('1')
+    expect(root.firstElementChild).not.toBe(initialChild)
+  })
+
   it('swap deferent type of child component', async () => {
     const Even = () => <p>Even</p>
     const Odd = () => <div>Odd</div>
