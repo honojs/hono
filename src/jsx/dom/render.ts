@@ -492,6 +492,19 @@ const isSameContext = (
     oldContexts.every((ctx, i) => ctx[1] === newContexts[i][1])
   )
 
+const indexChildrenByKey = (children: Node[]): Map<unknown, Node> | undefined => {
+  const index = new Map<unknown, Node>()
+  // Insert in the original order so map iteration preserves removal order.
+  for (const child of children) {
+    const key = child.key
+    if (index.has(key)) {
+      return
+    }
+    index.set(key, child)
+  }
+  return index
+}
+
 const fallbackUpdateFnArrayMap: WeakMap<
   NodeObject,
   Array<() => Promise<NodeObject | undefined>>
@@ -512,13 +525,15 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
       foundErrorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
       context[5]!.push([context, foundErrorHandler, node])
     }
-    const oldVChildren: Node[] | undefined = buildWithPreviousChildren
+    let oldVChildren: Node[] | undefined = buildWithPreviousChildren
       ? [...(node.pC as Node[])]
       : node.vC
         ? [...node.vC]
         : undefined
     const vChildren: Node[] = []
     let prevNode: Node | undefined
+    let scanBudget = (oldVChildren?.length || 0) * 2
+    let oldChildrenByKey: Map<unknown, Node> | undefined
     for (let i = 0; i < children.length; i++) {
       if (Array.isArray(children[i])) {
         children.splice(i, 1, ...((children[i] as unknown[]).flat(Infinity) as Child[]))
@@ -541,7 +556,24 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
         }
 
         let oldChild: NodeObject | undefined
-        if (oldVChildren && oldVChildren.length) {
+        if (oldChildrenByKey && child.key === undefined && !isNodeString(child)) {
+          oldVChildren = [...oldChildrenByKey.values()]
+          oldChildrenByKey = undefined
+        }
+        if (oldChildrenByKey) {
+          const key = child.key
+          const candidate = oldChildrenByKey.get(key)
+          // The strict check also preserves the existing behavior for NaN keys.
+          if (
+            candidate &&
+            (isNodeString(child)
+              ? isNodeString(candidate)
+              : candidate.tag === child.tag && candidate.key === key)
+          ) {
+            oldChild = candidate as NodeObject
+            oldChildrenByKey.delete(key)
+          }
+        } else if (oldVChildren && oldVChildren.length) {
           const i = oldVChildren.findIndex(
             isNodeString(child)
               ? (c) => isNodeString(c)
@@ -550,9 +582,15 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
                 : (c) => c.tag === (child as Node).tag
           )
 
+          scanBudget -= i === -1 ? oldVChildren.length : i
           if (i !== -1) {
             oldChild = oldVChildren[i] as NodeObject
             oldVChildren.splice(i, 1)
+          }
+          // Try indexing once, after searches exceed a linear budget.
+          if (scanBudget < 0) {
+            scanBudget = Infinity
+            oldChildrenByKey = indexChildrenByKey(oldVChildren)
           }
         }
 
@@ -604,6 +642,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
         prevNode = child
       }
     }
+    oldVChildren = oldChildrenByKey ? [...oldChildrenByKey.values()] : oldVChildren
     node.vR = buildWithPreviousChildren ? [...node.vC, ...(oldVChildren || [])] : oldVChildren || []
     node.vC = vChildren
     if (buildWithPreviousChildren) {
