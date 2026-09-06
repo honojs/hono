@@ -487,6 +487,23 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should match a wildcard route when path contains encoded line terminators', async () => {
+    const app = new Hono()
+    app.get('/api/*', (c) => c.text('api'))
+    app.get('/*', (c) => c.text('wildcard'))
+
+    const paths = ['/a%0Ab', '/a%0Db', '/a%E2%80%A8b', '/a%E2%80%A9b']
+    for (const p of paths) {
+      const res = await app.request(`http://localhost${p}`)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('wildcard')
+    }
+
+    const resApi = await app.request('http://localhost/api/a%0Ab')
+    expect(resApi.status).toBe(200)
+    expect(await resApi.text()).toBe('api')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')

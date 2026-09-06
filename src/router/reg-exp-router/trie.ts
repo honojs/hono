@@ -79,6 +79,6 @@ export class Trie {
       return ''
     })
 
-    return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap]
+    return [new RegExp(`^${regexp}`, 's'), indexReplacementMap, paramReplacementMap]
   }
 }

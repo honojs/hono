@@ -430,6 +430,12 @@ export const runTest = ({
         const res = match('GET', '/pathfoo')
         expect(res.length).toBe(0)
       })
+
+      it('GET /path/a\\nb with line terminator', async () => {
+        const res = match('GET', '/path/a\nb')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('path')
+      })
     })
 
     describe('Trailing wildcard after a label', () => {

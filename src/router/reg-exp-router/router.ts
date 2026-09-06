@@ -31,7 +31,8 @@ function buildWildcardRegExp(path: string): RegExp {
             : match === '*'
               ? ONLY_WILDCARD_REG_EXP_STR
               : `/:${LABEL_REG_EXP_STR}`
-    )}$`
+    )}$`,
+    's'
   ))
 }
 
