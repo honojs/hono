@@ -222,6 +222,22 @@ describe('accepts', () => {
     const result = accepts(c, options)
     expect(result).toBe('application/octet-stream')
   })
+
+  test('should not match a subtype wildcard the client rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/*;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
 })
 
 describe('Usage', () => {
