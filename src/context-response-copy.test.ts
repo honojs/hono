@@ -26,6 +26,24 @@ describe('Context response header copy capability', () => {
     expect(replacement.headers.get('x-after')).toBe('yes')
   })
 
+  it('propagates hook errors without reading the body or replacing the response', () => {
+    const error = new Error('copy failed')
+    class AdapterResponse extends NativeResponse {
+      static [copyHeaders] = () => {
+        throw error
+      }
+    }
+    vi.stubGlobal('Response', AdapterResponse)
+    const original = new NativeResponse('value')
+    const body = vi.spyOn(original, 'body', 'get')
+    const c = new Context(new Request('http://localhost/'))
+    c.res = original
+    expect(() => c.header('x-after', 'yes')).toThrow(error)
+    expect(body).not.toHaveBeenCalled()
+    expect(c.res).toBe(original)
+    expect(original.headers.has('x-after')).toBe(false)
+  })
+
   it('keeps the standard fallback when an adapter declines', async () => {
     class AdapterResponse extends NativeResponse {
       static [copyHeaders] = vi.fn(() => undefined)
