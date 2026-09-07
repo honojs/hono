@@ -221,7 +221,9 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
   while (i < acceptHeader.length) {
     ;[i, accept] = getNextAcceptValue(acceptHeader, i)
     if (accept) {
-      accept.q = parseQuality(accept.params.q)
+      // The "q" parameter is case-insensitive (RFC 9110 §12.4.2). `params` keeps
+      // the name as it was sent, so both spellings are checked here.
+      accept.q = parseQuality(accept.params.q ?? accept.params.Q)
       values.push(accept)
       if (lastAccept && lastAccept.q < accept.q) {
         // find higher quality accept value, so we need to sort

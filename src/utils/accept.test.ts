@@ -43,6 +43,19 @@ describe('parseAccept Comprehensive Tests', () => {
       expect(result[0].params.q).toBe('invalid')
       expect(result[0].q).toBe(1) // Normalized q value
     })
+
+    test('treats the q parameter name as case-insensitive', () => {
+      // RFC 9110 §12.4.2: the "q" parameter is case-insensitive.
+      expect(parseAccept('text/html;Q=0.5')).toEqual([
+        { type: 'text/html', params: { Q: '0.5' }, q: 0.5 },
+      ])
+      expect(parseAccept('text/html;Q=0')[0].q).toBe(0)
+    })
+
+    test('sorts by quality when the q parameter is uppercase', () => {
+      const result = parseAccept('text/html;Q=0.5,application/json;q=0.9')
+      expect(result.map((x) => x.type)).toEqual(['application/json', 'text/html'])
+    })
   })
 
   describe('Parameter Handling', () => {
