@@ -101,6 +101,11 @@
       "import": "./dist/helper/route/index.js",
       "require": "./dist/cjs/helper/route/index.js"
     },
+    "./mount": {
+      "types": "./dist/types/middleware/mount/index.d.ts",
+      "import": "./dist/middleware/mount/index.js",
+      "require": "./dist/cjs/middleware/mount/index.js"
+    },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
       "import": "./dist/helper/cookie/index.js",
@@ -454,6 +459,9 @@
       ],
       "route": [
         "./dist/types/helper/route"
+      ],
+      "mount": [
+        "./dist/types/middleware/mount"
       ],
       "cookie": [
         "./dist/types/helper/cookie"
