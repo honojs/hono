@@ -86,6 +86,6 @@ export const useActionState = <T>(
     setState(await fn(state, data))
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(actionState as any)[PERMALINK] = permalink
+  ;(actionState as any)[PERMALINK] = () => permalink
   return [state, actionState]
 }

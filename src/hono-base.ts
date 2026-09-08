@@ -26,7 +26,7 @@ import type {
   Schema,
 } from './types'
 import { COMPOSED_HANDLER } from './utils/constants'
-import { getPath, getPathNoStrict, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath, getRoutePath } from './utils/url'
 
 const notFoundHandler: NotFoundHandler = (c) => {
   return c.text('404 Not Found', 404)
