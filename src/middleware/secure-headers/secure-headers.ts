@@ -316,7 +316,7 @@ function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): strin
 
       return ''
     })
-    .filter(Boolean)
+    .filter((directive) => !!directive)
     .join(', ')
 }
 
