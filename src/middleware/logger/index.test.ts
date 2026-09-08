@@ -39,6 +39,19 @@ describe('Logger by Middleware', () => {
       }
       return res
     })
+
+    // Mock TTY as true for these tests
+    vi.stubGlobal('process', {
+      ...globalThis.process,
+      stdout: {
+        ...globalThis.process?.stdout,
+        isTTY: true,
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('Log status 200 with empty body', async () => {
@@ -127,6 +140,9 @@ describe('Logger by Middleware', () => {
 })
 
 describe('Logger by Middleware in NO_COLOR', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
   let app: Hono
   let log: string
 
