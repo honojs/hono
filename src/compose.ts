@@ -1,5 +1,7 @@
 import type { Context } from './context'
-import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
+import type { Env, ErrorHandler, HandlerWrapper, Next, NotFoundHandler, RouterRoute } from './types'
+
+export const defaultHandlerWrapper: HandlerWrapper = (c, next, route) => route.handler(c, next)
 
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
@@ -15,7 +17,8 @@ import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
 export const compose = <E extends Env = Env>(
   middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
-  onNotFound?: NotFoundHandler<E>
+  onNotFound?: NotFoundHandler<E>,
+  wrapper: HandlerWrapper = defaultHandlerWrapper
 ): ((context: Context, next?: Next) => Promise<Context>) => {
   return (context, next) => {
     let index = -1
@@ -47,8 +50,12 @@ export const compose = <E extends Env = Env>(
       }
 
       if (handler) {
+        // `route` is undefined for non-router executions, e.g., `hono/combine`
+        const route = (middleware[i]?.[0] as [unknown, RouterRoute?] | undefined)?.[1]
         try {
-          res = await handler(context, () => dispatch(i + 1))
+          res = route
+            ? await wrapper(context, (() => dispatch(i + 1)) as unknown as Next, route)
+            : await handler(context, () => dispatch(i + 1))
         } catch (err) {
           if (err instanceof Error && onError) {
             context.error = err
