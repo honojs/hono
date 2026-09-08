@@ -33,18 +33,29 @@ const defaultTimeoutException = new HTTPException(504, {
  *   await someLongRunningFunction()
  *   return c.text('Completed within time limit')
  * })
+ *
+ * app.use('/user', timeout(5000)) // Set a generic timeout for all user routes
+ *
+ * app.use('/user/export', timeout(30000), async (c, next) => {
+ *   await someLongRunningFunction()
+ *   return c.text('Completed within 30 seconds')
+ * })
  * ```
  */
 export const timeout = (
   duration: number,
   exception: HTTPExceptionFunction | HTTPException = defaultTimeoutException
-): MiddlewareHandler => {
+): MiddlewareHandler<{ Variables: { timeoutTimer: number | undefined } }> => {
   return async function timeout(context, next) {
-    let timer: number | undefined
+    let timer = context.get('timeoutTimer')
+    if (timer !== undefined) {
+      clearTimeout(timer)
+    }
     const timeoutPromise = new Promise<void>((_, reject) => {
       timer = setTimeout(() => {
         reject(typeof exception === 'function' ? exception(context) : exception)
       }, duration) as unknown as number
+      context.set('timeoutTimer', timer)
     })
 
     try {
@@ -52,6 +63,7 @@ export const timeout = (
     } finally {
       if (timer !== undefined) {
         clearTimeout(timer)
+        context.set('timeoutTimer', undefined)
       }
     }
   }
