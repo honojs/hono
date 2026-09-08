@@ -24,6 +24,8 @@ export type {
   ErrorHandler,
   Handler,
   MiddlewareHandler,
+  MethodNotAllowedHandler,
+  MethodNotAllowedResponse,
   Next,
   NotFoundResponse,
   NotFoundHandler,
