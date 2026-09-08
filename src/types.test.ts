@@ -763,6 +763,43 @@ describe('AddParam', () => {
   })
 })
 
+describe('ValidPath', () => {
+  const app = new Hono()
+  const subApp = new Hono().get('/', (c) => c.text('sub'))
+  const handler: Handler = (c) => c.text('ok')
+  const middleware: MiddlewareHandler = async (_c, next) => {
+    await next()
+  }
+  const applicationHandler = () => new Response('ok')
+
+  test('Should reject route paths containing double wildcards', () => {
+    // @ts-expect-error `**` is not supported in route paths
+    app.get('/auth/**', handler)
+    // @ts-expect-error `**` is not supported in route paths
+    app.on('GET', '/auth/**', handler)
+    // @ts-expect-error `**` is not supported in route paths
+    app.on('GET', ['/ok', '/auth/**'], handler)
+    // @ts-expect-error `**` is not supported in route paths
+    app.use('/auth/**', middleware)
+    // @ts-expect-error `**` is not supported in route paths
+    app.basePath('/auth/**')
+    // @ts-expect-error `**` is not supported in route paths
+    app.route('/auth/**', subApp)
+    // @ts-expect-error `**` is not supported in route paths
+    app.mount('/auth/**', applicationHandler)
+  })
+
+  test('Should allow supported wildcard and parameter route paths', () => {
+    app.get('/*', handler)
+    app.get('/auth/*', handler)
+    app.use('*', middleware)
+    app.get('/:id{[0-9]+}', handler)
+
+    const path = '/auth/**' as string
+    app.get(path, handler)
+  })
+})
+
 describe('ToSchema', () => {
   it('Should convert parameters to schema correctly', () => {
     type Actual = ToSchema<
