@@ -277,6 +277,39 @@ describe('compose with Context - 500 error', () => {
     expect(context.finalized).toBe(true)
   })
 
+  it('Should allow middleware to redirect after error', async () => {
+    const redirectMid = async (c: Context, next: Next) => {
+      await next()
+      if (c.error) {
+        return c.redirect('/foo')
+      }
+    }
+
+    const handler = (c: Context) => {
+      const name = c.req.query('name')
+      if (name === 'error') {
+        throw new Error()
+      }
+      return c.text(`Hello ${name}!`)
+    }
+
+    const testMiddleware: MiddlewareTuple[] = []
+    testMiddleware.push(buildMiddlewareTuple(redirectMid))
+    testMiddleware.push(buildMiddlewareTuple(handler))
+
+    const onError = (_error: Error, c: Context) => c.text('Internal Server Error', 500)
+    const onNotFound = (c: Context) => c.text('NotFound', 404)
+
+    const req = new Request('http://localhost/hello?name=error')
+    const c: Context = new Context(req)
+    const composed = compose(testMiddleware, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(302)
+    expect(context.res.headers.get('Location')).toBe('/foo')
+    expect(context.finalized).toBe(true)
+  })
+
   it('Run all the middlewares', async () => {
     const stack: number[] = []
     const middlewares = [
