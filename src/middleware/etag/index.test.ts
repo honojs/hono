@@ -499,3 +499,31 @@ describe('Etag Middleware', () => {
     expect(res2.headers.get('X-Custom-4')).toBeNull()
   })
 })
+
+describe('ETag values containing commas', () => {
+  it.each([
+    ['"revision,1"', '"revision,1"'],
+    ['"revision,1"', 'W/"revision,1"'],
+    ['W/"revision,1"', '"other", "revision,1" , "last"'],
+    ['"revision,1"', '"other,2", W/"revision,1"'],
+  ])('matches %s against %s', async (tag, ifNoneMatch) => {
+    const app = new Hono()
+    app.use(etag())
+    app.get('/', (c) => c.text('cached content', 200, { ETag: tag }))
+    const res = await app.request('/', { headers: { 'If-None-Match': ifNoneMatch } })
+    expect(res.status).toBe(304)
+    expect(await res.text()).toBe('')
+    expect(res.headers.get('ETag')).toBe(tag)
+  })
+
+  it('does not match a portion of a quoted tag', async () => {
+    const app = new Hono()
+    app.use(etag())
+    app.get('/', (c) => c.text('cached content', 200, { ETag: '"revision"' }))
+    const res = await app.request('/', {
+      headers: { 'If-None-Match': '"revision,1", "other"' },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('cached content')
+  })
+})
