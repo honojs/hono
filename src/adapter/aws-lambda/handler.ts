@@ -429,7 +429,7 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
     this.getCookies(event, headers)
     if (event.headers) {
       for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
+        if (v !== undefined) {
           headers.set(k, v)
         }
       }
@@ -483,7 +483,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
     }
     if (event.headers) {
       for (const [k, v] of Object.entries(event.headers)) {
-        if (v && !headers.has(k)) {
+        if (v !== undefined && !headers.has(k)) {
           headers.set(k, sanitizeHeaderValue(v))
         }
       }
@@ -515,7 +515,7 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
       }
     } else {
       for (const [key, value] of Object.entries(event.headers ?? {})) {
-        if (value) {
+        if (value !== undefined) {
           headers.set(key, sanitizeHeaderValue(value))
         }
       }

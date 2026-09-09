@@ -269,6 +269,30 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  it('Should preserve empty header values', () => {
+    const v1Event: LambdaEvent = {
+      ...baseV1Event,
+      headers: { 'x-empty': '' },
+      multiValueHeaders: undefined,
+    }
+    const v2Event: LambdaEvent = {
+      ...baseV2Event,
+      headers: { 'x-empty': '' },
+    }
+    const albEvent = {
+      httpMethod: 'GET',
+      path: '/',
+      headers: { 'x-empty': '' },
+      body: null,
+      isBase64Encoded: false,
+      requestContext: { elb: { targetGroupArn: '' } },
+    } as LambdaEvent
+
+    for (const event of [v1Event, v2Event, albEvent]) {
+      expect(getProcessor(event).createRequest(event).headers.get('x-empty')).toBe('')
+    }
+  })
+
   it('Should preserve every repeated header value for version 1.0 API Gateway event', () => {
     const event: LambdaEvent = {
       ...baseV1Event,
