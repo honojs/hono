@@ -41,6 +41,17 @@ describe('cloneElement', () => {
     expect(element.toString()).toBe('<img src="foo.png"/>')
     expect(clonedElement.toString()).toBe('<img src="foo.png" alt="bar"/>')
   })
+
+  it('should clone an element with array children', () => {
+    const element = (
+      <div>
+        <span>1</span>
+        <span>2</span>
+      </div>
+    )
+    const clonedElement = cloneElement(element, { className: 'cloned' })
+    expect(clonedElement.toString()).toBe('<div class="cloned"><span>1</span><span>2</span></div>')
+  })
 })
 
 describe('createElement', () => {
