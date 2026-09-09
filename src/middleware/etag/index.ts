@@ -30,10 +30,23 @@ export const RETAINED_304_HEADERS = [
 const stripWeak = (tag: string) => tag.replace(/^W\//, '')
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
-  return (
-    ifNoneMatch != null &&
-    ifNoneMatch.split(',').some((t) => stripWeak(t.trim()) === stripWeak(etag))
-  )
+  if (ifNoneMatch === null) {
+    return false
+  }
+  const expected = stripWeak(etag)
+  let start = 0
+  let quoted = false
+  for (let i = 0; i <= ifNoneMatch.length; i++) {
+    if (ifNoneMatch[i] === '"') {
+      quoted = !quoted
+    } else if (i === ifNoneMatch.length || (ifNoneMatch[i] === ',' && !quoted)) {
+      if (stripWeak(ifNoneMatch.slice(start, i).trim()) === expected) {
+        return true
+      }
+      start = i + 1
+    }
+  }
+  return false
 }
 
 function initializeGenerator(
