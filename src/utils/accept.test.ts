@@ -28,7 +28,26 @@ describe('parseAccept Comprehensive Tests', () => {
     test('handles extreme q values', () => {
       const header = 'a;q=999999,b;q=-99999,c;q=Infinity,d;q=-Infinity,e;q=NaN'
       const result = parseAccept(header)
-      expect(result.map((x) => x.q)).toEqual([1, 1, 1, 0, 0])
+      // Each side clamps to the bound it is past, so a negative q sorts below a real one
+      // rather than above it -- `-99999` lands where `-Infinity` already did. Asserted as
+      // pairs because the clamp makes the sequence non-monotonic, which sorts the result.
+      expect(result.map((x) => [x.type, x.q])).toEqual([
+        ['a', 1],
+        ['c', 1],
+        ['b', 0],
+        ['d', 0],
+        ['e', 0],
+      ])
+    })
+
+    test('a negative q does not outrank a valid one', () => {
+      const result = parseAccept('application/json;q=0.9,text/html;q=-1')
+      expect(result.map((x) => [x.type, x.q])).toEqual([
+        ['application/json', 0.9],
+        ['text/html', 0],
+      ])
+      // The sort is by descending q, so the refused type must not come first.
+      expect(result[0].type).toBe('application/json')
     })
 
     test('handles malformed q values', () => {
@@ -138,7 +157,7 @@ describe('parseAccept Comprehensive Tests', () => {
     })
 
     test('handles escaped quote and semicolon inside quoted parameter', () => {
-      const header = 'text/plain;meta="a\\\";b";q=0.5'
+      const header = 'text/plain;meta="a\\";b";q=0.5'
       const result = parseAccept(header)
       expect(result).toEqual([
         {
