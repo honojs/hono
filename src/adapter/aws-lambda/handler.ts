@@ -1,3 +1,4 @@
+import { pipeline } from 'node:stream/promises'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
@@ -123,17 +124,20 @@ const getRequestContext = (
   return event.requestContext
 }
 
-const streamToNodeStream = async (
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  writer: NodeJS.WritableStream
-): Promise<void> => {
+async function* readWebStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>
+): AsyncGenerator<Uint8Array> {
   let readResult = await reader.read()
   while (!readResult.done) {
-    writer.write(readResult.value)
+    yield readResult.value
     readResult = await reader.read()
   }
-  writer.end()
 }
+
+const streamToNodeStream = (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writer: NodeJS.WritableStream
+): Promise<void> => pipeline(readWebStream(reader), writer)
 
 export const streamHandle = <
   E extends Env = Env,
