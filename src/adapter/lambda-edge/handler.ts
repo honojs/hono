@@ -125,7 +125,8 @@ export const handle = (
     const [context, callback] = args
     let callbackError: Error | null = null
     let callbackResult: CloudFrontResult | CloudFrontRequest | undefined
-    const res = await app.fetch(createRequest(event), {
+    const cf = getCloudFrontRecord(event)
+    const res = await app.fetch(createRequest(cf), {
       event,
       context,
       callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
@@ -135,9 +136,9 @@ export const handle = (
         }
         callback?.(err, result)
       },
-      config: event.Records[0].cf.config,
-      request: event.Records[0].cf.request,
-      response: event.Records[0].cf.response,
+      config: cf.config,
+      request: cf.request,
+      response: cf.response,
     })
     if (callbackError) {
       throw callbackError
@@ -161,21 +162,38 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
   }
 }
 
-const createRequest = (event: CloudFrontEdgeEvent): Request => {
-  const queryString = event.Records[0].cf.request.querystring
-  const host =
-    event.Records[0].cf.request.headers?.host?.[0]?.value ||
-    event.Records[0].cf.config.distributionDomainName
-  const urlPath = `https://${host}${event.Records[0].cf.request.uri}`
+/**
+ * Reads the CloudFront record out of a Lambda@Edge event.
+ *
+ * The event is supplied by the runtime, so a malformed one means the function
+ * was invoked with something other than a Lambda@Edge event. Fail with a
+ * message naming the adapter and the missing field, rather than letting an
+ * unattributable property access error escape.
+ */
+const getCloudFrontRecord = (event: CloudFrontEdgeEvent): CloudFrontEvent['cf'] => {
+  const cf = event?.Records?.[0]?.cf
+  if (!cf?.request) {
+    throw new TypeError(
+      'Unable to map the CloudFront event to a Request: expected `Records[0].cf.request` in the Lambda@Edge event.'
+    )
+  }
+  return cf
+}
+
+const createRequest = (cf: CloudFrontEvent['cf']): Request => {
+  const request = cf.request
+  const queryString = request.querystring
+  const host = request.headers?.host?.[0]?.value || cf.config?.distributionDomainName
+  const urlPath = `https://${host}${request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
-  Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
+  Object.entries(request.headers ?? {}).forEach(([k, v]) => {
     v.forEach((header) => headers.append(k, header.value))
   })
 
-  const requestBody = event.Records[0].cf.request.body
-  const method = event.Records[0].cf.request.method
+  const requestBody = request.body
+  const method = request.method
   const rawBody = createBody(method, requestBody)
 
   let body: string | Uint8Array<ArrayBuffer> | undefined = rawBody

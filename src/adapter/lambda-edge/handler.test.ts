@@ -365,3 +365,73 @@ describe('handle', () => {
     expect(res).not.toHaveProperty('bodyEncoding')
   })
 })
+
+describe('handle with a malformed event', () => {
+  const invalidEventMessage =
+    'Unable to map the CloudFront event to a Request: expected `Records[0].cf.request` in the Lambda@Edge event.'
+
+  it('Should reject with a descriptive error when Records holds no CloudFront record', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    // The payload the AWS Lambda console prefills is an array of dummy ids.
+    const event = { Records: ['foo', 'bar'] } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(TypeError)
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should reject with a descriptive error when Records is empty or absent', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    for (const event of [{ Records: [] }, {}] as unknown as CloudFrontEdgeEvent[]) {
+      await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+    }
+  })
+
+  it('Should reject with a descriptive error when cf carries no request', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    const event = {
+      Records: [{ cf: { config: { distributionDomainName: 'd111111abcdef8.cloudfront.net' } } }],
+    } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should fall back to the distribution domain name when the request has no headers', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text(c.req.url))
+    const handler = handle(app)
+
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-request',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '1.2.3.4',
+              method: 'GET',
+              querystring: '',
+              uri: '/test-path',
+            },
+          },
+        },
+      ],
+    } as unknown as CloudFrontEdgeEvent
+
+    const res = await handler(event)
+
+    expect(res).toMatchObject({
+      status: '200',
+      body: 'https://d111111abcdef8.cloudfront.net/test-path',
+    })
+  })
+})
