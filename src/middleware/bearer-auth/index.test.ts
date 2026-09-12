@@ -439,6 +439,45 @@ describe('Bearer Auth by Middleware', () => {
       handlerExecuted = true
       return c.text('auth')
     })
+
+    app.use(
+      '/auth-custom-invalid-token-message-function-response/*',
+      bearerAuth({
+        token,
+        invalidToken: {
+          message: () => new Response('{"message":"Custom problem"}', {
+            status: 401,
+            headers: {
+              'Content-Type': 'application/problem+json',
+            }
+          }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-function-response/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-function-response-with-www-authenticate/*',
+      bearerAuth({
+        token,
+        invalidToken: {
+          message: () => new Response('{"message":"Custom problem"}', {
+            status: 401,
+            headers: {
+              'Content-Type': 'application/problem+json',
+              'WWW-Authenticate': 'Bearer error="custom_error"',
+            }
+          }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-function-response-with-www-authenticate/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
   })
 
   it('Should authorize', async () => {
@@ -923,6 +962,32 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
+  })
+
+  it('Should not authorize - custom invalid token message as function response', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-function-response')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/problem+json')
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer error="invalid_token"')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"message":"Custom problem"}')
+  })
+
+  it('Should not authorize - custom invalid token message as function response with custom WWW-Authenticate', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-token-message-function-response-with-www-authenticate'
+    )
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/problem+json')
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer error="custom_error"')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"message":"Custom problem"}')
   })
 })
 
