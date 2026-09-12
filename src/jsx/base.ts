@@ -118,10 +118,14 @@ const resolveFunctionComponentResult = (
   suspendedContext?: SuspendedContext
 ): Promise<string> =>
   result.then((resolved) => {
-    if (!Array.isArray(resolved) && !(resolved instanceof JSXNode)) {
+    if (
+      typeof resolved !== 'string' &&
+      !Array.isArray(resolved) &&
+      !(resolved instanceof JSXNode)
+    ) {
       return resolved
     }
-    const children = Array.isArray(resolved) ? resolved : [resolved]
+    const children = Array.isArray(resolved) ? resolved : [resolved as Child]
     const render = () => {
       const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
       childrenToStringToBuffer(children, buffer)
@@ -168,6 +172,33 @@ export type Child =
   | undefined
   | boolean
   | Child[]
+
+export const renderChildren = (children: Child[]): HtmlEscapedString | Promise<HtmlEscapedString> =>
+  runWithRenderContext(() => {
+    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+    childrenToStringToBuffer(children, buffer)
+    return buffer.length === 1
+      ? raw(buffer[0], buffer.callbacks)
+      : stringBufferToString(buffer, buffer.callbacks)
+  })
+
+export const isUntrustedObject = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  !(value instanceof JSXNode) &&
+  !(value instanceof Promise) &&
+  !(value as HtmlEscaped).isEscaped &&
+  typeof (value as { toString?: unknown }).toString === 'function'
+
+export const renderUntrustedObject = (
+  value: unknown
+): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  const stringified = (value as { toString(): unknown }).toString()
+  const escape = (result: unknown) => renderChildren([String(result)])
+  return stringified instanceof Promise ? stringified.then(escape) : escape(stringified)
+}
+
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props

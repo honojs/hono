@@ -9,6 +9,9 @@ import { buildDataStack } from './dom/render'
 import { use } from './hooks'
 import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
 
+const unsafeHtml = '<img src=x onerror=alert(1)>'
+const escapedUnsafeHtml = '&lt;img src=x onerror=alert(1)&gt;'
+
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
   document.querySelectorAll('template, script').forEach((e) => e.remove())
@@ -22,6 +25,33 @@ async function drainStream(stream: unknown): Promise<string> {
     html += textDecoder.decode(chunk)
   }
   return html
+}
+
+async function stringify(node: { toString(): string | Promise<string> }): Promise<string> {
+  return String(
+    await resolveCallback(await node.toString(), HtmlEscapedCallbackPhase.Stringify, false, {})
+  )
+}
+
+async function readInitialSuspenseChunk(fallback: unknown): Promise<string> {
+  let resolve!: () => void
+  const promise = new Promise<void>((done) => (resolve = done))
+  const Async = async () => {
+    await promise
+    return <span>done</span>
+  }
+  const reader = renderToReadableStream(
+    <Suspense fallback={fallback}>
+      <Async />
+    </Suspense>
+  ).getReader()
+
+  const first = await reader.read()
+  resolve()
+  while (!(await reader.read()).done) {
+    // Drain the retry so it cannot outlive the test.
+  }
+  return new TextDecoder().decode(first.value)
 }
 
 describe('Streaming', () => {
@@ -1153,5 +1183,99 @@ d.replaceWith(c.content)
     expect(adminHtml).not.toContain('role:guest')
     expect(guestHtml).toContain('role:guest')
     expect(guestHtml).not.toContain('role:admin')
+  })
+
+  describe('escaping', () => {
+    it('escapes string children with an asynchronous sibling', async () => {
+      const Async = async () => <span>done</span>
+      const node = (
+        <Suspense fallback='loading'>
+          {unsafeHtml}
+          <Async />
+        </Suspense>
+      )
+
+      expect(await stringify(node)).toBe(`${escapedUnsafeHtml}<span>done</span>`)
+      const streamed = await drainStream(renderToReadableStream(node))
+      expect(streamed).toContain(escapedUnsafeHtml)
+      expect(streamed).not.toContain(unsafeHtml)
+    })
+
+    it('escapes nested array strings', async () => {
+      expect(await stringify(<Suspense fallback='loading'>{[[[unsafeHtml]]]}</Suspense>)).toBe(
+        escapedUnsafeHtml
+      )
+    })
+
+    it('escapes a primitive fallback in the initial stream chunk', async () => {
+      const initialChunk = await readInitialSuspenseChunk(unsafeHtml)
+
+      expect(initialChunk).toContain(escapedUnsafeHtml)
+      expect(initialChunk).not.toContain(unsafeHtml)
+    })
+
+    it('escapes untrusted object fallbacks', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const fallback of [object, asyncObject, rawObject]) {
+        const initialChunk = await readInitialSuspenseChunk(fallback)
+        expect(initialChunk).toContain(escapedUnsafeHtml)
+        expect(initialChunk).not.toContain(unsafeHtml)
+      }
+    })
+
+    it('preserves an explicitly trusted fallback', async () => {
+      expect(await readInitialSuspenseChunk(raw('<strong>trusted</strong>'))).toContain(
+        '<strong>trusted</strong>'
+      )
+    })
+
+    it('does not interpret replacement patterns in content', async () => {
+      const content = "literal $& $` $'"
+      const Async = async () => <span>done</span>
+
+      expect(
+        await stringify(
+          <Suspense fallback='loading'>
+            {content}
+            <Async />
+          </Suspense>
+        )
+      ).toBe('literal $&amp; $` $&#39;<span>done</span>')
+    })
+
+    it('escapes untrusted object children', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const child of [object, asyncObject, rawObject]) {
+        const node = <Suspense fallback='loading'>{child as never}</Suspense>
+        expect(await stringify(node)).toBe(escapedUnsafeHtml)
+        const streamed = await drainStream(renderToReadableStream(node))
+        expect(streamed).toContain(escapedUnsafeHtml)
+        expect(streamed).not.toContain(unsafeHtml)
+      }
+    })
+
+    it('preserves explicitly trusted children', async () => {
+      expect(
+        await stringify(<Suspense fallback='loading'>{raw('<strong>trusted</strong>')}</Suspense>)
+      ).toBe('<strong>trusted</strong>')
+    })
+
+    it('keeps benign object stringification visible', async () => {
+      expect(await stringify(<Suspense fallback='loading'>{{} as never}</Suspense>)).toBe(
+        '[object Object]'
+      )
+    })
+
+    it('keeps a direct Promise child unchanged', async () => {
+      expect(
+        await stringify(<Suspense fallback='loading'>{Promise.resolve('resolved')}</Suspense>)
+      ).toBe('[object Promise]')
+    })
   })
 })

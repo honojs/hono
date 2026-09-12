@@ -1,6 +1,6 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
-import { JSXFragmentNode } from './base'
+import { isUntrustedObject, JSXFragmentNode, renderChildren, renderUntrustedObject } from './base'
 import { DOM_RENDERER } from './constants'
 import { createContextProviderFunction } from './dom/context'
 import type { FC, PropsWithChildren } from './'
@@ -217,26 +217,31 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
     // below may run later and must operate on the same array as the push.
     const contextValues = getContextValuesIn(getCurrentStore(), context)
     contextValues.push(props.value)
-    let string
+    let rendered
     try {
-      string = props.children
-        ? (Array.isArray(props.children)
-            ? new JSXFragmentNode('', {}, props.children)
+      rendered =
+        typeof props.children === 'string'
+          ? renderChildren([props.children])
+          : isUntrustedObject(props.children)
+            ? renderUntrustedObject(props.children)
             : props.children
-          ).toString()
-        : ''
+              ? (Array.isArray(props.children)
+                  ? new JSXFragmentNode('', {}, props.children)
+                  : props.children
+                ).toString()
+              : raw('')
     } catch (e) {
       contextValues.pop()
       throw e
     }
 
-    if (string instanceof Promise) {
-      return string
+    if (rendered instanceof Promise) {
+      return rendered
         .finally(() => contextValues.pop())
         .then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
     } else {
       contextValues.pop()
-      return raw(string)
+      return raw(rendered)
     }
   }) as Context<T>
   context.values = values

@@ -37,7 +37,7 @@ export const matchedRoutes = (c: Context): RouterRoute[] =>
  * Get the route path registered within the handler
  *
  * @param {Context} c - The context object
- * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
+ * @param {number} index - The index of the route from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching route. Defaults to the current route index.
  * @returns The route path registered within the handler
  *
  * @example
@@ -62,7 +62,7 @@ export const routePath = (c: Context, index?: number): string =>
  * Get the basePath of the as-is route specified by routing.
  *
  * @param {Context} c - The context object
- * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
+ * @param {number} index - The index of the route from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching route. Defaults to the current route index.
  * @returns The basePath of the as-is route specified by routing.
  *
  * @example
@@ -86,7 +86,7 @@ export const baseRoutePath = (c: Context, index?: number): string =>
  * Get the basePath with embedded parameters
  *
  * @param {Context} c - The context object
- * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
+ * @param {number} index - The index of the route from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching route. Defaults to the current route index.
  * @returns The basePath with embedded parameters.
  *
  * @example

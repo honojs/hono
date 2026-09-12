@@ -28,7 +28,26 @@ describe('parseAccept Comprehensive Tests', () => {
     test('handles extreme q values', () => {
       const header = 'a;q=999999,b;q=-99999,c;q=Infinity,d;q=-Infinity,e;q=NaN'
       const result = parseAccept(header)
-      expect(result.map((x) => x.q)).toEqual([1, 1, 1, 0, 0])
+      // Each side clamps to the bound it is past, so a negative q sorts below a real one
+      // rather than above it -- `-99999` lands where `-Infinity` already did. Asserted as
+      // pairs because the clamp makes the sequence non-monotonic, which sorts the result.
+      expect(result.map((x) => [x.type, x.q])).toEqual([
+        ['a', 1],
+        ['c', 1],
+        ['b', 0],
+        ['d', 0],
+        ['e', 0],
+      ])
+    })
+
+    test('a negative q does not outrank a valid one', () => {
+      const result = parseAccept('application/json;q=0.9,text/html;q=-1')
+      expect(result.map((x) => [x.type, x.q])).toEqual([
+        ['application/json', 0.9],
+        ['text/html', 0],
+      ])
+      // The sort is by descending q, so the refused type must not come first.
+      expect(result[0].type).toBe('application/json')
     })
 
     test('handles malformed q values', () => {
@@ -42,6 +61,19 @@ describe('parseAccept Comprehensive Tests', () => {
       const result = parseAccept(header)
       expect(result[0].params.q).toBe('invalid')
       expect(result[0].q).toBe(1) // Normalized q value
+    })
+
+    test('treats the q parameter name as case-insensitive', () => {
+      // RFC 9110 §12.4.2: the "q" parameter is case-insensitive.
+      expect(parseAccept('text/html;Q=0.5')).toEqual([
+        { type: 'text/html', params: { Q: '0.5' }, q: 0.5 },
+      ])
+      expect(parseAccept('text/html;Q=0')[0].q).toBe(0)
+    })
+
+    test('sorts by quality when the q parameter is uppercase', () => {
+      const result = parseAccept('text/html;Q=0.5,application/json;q=0.9')
+      expect(result.map((x) => x.type)).toEqual(['application/json', 'text/html'])
     })
   })
 

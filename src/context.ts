@@ -771,7 +771,7 @@ export class Context<
     const locationString = String(location)
     this.header(
       'Location',
-      // Multibyes should be encoded
+      // Multibytes should be encoded
       // eslint-disable-next-line no-control-regex
       !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
     )

@@ -1,5 +1,9 @@
 /** @jsxImportSource ../ */
+import { raw } from '../../helper/html'
 import { renderToReadableStream, renderToString } from './server'
+
+const unsafeHtml = '<img src=x onerror=alert(1)>'
+const escapedUnsafeHtml = '&lt;img src=x onerror=alert(1)&gt;'
 
 describe('renderToString', () => {
   it('Should be able to render HTML element', () => {
@@ -20,6 +24,40 @@ describe('renderToString', () => {
 
   it('Should be able to render string', () => {
     expect(renderToString('Hono')).toBe('Hono')
+  })
+
+  it('Should escape a string root', () => {
+    expect(renderToString(unsafeHtml)).toBe(escapedUnsafeHtml)
+  })
+
+  it('Should preserve an explicitly trusted root', () => {
+    expect(renderToString(raw('<strong>trusted</strong>'))).toBe('<strong>trusted</strong>')
+  })
+
+  it('Should escape nested array roots without separators', () => {
+    expect(renderToString([unsafeHtml, [unsafeHtml]])).toBe(
+      `${escapedUnsafeHtml}${escapedUnsafeHtml}`
+    )
+  })
+
+  it('Should preserve trusted content in an array root', () => {
+    expect(renderToString([raw('<strong>trusted</strong>'), unsafeHtml])).toBe(
+      `<strong>trusted</strong>${escapedUnsafeHtml}`
+    )
+  })
+
+  it('Should reject an asynchronous array root', () => {
+    expect(() => renderToString([Promise.resolve(unsafeHtml)])).toThrow(
+      'Async component is not supported in renderToString'
+    )
+  })
+
+  it('Should keep non-string roots unchanged', () => {
+    const object = { toString: () => 'plain-text' }
+
+    expect(renderToString(10n as never)).toBe('10')
+    expect(renderToString(Symbol('value') as never)).toBe('Symbol(value)')
+    expect(renderToString(object as never)).toBe('plain-text')
   })
 
   it('Should omit options', () => {
@@ -71,6 +109,39 @@ describe('renderToReadableStream', () => {
 
   it('Should be able to render string', async () => {
     expect(await getStringFromStream(await renderToReadableStream('Hono'))).toBe('Hono')
+  })
+
+  it('Should escape a string root', async () => {
+    expect(await getStringFromStream(await renderToReadableStream(unsafeHtml))).toBe(
+      escapedUnsafeHtml
+    )
+  })
+
+  it('Should preserve an explicitly trusted root', async () => {
+    expect(
+      await getStringFromStream(await renderToReadableStream(raw('<strong>trusted</strong>')))
+    ).toBe('<strong>trusted</strong>')
+  })
+
+  it('Should escape synchronous and asynchronous array roots', async () => {
+    expect(
+      await getStringFromStream(await renderToReadableStream([unsafeHtml, [unsafeHtml]]))
+    ).toBe(`${escapedUnsafeHtml}${escapedUnsafeHtml}`)
+    expect(
+      await getStringFromStream(await renderToReadableStream([Promise.resolve(unsafeHtml)]))
+    ).toBe(escapedUnsafeHtml)
+  })
+
+  it('Should preserve trusted content in an array root', async () => {
+    expect(
+      await getStringFromStream(
+        await renderToReadableStream([raw('<strong>trusted</strong>'), unsafeHtml])
+      )
+    ).toBe(`<strong>trusted</strong>${escapedUnsafeHtml}`)
+  })
+
+  it('Should keep non-string roots unchanged', async () => {
+    expect(await getStringFromStream(await renderToReadableStream(10n as never))).toBe('10')
   })
 
   it('Should be called `onError` if there is an error', async () => {
