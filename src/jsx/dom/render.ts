@@ -574,23 +574,36 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
             oldChildrenByKey.delete(key)
           }
         } else if (oldVChildren && oldVChildren.length) {
-          const i = oldVChildren.findIndex(
-            isNodeString(child)
-              ? (c) => isNodeString(c)
-              : child.key !== undefined
-                ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
-                : (c) => c.tag === (child as Node).tag
-          )
+          const first = oldVChildren[0]
+          const isMatchFirst = isNodeString(child)
+            ? isNodeString(first)
+            : !isNodeString(first) &&
+              (child.key !== undefined
+                ? (first as Node).key === (child as Node).key &&
+                  (first as Node).tag === (child as Node).tag
+                : (first as Node).tag === (child as Node).tag)
 
-          scanBudget -= i === -1 ? oldVChildren.length : i
-          if (i !== -1) {
-            oldChild = oldVChildren[i] as NodeObject
-            oldVChildren.splice(i, 1)
-          }
-          // Try indexing once, after searches exceed a linear budget.
-          if (scanBudget < 0) {
-            scanBudget = Infinity
-            oldChildrenByKey = indexChildrenByKey(oldVChildren)
+          if (isMatchFirst) {
+            oldChild = oldVChildren.shift() as NodeObject
+          } else {
+            const i = oldVChildren.findIndex(
+              isNodeString(child)
+                ? (c) => isNodeString(c)
+                : child.key !== undefined
+                  ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+                  : (c) => c.tag === (child as Node).tag
+            )
+
+            scanBudget -= i === -1 ? oldVChildren.length : i
+            if (i !== -1) {
+              oldChild = oldVChildren[i] as NodeObject
+              oldVChildren.splice(i, 1)
+            }
+            // Try indexing once, after searches exceed a linear budget.
+            if (scanBudget < 0) {
+              scanBudget = Infinity
+              oldChildrenByKey = indexChildrenByKey(oldVChildren)
+            }
           }
         }
 
