@@ -119,6 +119,15 @@ export class Node<T> {
         }
 
         for (const child of node.#patterns) {
+          // A pattern node is also stored under its own key in `#children`, so a
+          // final request part that is literally the pattern (e.g. `*`) already
+          // had its handlers pushed above. Pushing them again would run the
+          // handler twice. Earlier parts still need the pattern branch, which is
+          // what lets a wildcard match the rest of the path.
+          if (isLast && child === nextNode) {
+            continue
+          }
+
           const pattern = child.#pattern!
           const params = node.#params === emptyParams ? {} : { ...node.#params }
 
