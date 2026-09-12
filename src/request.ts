@@ -232,7 +232,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         // be produced even though the bytes are still available. Carry the original
         // `Content-Type` over, except for `FormData`, where `Response` must generate
         // a fresh multipart boundary of its own.
-        const contentType = body instanceof FormData ? undefined : raw.headers.get('content-type')
+        const contentType =
+          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
         return new Response(body, {
           headers: contentType ? { 'Content-Type': contentType } : undefined,
         })[key]()
