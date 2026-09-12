@@ -251,16 +251,16 @@ const parseQuality = (qVal?: string): number => {
   }
 
   const num = Number(qVal)
-  if (num === Infinity) {
-    return 1
-  }
-  if (num === -Infinity) {
-    return 0
-  }
   if (Number.isNaN(num)) {
     return 1
   }
-  if (num < 0 || num > 1) {
+  // A qvalue is 0-1 (RFC 9110 12.4.2). Clamp rather than reject, but clamp each side to the
+  // bound it is past: sending a negative q below every real one instead of above them, which
+  // is what `-Infinity` already did.
+  if (num < 0) {
+    return 0
+  }
+  if (num > 1) {
     return 1
   }
 
