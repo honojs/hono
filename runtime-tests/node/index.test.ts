@@ -206,6 +206,103 @@ describe('streamSSE', () => {
   })
 })
 
+describe('streamSSE lifecycle (Last-Event-ID + write-after-abort)', () => {
+  const events = ['alpha', 'beta', 'gamma', 'delta']
+  const app = new Hono()
+
+  let handlerDone = false
+  let writesAfterAbort = 0
+
+  // Replays only the events after the Last-Event-ID cursor, as an EventSource
+  // reconnect would expect.
+  app.get('/feed', (c) =>
+    streamSSE(c, async (stream) => {
+      const cursor = Number(stream.lastEventId ?? 0)
+      for (let i = cursor; i < events.length; i++) {
+        await stream.writeSSE({ data: events[i], id: String(i + 1) })
+      }
+    })
+  )
+
+  app.get('/abrupt', (c) =>
+    streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: 'one', id: '1' })
+      // The client disconnects during this window; keep producing.
+      await stream.sleep(20)
+      for (let i = 2; i <= 4; i++) {
+        await stream.writeSSE({ data: `dropped-${i}`, id: String(i) })
+        writesAfterAbort++
+      }
+      handlerDone = true
+    })
+  )
+
+  const agent = createAgent(app)
+
+  beforeEach(() => {
+    handlerDone = false
+    writesAfterAbort = 0
+  })
+
+  const readEvents = async (res: Response, count: number): Promise<string[]> => {
+    const reader = res.body!.getReader()
+    const decoder = new TextDecoder()
+    const out: string[] = []
+    let buffer = ''
+    while (out.length < count) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      buffer += decoder.decode(value, { stream: true })
+      const frames = buffer.split('\n\n')
+      buffer = frames.pop() ?? ''
+      for (const frame of frames) {
+        const data = /^data: (.*)$/m.exec(frame)?.[1]
+        if (data !== undefined) {
+          out.push(data)
+        }
+      }
+    }
+    reader.releaseLock()
+    return out
+  }
+
+  it('Should resume from the Last-Event-ID header after a reconnect', async () => {
+    // First connection: the client reads two events, then drops.
+    const first = await agent.get('/feed')
+    expect(await readEvents(first, 2)).toEqual(['alpha', 'beta'])
+    await first.body!.cancel()
+
+    // Reconnect with the id of the last received event: only later events replay.
+    const second = await agent.get('/feed', { headers: { 'Last-Event-ID': '2' } })
+    expect(await readEvents(second, 2)).toEqual(['gamma', 'delta'])
+    await second.body!.cancel()
+  })
+
+  it('Should resume from the beginning without a Last-Event-ID header', async () => {
+    const res = await agent.get('/feed')
+    expect(await readEvents(res, 4)).toEqual(['alpha', 'beta', 'gamma', 'delta'])
+    await res.body!.cancel()
+  })
+
+  it('Should let the handler finish cleanly when the client disconnects mid-stream', async () => {
+    const controller = new AbortController()
+    const res = await agent.get('/abrupt', { signal: controller.signal })
+    expect(await readEvents(res, 1)).toEqual(['one'])
+    controller.abort()
+    await res.body!.cancel().catch(() => {})
+
+    // Writes after the disconnect are no-ops; the handler must still complete.
+    const deadline = Date.now() + 2000
+    while (!handlerDone && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    }
+    expect(handlerDone).toBe(true)
+    expect(writesAfterAbort).toBe(3)
+  })
+})
+
 describe('compress', async () => {
   const cssContent = Array.from({ length: 60 }, () => 'body { color: red; }').join('\n')
   const [externalServer, serverInfo] = await new Promise<[Server, AddressInfo]>((resolve) => {

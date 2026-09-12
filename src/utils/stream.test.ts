@@ -209,4 +209,52 @@ describe('StreamingApi', () => {
       process.off('unhandledRejection', unhandled)
     }
   })
+
+  it('write() is a no-op after abort() and does not touch the writer', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write('before')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('before'))
+
+    api.abort()
+    expect(api.aborted).toBe(true)
+
+    // Must resolve immediately without enqueuing anything or throwing.
+    await expect(api.write('after')).resolves.toBe(api)
+    await expect(api.writeln('after')).resolves.toBe(api)
+    const { value, done } = await Promise.race([
+      reader.read(),
+      new Promise<{ value: undefined; done: true }>((resolve) =>
+        setTimeout(() => resolve({ value: undefined, done: true }), 100)
+      ),
+    ])
+    expect(done).toBe(true)
+    expect(value).toBeUndefined()
+  })
+
+  it('write() is a no-op after the client cancels the response stream', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write('first')
+    await reader.read()
+
+    await reader.cancel()
+    expect(api.aborted).toBe(true)
+
+    // Writing after the disconnect neither throws nor hangs.
+    const write = api.write('after-abort')
+    await expect(
+      Promise.race([write, new Promise((resolve) => setTimeout(() => resolve('hung'), 500))])
+    ).resolves.not.toBe('hung')
+  })
+
+  it('close() after abort() is a no-op and does not throw', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    api.abort()
+    await expect(api.close()).resolves.toBeUndefined()
+    expect(api.closed).toBe(true)
+  })
 })
