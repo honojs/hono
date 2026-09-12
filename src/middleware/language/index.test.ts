@@ -13,6 +13,43 @@ describe('languageDetector', () => {
     return app
   }
 
+  describe('q=0 means explicitly not acceptable (RFC 9110 §12.5.4)', () => {
+    it('should not detect a language the client rejected with q=0', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', { headers: { 'Accept-Language': 'fr;q=0' } })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should fall through to the next acceptable language', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr', 'es'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: { 'Accept-Language': 'fr;q=0, es;q=0.8' },
+      })
+      expect(await res.text()).toBe('es')
+    })
+
+    it('should still detect languages with a positive q value', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['en', 'fr'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', { headers: { 'Accept-Language': 'fr;q=0.1' } })
+      expect(await res.text()).toBe('fr')
+    })
+  })
+
   describe('Query Parameter Detection', () => {
     it('should detect language from query parameter', async () => {
       const app = createTestApp({

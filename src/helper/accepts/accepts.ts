@@ -45,12 +45,17 @@ const getSpecificity = (type: string): number => {
 
 export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string => {
   const { supports, default: defaultSupport } = config
-  const sortedAccepts = accepts.slice().sort((a, b) => {
-    if (b.q !== a.q) {
-      return b.q - a.q
-    }
-    return getSpecificity(b.type) - getSpecificity(a.type)
-  })
+  // A quality value of 0 means the range is explicitly not acceptable
+  // (RFC 9110 §12.5.1), so those entries must never match. This mirrors the
+  // `q > 0` check the compress middleware already performs.
+  const sortedAccepts = accepts
+    .filter((accept) => accept.q > 0)
+    .sort((a, b) => {
+      if (b.q !== a.q) {
+        return b.q - a.q
+      }
+      return getSpecificity(b.type) - getSpecificity(a.type)
+    })
 
   for (const accept of sortedAccepts) {
     const matched = supports.find((supported) => matchType(accept.type, supported))

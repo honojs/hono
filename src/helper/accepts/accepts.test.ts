@@ -259,3 +259,71 @@ describe('Usage', () => {
     expect(await req2.text()).toBe('lang: en')
   })
 })
+
+describe('q=0 means explicitly not acceptable (RFC 9110 §12.5.1)', () => {
+  it('Should not match a supported type the client rejected with q=0', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['application/json'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', { headers: { Accept: 'application/json;q=0' } })
+    expect(await res.text()).toBe('text/html')
+  })
+
+  it('Should fall through to a lower-priority type that is still acceptable', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['application/json', 'text/plain'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', {
+      headers: { Accept: 'application/json;q=0, text/plain;q=0.5' },
+    })
+    expect(await res.text()).toBe('text/plain')
+  })
+
+  it('Should not match a wildcard the client rejected with q=0', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['text/plain'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', { headers: { Accept: 'text/*;q=0' } })
+    expect(await res.text()).toBe('text/html')
+  })
+
+  it('Should still match entries with a positive q value', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['application/json'],
+          default: 'text/html',
+        })
+      )
+    )
+
+    const res = await app.request('/', { headers: { Accept: 'application/json;q=0.1' } })
+    expect(await res.text()).toBe('application/json')
+  })
+})
