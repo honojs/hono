@@ -231,6 +231,45 @@ describe('EventProcessor.createRequest', () => {
     expect(url.searchParams.get('ampersand')).toBe('a&b&c')
   })
 
+  it('Should preserve empty query parameters for version 1.0', () => {
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      queryStringParameters: {
+        empty: '',
+        present: '0',
+        omitted: undefined,
+      },
+    }
+
+    const request = getProcessor(event).createRequest(event)
+
+    expect(request.url).toBe(
+      'https://id.execute-api.us-east-1.amazonaws.com/my/path?empty=&present=0'
+    )
+  })
+
+  it('Should preserve empty query parameters for ALB events', () => {
+    const event: LambdaEvent = {
+      httpMethod: 'GET',
+      path: '/my/path',
+      headers: { host: 'example.test' },
+      body: null,
+      isBase64Encoded: false,
+      queryStringParameters: {
+        empty: '',
+        present: '0',
+        omitted: undefined,
+      },
+      requestContext: {
+        elb: { targetGroupArn: 'arn:aws:elasticloadbalancing:...' },
+      },
+    }
+
+    const request = getProcessor(event).createRequest(event)
+
+    expect(request.url).toBe('https://example.test/my/path?empty=&present=0')
+  })
+
   it('Should return valid Request object from version 1.0 API Gateway event', () => {
     const event: LambdaEvent = {
       ...baseV1Event,
