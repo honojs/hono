@@ -24,9 +24,9 @@ export class SSEStreamingApi extends StreamingApi {
       })
       .join('\n')
 
-    for (const key of ['event', 'id'] as const) {
+    for (const key of ['event', 'id', 'retry'] as const) {
       const value = message[key]
-      if (value && /[\r\n]/.test(value)) {
+      if (value !== undefined && value !== null && /[\r\n]/.test(String(value))) {
         throw new Error(`${key} must not contain "\\r" or "\\n"`)
       }
     }
