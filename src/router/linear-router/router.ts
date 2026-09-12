@@ -115,6 +115,11 @@ export class LinearRouter<T> implements Router<T> {
                     continue ROUTES_LOOP
                   }
                   endValuePos = path.length
+                } else if (endValuePos === pos + 1) {
+                  // an empty segment, as in `/u//posts`. A trailing empty segment
+                  // is already rejected above; reject it mid-path too instead of
+                  // capturing an empty param value.
+                  continue ROUTES_LOOP
                 }
                 value = path.slice(pos + 1, endValuePos)
                 pos = endValuePos
