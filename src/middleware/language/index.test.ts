@@ -122,6 +122,20 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('en')
     })
 
+    it('should continue to the next detector after a zero-quality language', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en', 'ja'],
+        fallbackLanguage: 'en',
+        order: ['header', 'querystring'],
+      })
+
+      const res = await app.request('/?lang=ja', {
+        headers: { 'accept-language': 'fr;q=0' },
+      })
+      expect(await res.text()).toBe('ja')
+      expect(res.headers.get('set-cookie')).toContain('language=ja')
+    })
+
     it('should match after multiple truncations', async () => {
       const app = createTestApp({
         supportedLanguages: ['zh-Hant', 'en'],
