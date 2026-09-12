@@ -1967,6 +1967,56 @@ describe('Hono with `app.route`', () => {
     })
   })
 
+  describe('onError with middleware', () => {
+    it('Should compose middleware before the error handler', async () => {
+      const app = new Hono()
+      const calls: string[] = []
+
+      app.onError(
+        async (c, next) => {
+          calls.push(`before:${c.req.param('id')}:${c.error?.message}`)
+          await next()
+          calls.push(`after:${c.req.param('id')}`)
+          c.res.headers.set('x-error-middleware', 'true')
+        },
+        (err, c) => {
+          calls.push('handler')
+          return c.text(err.message, 500)
+        }
+      )
+
+      app.get('/posts/:id', () => {
+        throw new Error('This is Error')
+      })
+
+      const res = await app.request('https://example.com/posts/123')
+      expect(res.status).toBe(500)
+      expect(res.headers.get('x-error-middleware')).toBe('true')
+      expect(await res.text()).toBe('This is Error')
+      expect(calls).toEqual(['before:123:This is Error', 'handler', 'after:123'])
+    })
+
+    it('Should replace an existing response', async () => {
+      const app = new Hono()
+
+      app.use(async (_c, next) => {
+        await next()
+        throw new Error('Error after response')
+      })
+      app.get('/posts/:id', (c) => c.text('OK'))
+      app.onError(
+        async (_c, next) => {
+          await next()
+        },
+        (err, c) => c.text(err.message, 500)
+      )
+
+      const res = await app.request('https://example.com/posts/123')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Error after response')
+    })
+  })
+
   describe('notFound', () => {
     const app = new Hono()
     const sub = new Hono()
@@ -2019,6 +2069,47 @@ describe('Hono with `app.route`', () => {
       expect(res.status).toBe(404)
       expect(res.headers.get('explicit')).toBe(null)
       expect(await res.text()).toBe('404 Not Found by app')
+    })
+  })
+
+  describe('notFound with middleware', () => {
+    it('Should compose middleware before the not-found handler', async () => {
+      const app = new Hono()
+      const calls: string[] = []
+
+      app.notFound(
+        async (c, next) => {
+          calls.push(`before:${c.req.param('id')}`)
+          await next()
+          calls.push(`after:${c.req.param('id')}`)
+          c.res.headers.set('x-not-found-middleware', 'true')
+        },
+        (c) => {
+          calls.push('handler')
+          return c.text('Custom Not Found', 404)
+        }
+      )
+
+      app.get('/posts/:id', (c) => c.notFound())
+
+      const res = await app.request('https://example.com/posts/123')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('x-not-found-middleware')).toBe('true')
+      expect(await res.text()).toBe('Custom Not Found')
+      expect(calls).toEqual(['before:123', 'handler', 'after:123'])
+    })
+
+    it('Should allow middleware to return a response', async () => {
+      const app = new Hono()
+
+      app.notFound(
+        async (c) => c.text('Middleware Not Found', 404),
+        (c) => c.text('Handler Not Found', 404)
+      )
+
+      const res = await app.request('https://example.com/missing')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Middleware Not Found')
     })
   })
 })
