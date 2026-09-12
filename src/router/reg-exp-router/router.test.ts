@@ -262,4 +262,22 @@ describe('RegExpRouter', () => {
       }
     })
   })
+
+  describe('Wildcard with line terminators', () => {
+    it('Should match path with newlines', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/a/*', 'wildcard')
+      const [res] = router.match('GET', '/a/b\nc')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+
+    it('Should match path with carriage return', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '*', 'wildcard')
+      const [res] = router.match('GET', '/a/b\rc')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+  })
 })
