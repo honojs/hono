@@ -227,7 +227,15 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
         }
-        return new Response(body)[key]()
+        // Rebuilding the body through a bare `Response` loses the request's media
+        // type, so a representation that needs it (e.g. `formData()`) can no longer
+        // be produced even though the bytes are still available. Carry the original
+        // `Content-Type` over, except for `FormData`, where `Response` must generate
+        // a fresh multipart boundary of its own.
+        const contentType = body instanceof FormData ? undefined : raw.headers.get('content-type')
+        return new Response(body, {
+          headers: contentType ? { 'Content-Type': contentType } : undefined,
+        })[key]()
       })
     }
 
