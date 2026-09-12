@@ -1772,3 +1772,82 @@ describe('PEM parsing', async () => {
     expect(verified).toEqual(payload)
   })
 })
+
+describe('leeway (clock skew tolerance)', () => {
+  const secret = 'a-secret'
+
+  it('should accept a token with nbf slightly in the future within leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', nbf: now + 5 }, secret, AlgorithmTypes.HS256)
+
+    await expect(JWT.verify(tok, secret, AlgorithmTypes.HS256)).rejects.toThrow(JwtTokenNotBefore)
+
+    const verified = await JWT.verify(tok, secret, {
+      alg: AlgorithmTypes.HS256,
+      leeway: 10,
+    })
+    expect(verified.message).toBe('hello')
+  })
+
+  it('should reject a token with nbf in the future exceeding leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', nbf: now + 20 }, secret, AlgorithmTypes.HS256)
+
+    await expect(
+      JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        leeway: 10,
+      })
+    ).rejects.toThrow(JwtTokenNotBefore)
+  })
+
+  it('should accept an expired token within leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', exp: now - 5 }, secret, AlgorithmTypes.HS256)
+
+    await expect(JWT.verify(tok, secret, AlgorithmTypes.HS256)).rejects.toThrow(JwtTokenExpired)
+
+    const verified = await JWT.verify(tok, secret, {
+      alg: AlgorithmTypes.HS256,
+      leeway: 10,
+    })
+    expect(verified.message).toBe('hello')
+  })
+
+  it('should reject an expired token exceeding leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', exp: now - 20 }, secret, AlgorithmTypes.HS256)
+
+    await expect(
+      JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        leeway: 10,
+      })
+    ).rejects.toThrow(JwtTokenExpired)
+  })
+
+  it('should accept a token with iat slightly in the future within leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', iat: now + 5 }, secret, AlgorithmTypes.HS256)
+
+    await expect(JWT.verify(tok, secret, AlgorithmTypes.HS256)).rejects.toThrow(JwtTokenIssuedAt)
+
+    const verified = await JWT.verify(tok, secret, {
+      alg: AlgorithmTypes.HS256,
+      leeway: 10,
+    })
+    expect(verified.message).toBe('hello')
+  })
+
+  it('should reject a token with iat in the future exceeding leeway', async () => {
+    const now = Math.floor(Date.now() / 1000)
+    const tok = await JWT.sign({ message: 'hello', iat: now + 20 }, secret, AlgorithmTypes.HS256)
+
+    await expect(
+      JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        leeway: 10,
+      })
+    ).rejects.toThrow(JwtTokenIssuedAt)
+  })
+})
