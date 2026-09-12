@@ -151,6 +151,18 @@ export const runTest = ({
         expect(res.length).toBe(0)
       })
 
+      it('Regexp should not match line terminators with .', async () => {
+        router.add('GET', '/custom/:param{.+}', 'custom')
+        let res = match('GET', '/custom/a\nb')
+        expect(res.length).toBe(0)
+        res = match('GET', '/custom/a\rb')
+        expect(res.length).toBe(0)
+        res = match('GET', `/custom/a${String.fromCharCode(0x2028)}b`)
+        expect(res.length).toBe(0)
+        res = match('GET', `/custom/a${String.fromCharCode(0x2029)}b`)
+        expect(res.length).toBe(0)
+      })
+
       it('Parameter with {.*} regexp', () => {
         router.add('GET', '/files/:name{.*}', 'file')
         let res = match('GET', '/files')
@@ -429,6 +441,12 @@ export const runTest = ({
       it('GET /pathfoo', async () => {
         const res = match('GET', '/pathfoo')
         expect(res.length).toBe(0)
+      })
+
+      it('GET /path/a\\nb with line terminator', async () => {
+        const res = match('GET', '/path/a\nb')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('path')
       })
     })
 
