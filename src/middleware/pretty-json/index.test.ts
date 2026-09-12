@@ -133,6 +133,19 @@ describe('JSON pretty by Middleware', () => {
     expect(res.body).toBeNull()
   })
 
+  it('Should not break 304 responses with a JSON content-type', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/x', (c) => {
+      c.header('Content-Type', 'application/json')
+      return c.body(null, 304)
+    })
+
+    const res = await app.request('http://localhost/x')
+    expect(res.status).toBe(304)
+    expect(res.body).toBeNull()
+  })
+
   it('Should not break empty responses with a JSON content-type', async () => {
     const app = new Hono()
     app.use('*', prettyJSON())
@@ -149,11 +162,16 @@ describe('JSON pretty by Middleware', () => {
     app.get(
       '/x',
       () =>
-        new Response('not json', { status: 200, headers: { 'Content-Type': 'application/json' } })
+        new Response('not json', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'X-Custom': 'custom', ETag: '"abc"' },
+        })
     )
 
     const res = await app.request('http://localhost/x')
     expect(res.status).toBe(200)
+    expect(res.headers.get('X-Custom')).toBe('custom')
+    expect(res.headers.get('ETag')).toBe('"abc"')
     expect(await res.text()).toBe('not json')
   })
 
@@ -166,6 +184,7 @@ describe('JSON pretty by Middleware', () => {
     })
     app.get('/x', (c) => c.json({ message: 'Hono!' }))
 
+    // The body is consumed by the middleware above, so only the status is asserted here
     const res = await app.request('http://localhost/x')
     expect(res.status).toBe(200)
   })
