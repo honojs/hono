@@ -106,6 +106,43 @@ export const runTest = ({
       })
     })
 
+    describe('Wildcard', () => {
+      // Behaviour agreed in #5243. A wildcard with a non-empty prefix consumes zero or
+      // more characters and stays inside its own segment; a standalone `*` segment
+      // consumes at least one when a segment follows it. Either may consume the rest of
+      // the path, separators included, when it ends the route.
+      const cases: [route: string, path: string, shouldMatch: boolean][] = [
+        ['/x*/y', '/x/y', true],
+        ['/x*/y', '/xz/y', true],
+        ['/x*/y', '/xzz/y', true],
+        ['/x*/y', '/x/z/y', false],
+        ['/x*y', '/xy', false],
+        ['/x*y', '/xay', false],
+        ['/x*y/index', '/xy/index', false],
+        ['/x*y/index', '/xay/index', false],
+        ['/a/b*/c', '/a/b/c', true],
+        ['/a/b*/c', '/a/bz/c', true],
+        ['/a/b*/c', '/a/b/z/c', false],
+        ['/wild/*/card', '/wild//card', false],
+        ['/wild/*/card', '/wild/x/card', true],
+        ['/wild/*/card', '/wild/x/y/card', false],
+        ['/assets*', '/assets', true],
+        ['/assets*', '/assets123', true],
+        ['/assets*', '/assets/foo', true],
+      ]
+
+      for (const [route, path, shouldMatch] of cases) {
+        it(`${route} ${shouldMatch ? 'matches' : 'does not match'} ${path}`, async () => {
+          router.add('GET', route, 'wildcard')
+          const res = match('GET', path)
+          expect(res.length).toBe(shouldMatch ? 1 : 0)
+          if (shouldMatch) {
+            expect(res[0].handler).toEqual('wildcard')
+          }
+        })
+      }
+    })
+
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
