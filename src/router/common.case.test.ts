@@ -370,6 +370,24 @@ export const runTest = ({
       })
     })
 
+    describe('Request path segment that is literally a star', () => {
+      beforeEach(() => {
+        router.add('GET', '/a/*', 'wildcard')
+      })
+
+      it('GET /a/* matches once, not twice', () => {
+        const res = match('GET', '/a/*')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
+      })
+
+      it('GET /a/*/b still matches', () => {
+        const res = match('GET', '/a/*/b')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
+      })
+    })
+
     describe('Suffix wildcard', () => {
       beforeEach(() => {
         router.add('GET', '/assets*', 'assets')
