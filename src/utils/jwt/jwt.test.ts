@@ -92,6 +92,21 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  it('JwtTokenInvalid for a signature that is not valid base64url', async () => {
+    const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.@@@@'
+    const secret = 'a-secret'
+    let err: JwtTokenInvalid
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as JwtTokenInvalid
+    }
+    // @ts-ignore
+    expect(err).toEqual(new JwtTokenInvalid(tok))
+    expect(authorized).toBeUndefined()
+  })
+
   it('JwtTokenNotBefore', async () => {
     const tok =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'
