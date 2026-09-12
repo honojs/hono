@@ -221,7 +221,11 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
   while (i < acceptHeader.length) {
     ;[i, accept] = getNextAcceptValue(acceptHeader, i)
     if (accept) {
-      accept.q = parseQuality(accept.params.q)
+      // RFC 9110 §12.4.2 defines the weight parameter name as case-insensitive.
+      // Parameter names are otherwise stored verbatim, so both spellings are
+      // checked here rather than normalising the whole params record. The name is
+      // a single character, so `q` and `Q` are the only possibilities.
+      accept.q = parseQuality(accept.params.q ?? accept.params.Q)
       values.push(accept)
       if (lastAccept && lastAccept.q < accept.q) {
         // find higher quality accept value, so we need to sort

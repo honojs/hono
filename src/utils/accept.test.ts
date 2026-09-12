@@ -265,3 +265,35 @@ describe('parseAccept Comprehensive Tests', () => {
     })
   })
 })
+
+describe('case-insensitive weight parameter', () => {
+  it('Should honour an uppercase Q', () => {
+    // RFC 9110 §12.4.2: the weight parameter name is case-insensitive.
+    expect(parseAccept('text/html;Q=0.5')).toEqual([
+      { type: 'text/html', params: { Q: '0.5' }, q: 0.5 },
+    ])
+  })
+
+  it('Should treat Q=0 as not acceptable', () => {
+    expect(parseAccept('text/html;Q=0')[0].q).toBe(0)
+  })
+
+  it('Should sort correctly when weights are spelled inconsistently', () => {
+    expect(parseAccept('application/json;Q=0.2, text/html;q=0.9')).toEqual([
+      { type: 'text/html', params: { q: '0.9' }, q: 0.9 },
+      { type: 'application/json', params: { Q: '0.2' }, q: 0.2 },
+    ])
+  })
+
+  it('Should prefer a lowercase q when both spellings are present', () => {
+    expect(parseAccept('text/html;q=0.5;Q=0.2')[0].q).toBe(0.5)
+  })
+
+  it('Should keep other parameter names case-sensitive', () => {
+    // Only the weight parameter is looked up case-insensitively.
+    const result = parseAccept('text/html;key=2;KEY=3;Q=0.4')
+    expect(result[0].params.key).toBe('2')
+    expect(result[0].params.KEY).toBe('3')
+    expect(result[0].q).toBe(0.4)
+  })
+})
