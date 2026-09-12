@@ -109,7 +109,7 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
           const content = htmlArray.join('')
           if (buffer) {
             buffer[0] = buffer[0].replace(
-              new RegExp(`<template id="H:${index}"></template>.*?<!--/\\$-->`),
+              new RegExp(`<template id="H:${index}"></template>[\\s\\S]*?<!--/\\$-->`),
               () => content
             )
           }

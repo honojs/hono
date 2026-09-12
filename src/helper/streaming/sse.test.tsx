@@ -1,6 +1,6 @@
 /** @jsxImportSource ../../jsx */
 import { Context } from '../../context'
-import { ErrorBoundary } from '../../jsx'
+import { ErrorBoundary, Suspense } from '../../jsx'
 import { streamSSE } from '.'
 
 describe('SSE Streaming helper', () => {
@@ -270,6 +270,58 @@ describe('SSE Streaming helper', () => {
     const { value } = await reader.read()
     const decodedValue = decoder.decode(value)
     expect(decodedValue).toBe('data: <div>Error</div>\n\n')
+  })
+
+  it('Check streamSSE Response via Suspense with a multi-line fallback', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>Async Hello</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <Suspense fallback={<div>{'Loading...\nPlease wait'}</div>}>
+            <AsyncComponent />
+          </Suspense>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary with multi-line content', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>{'Async\nHello'}</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AsyncComponent />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async\ndata: Hello</div>\n\n')
   })
 
   it('Check streamSSE handles \\r (CR) line ending correctly', async () => {
