@@ -639,6 +639,25 @@ describe('cloneRawRequest', () => {
     expect(await clonedReq.json()).toEqual({ foo: 'bar' })
   })
 
+  test('clones consumed urlencoded request without flipping the media type', async () => {
+    const body = 'foo=bar&baz=qux'
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      })
+    )
+    await req.formData()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded')
+    expect(await clonedReq.text()).toBe(body)
+  })
+
   test('clones GET request without body', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {

@@ -488,7 +488,17 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     body = JSON.stringify(body)
     delete headers['content-length']
   } else if (body instanceof FormData) {
-    delete headers['content-type']
+    const contentType = headers['content-type']
+    const isURLEncoded = contentType
+      ? contentType.trim().toLowerCase().startsWith('application/x-www-form-urlencoded')
+      : false
+    if (isURLEncoded) {
+      body = new URLSearchParams(
+        [...(body as FormData).entries()].map(([k, v]) => [k, typeof v === 'string' ? v : v.name])
+      )
+    } else {
+      delete headers['content-type']
+    }
     delete headers['content-length']
   }
 
