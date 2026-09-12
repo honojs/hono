@@ -159,7 +159,7 @@ export const setMetric: SetMetric = (
     return
   }
   if (typeof valueDescription === 'number') {
-    const dur = valueDescription.toFixed(precision || 1)
+    const dur = valueDescription.toFixed(precision ?? 1)
 
     const metric = description ? `${name};dur=${dur};desc="${description}"` : `${name};dur=${dur}`
 

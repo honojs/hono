@@ -307,4 +307,95 @@ describe('Server-Timing API', () => {
       consoleWarnSpy.mockRestore()
     })
   })
+
+  describe('Should handle precision', () => {
+    it('Should honor an explicit precision of 0 (whole milliseconds)', async () => {
+      const precisionApp = new Hono()
+
+      precisionApp.use('*', timing())
+      precisionApp.get('/', (c) => {
+        setMetric(c, 'value', 23.86, undefined, 0)
+        return c.text('/')
+      })
+
+      const res = await precisionApp.request('http://localhost/')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('server-timing')).toContain('value;dur=24')
+    })
+
+    it('Should honor an explicit precision of 1', async () => {
+      const precisionApp = new Hono()
+
+      precisionApp.use('*', timing())
+      precisionApp.get('/', (c) => {
+        setMetric(c, 'value', 23.86, undefined, 1)
+        return c.text('/')
+      })
+
+      const res = await precisionApp.request('http://localhost/')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('server-timing')).toContain('value;dur=23.9')
+    })
+
+    it('Should default to one decimal place when precision is omitted', async () => {
+      const precisionApp = new Hono()
+
+      precisionApp.use('*', timing())
+      precisionApp.get('/', (c) => {
+        setMetric(c, 'value', 23.86)
+        return c.text('/')
+      })
+
+      const res = await precisionApp.request('http://localhost/')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('server-timing')).toContain('value;dur=23.9')
+    })
+
+    it('Should forward an explicit precision of 0 from endTime', async () => {
+      const precisionApp = new Hono()
+
+      precisionApp.use('*', timing())
+      precisionApp.get('/', (c) => {
+        startTime(c, 'db')
+        endTime(c, 'db', 0)
+        return c.text('/')
+      })
+
+      const res = await precisionApp.request('http://localhost/')
+      const metric = res.headers
+        .get('server-timing')
+        ?.split(',')
+        .find((part) => part.startsWith('db;dur='))
+      const dur = metric?.match(/dur=([\d.]+)/)?.[1]
+
+      expect(res.status).toBe(200)
+      expect(dur).toBeDefined()
+      // precision 0 rounds to a whole number, so there is no decimal point
+      expect(dur).not.toContain('.')
+    })
+
+    it('Should forward an explicit precision of 0 from wrapTime', async () => {
+      const precisionApp = new Hono()
+
+      precisionApp.use('*', timing())
+      precisionApp.get('/', async (c) => {
+        await wrapTime(c, 'db', Promise.resolve('data'), undefined, 0)
+        return c.text('/')
+      })
+
+      const res = await precisionApp.request('http://localhost/')
+      const metric = res.headers
+        .get('server-timing')
+        ?.split(',')
+        .find((part) => part.startsWith('db;dur='))
+      const dur = metric?.match(/dur=([\d.]+)/)?.[1]
+
+      expect(res.status).toBe(200)
+      expect(dur).toBeDefined()
+      expect(dur).not.toContain('.')
+    })
+  })
 })
