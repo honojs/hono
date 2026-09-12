@@ -154,6 +154,38 @@ describe('Basic - JSON', () => {
     expect(data.requestBody).toEqual(payload)
   })
 
+  it('Should not override a user-specified Content-Type when sending json', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar' },
+        cookie: { debug: 'true' },
+      },
+      { headers: { 'Content-Type': 'application/merge-patch+json' } }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('application/merge-patch+json')
+    expect(data.requestBody).toEqual(payload)
+  })
+
+  it('Should not override a user-specified Content-Type when sending json (lowercase header name)', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar' },
+        cookie: { debug: 'true' },
+      },
+      { headers: { 'content-type': 'application/merge-patch+json' } }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('application/merge-patch+json')
+    expect(data.requestBody).toEqual(payload)
+  })
+
   it('Should get 404 response', async () => {
     const res = await client['hello-not-found'].$get()
     expect(res.status).toBe(404)
