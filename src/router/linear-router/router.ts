@@ -116,6 +116,11 @@ export class LinearRouter<T> implements Router<T> {
                   }
                   endValuePos = path.length
                 }
+                if (endValuePos === pos + 1) {
+                  // An empty segment (e.g. /u//posts) does not satisfy a
+                  // :label — the other routers return no match here.
+                  continue ROUTES_LOOP
+                }
                 value = path.slice(pos + 1, endValuePos)
                 pos = endValuePos
               }

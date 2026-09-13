@@ -119,6 +119,12 @@ export const runTest = ({
         expect(res.length).toBe(0)
       })
 
+      it('Named Param does not match an empty segment', async () => {
+        router.add('GET', '/u/:id/posts', 'get u posts')
+        const res = match('GET', '/u//posts')
+        expect(res.length).toBe(0)
+      })
+
       it('Wildcard', async () => {
         router.add('GET', '/wild/*/card', 'get wildcard')
         const res = match('GET', '/wild/xxx/card')
