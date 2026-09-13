@@ -164,7 +164,12 @@ describe('JSON pretty by Middleware', () => {
       () =>
         new Response('not json', {
           status: 200,
-          headers: { 'Content-Type': 'application/json', 'X-Custom': 'custom', ETag: '"abc"' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Custom': 'custom',
+            ETag: '"abc"',
+            'Content-Length': '8',
+          },
         })
     )
 
@@ -172,10 +177,11 @@ describe('JSON pretty by Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Custom')).toBe('custom')
     expect(res.headers.get('ETag')).toBe('"abc"')
+    expect(res.headers.get('Content-Length')).toBe('8')
     expect(await res.text()).toBe('not json')
   })
 
-  it('Should not break a response whose body was already consumed', async () => {
+  it('Should pass through a response whose body was already consumed by another middleware', async () => {
     const app = new Hono()
     app.use('*', prettyJSON({ force: true }))
     app.use('*', async (c, next) => {
@@ -184,9 +190,12 @@ describe('JSON pretty by Middleware', () => {
     })
     app.get('/x', (c) => c.json({ message: 'Hono!' }))
 
-    // The body is consumed by the middleware above, so only the status is asserted here
+    // The other middleware has read the body, so the bytes are no longer available;
+    // pretty JSON must not turn this into a 500 and must leave the response as is.
     const res = await app.request('http://localhost/x')
     expect(res.status).toBe(200)
+    expect(res.bodyUsed).toBe(true)
+    await expect(res.text()).rejects.toThrow()
   })
 
   it('Should remove a stale Content-Length when the body is prettified', async () => {
@@ -196,7 +205,7 @@ describe('JSON pretty by Middleware', () => {
       '/x',
       () =>
         new Response('{"message":"Hono!"}', {
-          headers: { 'Content-Type': 'application/json', 'Content-Length': '21' },
+          headers: { 'Content-Type': 'application/json', 'Content-Length': '19' },
         })
     )
 
