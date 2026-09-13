@@ -42,6 +42,7 @@ describe('Basic - JSON', () => {
       validator('header', () => {
         return {} as {
           'x-message': string
+          'Content-Type'?: string
         }
       }),
       validator('json', () => {
@@ -183,6 +184,73 @@ describe('Basic - JSON', () => {
     expect(res.ok).toBe(true)
     const data = await res.json()
     expect(data.requestContentType).toBe('application/merge-patch+json')
+    expect(data.requestBody).toEqual(payload)
+  })
+
+  it('Should not override a Content-Type returned by function-form headers', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar' },
+        cookie: { debug: 'true' },
+      },
+      { headers: () => ({ 'Content-Type': 'application/merge-patch+json' }) }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('application/merge-patch+json')
+    expect(data.requestBody).toEqual(payload)
+  })
+
+  it('Should not override a Content-Type specified as a route-typed header argument', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar', 'Content-Type': 'application/merge-patch+json' },
+        cookie: { debug: 'true' },
+      },
+      {}
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('application/merge-patch+json')
+    expect(data.requestBody).toEqual(payload)
+  })
+
+  it('Should send an explicitly empty Content-Type instead of the default when sending json', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar' },
+        cookie: { debug: 'true' },
+      },
+      { headers: { 'Content-Type': '' } }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('')
+    expect(data.requestBody).toEqual(payload)
+  })
+
+  it('Should let init.headers take highest priority over the default Content-Type', async () => {
+    const res = await client.posts.$post(
+      {
+        json: payload,
+        header: { 'x-message': 'foobar' },
+        cookie: { debug: 'true' },
+      },
+      {
+        headers: { 'Content-Type': 'application/merge-patch+json' },
+        init: { headers: { 'Content-Type': 'application/vnd.api+json' } },
+      }
+    )
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestContentType).toBe('application/vnd.api+json')
     expect(data.requestBody).toEqual(payload)
   })
 
