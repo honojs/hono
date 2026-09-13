@@ -429,6 +429,65 @@ describe('Body methods with caching', () => {
     })
   })
 
+  describe('should not break body methods after formData() with non-form content-type', () => {
+    const createReq = () =>
+      new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: JSON.stringify({ event: 'push' }),
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+    it('text()', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      expect(await req.text()).toBe(JSON.stringify({ event: 'push' }))
+    })
+
+    it('json()', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      expect(await req.json()).toEqual({ event: 'push' })
+    })
+
+    it('arrayBuffer()', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      expect(await req.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+    })
+
+    it('bytes()', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      expect(await req.bytes()).toBeInstanceOf(Uint8Array)
+    })
+
+    it('blob()', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      expect(await req.blob()).toBeInstanceOf(Blob)
+    })
+
+    it('formData() keeps reporting the parse failure', async () => {
+      const req = createReq()
+      await expect(req.formData()).rejects.toThrow()
+      await expect(req.formData()).rejects.toThrow()
+    })
+
+    it('allows trying another representation after a failed parse', async () => {
+      const req = createReq()
+      let parsedAsForm
+      try {
+        parsedAsForm = await req.formData()
+      } catch {
+        parsedAsForm = null
+      }
+      expect(parsedAsForm).toBeNull()
+      expect(await req.json()).toEqual({ event: 'push' })
+    })
+  })
+
   describe('req.parseBody()', async () => {
     it('should parse form data', async () => {
       const data = new FormData()
@@ -509,7 +568,6 @@ describe('Body methods with caching', () => {
         expect(req.formData()).rejects.toThrow()
       })
     })
-
     describe('Return type', () => {
       let req: HonoRequest
       beforeEach(() => {
