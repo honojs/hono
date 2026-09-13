@@ -324,6 +324,80 @@ describe('SSE Streaming helper', () => {
     expect(decodedValue).toBe('data: <div>Async\ndata: Hello</div>\n\n')
   })
 
+  it('Check streamSSE Response via sibling Suspense boundaries with multi-line fallbacks', async () => {
+    const One = async () => Promise.resolve(<div>One</div>)
+    const Two = async () => Promise.resolve(<div>Two</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <div>
+            <Suspense fallback={<div>{'Loading1...\nwait'}</div>}>
+              <One />
+            </Suspense>
+            <Suspense fallback={<div>{'Loading2...\nwait'}</div>}>
+              <Two />
+            </Suspense>
+          </div>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let decodedValue = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      decodedValue += decoder.decode(value)
+    }
+    expect(decodedValue).toBe('data: <div><div>One</div><div>Two</div></div>\n\n')
+  })
+
+  it('Check streamSSE Response via nested Suspense boundaries with multi-line fallback and content', async () => {
+    const Inner = async () => Promise.resolve(<div>{'Inner\nContent'}</div>)
+    const Outer = async () =>
+      Promise.resolve(
+        <Suspense fallback={<div>{'B\nb'}</div>}>
+          <Inner />
+        </Suspense>
+      )
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <Suspense fallback={<div>{'A\na'}</div>}>
+            <Outer />
+          </Suspense>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let decodedValue = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      decodedValue += decoder.decode(value)
+    }
+    expect(decodedValue).toBe('data: <div>Inner\ndata: Content</div>\n\n')
+  })
+
   it('Check streamSSE handles \\r (CR) line ending correctly', async () => {
     const res = streamSSE(c, async (stream) => {
       await stream.writeSSE({
