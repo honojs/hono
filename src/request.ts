@@ -216,31 +216,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   #cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
-    const cachedBody = bodyCache[key]
-
-    if (cachedBody) {
-      return cachedBody
-    }
-
-    for (const anyCachedKey in bodyCache) {
-      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
-        if (anyCachedKey === 'json') {
-          body = JSON.stringify(body)
-        }
-        // Rebuilding the body through a bare `Response` loses the request's media
-        // type, so a representation that needs it (e.g. `formData()`) can no longer
-        // be produced even though the bytes are still available. Carry the original
-        // `Content-Type` over, except for `FormData`, where `Response` must generate
-        // a fresh multipart boundary of its own.
-        const contentType =
-          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
-        return new Response(body, {
-          headers: contentType ? { 'Content-Type': contentType } : undefined,
-        })[key]()
-      })
-    }
-
-    return (bodyCache[key] = raw[key]())
+    return (bodyCache[key] ??= (
+      (bodyCache.arrayBuffer ??= raw.arrayBuffer() as never) as unknown as Promise<ArrayBuffer>
+    ).then((buffer) =>
+      new Response(buffer, {
+        headers: { 'Content-Type': raw.headers.get('content-type') ?? '' },
+      })[key]()
+    ) as never)
   }
 
   /**
@@ -483,23 +465,15 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     return req.raw.clone()
   }
 
-  const cacheKey = (Object.keys(req.bodyCache) as Array<keyof Body>)[0]
-  if (!cacheKey) {
+  if (!req.bodyCache.arrayBuffer) {
     throw new HTTPException(500, {
       message:
         'Cannot clone request: body was already consumed and not cached. Please use HonoRequest methods (e.g., req.json(), req.text()) instead of consuming req.raw directly.',
     })
   }
 
-  let body: BodyInit = await req[cacheKey]()
+  const body: BodyInit = await req.arrayBuffer()
   const headers = req.header()
-  if (cacheKey === 'json') {
-    body = JSON.stringify(body)
-    delete headers['content-length']
-  } else if (body instanceof FormData) {
-    delete headers['content-type']
-    delete headers['content-length']
-  }
 
   const requestInit: RequiredRequestInit = {
     body,
