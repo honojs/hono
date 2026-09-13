@@ -62,6 +62,7 @@
     "./router/trie-router": "./src/router/trie-router/index.ts",
     "./router/pattern-router": "./src/router/pattern-router/index.ts",
     "./router/linear-router": "./src/router/linear-router/index.ts",
+    "./router/transform-router": "./src/router/transform-router/index.ts",
     "./client": "./src/client/index.ts",
     "./adapter": "./src/helper/adapter/index.ts",
     "./factory": "./src/helper/factory/index.ts",
