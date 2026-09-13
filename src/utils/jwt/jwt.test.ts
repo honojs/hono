@@ -94,17 +94,16 @@ describe('JWT', () => {
 
   it('JwtTokenInvalid for a signature that is not valid base64url', async () => {
     const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.@@@@'
-    const secret = 'a-secret'
-    let err: JwtTokenInvalid
-    let authorized
-    try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
-    } catch (e) {
-      err = e as JwtTokenInvalid
-    }
-    // @ts-ignore
-    expect(err).toEqual(new JwtTokenInvalid(tok))
-    expect(authorized).toBeUndefined()
+    const err = await JWT.verify(tok, 'a-secret', AlgorithmTypes.HS256).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(JwtTokenInvalid)
+    expect(err).toHaveProperty('message', `invalid JWT token: ${tok}`)
+  })
+
+  it('JwtTokenSignatureMismatched for an empty signature', async () => {
+    const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.'
+    const err = await JWT.verify(tok, 'a-secret', AlgorithmTypes.HS256).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(JwtTokenSignatureMismatched)
+    expect(err).toHaveProperty('message', `token(${tok}) signature mismatched`)
   })
 
   it('JwtTokenNotBefore', async () => {
