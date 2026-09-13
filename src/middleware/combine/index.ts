@@ -108,6 +108,16 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
             if (res === false) {
               throw new Error('Unmet condition')
             }
+            if (res === true) {
+              // A `Condition` reports a verdict, it does not call `next()` itself.
+              // Returning the boolean leaves `compose` assigning it to `c.res`, so
+              // the app resolves to `true` instead of a `Response` and the rest of
+              // the chain never runs. `some()` already continues here.
+              if (!c.finalized) {
+                await next()
+              }
+              return
+            }
             return res
           },
         ],
