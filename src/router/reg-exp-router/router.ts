@@ -22,15 +22,19 @@ let wildcardRegExpCache: Record<string, RegExp> = createNullObject()
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     `^${path.replace(
-      /\/:[^/{}]+(?:\{\[\^\/]\+})?(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()?{}|])/g,
-      (match, metaChar) =>
+      /\/:[^/{}]+(?:\{\[\^\/]\+})?(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()?{}|])|(\/\*)(?=\/)/g,
+      (match, metaChar, midWildcard) =>
         metaChar
           ? `\\${metaChar}`
-          : match === '/*'
-            ? TAIL_WILDCARD_REG_EXP_STR
-            : match === '*'
-              ? ONLY_WILDCARD_REG_EXP_STR
-              : `/:${LABEL_REG_EXP_STR}`
+          : midWildcard
+            ? // a '*' in the middle of a path stands for one whole part, as it does
+              // in the trie; only a trailing '*' reaches into the rest of the path
+              `/${LABEL_REG_EXP_STR}`
+            : match === '/*'
+              ? TAIL_WILDCARD_REG_EXP_STR
+              : match === '*'
+                ? ONLY_WILDCARD_REG_EXP_STR
+                : `/:${LABEL_REG_EXP_STR}`
     )}$`
   ))
 }

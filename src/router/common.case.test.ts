@@ -548,6 +548,26 @@ export const runTest = ({
       })
     })
 
+    describe('Middle wildcard covering a label route', () => {
+      beforeEach(() => {
+        router.add('GET', '/*/admin/*', 'middleware')
+        router.add('GET', '/:tenant/admin/users', 'handler')
+      })
+
+      it('GET /acme/admin/users', async () => {
+        const res = match('GET', '/acme/admin/users')
+        expect(res.length).toBe(2)
+        expect(res[0].handler).toEqual('middleware')
+        expect(res[1].handler).toEqual('handler')
+        expect(res[1].params['tenant']).toBe('acme')
+      })
+
+      it('GET /acme/public/users', async () => {
+        const res = match('GET', '/acme/public/users')
+        expect(res.length).toBe(0)
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')
