@@ -4,6 +4,7 @@
  */
 
 import type { HtmlEscapedString } from '../../utils/html'
+import { renderChildren } from '../base'
 import type { Child } from '../base'
 import { renderToReadableStream as renderToReadableStreamHono } from '../streaming'
 import version from './'
@@ -11,6 +12,9 @@ import version from './'
 export interface RenderToStringOptions {
   identifierPrefix?: string
 }
+
+const prepareRoot = (element: Child): Child =>
+  typeof element === 'string' || Array.isArray(element) ? renderChildren([element]) : element
 
 /**
  * Render JSX element to string.
@@ -22,7 +26,8 @@ const renderToString = (element: Child, options: RenderToStringOptions = {}): st
   if (Object.keys(options).length > 0) {
     console.warn('options are not supported yet')
   }
-  const res = element?.toString() ?? ''
+  element = prepareRoot(element)
+  const res = element instanceof Promise ? element : (element?.toString() ?? '')
   if (typeof res !== 'string') {
     throw new Error('Async component is not supported in renderToString')
   }
@@ -55,6 +60,7 @@ const renderToReadableStream = async (
     console.warn('options are not supported yet, except onError')
   }
 
+  element = prepareRoot(element)
   if (!element || typeof element !== 'object') {
     element = element?.toString() ?? ''
   }

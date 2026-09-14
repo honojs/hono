@@ -1179,6 +1179,65 @@ describe('Context', () => {
       expect(template.toString()).toBe('<div><span>dark</span>!</div><div><span>dark</span>!</div>')
     })
 
+    it('escapes a single string child', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>{'<img src=x onerror=alert(1)>'}</ThemeContext.Provider>
+      )
+
+      expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+    })
+
+    it('escapes a string returned by an asynchronous child', async () => {
+      const Async = async () => '<img src=x onerror=alert(1)>' as any
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Async />
+        </ThemeContext.Provider>
+      )
+
+      expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+    })
+
+    it('preserves explicitly trusted content', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          {raw('<strong>trusted</strong>')}
+        </ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('<strong>trusted</strong>')
+    })
+
+    it('escapes untrusted object stringification', async () => {
+      const object = { toString: () => '<img src=x onerror=alert(1)>' }
+      const asyncObject = { toString: async () => '<img src=x onerror=alert(1)>' }
+      const rawObject = { toString: () => raw('<img src=x onerror=alert(1)>') }
+
+      for (const child of [object, asyncObject, rawObject]) {
+        const template = (
+          <ThemeContext.Provider value='dark'>{child as never}</ThemeContext.Provider>
+        )
+        expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+      }
+    })
+
+    it('continues to omit unsupported objects in child arrays', async () => {
+      const object = { toString: () => '<img src=x onerror=alert(1)>' }
+      const template = (
+        <ThemeContext.Provider value='dark'>{[object as never, 'safe']}</ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('safe')
+    })
+
+    it('keeps a direct Promise child unchanged', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>{Promise.resolve('resolved')}</ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('[object Promise]')
+    })
+
     it('nested', () => {
       const template = (
         <ThemeContext.Provider value='dark'>
