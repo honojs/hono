@@ -46,6 +46,11 @@ export class StreamingApi {
   }
 
   async write(input: Uint8Array | string): Promise<StreamingApi> {
+    if (this.aborted) {
+      // The client is gone and the writable may be errored; depending on the
+      // runtime, writing can throw or hang, so writes after abort are no-ops.
+      return this
+    }
     try {
       if (typeof input === 'string') {
         input = this.encoder.encode(input)
@@ -68,6 +73,10 @@ export class StreamingApi {
 
   async close() {
     this.closed = true
+    if (this.aborted) {
+      // The writable was torn down by abort(); there is nothing to close.
+      return
+    }
     try {
       await this.writer.close()
     } catch {
