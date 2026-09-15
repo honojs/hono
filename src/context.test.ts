@@ -300,6 +300,20 @@ describe('Context', () => {
     expect(c.res.headers.get('Content-Type')).toBe('application/json')
   })
 
+  it('Should append headers prepared via `c.header()` even if `c.res` was never read first', () => {
+    c.header('x-Custom1', 'Message1')
+    const res2 = new Response('foo2', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    res2.headers.set('x-Custom2', 'Message2')
+    c.res = res2
+    expect(c.res.headers.get('x-Custom1')).toBe('Message1')
+    expect(c.res.headers.get('x-Custom2')).toBe('Message2')
+    expect(c.res.headers.get('Content-Type')).toBe('application/json')
+  })
+
   it('Should return 200 response', async () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
