@@ -66,7 +66,10 @@ export class LinearRouter<T> implements Router<T> {
                 continue ROUTES_LOOP
               }
             } else {
-              const index = path.indexOf('/', pos)
+              // A standalone `*` segment consumes at least one character; one with a
+              // prefix may consume none.
+              const standalone = part.charCodeAt(part.length - 1) === 47
+              const index = path.indexOf('/', standalone ? pos + 1 : pos)
               if (index === -1) {
                 continue ROUTES_LOOP
               }
