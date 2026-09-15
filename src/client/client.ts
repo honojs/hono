@@ -116,7 +116,12 @@ class ClientRequestImpl {
       }
     }
 
-    if (this.cType) {
+    if (
+      this.cType &&
+      !Object.entries(headerValues).some(
+        ([key, value]) => value !== undefined && key.toLowerCase() === 'content-type'
+      )
+    ) {
       headerValues['Content-Type'] = this.cType
     }
 
