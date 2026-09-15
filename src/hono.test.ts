@@ -1221,6 +1221,22 @@ describe('Middleware', () => {
       expect(res.headers.get('x-custom')).toBe(null)
     })
   })
+
+  describe('Header set via `c.header()` before `next()`, with a raw `Response` returned downstream', () => {
+    const app = new Hono()
+
+    app.use('*', async (c, next) => {
+      c.header('x-custom', 'foo')
+      await next()
+    })
+
+    app.get('/', () => new Response('Handler'))
+
+    it('Should keep the header set before `next()`', async () => {
+      const res = await app.request('/')
+      expect(res.headers.get('x-custom')).toBe('foo')
+    })
+  })
 })
 
 describe('Builtin Middleware', () => {
