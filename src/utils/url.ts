@@ -181,6 +181,19 @@ export const mergePath: (...paths: string[]) => string = (
   }`
 }
 
+/**
+ * A trailing `*` already matches every remaining path segment, so `**` (or
+ * more) written out of habit from other routers is not a distinct pattern.
+ * Collapse it to a single `*` so every router implementation sees the same,
+ * already-supported path.
+ * @param {string} path - The route path to normalize.
+ * @returns {string} The path with a collapsed trailing wildcard run.
+ * @example
+ * collapseWildcard('/api/**') // '/api/*'
+ * collapseWildcard('/api/*') // '/api/*'
+ */
+export const collapseWildcard = (path: string): string => path.replace(/\*{2,}$/, '*')
+
 export const checkOptionalParameter = (path: string): string[] | null => {
   /*
     If path is `/api/animals/:type?` it will return:
