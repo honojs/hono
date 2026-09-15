@@ -223,24 +223,44 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
 
     for (const anyCachedKey in bodyCache) {
-      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
-        if (anyCachedKey === 'json') {
-          body = JSON.stringify(body)
-        }
-        // Rebuilding the body through a bare `Response` loses the request's media
-        // type, so a representation that needs it (e.g. `formData()`) can no longer
-        // be produced even though the bytes are still available. Carry the original
-        // `Content-Type` over, except for `FormData`, where `Response` must generate
-        // a fresh multipart boundary of its own.
-        const contentType =
-          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
-        return new Response(body, {
-          headers: contentType ? { 'Content-Type': contentType } : undefined,
-        })[key]()
-      })
+      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>)
+        .then((body) => {
+          if (anyCachedKey === 'json') {
+            body = JSON.stringify(body)
+          }
+          const contentType =
+            anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
+          return new Response(body, {
+            headers: contentType ? { 'Content-Type': contentType } : undefined,
+          })[key]()
+        })
+        .catch((e) => {
+          delete bodyCache[anyCachedKey as keyof Body]
+          throw e
+        })
     }
 
-    return (bodyCache[key] = raw[key]())
+    let rawClone: Request | undefined
+    try {
+      if (!raw.bodyUsed) {
+        rawClone = raw.clone()
+      }
+    } catch {}
+
+    const promise = raw[key]().catch((e: unknown) => {
+      delete bodyCache[key]
+      if (rawClone) {
+        const bytesPromise = rawClone.arrayBuffer().catch(() => {
+          delete bodyCache['arrayBuffer' as keyof Body]
+          throw e
+        })
+        bodyCache['arrayBuffer'] = bytesPromise as unknown as ArrayBuffer
+        bytesPromise.catch(() => {})
+      }
+      throw e
+    })
+
+    return (bodyCache[key] = promise as unknown as Body[typeof key])
   }
 
   /**
