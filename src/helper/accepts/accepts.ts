@@ -19,15 +19,19 @@ export interface acceptsOptions extends acceptsConfig {
 }
 
 const matchType = (acceptType: string, supportedType: string): boolean => {
-  if (acceptType === supportedType) {
+  // Media types (RFC 9110 §8.3.1) and language tags (RFC 4647 §2.1) match
+  // case-insensitively, so fold both sides before comparing.
+  const accept = acceptType.toLowerCase()
+  const supported = supportedType.toLowerCase()
+  if (accept === supported) {
     return true
   }
-  if (acceptType === '*/*' || acceptType === '*') {
+  if (accept === '*/*' || accept === '*') {
     return false
   }
-  if (acceptType.endsWith('/*')) {
-    const [acceptMain] = acceptType.split('/')
-    const [supportedMain] = supportedType.split('/')
+  if (accept.endsWith('/*')) {
+    const [acceptMain] = accept.split('/')
+    const [supportedMain] = supported.split('/')
     return acceptMain === supportedMain
   }
   return false

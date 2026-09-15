@@ -306,4 +306,79 @@ describe('Usage', () => {
     expect(req1.headers.get('Location')).toBe('/ja/foo')
     expect(await req2.text()).toBe('lang: en')
   })
+
+  test('should match media types case-insensitively (RFC 9110 §8.3.1)', () => {
+    const c = {
+      req: {
+        header: () => 'TEXT/HTML',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html'],
+      default: 'application/json',
+    }
+    expect(accepts(c, options)).toBe('text/html')
+  })
+
+  test('should match mixed-case media types and subtypes case-insensitively', () => {
+    const c = {
+      req: {
+        header: () => 'Text/Html',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html'],
+      default: 'application/json',
+    }
+    expect(accepts(c, options)).toBe('text/html')
+  })
+
+  test('should match case-insensitive subtype wildcards', () => {
+    const c = {
+      req: {
+        header: () => 'TEXT/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html'],
+      default: 'application/json',
+    }
+    expect(accepts(c, options)).toBe('text/html')
+  })
+
+  test('should match language tags case-insensitively (RFC 4647 §2.1)', () => {
+    const c = {
+      req: {
+        header: () => 'en-us',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept-Language',
+      supports: ['en-US'],
+      default: 'en',
+    }
+    expect(accepts(c, options)).toBe('en-US')
+  })
+
+  test('should match case-folded language tags regardless of header casing', () => {
+    const c = {
+      req: {
+        header: () => 'EN',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept-Language',
+      supports: ['en'],
+      default: 'ja',
+    }
+    expect(accepts(c, options)).toBe('en')
+  })
 })
