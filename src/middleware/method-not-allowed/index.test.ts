@@ -186,6 +186,22 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.get('Allow')).toBe('GET, HEAD, POST')
   })
 
+
+  it('ignores trailing wildcard routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('API'))
+    app.get('/*', (c) => c.text('Wildcard'))
+
+    const apiRes = await app.request('/api', { method: 'POST' })
+    expect(apiRes.status).toBe(405)
+    expect(apiRes.headers.get('Allow')).toBe('GET, HEAD')
+
+    const wildcardRes = await app.request('/other', { method: 'POST' })
+    expect(wildcardRes.status).toBe(404)
+    expect(wildcardRes.headers.has('Allow')).toBe(false)
+  })
+
   it('ignores ALL routes when collecting allowed methods', async () => {
     const app = new Hono()
     app.use(methodNotAllowed({ app }))
