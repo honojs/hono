@@ -1,5 +1,19 @@
 # Migration Guide
 
+## v4.x to v5.0.0
+
+### Synchronous color detection
+
+`getColorEnabledAsync()` from `hono/utils/color` has been removed. Use `getColorEnabled()` instead. On Cloudflare Workers, pass the environment bindings explicitly:
+
+```ts
+import { getColorEnabled } from 'hono/utils/color'
+
+app.get('/color', (c) => c.json({ enabled: getColorEnabled(c.env) }))
+```
+
+The logger middleware passes `c.env` automatically, so existing `logger()` calls do not need to change. `NO_COLOR` in either the supplied bindings or the runtime environment disables colors. Bindings are checked on each call.
+
 ## v4.3.11 to v4.4.0
 
 ### `deno.land/x` to JSR

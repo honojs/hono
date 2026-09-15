@@ -36,6 +36,14 @@ describe('workerd', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('True')
   })
+
+  it('Should log a colored status', async () => {
+    const res = await worker.fetch('/logger')
+    expect(await res.json()).toEqual([
+      '<-- GET /logger',
+      expect.stringContaining('--> GET /logger \x1b[32m200\x1b[0m'),
+    ])
+  })
 })
 
 describe('workerd with WebSocket', () => {
@@ -85,6 +93,7 @@ describe('workerd with NO_COLOR', () => {
         NO_COLOR: true,
       },
       compatibilityDate: '2026-07-01',
+      compatibilityFlags: ['disallow_importable_env'],
       experimental: { disableExperimentalWarning: true },
     })
   })
@@ -97,5 +106,13 @@ describe('workerd with NO_COLOR', () => {
     const res = await worker.fetch('/color')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('False')
+  })
+
+  it('Should log an uncolored status from request bindings', async () => {
+    const res = await worker.fetch('/logger')
+    expect(await res.json()).toEqual([
+      '<-- GET /logger',
+      expect.stringMatching(/^--> GET \/logger 200 \d+ms$/),
+    ])
   })
 })
