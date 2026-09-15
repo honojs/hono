@@ -4,13 +4,44 @@ import { checkOptionalParameter } from '../../utils/url'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
+type RoutePart =
+  | { type: 'literal'; value: string }
+  | { type: 'param'; name: string; regex?: RegExp }
 const emptyParams = Object.create(null)
 
 const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
+const buildParts = (routePath: string): RoutePart[] => {
+  const parts = routePath.match(splitPathRe) as string[]
+  const result: RoutePart[] = []
+
+  for (let j = 0, len = parts.length; j < len; j++) {
+    const part = parts[j]
+
+    if (part.charCodeAt(1) === 58) {
+      let name = part.slice(2)
+      let regex: RegExp | undefined
+
+      if (name.charCodeAt(name.length - 1) === 125) {
+        const openBracePos = name.indexOf('{')
+        const next = parts[j + 1]
+        const lookahead = next && next[1] !== ':' && next[1] !== '*' ? `(?=${next})` : ''
+
+        regex = new RegExp(name.slice(openBracePos + 1, -1) + lookahead, 'd')
+        name = name.slice(0, openBracePos)
+      }
+      result.push({ type: 'param', name, regex })
+    } else {
+      result.push({ type: 'literal', value: part })
+    }
+  }
+  return result
+}
 export class LinearRouter<T> implements Router<T> {
   name: string = 'LinearRouter'
   #routes: [string, string, T][] = []
+  // Cache only parameter-route parsing.
+  #routeParts = new Map<string, RoutePart[]>()
 
   add(method: string, path: string, handler: T) {
     for (
@@ -18,7 +49,12 @@ export class LinearRouter<T> implements Router<T> {
       i < len;
       i++
     ) {
-      this.#routes.push([method, paths[i], handler])
+      const routePath = paths[i]
+      // Only preprocess routes that actually need it.
+      if (routePath.indexOf(':') !== -1 && routePath.indexOf('*') === -1) {
+        this.#routeParts.get(routePath) || this.#routeParts.set(routePath, buildParts(routePath))
+      }
+      this.#routes.push([method, routePath, handler])
     }
   }
 
@@ -76,7 +112,7 @@ export class LinearRouter<T> implements Router<T> {
           handlers.push([handler, emptyParams])
         } else if (hasLabel && !hasStar) {
           const params: Record<string, string> = Object.create(null)
-          const parts = routePath.match(splitPathRe) as string[]
+          const parts = this.#routeParts.get(routePath)!
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -85,27 +121,20 @@ export class LinearRouter<T> implements Router<T> {
             }
 
             const part = parts[j]
-            if (part.charCodeAt(1) === 58) {
+            if (part.type === 'param') {
               if (path.charCodeAt(pos) !== 47) {
                 continue ROUTES_LOOP
               }
 
-              // /:label
-              let name = part.slice(2)
               let value
 
-              if (name.charCodeAt(name.length - 1) === 125) {
-                // :label{pattern}
-                const openBracePos = name.indexOf('{')
-                const next = parts[j + 1]
-                const lookahead = next && next[1] !== ':' && next[1] !== '*' ? `(?=${next})` : ''
-                const pattern = name.slice(openBracePos + 1, -1) + lookahead
+              if (part.regex) {
                 const restPath = path.slice(pos + 1)
-                const match = new RegExp(pattern, 'd').exec(restPath) as RegExpMatchArrayWithIndices
+                const match = part.regex.exec(restPath) as RegExpMatchArrayWithIndices | null
                 if (!match || match.indices[0][0] !== 0 || match.indices[0][1] === 0) {
                   continue ROUTES_LOOP
                 }
-                name = name.slice(0, openBracePos)
+
                 value = restPath.slice(...match.indices[0])
                 pos += match.indices[0][1] + 1
               } else {
@@ -120,13 +149,13 @@ export class LinearRouter<T> implements Router<T> {
                 pos = endValuePos
               }
 
-              params[name] ||= value as string
+              params[part.name] ||= value as string
             } else {
-              const index = path.indexOf(part, pos)
+              const index = path.indexOf(part.value, pos)
               if (index !== pos) {
                 continue ROUTES_LOOP
               }
-              pos += part.length
+              pos += part.value.length
             }
 
             if (j === lastIndex) {
