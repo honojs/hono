@@ -92,6 +92,50 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  it('rejects token with non-object payload (null)', async () => {
+    const secret = 'a-secret'
+    const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+    const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+    const encodedPayload = encode('null')
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      secret,
+      AlgorithmTypes.HS256,
+      utf8Encoder.encode(signingInput)
+    )
+    const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+    let err
+    try {
+      await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenInvalid(tok))
+  })
+
+  it('rejects token with array or primitive payload', async () => {
+    const secret = 'a-secret'
+    const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+    const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
+    const encodedPayload = encode('[1, 2, 3]')
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      secret,
+      AlgorithmTypes.HS256,
+      utf8Encoder.encode(signingInput)
+    )
+    const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+
+    let err
+    try {
+      await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenInvalid(tok))
+  })
+
   it('JwtTokenNotBefore', async () => {
     const tok =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'

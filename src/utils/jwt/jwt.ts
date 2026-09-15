@@ -124,6 +124,9 @@ export const verify = async (
   if (!isTokenHeader(header)) {
     throw new JwtHeaderInvalid(header)
   }
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    throw new JwtTokenInvalid(token)
+  }
   if (header.alg !== alg) {
     throw new JwtAlgorithmMismatch(alg, header.alg)
   }
