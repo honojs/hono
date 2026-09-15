@@ -183,7 +183,7 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('404 Not Found')
   })
 
-  it('Should not return a pre-compressed response - /static/hello.html', async () => {
+  it('Should vary an identity response for an unsupported encoding', async () => {
     const app = new Hono().use(
       '*',
       baseServeStatic({
@@ -198,9 +198,49 @@ describe('Serve Static Middleware', () => {
 
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toBeNull()
-    expect(res.headers.get('Vary')).toBeNull()
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('Hello in static/hello.html')
+  })
+
+  it('Should vary an identity response when Accept-Encoding is absent', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.html')
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBeNull()
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    expect(await res.text()).toBe('Hello in static/hello.html')
+  })
+
+  test.each([
+    ['Cookie', 'Cookie, Accept-Encoding'],
+    ['aCcEpT-eNcOdInG', 'aCcEpT-eNcOdInG'],
+    ['*', '*'],
+  ])('Should merge Accept-Encoding with Vary: %s', async (vary, expected) => {
+    const app = new Hono()
+    app.use('*', async (c, next) => {
+      c.header('Vary', vary)
+      await next()
+    })
+    app.use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.html')
+
+    expect(res.headers.get('Vary')).toBe(expected)
   })
 
   it('Should not find pre-compressed files - /static/hello.jpg', async () => {
