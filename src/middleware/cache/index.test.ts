@@ -1116,7 +1116,7 @@ describe('Cache Skipping Logic', () => {
     expect(caches.open).not.toHaveBeenCalled()
   })
 
-  it('Should bypass QUERY caching after the body was read directly as FormData', async () => {
+  it('Should cache QUERY after the body was read directly as FormData', async () => {
     const { mockCache } = stubStoreBackedCache()
     const app = new Hono()
     let queryCount = 0
@@ -1149,9 +1149,8 @@ describe('Cache Skipping Logic', () => {
     await request()
     const res = await request()
 
-    expect(res.headers.get('X-Count')).toBe('2')
-    expect(caches.open).not.toHaveBeenCalled()
-    expect(mockCache.put).not.toHaveBeenCalled()
+    expect(res.headers.get('X-Count')).toBe('1')
+    expect(mockCache.put).toHaveBeenCalledOnce()
   })
 
   it('Should cache QUERY after the body was read through HonoRequest', async () => {
