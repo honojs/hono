@@ -5,7 +5,15 @@
 
 import type { Context } from '../../context'
 
-export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'
+export type Runtime =
+  | 'node'
+  | 'deno'
+  | 'bun'
+  | 'ant'
+  | 'workerd'
+  | 'fastly'
+  | 'edge-light'
+  | 'other'
 
 export const env = <
   T extends Record<string, unknown>,
@@ -25,6 +33,7 @@ export const env = <
   const runtimeEnvHandlers: Record<string, () => T> = {
     bun: () => globalEnv,
     node: () => globalEnv,
+    ant: () => globalEnv,
     'edge-light': () => globalEnv,
     deno: () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -43,6 +52,7 @@ export const env = <
 export const knownUserAgents: Partial<Record<Runtime, string>> = {
   deno: 'Deno',
   bun: 'Bun',
+  ant: 'Ant',
   workerd: 'Cloudflare-Workers',
   node: 'Node.js',
 }
