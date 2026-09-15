@@ -13,6 +13,7 @@ import type {
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
+import { bufferToFormData } from './utils/buffer'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
 import { getQueryParam, getQueryParams, tryDecodeURIComponent } from './utils/url'
@@ -238,6 +239,27 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
           headers: contentType ? { 'Content-Type': contentType } : undefined,
         })[key]()
       })
+    }
+
+    if (key === 'formData') {
+      // `raw.formData()` consumes the stream even when it rejects (undici marks the body as
+      // used before it validates the media type), so a failed parse used to leave the request
+      // with no readable representation at all. Read the bytes first, the same way
+      // `parseBody()` already does, so the body survives a failed parse.
+      return (bodyCache.formData = this.arrayBuffer().then((buffer) =>
+        bufferToFormData(buffer, raw.headers.get('content-type') ?? '').then((formData) => {
+          // On success keep `formData` as the first entry, which is the position consumers
+          // inspecting `Object.keys(bodyCache)[0]` (`cloneRawRequest()`, the cache
+          // middleware) rely on. Not done on failure: the raw bytes then stay first so the
+          // other representations remain readable.
+          const buffered = bodyCache.arrayBuffer
+          delete bodyCache.arrayBuffer
+          if (buffered) {
+            bodyCache.arrayBuffer = buffered
+          }
+          return formData
+        })
+      ) as unknown as FormData)
     }
 
     return (bodyCache[key] = raw[key]())
