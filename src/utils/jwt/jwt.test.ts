@@ -1514,6 +1514,35 @@ describe('verifyWithJwks key handling', () => {
 
     expect(localKeys).toEqual(originalKeys)
   })
+
+  it('Should throw when JWKS response is not valid JSON', async () => {
+    const originalFetch = globalThis.fetch
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: 'unknown-key' })
+    ).toString('base64url')
+    const payload = Buffer.from(JSON.stringify({})).toString('base64url')
+    const token = `${header}.${payload}.x`
+
+    try {
+      globalThis.fetch = (async () => {
+        return new Response('not-json', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }) as typeof globalThis.fetch
+
+      await expect(
+        verifyWithJwks(token, {
+          jwks_uri: 'https://example.invalid/.well-known/jwks.json',
+          allowedAlgorithms: ['RS256'],
+        })
+      ).rejects.toThrow(
+        'failed to parse JWKS JSON from https://example.invalid/.well-known/jwks.json'
+      )
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
 })
 
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {

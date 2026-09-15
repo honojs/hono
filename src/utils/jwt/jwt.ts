@@ -232,7 +232,12 @@ export const verifyWithJwks = async (
     if (!response.ok) {
       throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
     }
-    const data = (await response.json()) as { keys?: JsonWebKey[] }
+    let data: { keys?: JsonWebKey[] }
+    try {
+      data = (await response.json()) as { keys?: JsonWebKey[] }
+    } catch {
+      throw new Error(`failed to parse JWKS JSON from ${options.jwks_uri}`)
+    }
     if (!data.keys) {
       throw new Error('invalid JWKS response. "keys" field is missing')
     }
