@@ -86,6 +86,8 @@ export type VerifyOptions = {
   iat?: boolean
   /** Acceptable audience(s) for the token */
   aud?: string | string[] | RegExp
+  /** Clock tolerance in seconds to account for clock skew (default: `0`) */
+  leeway?: number
 }
 
 export type VerifyOptionsWithAlg = {
@@ -109,6 +111,7 @@ export const verify = async (
     exp = true,
     iat = true,
     aud,
+    leeway = 0,
   } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions
 
   if (!alg) {
@@ -129,17 +132,29 @@ export const verify = async (
   }
   const now = Math.floor(Date.now() / 1000)
   if (nbf && payload.nbf !== undefined) {
-    if (typeof payload.nbf !== 'number' || !Number.isFinite(payload.nbf) || payload.nbf > now) {
+    if (
+      typeof payload.nbf !== 'number' ||
+      !Number.isFinite(payload.nbf) ||
+      payload.nbf > now + leeway
+    ) {
       throw new JwtTokenNotBefore(token)
     }
   }
   if (exp && payload.exp !== undefined) {
-    if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || payload.exp <= now) {
+    if (
+      typeof payload.exp !== 'number' ||
+      !Number.isFinite(payload.exp) ||
+      payload.exp <= now - leeway
+    ) {
       throw new JwtTokenExpired(token)
     }
   }
   if (iat && payload.iat !== undefined) {
-    if (typeof payload.iat !== 'number' || !Number.isFinite(payload.iat) || now < payload.iat) {
+    if (
+      typeof payload.iat !== 'number' ||
+      !Number.isFinite(payload.iat) ||
+      now < payload.iat - leeway
+    ) {
       throw new JwtTokenIssuedAt(now, payload.iat)
     }
   }
