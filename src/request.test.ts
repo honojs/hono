@@ -508,6 +508,38 @@ describe('Body methods with caching', () => {
         // application/json is not a valid formData content-type, so this should throw
         expect(req.formData()).rejects.toThrow()
       })
+
+      it('failed formData() does not poison other body methods', async () => {
+        const req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: 'push' }),
+          })
+        )
+
+        await expect(req.formData()).rejects.toThrow()
+        expect(await req.text()).toBe(JSON.stringify({ event: 'push' }))
+        expect(await req.json()).toEqual({ event: 'push' })
+        expect(await req.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+        expect(await req.bytes()).toBeInstanceOf(Uint8Array)
+        expect(await req.blob()).toBeInstanceOf(Blob)
+      })
+
+      it('text() after failed formData() is still readable via cache fallback', async () => {
+        const req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{"foo":"bar"}',
+          })
+        )
+
+        await expect(req.formData()).rejects.toThrow()
+        // Second formData should still throw, but not poison text
+        await expect(req.formData()).rejects.toThrow()
+        expect(await req.text()).toBe('{"foo":"bar"}')
+      })
     })
 
     describe('Return type', () => {
