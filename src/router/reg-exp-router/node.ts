@@ -1,8 +1,8 @@
 import { createNullObject } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
-export const ONLY_WILDCARD_REG_EXP_STR = '.*'
-export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
+export const ONLY_WILDCARD_REG_EXP_STR = '[\\s\\S]*'
+export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[\\s\\S]*)'
 export const PATH_ERROR = Symbol()
 
 export type ParamAssocArray = [string, number][]
@@ -77,7 +77,7 @@ export class Node {
         const name = pattern[1]
         let regexpStr = pattern[2] || LABEL_REG_EXP_STR
         if (name && pattern[2]) {
-          if (regexpStr === '.*') {
+          if (regexpStr === '.*' || regexpStr === ONLY_WILDCARD_REG_EXP_STR) {
             throw PATH_ERROR
           }
           regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
