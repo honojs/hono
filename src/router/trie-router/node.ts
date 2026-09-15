@@ -119,6 +119,9 @@ export class Node<T> {
         }
 
         for (const child of node.#patterns) {
+          if (isLast && child === nextNode) {
+            continue
+          }
           const pattern = child.#pattern!
           const params = node.#params === emptyParams ? {} : { ...node.#params }
 
