@@ -878,6 +878,23 @@ export const runTest = ({
       })
     })
 
+    describe('Empty path segment', () => {
+      beforeEach(() => {
+        router.add('GET', '/u/:id/posts', 'posts')
+      })
+
+      it('GET /u/42/posts', () => {
+        const res = match('GET', '/u/42/posts')
+        expect(res.length).toBe(1)
+        expect(res[0].params['id']).toBe('42')
+      })
+
+      it('GET /u//posts does not match with an empty param', () => {
+        const res = match('GET', '/u//posts')
+        expect(res.length).toBe(0)
+      })
+    })
+
     describe('Same path', () => {
       beforeEach(() => {
         router.add('GET', '/hey', 'Middleware A')
