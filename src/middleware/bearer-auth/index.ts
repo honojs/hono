@@ -13,7 +13,8 @@ const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
-type MessageFunction = (c: Context) => string | object | Promise<string | object>
+type MessageValue = string | object | Response
+type MessageFunction = (c: Context) => MessageValue | Promise<MessageValue>
 type CustomizedErrorResponseOptions = {
   wwwAuthenticateHeader?: string | object | MessageFunction
   message?: string | object | MessageFunction
@@ -140,6 +141,18 @@ export const bearerAuth = <E extends Env = Env>(
     }
     const responseMessage =
       typeof messageOption === 'function' ? await messageOption(c) : messageOption
+    if (responseMessage instanceof Response) {
+      const resHeaders = new Headers(responseMessage.headers)
+      if (!resHeaders.has('WWW-Authenticate')) {
+        resHeaders.set('WWW-Authenticate', headers['WWW-Authenticate'])
+      }
+      throw new HTTPException(status, {
+        res: new Response(responseMessage.body, {
+          status: responseMessage.status || status,
+          headers: resHeaders,
+        }),
+      })
+    }
     const res =
       typeof responseMessage === 'string'
         ? new Response(responseMessage, { status, headers })
