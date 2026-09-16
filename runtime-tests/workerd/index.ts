@@ -4,7 +4,7 @@ import { Hono } from '../../src/hono'
 import { logger } from '../../src/middleware/logger'
 import { getColorEnabled } from '../../src/utils/color'
 
-const app = new Hono()
+const app = new Hono<{ Bindings: { NAME?: string; NO_COLOR?: boolean } }>()
 
 app.get('/', (c) => c.text(`Hello from ${getRuntimeKey()}`))
 
