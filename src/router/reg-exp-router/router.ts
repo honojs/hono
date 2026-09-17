@@ -161,8 +161,8 @@ export class RegExpRouter<T> implements Router<T> {
         }
         handlerData[pathData[0]] = handlers.map(([h, handlerPath]) => [
           h,
-          trie.paths[handlerPath][1].reduceRight((map, [key], i) => {
-            map[key] = paramReplacementMap[pathData[1][i][1]]
+          trie.paths[handlerPath][1].reduceRight((map, [key, paramIndex]) => {
+            map[key] = paramReplacementMap[paramIndex]
             return map
           }, createNullObject()),
         ])
