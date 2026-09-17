@@ -8,13 +8,22 @@ export class Trie {
   #context: Context = { varIndex: 0 }
   #root: Node = new Node()
   #index: number = 0
+  // path -> nodes from the root to the terminal, and the tokens between them
+  #nodes: Record<string, Node[]> = createNullObject()
+  #tokens: Record<string, string[]> = createNullObject()
   // dynamic path -> [handler index, param assoc]; static paths are not registered
   paths: Record<string, [number, ParamAssocArray]> = createNullObject()
+
+  has(path: string): boolean {
+    return path in this.#nodes
+  }
 
   insert(path: string, isStatic: boolean): void {
     if (isStatic) {
       // a static path has no pattern; every character is a literal token
-      this.#root.insert(path.split(''), 0, [], this.#context, true)
+      const tokens = path.split('')
+      this.#nodes[path] = this.#root.insert(tokens, 0, [], this.#context, true)
+      this.#tokens[path] = tokens
       return
     }
 
@@ -52,8 +61,27 @@ export class Trie {
       }
     }
 
-    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, false)
+    this.#nodes[path] = this.#root.insert(tokens, this.#index, paramAssoc, this.#context, false)
+    this.#tokens[path] = tokens
     this.paths[path] = [this.#index++, paramAssoc]
+  }
+
+  // whether every request matching `path` also matches the wildcard path `wildcardPath`
+  covers(wildcardPath: string, path: string): boolean {
+    const nodes = this.#nodes[path]
+    const wildcardNodes = this.#nodes[wildcardPath]
+    // the node just before the wildcard terminal must be on the branch of `path`, at its own depth
+    const i = wildcardNodes.length - 2
+    if (nodes[i] !== wildcardNodes[i]) {
+      return false
+    }
+    const tokens = this.#tokens[wildcardPath]
+    // '*' matches everything below; '/*' needs `path` to end there or to continue with '/'
+    return (
+      tokens[tokens.length - 1] === '*' ||
+      i === nodes.length - 1 ||
+      this.#tokens[path][i][0] === '/'
+    )
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {

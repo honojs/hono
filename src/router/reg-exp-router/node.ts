@@ -56,9 +56,10 @@ export class Node {
     paramMap: ParamAssocArray,
     context: Context,
     isStatic: boolean
-  ): void {
+  ): Node[] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let node: Node = this
+    const nodes: Node[] = [node]
     for (let i = 0, len = tokens.length; i < len; i++) {
       const token = tokens[i]
       const pattern =
@@ -128,12 +129,14 @@ export class Node {
       }
 
       node = nextNode
+      nodes.push(node)
     }
 
     if (node.#index !== undefined) {
       throw PATH_ERROR
     }
     node.#index = isStatic ? -1 : index
+    return nodes
   }
 
   buildRegExpStr(): string {
