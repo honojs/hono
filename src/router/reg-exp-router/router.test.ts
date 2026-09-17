@@ -68,6 +68,62 @@ describe('RegExpRouter', () => {
       }
     )
 
+    it.each(['/:id{@1}', '/:id{#1}'])(
+      'should reject a pattern containing an internal marker: %s',
+      (path) => {
+        const router = new RegExpRouter<string>()
+        expect(() => router.add('GET', path, 'handler')).toThrowError(UnsupportedPathError)
+      }
+    )
+
+    it.each(['@1', '#1'])('should match %s in a definition literally', (segment) => {
+      const router = new RegExpRouter<string>()
+      router.add('ALL', `/:x{a}/${segment}/*`, 'middleware')
+      router.add('GET', `/a/${segment}/foo`, 'static')
+      router.add('GET', `/${segment}/:id`, 'dynamic')
+
+      expect(router.match('GET', `/a/${segment}/foo`)).toEqual([
+        [
+          ['middleware', { x: 0 }],
+          ['static', {}],
+        ],
+        ['a'],
+      ])
+      const [handlers, params] = router.match('GET', `/${segment}/42`)
+      expect(handlers.map(([handler]) => handler)).toEqual(['dynamic'])
+      expect(params?.[(handlers[0][1] as ParamIndexMap).id]).toBe('42')
+      expect(router.match('GET', `/a/${segment}1/foo`)[0]).toEqual([])
+    })
+
+    it.each(['@', '#'])('should capture %s with a single character pattern', (char) => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', `/:x{${char}}/*`, 'middleware')
+      router.add('GET', `/${char}/foo`, 'static')
+
+      expect(router.match('GET', `/${char}/foo`)).toEqual([
+        [
+          ['middleware', { x: 0 }],
+          ['static', {}],
+        ],
+        [char],
+      ])
+      const [handlers, params] = router.match('GET', `/${char}/bar`)
+      expect(handlers.map(([handler]) => handler)).toEqual(['middleware'])
+      expect(params?.[(handlers[0][1] as ParamIndexMap).x]).toBe(char)
+    })
+
+    it.each(['@user', '#tag'])(
+      'should support %s in a definition and internal marker text in a param value',
+      (segment) => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', `/${segment}/:id`, 'handler')
+
+        const [handlers, params] = router.match('GET', `/${segment}/@1#2`)
+        expect(handlers).toEqual([['handler', { id: 1 }]])
+        expect(params?.[1]).toBe('@1#2')
+      }
+    )
+
     it('should treat a param name ending in * as a label', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/files/:path*', 'file')
