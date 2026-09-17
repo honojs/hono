@@ -35,6 +35,24 @@ describe('RegExpRouter', () => {
       expect(res).toEqual([['get post', { id: 1 }]])
       expect((stash as ParamStash)[1]).toBe('1')
     })
+
+    it('should retain only the captures used by a static route', () => {
+      const router = new RegExpRouter<string>()
+      for (let i = 0; i < 100; i++) {
+        router.add('GET', `/dynamic${i}/:id`, 'dynamic')
+      }
+      router.add('GET', '/:x{z}/*', 'middleware')
+      router.add('GET', '/z/foo', 'static')
+
+      const [handlers, params] = router.match('GET', '/z/foo')
+      expect(handlers.map(([handler]) => handler)).toEqual(['middleware', 'static'])
+      expect(params).toHaveLength(1)
+      expect(params?.[(handlers[0][1] as ParamIndexMap).x]).toBe('z')
+      expect(handlers[1][1]).toEqual({})
+
+      const [dynamicHandlers, dynamicParams] = router.match('GET', '/dynamic0/42')
+      expect(dynamicParams?.[(dynamicHandlers[0][1] as ParamIndexMap).id]).toBe('42')
+    })
   })
 
   describe('UnsupportedPathError', () => {

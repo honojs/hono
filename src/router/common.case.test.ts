@@ -718,6 +718,68 @@ export const runTest = ({
       })
     })
 
+    describe('Params on a static route', () => {
+      it('GET /a/foo', () => {
+        router.add('GET', '/:x{a}/*', 'middleware')
+        router.add('GET', '/a/foo', 'handler')
+        router.add('GET', '/a', 'root handler')
+
+        expect(match('GET', '/a/foo')).toEqual([
+          { handler: 'middleware', params: { x: 'a' } },
+          { handler: 'handler', params: {} },
+        ])
+        expect(match('GET', '/a')).toEqual([
+          { handler: 'middleware', params: { x: 'a' } },
+          { handler: 'root handler', params: {} },
+        ])
+        expect(match('GET', '/a/bar')).toEqual([{ handler: 'middleware', params: { x: 'a' } }])
+      })
+
+      it('GET /a/foo in reverse registration order', () => {
+        router.add('GET', '/a/foo', 'handler')
+        router.add('GET', '/:x{a}/*', 'middleware')
+
+        expect(match('GET', '/a/foo')).toEqual([
+          { handler: 'handler', params: {} },
+          { handler: 'middleware', params: { x: 'a' } },
+        ])
+      })
+
+      it('GET and POST /a/foo with ALL middleware', () => {
+        router.add('ALL', '/:x{a}/*', 'middleware')
+        router.add('GET', '/a/foo', 'get handler')
+        router.add('POST', '/a/foo', 'post handler')
+
+        expect(match('GET', '/a/foo')).toEqual([
+          { handler: 'middleware', params: { x: 'a' } },
+          { handler: 'get handler', params: {} },
+        ])
+        expect(match('POST', '/a/foo')).toEqual([
+          { handler: 'middleware', params: { x: 'a' } },
+          { handler: 'post handler', params: {} },
+        ])
+        expect(match('PUT', '/a/foo')).toEqual([{ handler: 'middleware', params: { x: 'a' } }])
+      })
+
+      it('GET /a/b/foo with overlapping middleware', () => {
+        router.add('GET', '/:x{a}/*', 'middleware a')
+        router.add('GET', '/:first{a}/:second{b}/*', 'middleware b')
+        router.add('GET', '/:x{c}/*', 'middleware c')
+        router.add('GET', '/a/b/foo', 'handler ab')
+        router.add('GET', '/c/foo', 'handler c')
+
+        expect(match('GET', '/a/b/foo')).toEqual([
+          { handler: 'middleware a', params: { x: 'a' } },
+          { handler: 'middleware b', params: { first: 'a', second: 'b' } },
+          { handler: 'handler ab', params: {} },
+        ])
+        expect(match('GET', '/c/foo')).toEqual([
+          { handler: 'middleware c', params: { x: 'c' } },
+          { handler: 'handler c', params: {} },
+        ])
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')

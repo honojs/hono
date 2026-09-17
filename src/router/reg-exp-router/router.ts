@@ -87,6 +87,14 @@ export class RegExpRouter<T> implements Router<T> {
     const handlerData: HandlerData<T>[] = []
     const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
 
+    // handler position -> [handler, param map], shared by every path the handler is attached to
+    const entries: HandlerData<T> = handlers.map(([handler, path]) => [
+      handler,
+      (trie.paths[path]?.[1] || []).reduceRight((map, [key, paramIndex]) => {
+        map[key] = paramReplacementMap[paramIndex]
+        return map
+      }, createNullObject()),
+    ])
     // path -> positions of its own handlers; positions of wildcard handlers
     const indexes: Record<string, number[]> = createNullObject()
     const wildcards: number[] = []
@@ -103,19 +111,40 @@ export class RegExpRouter<T> implements Router<T> {
         ...wildcards.filter((i) => handlers[i][1] !== path && trie.covers(handlers[i][1], path)),
       ]
         .sort((a, b) => a - b)
-        .map((i) => handlers[i])
+        .map((i) => entries[i])
       const pathData = trie.paths[path]
       if (!pathData) {
-        staticMap[path] = [matched.map(([h]) => [h, createNullObject()]), emptyParam]
+        const hasParams = matched.some(([, params]) => Object.keys(params).length > 0)
+        if (!hasParams) {
+          staticMap[path] = [matched, emptyParam]
+          continue
+        }
+        // Keep only the captures used by this static route's middleware.
+        const captures = path.match(regexp)!
+        const params: string[] = []
+        const replacements = new Map<number, number>()
+        const staticHandlers: HandlerData<T> = matched.map((entry) => {
+          const keys = Object.keys(entry[1])
+          if (keys.length === 0) {
+            return entry
+          }
+          const map = createNullObject()
+          for (const key of keys) {
+            const index = entry[1][key]
+            let replacement = replacements.get(index)
+            if (replacement === undefined) {
+              replacement = params.length
+              replacements.set(index, replacement)
+              params.push(captures[index])
+            }
+            map[key] = replacement
+          }
+          return [entry[0], map]
+        })
+        staticMap[path] = [staticHandlers, params]
         continue
       }
-      handlerData[pathData[0]] = matched.map(([h, handlerPath]) => [
-        h,
-        trie.paths[handlerPath][1].reduceRight((map, [key, paramIndex]) => {
-          map[key] = paramReplacementMap[paramIndex]
-          return map
-        }, createNullObject()),
-      ])
+      handlerData[pathData[0]] = matched
     }
 
     return [regexp, indexReplacementMap.map((i) => handlerData[i]), staticMap] as Matcher<T>

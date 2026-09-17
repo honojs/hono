@@ -1,3 +1,4 @@
+import type { ParamIndexMap } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import { runTest } from '../common.case.test'
 import { buildInitParams, serializeInitParams, PreparedRegExpRouter } from './prepared-router'
@@ -98,6 +99,75 @@ describe('buildInitParams() and serializeInitParams()', () => {
       },
     ])
     expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should preserve static middleware params when serialized', () => {
+    const params = buildInitParams({
+      paths: ['/:x{a}/*', '/:y{b}/*', '/a/foo', '/b/foo'],
+    })
+    const restored = (0, eval)(serializeInitParams(params)) as typeof params
+    expect(restored).toEqual(params)
+
+    const router = new PreparedRegExpRouter(...restored)
+    router.add('ALL', '/:x{a}/*', 'middleware a')
+    router.add('GET', '/a/foo', 'handler a')
+    router.add('ALL', '/:y{b}/*', 'middleware b')
+    router.add('POST', '/b/foo', 'handler b')
+
+    const [aHandlers, aParams] = router.match('GET', '/a/foo')
+    expect(aHandlers).toEqual([
+      ['middleware a', { x: expect.any(Number) }],
+      ['handler a', {}],
+    ])
+    expect(aParams?.[aHandlers[0][1].x as number]).toBe('a')
+
+    const [bHandlers, bParams] = router.match('POST', '/b/foo')
+    expect(bHandlers).toEqual([
+      ['middleware b', { y: expect.any(Number) }],
+      ['handler b', {}],
+    ])
+    expect(bParams?.[bHandlers[0][1].y as number]).toBe('b')
+  })
+
+  it('should relocate compact params separately for each static route', () => {
+    const params = buildInitParams({
+      paths: ['/a/:y{b}/*', '/:x{a}/*', '/a/foo', '/a/b/foo', '/:x{a}/*'],
+    })
+    const restored = (0, eval)(serializeInitParams(params)) as typeof params
+    expect(restored).toEqual(params)
+
+    for (const initParams of [params, restored]) {
+      const router = new PreparedRegExpRouter(...initParams)
+      router.add('ALL', '/a/:y{b}/*', 'inner')
+      router.add('ALL', '/:x{a}/*', 'outer')
+      router.add('ALL', '/:x{a}/*', 'outer again')
+      router.add('GET', '/a/foo', 'get handler')
+      router.add('POST', '/a/b/foo', 'post handler')
+
+      const [outerHandlers, outerParams] = router.match('GET', '/a/foo')
+      expect(outerParams).toHaveLength(1)
+      expect(outerHandlers.map(([handler]) => handler)).toEqual([
+        'outer',
+        'outer again',
+        'get handler',
+      ])
+      for (const [, map] of outerHandlers.slice(0, 2)) {
+        expect(outerParams?.[(map as ParamIndexMap).x]).toBe('a')
+      }
+
+      const [innerHandlers, innerParams] = router.match('POST', '/a/b/foo')
+      expect(innerParams).toHaveLength(2)
+      expect(innerHandlers.map(([handler]) => handler)).toEqual([
+        'inner',
+        'outer',
+        'outer again',
+        'post handler',
+      ])
+      expect(innerParams?.[(innerHandlers[0][1] as ParamIndexMap).y]).toBe('b')
+      for (const [, map] of innerHandlers.slice(1, 3)) {
+        expect(innerParams?.[(map as ParamIndexMap).x]).toBe('a')
+      }
+    }
   })
 
   it('should build init params with paths with params', () => {

@@ -1,7 +1,7 @@
 import type { ParamIndexMap, Result, Router } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { HandlerData, Matcher, MatcherMap, StaticMap } from './matcher'
-import { match, emptyParam } from './matcher'
+import { match } from './matcher'
 import { RegExpRouter } from './router'
 
 type RelocateMap = Record<string, ([(number | string)[], ParamIndexMap] | [(number | string)[]])[]>
@@ -49,7 +49,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
       const all = this.#matchers[METHOD_NAME_ALL] as Matcher<T>
       const staticMap = {} as StaticMap<T>
       for (const key in all[2]) {
-        staticMap[key] = [all[2][key][0].slice(), emptyParam] as Result<T>
+        staticMap[key] = [all[2][key][0].slice(), all[2][key][1]] as Result<T>
       }
       this.#matchers[method] = [
         all[0],
@@ -109,7 +109,7 @@ export const buildInitParams: (params: {
   const all = matchers[METHOD_NAME_ALL] as Matcher<string>
 
   const relocateMap: RelocateMap = {}
-  for (const path of paths) {
+  for (const path of new Set(paths)) {
     if (path === '/*' || path === '*') {
       continue
     }
@@ -130,16 +130,28 @@ export const buildInitParams: (params: {
         }
       })
     })
+    const staticRelocations = new Map<string, [string[], ParamIndexMap]>()
     for (const path2 in all[2]) {
-      all[2][path2][0].forEach(([p]) => {
-        if (p === path) {
-          relocateMap[path] ||= [[[]]]
-          const value = path2 === path ? '' : path2
-          if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
-            relocateMap[path][0][0].push(value)
-          }
+      const entry = all[2][path2][0].find(([p]) => p === path)
+      if (!entry) {
+        continue
+      }
+      const value = path2 === path ? '' : path2
+      const map = entry[1] as ParamIndexMap
+      if (Object.keys(map).length === 0) {
+        relocateMap[path] ||= [[[]]]
+        relocateMap[path][0][0].push(value)
+      } else {
+        // Static routes use compact capture indexes, independently of the regexp's indexes.
+        const key = JSON.stringify(map)
+        let relocation = staticRelocations.get(key)
+        if (!relocation) {
+          relocation = [[], map]
+          staticRelocations.set(key, relocation)
+          ;(relocateMap[path] ||= []).push(relocation)
         }
-      })
+        relocation[0].push(value)
+      }
     }
   }
 
