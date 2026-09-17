@@ -222,6 +222,48 @@ describe('RegExpRouter', () => {
     })
   })
 
+  describe('Literal regexp metacharacters', () => {
+    it.each(['foo?bar', 'foo|bar'])(
+      'should match %s literally and preserve middleware params',
+      (segment) => {
+        const router = new RegExpRouter<string>()
+        router.add('ALL', `/${segment}/:x{a}/*`, 'middleware')
+        router.add('GET', `/${segment}/a/b`, 'static')
+        router.add('GET', '/ok', 'other')
+
+        expect(router.match('GET', '/ok')[0]).toEqual([['other', {}]])
+        for (const suffix of ['b', 'c']) {
+          const [handlers, params] = router.match('GET', `/${segment}/a/${suffix}`)
+          expect(handlers.map(([handler]) => handler)).toEqual(
+            suffix === 'b' ? ['middleware', 'static'] : ['middleware']
+          )
+          expect(params?.[(handlers[0][1] as ParamIndexMap).x]).toBe('a')
+        }
+        for (const path of ['/foobar/a/c', '/fobar/a/c', '/bar/a/c']) {
+          expect(router.match('GET', path)[0]).toEqual([])
+        }
+      }
+    )
+
+    it('should preserve alternation and quantifiers in custom regexp patterns', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/:x{a|b}/:y{cd?}', 'pattern')
+
+      for (const [x, y] of [
+        ['a', 'c'],
+        ['b', 'cd'],
+      ]) {
+        const [handlers, params] = router.match('GET', `/${x}/${y}`)
+        expect(handlers.map(([handler]) => handler)).toEqual(['pattern'])
+        const map = handlers[0][1] as ParamIndexMap
+        expect(params?.[map.x]).toBe(x)
+        expect(params?.[map.y]).toBe(y)
+      }
+      expect(router.match('GET', '/c/c')[0]).toEqual([])
+      expect(router.match('GET', '/a/cdd')[0]).toEqual([])
+    })
+  })
+
   describe('Single character regexp pattern', () => {
     it('Should capture a param even if a static path created the node first', () => {
       const router = new RegExpRouter<string>()
@@ -275,12 +317,15 @@ describe('RegExpRouter', () => {
       }
     })
 
-    it('Should throw an error for a single meta character pattern', () => {
-      const router = new RegExpRouter<string>()
-      expect(() => {
-        router.add('GET', '/:x{.}', 'meta')
-      }).toThrowError(UnsupportedPathError)
-    })
+    it.each(['.', '?', '|'])(
+      'Should throw an error for a single meta character pattern: %s',
+      (pattern) => {
+        const router = new RegExpRouter<string>()
+        expect(() => {
+          router.add('GET', `/:x{${pattern}}`, 'meta')
+        }).toThrowError(UnsupportedPathError)
+      }
+    )
   })
 
   describe('Capture a param of a label node created by a middle wildcard', () => {

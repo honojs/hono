@@ -10,7 +10,7 @@ export interface Context {
   varIndex: number
 }
 
-const regExpMetaChars = new Set('.\\+*[^]$()')
+const regExpMetaChars = new Set('.\\+*[^]$()?|')
 
 /**
  * Sort order:
