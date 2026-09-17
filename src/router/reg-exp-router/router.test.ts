@@ -38,6 +38,25 @@ describe('RegExpRouter', () => {
   })
 
   describe('UnsupportedPathError', () => {
+    it('should treat a param name ending in * as a label', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/files/:path*', 'file')
+      router.add('GET', '/files/', 'index')
+
+      const [handlers, params] = router.match('GET', '/files/test')
+      expect(handlers).toEqual([['file', { 'path*': 1 }]])
+      expect(params?.[1]).toBe('test')
+      expect(router.match('GET', '/files/')[0]).toEqual([['index', {}]])
+    })
+
+    it('should not treat a malformed trailing pattern as a wildcard', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/:x{a}*', 'malformed')
+      router.add('GET', '/', 'root')
+
+      expect(router.match('GET', '/')[0]).toEqual([['root', {}]])
+    })
+
     describe('Ambiguous', () => {
       it('GET /entry/:name', () => {
         const router = new RegExpRouter<string>()

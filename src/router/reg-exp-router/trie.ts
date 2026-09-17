@@ -18,6 +18,12 @@ export class Trie {
     return path in this.#nodes
   }
 
+  isWildcard(path: string): boolean {
+    const tokens = this.#tokens[path]
+    const last = tokens[tokens.length - 1]
+    return last === '*' || last === '/*'
+  }
+
   insert(path: string, isStatic: boolean): void {
     if (isStatic) {
       // a static path has no pattern; every character is a literal token

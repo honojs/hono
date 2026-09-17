@@ -548,6 +548,176 @@ export const runTest = ({
       })
     })
 
+    describe('Middle wildcard middleware', () => {
+      it('GET /acme/admin/users', () => {
+        router.add('GET', '/*/admin/*', 'middleware')
+        router.add('GET', '/:tenant/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'handler', params: { tenant: 'acme' } },
+        ])
+        expect(match('GET', '/acme/public/users')).toEqual([])
+      })
+    })
+
+    describe('Params after a middle wildcard', () => {
+      it('GET /acme/123/users', () => {
+        router.add('GET', '/*/:id/*', 'middleware')
+        router.add('GET', '/:tenant/:id/users', 'handler')
+
+        expect(match('GET', '/acme/123/users')).toEqual([
+          { handler: 'middleware', params: { id: '123' } },
+          { handler: 'handler', params: { tenant: 'acme', id: '123' } },
+        ])
+        expect(match('GET', '/acme/123')).toEqual([
+          { handler: 'middleware', params: { id: '123' } },
+        ])
+      })
+
+      it('GET /acme/123/users in reverse registration order', () => {
+        router.add('GET', '/:tenant/:id/users', 'handler')
+        router.add('GET', '/*/:id/*', 'middleware')
+
+        expect(match('GET', '/acme/123/users')).toEqual([
+          { handler: 'handler', params: { tenant: 'acme', id: '123' } },
+          { handler: 'middleware', params: { id: '123' } },
+        ])
+      })
+
+      it('POST /acme/123/users with ALL middleware', () => {
+        router.add('ALL', '/*/:id/*', 'middleware')
+        router.add('POST', '/:tenant/:id/users', 'handler')
+
+        expect(match('POST', '/acme/123/users')).toEqual([
+          { handler: 'middleware', params: { id: '123' } },
+          { handler: 'handler', params: { tenant: 'acme', id: '123' } },
+        ])
+      })
+
+      it('GET /org/acme/123/users with different param names', () => {
+        router.add('GET', '/:org/*/:id/*', 'middleware')
+        router.add('GET', '/:organization/:tenant/:userId/users', 'handler')
+
+        expect(match('GET', '/org/acme/123/users')).toEqual([
+          { handler: 'middleware', params: { org: 'org', id: '123' } },
+          { handler: 'handler', params: { organization: 'org', tenant: 'acme', userId: '123' } },
+        ])
+      })
+
+      it('GET /eu/acme/123/users with consecutive wildcards', () => {
+        router.add('GET', '/*/*/:id/*', 'middleware')
+        router.add('GET', '/:region/:tenant/:userId/users', 'handler')
+
+        expect(match('GET', '/eu/acme/123/users')).toEqual([
+          { handler: 'middleware', params: { id: '123' } },
+          { handler: 'handler', params: { region: 'eu', tenant: 'acme', userId: '123' } },
+        ])
+      })
+
+      it('GET /acme/123/users with a regexp param', () => {
+        router.add('GET', '/*/:id{[0-9]+}/*', 'middleware')
+        router.add('GET', '/:tenant/:userId{[0-9]+}/users', 'handler')
+
+        expect(match('GET', '/acme/123/users')).toEqual([
+          { handler: 'middleware', params: { id: '123' } },
+          { handler: 'handler', params: { tenant: 'acme', userId: '123' } },
+        ])
+      })
+    })
+
+    describe('Overlapping wildcard middleware', () => {
+      it('GET /acme/admin/users', () => {
+        router.add('GET', '/:tenant/*', 'middleware a')
+        router.add('GET', '/*/admin/*', 'middleware b')
+        router.add('GET', '/:tenant/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware a', params: { tenant: 'acme' } },
+          { handler: 'middleware b', params: {} },
+          { handler: 'handler', params: { tenant: 'acme' } },
+        ])
+        expect(match('GET', '/acme/admin/other')).toEqual([
+          { handler: 'middleware a', params: { tenant: 'acme' } },
+          { handler: 'middleware b', params: {} },
+        ])
+      })
+
+      it('GET /acme/admin/users in reverse registration order', () => {
+        router.add('GET', '/*/admin/*', 'middleware b')
+        router.add('GET', '/:tenant/*', 'middleware a')
+        router.add('GET', '/:tenant/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware b', params: {} },
+          { handler: 'middleware a', params: { tenant: 'acme' } },
+          { handler: 'handler', params: { tenant: 'acme' } },
+        ])
+      })
+
+      it('GET /acme/admin/users with a shorter label middleware', () => {
+        router.add('GET', '/:t/*', 'middleware a')
+        router.add('GET', '/*/admin/*', 'middleware b')
+        router.add('GET', '/:t/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware a', params: { t: 'acme' } },
+          { handler: 'middleware b', params: {} },
+          { handler: 'handler', params: { t: 'acme' } },
+        ])
+      })
+
+      it('GET /acme/admin/users with a middle wildcard route', () => {
+        router.add('GET', '/:tenant/admin/*', 'middleware')
+        router.add('GET', '/*/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware', params: { tenant: 'acme' } },
+          { handler: 'handler', params: {} },
+        ])
+      })
+    })
+
+    describe('Default pattern in a route', () => {
+      it('GET /acme/admin/users with a middle wildcard middleware', () => {
+        router.add('GET', '/*/admin/*', 'middleware')
+        router.add('GET', '/:tenant{[^/]+}/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'handler', params: { tenant: 'acme' } },
+        ])
+      })
+
+      it('GET /acme/admin/users with a label middleware', () => {
+        router.add('GET', '/:id/admin/*', 'middleware')
+        router.add('GET', '/:tenant{[^/]+}/admin/users', 'handler')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware', params: { id: 'acme' } },
+          { handler: 'handler', params: { tenant: 'acme' } },
+        ])
+      })
+
+      it('GET /acme does not run a longer middleware', () => {
+        router.add('GET', '/:tenant{[^/]+}', 'handler')
+        router.add('GET', '/:tenant/*/*', 'middleware')
+
+        expect(match('GET', '/acme')).toEqual([{ handler: 'handler', params: { tenant: 'acme' } }])
+        expect(match('GET', '/acme/x/y')).toEqual([
+          { handler: 'middleware', params: { tenant: 'acme' } },
+        ])
+      })
+
+      it('GET /acme/admin/users with the default pattern followed by a label', () => {
+        router.add('GET', '/:tenant{[^/]+}/:section/*', 'middleware')
+
+        expect(match('GET', '/acme/admin/users')).toEqual([
+          { handler: 'middleware', params: { tenant: 'acme', section: 'admin' } },
+        ])
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')
