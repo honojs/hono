@@ -56,6 +56,18 @@ describe('RegExpRouter', () => {
   })
 
   describe('UnsupportedPathError', () => {
+    it.each(['\n', '\r', '\u2028', '\u2029'])(
+      'should reject a path containing a line terminator during registration: %j',
+      (lineBreak) => {
+        const router = new RegExpRouter<string>()
+        const path = `/a/foo${lineBreak}bar`
+
+        expect(() => router.add('GET', path, 'handler')).toThrowError(
+          new UnsupportedPathError(path)
+        )
+      }
+    )
+
     it('should treat a param name ending in * as a label', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/files/:path*', 'file')

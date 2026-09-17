@@ -43,6 +43,11 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
+    // Wildcards cannot match line terminators.
+    if (/[\r\n\u2028\u2029]/.test(path)) {
+      throw new UnsupportedPathError(path)
+    }
+
     if (!handlers[method]) {
       this.#tries![method] = new Trie()
       handlers[method] = []
