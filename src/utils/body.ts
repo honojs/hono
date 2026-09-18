@@ -221,6 +221,7 @@ const handleParsingAllValues = (
  * @param {BodyData} form - The form data object.
  * @param {string} key - The dot notation key.
  * @param {BodyDataValue} value - The value to assign.
+ * @param {{ count: number }} state - The state object tracking nesting depth.
  */
 const handleParsingNestedValues = (
   form: BodyData,
