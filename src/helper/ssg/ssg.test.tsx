@@ -162,6 +162,128 @@ describe('toSSG function', () => {
     expect(result.files).toStrictEqual([])
   })
 
+  it('Should reject consecutive parent segments from ssgParams', async () => {
+    const app = new Hono()
+    app.get('/:id', ssgParams([{ id: 'a/b/../../../pwned' }]), (c) =>
+      c.text('attacker-controlled-body')
+    )
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    expect(result.success).toBe(false)
+    expect(result.files).toStrictEqual([])
+    expect(result.error?.message).toContain('Path traversal detected')
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('Should generate files when dir is the current directory', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.html('Hello, World!'))
+    app.get('/about/some', (c) => c.text('About Page 2tier'))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: '.' })
+
+    expect(result.success).toBe(true)
+    expect(result.files).toHaveLength(2)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('index.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('about/some.txt', expect.any(String))
+    expect(fsMock.mkdir).not.toHaveBeenCalledWith('', expect.anything())
+  })
+
+  it('Should reject absolute Windows paths when dir is the current directory', async () => {
+    const app = new Hono()
+    app.get(
+      '/:drive/:dir/:file',
+      ssgParams([{ drive: 'C:', dir: 'Windows', file: 'pwned' }]),
+      (c) => c.text('pwned')
+    )
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: '.' })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.message).toContain('Path traversal detected')
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('Should reject drive-relative Windows paths when dir is the current directory', async () => {
+    const app = new Hono()
+    app.get('/:id', ssgParams([{ id: 'C:pwned' }]), (c) => c.text('pwned'))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: '.' })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.message).toContain('Path traversal detected')
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('Should reject a drive-relative Windows output root', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: 'C:' })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.message).toContain('Path traversal detected')
+    expect(fsMock.mkdir).not.toHaveBeenCalled()
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('Should preserve a UNC output directory', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.html('Hello, World!'))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: '\\\\server\\share\\out' })
+
+    expect(result.success).toBe(true)
+    expect(fsMock.mkdir).toHaveBeenCalledWith('//server/share/out', { recursive: true })
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      '//server/share/out/index.html',
+      expect.any(String)
+    )
+  })
+
+  it('Should normalize redundant leading separators in a POSIX output directory', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.html('Hello, World!'))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: '///tmp/out' })
+
+    expect(result.success).toBe(true)
+    expect(fsMock.mkdir).toHaveBeenCalledWith('/tmp/out', { recursive: true })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('/tmp/out/index.html', expect.any(String))
+  })
+
   it('Should correctly generate files with the expected paths', async () => {
     app.get('/data', (c) =>
       c.text(JSON.stringify({ title: 'hono' }), 200, {

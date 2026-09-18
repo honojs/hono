@@ -144,6 +144,13 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.set() and c.get() with symbol key', () => {
+    const sym = Symbol('key')
+    expect(c.get(sym)).toBe(undefined)
+    c.set(sym, 'value')
+    expect(c.get(sym)).toBe('value')
+  })
+
   it('c.set() and c.get()', async () => {
     expect(c.get('foo')).toBe(undefined)
     c.set('foo', 'bar')

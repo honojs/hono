@@ -64,7 +64,7 @@ Contributions Welcome! You can contribute in the following ways.
 
 - Create an Issue - Propose a new feature. Report a bug.
 - Pull Request - Fix a bug or typo. Refactor the code.
-- Create third-party middleware - See instructions below.
+- Create third-party middleware - See [Third-party middleware](docs/CONTRIBUTING.md#third-party-middleware).
 - Share - Share your thoughts on the Blog, X, and others.
 - Make your application - Please try to use Hono.
 

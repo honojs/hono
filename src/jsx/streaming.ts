@@ -6,7 +6,7 @@
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
-import { JSXNode } from './base'
+import { isUntrustedObject, JSXNode, renderChildren, renderUntrustedObject } from './base'
 import { childrenToString } from './components'
 import { DOM_RENDERER, DOM_STASH } from './constants'
 import { captureRenderContext, createContext, useContext } from './context'
@@ -32,6 +32,15 @@ export const StreamingContext: JSXContext<{ scriptNonce: string } | null> = crea
 } | null>(null)
 
 let suspenseCounter = 0
+
+const serializeBoundaryChild = (child: Child): string | Promise<string> =>
+  typeof child === 'string' || Array.isArray(child)
+    ? renderChildren([child])
+    : child == null || typeof child === 'boolean'
+      ? ''
+      : isUntrustedObject(child)
+        ? renderUntrustedObject(child)
+        : child.toString()
 
 /**
  * @experimental
@@ -60,9 +69,7 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
   try {
     stackNode[DOM_STASH][0] = 0
     buildDataStack.push([[], stackNode])
-    resArray = children.map((c) =>
-      c == null || typeof c === 'boolean' ? '' : c.toString()
-    ) as HtmlEscapedString[]
+    resArray = children.map(serializeBoundaryChild) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       // Capture before deferring: on the fallback path the render context is
@@ -86,7 +93,11 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = suspenseCounter++
-    const fallbackStr = await fallback.toString()
+    const fallbackStr = await (typeof fallback === 'string' || Array.isArray(fallback)
+      ? renderChildren([fallback])
+      : isUntrustedObject(fallback)
+        ? renderUntrustedObject(fallback)
+        : fallback.toString())
     return raw(`<template id="H:${index}"></template>${fallbackStr}<!--/$-->`, [
       ...(fallbackStr.callbacks || []),
       ({ phase, buffer, context }) => {
@@ -99,7 +110,7 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
           if (buffer) {
             buffer[0] = buffer[0].replace(
               new RegExp(`<template id="H:${index}"></template>.*?<!--/\\$-->`),
-              content
+              () => content
             )
           }
           let html = buffer

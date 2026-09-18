@@ -551,10 +551,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string, value: unknown) => {
+  > = (key: PropertyKey, value: unknown) => {
     this.#var ??= new Map()
     this.#var.set(key, value)
   }
@@ -576,10 +576,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string) => {
+  > = (key: PropertyKey) => {
     return this.#var ? this.#var.get(key) : undefined
   }
 
@@ -771,7 +771,7 @@ export class Context<
     const locationString = String(location)
     this.header(
       'Location',
-      // Multibyes should be encoded
+      // Multibytes should be encoded
       // eslint-disable-next-line no-control-regex
       !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
     )

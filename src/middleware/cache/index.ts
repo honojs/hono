@@ -55,7 +55,7 @@ const createCacheKey = (
   varyHeaders: [string, string][]
 ): string => {
   const url = new URL(cacheKeyPath, requestUrl)
-  url.searchParams.append(cacheKeyParameter, key.split('#', 1)[0])
+  url.searchParams.append(cacheKeyParameter, key)
   url.searchParams.append(cacheMethodKeyParameter, request.method)
 
   if (request.method === 'QUERY') {

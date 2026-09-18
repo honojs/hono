@@ -377,6 +377,58 @@ describe('Body methods with caching', () => {
     expect(async () => await req.blob()).not.toThrow()
   })
 
+  describe('formData() after another representation has been cached', () => {
+    const urlencoded = 'application/x-www-form-urlencoded'
+    const body = 'foo=bar&baz=qux'
+
+    for (const first of ['text', 'arrayBuffer', 'bytes', 'blob'] as const) {
+      test(`req.formData() after req.${first}()`, async () => {
+        const req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            headers: { 'Content-Type': urlencoded },
+            body,
+          })
+        )
+        await req[first]()
+        const formData = await req.formData()
+        expect(formData.get('foo')).toBe('bar')
+        expect(formData.get('baz')).toBe('qux')
+      })
+    }
+
+    test('req.formData() after req.text() for multipart/form-data', async () => {
+      const boundary = '----hono-test-boundary'
+      const multipart =
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="foo"\r\n\r\n' +
+        'bar\r\n' +
+        `--${boundary}--\r\n`
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+          body: multipart,
+        })
+      )
+      await req.text()
+      expect((await req.formData()).get('foo')).toBe('bar')
+    })
+
+    test('the cached representation is still returned unchanged', async () => {
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': urlencoded },
+          body,
+        })
+      )
+      expect(await req.text()).toBe(body)
+      expect(await req.text()).toBe(body)
+      expect(await req.arrayBuffer()).toEqual(new TextEncoder().encode(body).buffer)
+    })
+  })
+
   describe('req.parseBody()', async () => {
     it('should parse form data', async () => {
       const data = new FormData()

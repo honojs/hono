@@ -746,6 +746,25 @@ describe('Cache Skipping Logic', () => {
     expect(putSpy).not.toHaveBeenCalled()
   })
 
+  it('Should cache request URLs containing a fragment', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let requestCount = 0
+    app.use('*', cache({ cacheName: 'fragment-request-test', wait: true }))
+    app.get('/', (c) => {
+      requestCount++
+      return c.text(c.req.query('name') ?? 'default')
+    })
+
+    expect(await (await app.request('http://localhost/#?name=probe')).text()).toBe('default')
+    expect(await (await app.request('http://localhost/#?name=probe')).text()).toBe('default')
+    expect(requestCount).toBe(1)
+    expect(mockCache.put).toHaveBeenCalledOnce()
+    expect(mockCache.put.mock.calls[0][0]).toBe(
+      'http://localhost/.hono/cache?__hono_cache_key=http%3A%2F%2Flocalhost%2F%23%3Fname%3Dprobe&__hono_cache_method=GET'
+    )
+  })
+
   it('Should cache QUERY responses without consuming the handler request body', async () => {
     const { mockCache } = stubStoreBackedCache()
     const app = new Hono()
@@ -945,6 +964,37 @@ describe('Cache Skipping Logic', () => {
     expect(await (await app.request('/resource')).text()).toBe('custom key response')
     expect(await (await app.request('/query-key')).text()).toBe('request URL response')
     expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should preserve fragments in custom cache keys', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let requestCount = 0
+    app.use(
+      '/report',
+      cache({
+        cacheName: 'custom-fragment-key-test',
+        wait: true,
+        keyGenerator: (c) => `${c.req.path}#${c.req.header('X-Tenant-Id')}`,
+      })
+    )
+    app.get('/report', (c) => {
+      requestCount++
+      return c.text(`report for ${c.req.header('X-Tenant-Id')}`)
+    })
+
+    const request = (tenant: string) =>
+      app.request('/report', { headers: { 'X-Tenant-Id': tenant } })
+
+    expect(await (await request('acme')).text()).toBe('report for acme')
+    expect(await (await request('globex')).text()).toBe('report for globex')
+    expect(await (await request('acme')).text()).toBe('report for acme')
+    expect(requestCount).toBe(2)
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+    expect(mockCache.put.mock.calls.map(([key]) => key)).toEqual([
+      'http://localhost/.hono/cache?__hono_cache_key=%2Freport%23acme&__hono_cache_method=GET',
+      'http://localhost/.hono/cache?__hono_cache_key=%2Freport%23globex&__hono_cache_method=GET',
+    ])
   })
 
   it('Should keep QUERY digest and vary values with a fragmented custom cache key', async () => {

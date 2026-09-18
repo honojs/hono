@@ -1243,6 +1243,10 @@ describe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {
   const app = new Hono()
     .get('/posts/:id/comments', (c) => c.json({ ok: true }))
     .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
+    .get('/docs/:page', (c) => c.json({ ok: true }))
+    .get('/files/:dir/', (c) => c.json({ ok: true }))
+    .get('/:page', (c) => c.json({ ok: true }))
+    .get('/index/:v?', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -1270,16 +1274,54 @@ describe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {
     })
     expect(pathname(value)).toBe('/something/123/456')
   })
+
+  it('Should keep a param value of "index" - /docs/index', async () => {
+    const value = client.docs[':page'][cmd]({
+      param: {
+        page: 'index',
+      },
+    })
+    expect(pathname(value)).toBe('/docs/index')
+  })
+
+  it('Should keep a root-level param value of "index" - /index', async () => {
+    const value = client[':page'][cmd]({
+      param: {
+        page: 'index',
+      },
+    })
+    expect(pathname(value)).toBe('/index')
+  })
+
+  it('Should keep a literal index segment when an optional param is omitted - /index', async () => {
+    const value = client.index[':v?'][cmd]({
+      param: {
+        v: undefined,
+      },
+    })
+    expect(pathname(value)).toBe('/index')
+  })
+
+  it('Should still drop the index alias of a route with a param - /files/123', async () => {
+    const value = client.files[':dir'].index[cmd]({
+      param: {
+        dir: '123',
+      },
+    })
+    expect(pathname(value)).toBe('/files/123')
+  })
 })
 
 describe('$url() / $path() with a query option', () => {
-  const app = new Hono().get(
-    '/posts',
-    validator('query', () => {
-      return {} as { filter: 'test' }
-    }),
-    (c) => c.json({ ok: true })
-  )
+  const app = new Hono()
+    .get(
+      '/posts',
+      validator('query', () => {
+        return {} as { filter: 'test' }
+      }),
+      (c) => c.json({ ok: true })
+    )
+    .get('/docs/:page', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -1297,6 +1339,28 @@ describe('$url() / $path() with a query option', () => {
       },
     })
     expect(path).toBe('/posts?filter=test')
+  })
+
+  it('Should return the correct path - /docs/index?filter=test', async () => {
+    const url = client.docs[':page'].$url({
+      param: {
+        page: 'index',
+      },
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.href).toBe('http://localhost/docs/index?filter=test')
+
+    const path = client.docs[':page'].$path({
+      param: {
+        page: 'index',
+      },
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(path).toBe('/docs/index?filter=test')
   })
 })
 
@@ -1548,25 +1612,37 @@ describe('WebSocket URL Protocol Translation', () => {
   it('Translates HTTP to ws', async () => {
     const client = hc<AppType>('http://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Translates HTTPS to wss', async () => {
     const client = hc<AppType>('https://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
   })
 
   it('Keeps ws unchanged', async () => {
     const client = hc<AppType>('ws://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Keeps wss unchanged', async () => {
     const client = hc<AppType>('wss://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
+  })
+
+  it('Preserves an index path parameter value', async () => {
+    const dynamicRoute = new Hono().get(
+      '/:id',
+      upgradeWebSocket(() => ({}))
+    )
+    const client = hc<typeof dynamicRoute>('http://localhost')
+
+    client[':id'].$ws({ param: { id: 'index' } })
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
   })
 })
 
@@ -1608,7 +1684,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         tag: ['a', 'b'],
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test&tag=a&tag=b')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=123&type=test&tag=a&tag=b')
   })
 
   it('Translates HTTPS to wss and includes query parameters', async () => {
@@ -1619,7 +1695,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=456&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=456&type=secure')
   })
 
   it('Keeps ws unchanged and includes query parameters', async () => {
@@ -1630,7 +1706,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'plain',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=789&type=plain')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=789&type=plain')
   })
 
   it('Keeps wss unchanged and includes query parameters', async () => {
@@ -1641,7 +1717,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=1011&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=1011&type=secure')
   })
 })
 
@@ -1796,13 +1872,13 @@ describe('WebSocket Provider Integration', () => {
       description: 'should initialize the WebSocket provider correctly',
       url: 'http://localhost',
       query: undefined,
-      expectedUrl: 'ws://localhost/index',
+      expectedUrl: 'ws://localhost/',
     },
     {
       description: 'should correctly add query parameters to the WebSocket URL',
       url: 'http://localhost',
       query: { id: '123', type: 'test', tag: ['a', 'b'] },
-      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+      expectedUrl: 'ws://localhost/?id=123&type=test&tag=a&tag=b',
     },
   ])('$description', ({ url, expectedUrl, query }) => {
     const webSocketMock = vi.fn()

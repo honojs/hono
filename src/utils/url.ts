@@ -133,9 +133,22 @@ export const getPath = (request: Request): string => {
   return url.slice(start, i)
 }
 
+/**
+ * @deprecated
+ * Use the `URL` API instead.
+ */
 export const getQueryStrings = (url: string): string => {
   const queryIndex = url.indexOf('?', 8)
-  return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)
+  if (queryIndex === -1) {
+    return ''
+  }
+
+  const hashIndex = url.indexOf('#', 8)
+  return hashIndex === -1
+    ? url.slice(queryIndex)
+    : queryIndex < hashIndex
+      ? url.slice(queryIndex, hashIndex)
+      : ''
 }
 
 export const getPathNoStrict = (request: Request): string => {
@@ -221,6 +234,11 @@ const _getQueryParam = (
   key?: string,
   multiple?: boolean
 ): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  const hashIndex = url.indexOf('#', 8)
+  if (hashIndex !== -1) {
+    url = url.slice(0, hashIndex)
+  }
+
   let encoded
 
   if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
