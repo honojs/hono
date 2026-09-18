@@ -667,7 +667,14 @@ const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
  * @param contentType The content type to check.
  * @returns True if the content type is binary, false otherwise.
  */
+const BINARY_XML_ARCHIVE_CONTENT_TYPES =
+  /^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i
+
 export const defaultIsContentTypeBinary = (contentType: string): boolean => {
+  if (BINARY_XML_ARCHIVE_CONTENT_TYPES.test(contentType)) {
+    return true
+  }
+
   return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/.test(
     contentType
   )

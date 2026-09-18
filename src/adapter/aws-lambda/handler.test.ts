@@ -107,6 +107,7 @@ describe('isContentTypeBinary', () => {
     ['application/epub+zip', true],
     ['application/ld+json', false],
     ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
   ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
     expect(defaultIsContentTypeBinary(mimeType)).toBe(expected)
   })
@@ -185,6 +186,21 @@ describe('EventProcessor.createResult with contentTypesAsBinary', () => {
 
     expect(result.isBase64Encoded).toBe(false)
     expect(result.body).toBe('test text content')
+  })
+
+  it('Should base64 encode application/vnd.apple.installer+xml content when using default binary detection', async () => {
+    const processor = getProcessor(event)
+    const binaryBody = new Uint8Array([0xff, 0xfe, 0xfd, 0x00])
+    const response = new Response(binaryBody, {
+      headers: { 'content-type': 'application/vnd.apple.installer+xml' },
+    })
+
+    const result = await processor.createResult(event, response, {
+      isContentTypeBinary: undefined,
+    })
+
+    expect(result.isBase64Encoded).toBe(true)
+    expect(result.body).toBe('//79AA==')
   })
 })
 
