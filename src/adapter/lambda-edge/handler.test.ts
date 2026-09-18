@@ -19,6 +19,12 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
+    // Binary archive media types that end in `+xml` or that are not JSON/XML
+    expect(isContentTypeBinary('application/vnd.apple.installer+xml')).toBe(true)
+    expect(isContentTypeBinary('application/vnd.mozilla.xul+xml')).toBe(true)
+    expect(
+      isContentTypeBinary('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    ).toBe(true)
   })
 })
 
@@ -299,6 +305,27 @@ describe('handle', () => {
 
     const res = await handler(cloudFrontEdgeEvent)
     expect(res).toMatchObject({ status: '200', body: 'normal' })
+  })
+
+  it('Should base64 encode a binary archive with a `+xml` content-type', async () => {
+    // An Apple installer package is a `xar` archive, not an XML document, so the
+    // body must not be decoded as UTF-8.
+    const payload = new Uint8Array([
+      0x78, 0x61, 0x72, 0x21, 0x00, 0x1c, 0x00, 0x01, 0xff, 0xfe, 0x80, 0x81,
+    ])
+
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      c.header('Content-Type', 'application/vnd.apple.installer+xml')
+      return c.body(payload)
+    })
+    const handler = handle(app)
+
+    const body = encodeBase64(payload.buffer)
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ bodyEncoding: 'base64', body })
+    expect(decodeBase64(body)).toEqual(payload)
   })
 
   it('Should base64 encode a compressed response with a textual content-type', async () => {

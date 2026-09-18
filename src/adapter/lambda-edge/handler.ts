@@ -211,8 +211,14 @@ export const createBody = (
   return requestBody.data
 }
 
+const BINARY_XML_ARCHIVE_CONTENT_TYPES =
+  /^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i
+
 export const isContentTypeBinary = (contentType: string): boolean => {
-  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
+  if (BINARY_XML_ARCHIVE_CONTENT_TYPES.test(contentType)) {
+    return true
+  }
+  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/.test(
     contentType
   )
 }
