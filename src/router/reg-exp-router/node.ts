@@ -67,7 +67,7 @@ export class Node {
           ? token === '*'
             ? i === len - 1
               ? ['', '', ONLY_WILDCARD_REG_EXP_STR] // '*' matches to all the trailing paths
-              : tokens[i + 1] !== '/'
+              : tokens[i + 1][0] !== '/'
                 ? null // only a '*' that ends a segment is a wildcard
                 : tokens[i - 1] === '/'
                   ? ['', '', LABEL_REG_EXP_STR] // a standalone '*' takes a whole segment

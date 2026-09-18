@@ -567,6 +567,26 @@ export const runTest = ({
         router.add('GET', '/a/*/b/*', 'b')
       })
 
+      it('GET /acme/x/y with a named parameter', async () => {
+        router = newRouter()
+        router.add('GET', '/:tenant/*/*', 'tenant')
+        const res = match('GET', '/acme/x/y')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('tenant')
+        expect(res[0].params['tenant']).toBe('acme')
+      })
+
+      it.each([
+        ['/foo/*/*', '/foo/x/y'],
+        ['/x*/*', '/xz/y'],
+        ['/x*/*', '/x/y'],
+      ])('%s matches %s', async (route, path) => {
+        router.add('GET', route, 'wildcard')
+        const res = match('GET', path)
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
+      })
+
       it('GET /a/x/b', async () => {
         const res = match('GET', '/a/x/b')
         expect(res.length).toBe(1)
