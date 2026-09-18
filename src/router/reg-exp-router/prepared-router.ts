@@ -4,7 +4,8 @@ import type { HandlerData, Matcher, MatcherMap, StaticMap } from './matcher'
 import { match } from './matcher'
 import { RegExpRouter } from './router'
 
-type RelocateMap = Record<string, ([(number | string)[], ParamIndexMap] | [(number | string)[]])[]>
+type Relocation = [(number | string)[], ParamIndexMap]
+type RelocateMap = Record<string, Relocation[]>
 
 export class PreparedRegExpRouter<T> implements Router<T> {
   name: string = 'PreparedRegExpRouter'
@@ -22,26 +23,15 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     Object.values(matcher[2]).forEach((list) => (list[0] as [T, ParamIndexMap][]).push(handlerData))
   }
 
-  #addPath(
-    method: string,
-    path: string,
-    handler: T,
-    indexes: (number | string)[],
-    map: ParamIndexMap | undefined
-  ) {
+  #addPath(method: string, path: string, handler: T, [indexes, map]: Relocation) {
     const matcher = this.#matchers[method] as Matcher<T>
-    if (!map) {
-      // assumed to be a static route
-      matcher[2][path][0].push([handler, {}])
-    } else {
-      indexes.forEach((index) => {
-        if (typeof index === 'number') {
-          matcher[1][index].push([handler, map])
-        } else {
-          ;(matcher[2][index || path][0] as [T, ParamIndexMap][]).push([handler, map])
-        }
-      })
-    }
+    indexes.forEach((index) => {
+      if (typeof index === 'number') {
+        matcher[1][index].push([handler, map])
+      } else {
+        ;(matcher[2][index || path][0] as [T, ParamIndexMap][]).push([handler, map])
+      }
+    })
   }
 
   add(method: string, path: string, handler: T) {
@@ -74,13 +64,13 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     if (!data) {
       throw new Error(`Path ${path} is not registered`)
     }
-    for (const [indexes, map] of data) {
+    for (const relocation of data) {
       if (method === METHOD_NAME_ALL) {
         for (const m in this.#matchers) {
-          this.#addPath(m, path, handler, indexes, map)
+          this.#addPath(m, path, handler, relocation)
         }
       } else {
-        this.#addPath(method, path, handler, indexes, map)
+        this.#addPath(method, path, handler, relocation)
       }
     }
   }
@@ -113,44 +103,31 @@ export const buildInitParams: (params: {
     if (path === '/*' || path === '*') {
       continue
     }
+    // one relocation per param map; optional params and compacted static routes give a handler several
+    const relocations = new Map<string, Relocation>()
+    const relocate = (map: ParamIndexMap, index: number | string) => {
+      const key = JSON.stringify(map)
+      let relocation = relocations.get(key)
+      if (!relocation) {
+        relocation = [[], map]
+        relocations.set(key, relocation)
+        ;(relocateMap[path] ||= []).push(relocation)
+      }
+      if (relocation[0].indexOf(index) === -1) {
+        relocation[0].push(index)
+      }
+    }
     all[1].forEach((list, i) => {
       list.forEach(([p, map]) => {
         if (p === path) {
-          if (relocateMap[path]) {
-            relocateMap[path][0][1] = {
-              ...relocateMap[path][0][1],
-              ...map,
-            }
-          } else {
-            relocateMap[path] = [[[], map]]
-          }
-          if (relocateMap[path][0][0].findIndex((j) => j === i) === -1) {
-            relocateMap[path][0][0].push(i)
-          }
+          relocate(map, i)
         }
       })
     })
-    const staticRelocations = new Map<string, [string[], ParamIndexMap]>()
     for (const path2 in all[2]) {
       const entry = all[2][path2][0].find(([p]) => p === path)
-      if (!entry) {
-        continue
-      }
-      const value = path2 === path ? '' : path2
-      const map = entry[1] as ParamIndexMap
-      if (Object.keys(map).length === 0) {
-        relocateMap[path] ||= [[[]]]
-        relocateMap[path][0][0].push(value)
-      } else {
-        // Static routes use compact capture indexes, independently of the regexp's indexes.
-        const key = JSON.stringify(map)
-        let relocation = staticRelocations.get(key)
-        if (!relocation) {
-          relocation = [[], map]
-          staticRelocations.set(key, relocation)
-          ;(relocateMap[path] ||= []).push(relocation)
-        }
-        relocation[0].push(value)
+      if (entry) {
+        relocate(entry[1] as ParamIndexMap, path2 === path ? '' : path2)
       }
     }
   }

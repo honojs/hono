@@ -2,6 +2,7 @@ import type { ParamIndexMap } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import { runTest } from '../common.case.test'
 import { buildInitParams, serializeInitParams, PreparedRegExpRouter } from './prepared-router'
+import { RegExpRouter } from './router'
 
 describe('PreparedRegExpRouter', async () => {
   runTest({
@@ -95,7 +96,7 @@ describe('buildInitParams() and serializeInitParams()', () => {
         ],
       },
       {
-        '/hello': [[['']]],
+        '/hello': [[[''], {}]],
       },
     ])
     expect((0, eval)(serializeInitParams(params))).toEqual(params)
@@ -170,6 +171,22 @@ describe('buildInitParams() and serializeInitParams()', () => {
     }
   })
 
+  it.each([
+    ['/a/*/:y?', ['/a/x/b', '/a/x']],
+    ['/bar/:b?', ['/bar/1', '/bar']],
+  ])('should relocate an optional param handler like RegExpRouter: %s', (path, requests) => {
+    const params = buildInitParams({ paths: [path] })
+    const restored = (0, eval)(serializeInitParams(params)) as typeof params
+    const router = new PreparedRegExpRouter(...restored)
+    const regExpRouter = new RegExpRouter<string>()
+    router.add('GET', path, 'handler')
+    regExpRouter.add('GET', path, 'handler')
+
+    for (const request of requests) {
+      expect(router.match('GET', request)).toEqual(regExpRouter.match('GET', request))
+    }
+  })
+
   it('should build init params with paths with params', () => {
     const params = buildInitParams({
       paths: ['/hello/:name', '/hello/:name/posts/:postId'],
@@ -214,7 +231,7 @@ describe('buildInitParams() and serializeInitParams()', () => {
         ],
       },
       {
-        '/hello': [[['']]],
+        '/hello': [[[''], {}]],
         '/hello/:name': [[[2], { name: 1 }]],
         '/hello/:name/posts/:postId': [[[4], { name: 1, postId: 3 }]],
       },
