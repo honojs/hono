@@ -22,8 +22,11 @@ const matchType = (acceptType: string, supportedType: string): boolean => {
   if (acceptType === supportedType) {
     return true
   }
+  // `*/*` and `*` are acceptable for every media type (RFC 9110 §12.5.1), so
+  // they match any supported entry; `getSpecificity` sorts them after more
+  // specific entries, so concrete types win when both are present. (#5418)
   if (acceptType === '*/*' || acceptType === '*') {
-    return false
+    return true
   }
   if (acceptType.endsWith('/*')) {
     const [acceptMain] = acceptType.split('/')

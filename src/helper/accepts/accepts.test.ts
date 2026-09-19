@@ -57,7 +57,7 @@ describe('accepts', () => {
   test('should return default support if no matched support', () => {
     const c = {
       req: {
-        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp',
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
@@ -86,7 +86,7 @@ describe('accepts', () => {
     expect(result).toBe('application/json')
   })
 
-  test('should return default support for global wildcard */*', () => {
+  test('should match any support for global wildcard */*', () => {
     const c = {
       req: {
         header: () => 'text/plain, */*;q=0.5',
@@ -99,10 +99,10 @@ describe('accepts', () => {
       default: 'text/html',
     }
     const result = accepts(c, options)
-    expect(result).toBe('text/html')
+    expect(result).toBe('application/json')
   })
 
-  test('should return default support for single asterisk wildcard *', () => {
+  test('should match any support for single asterisk wildcard *', () => {
     const c = {
       req: {
         header: () => '*',
@@ -115,7 +115,55 @@ describe('accepts', () => {
       default: 'identity',
     }
     const result = accepts(c, options)
-    expect(result).toBe('identity')
+    expect(result).toBe('gzip')
+  })
+
+  test('should return the first supported type for wildcard-only */* header', () => {
+    const c = {
+      req: {
+        header: () => '*/*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html', 'application/json'],
+      default: 'text/plain',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should return default support for wildcard with zero quality factor', () => {
+    const c = {
+      req: {
+        header: () => '*/*;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html', 'application/json'],
+      default: 'text/plain',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/plain')
+  })
+
+  test('should match wildcard * for Accept-Language', () => {
+    const c = {
+      req: {
+        header: () => '*',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept-Language',
+      supports: ['en', 'zh'],
+      default: 'en',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('en')
   })
 
   test('should prefer exact match over wildcard match at same quality factor', () => {
