@@ -63,7 +63,7 @@ export function handleMiddleware<E extends Env = {}, P extends string = any, I e
       executionCtx,
     })
 
-    let response: Response | void = undefined
+    let response: Response | void | Context = undefined
 
     try {
       response = await middleware(context, async () => {
@@ -76,6 +76,7 @@ export function handleMiddleware<E extends Env = {}, P extends string = any, I e
             throw error
           }
         }
+        return context
       })
     } catch (error) {
       if (error instanceof Error) {
@@ -85,7 +86,7 @@ export function handleMiddleware<E extends Env = {}, P extends string = any, I e
       }
     }
 
-    if (response) {
+    if (response instanceof Response) {
       return response
     }
 

@@ -434,6 +434,7 @@ class Hono<
       try {
         res = matchResult[0][0][0][0](c, async () => {
           c.res = await this.#notFoundHandler(c)
+          return c
         })
       } catch (err) {
         return this.#handleError(err, c)

@@ -16,7 +16,7 @@ export const compose = <E extends Env = Env>(
   middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
-): ((context: Context, next?: Next) => Promise<Context>) => {
+): ((context: Context, next?: Next | Next<void>) => Promise<Context>) => {
   return (context, next) => {
     let index = -1
 

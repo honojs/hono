@@ -32,7 +32,7 @@ export type Env = {
   Variables?: Variables
 }
 
-export type Next = () => Promise<void>
+export type Next<R = Context> = () => Promise<R>
 
 export type ExtractInput<I extends Input | Input['in']> = I extends Input
   ? unknown extends I['in']
@@ -78,14 +78,14 @@ export type Handler<
   P extends string = any,
   I extends Input = BlankInput,
   R extends HandlerResponse<any> = any,
-> = (c: Context<E, P, I>, next: Next) => R
+> = (c: Context<E, P, I>, next: Next<Context<E, P, I>>) => R
 
 export type MiddlewareHandler<
   E extends Env = any,
   P extends string = string,
   I extends Input = {},
   R extends HandlerResponse<any> = Response,
-> = (c: Context<E, P, I>, next: Next) => Promise<R | void>
+> = (c: Context<E, P, I>, next: Next<Context<E, P, I>>) => Promise<R | void | Context<E, P, I>>
 
 export type H<
   E extends Env = any,

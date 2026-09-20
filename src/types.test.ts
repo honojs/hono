@@ -63,7 +63,17 @@ describe('HandlerInterface', () => {
         out: { json: Payload }
       }
     > = async (_c, next) => {
-      await next()
+      const nextContext = await next()
+      expectTypeOf(nextContext).toEqualTypeOf<
+        Context<
+          Env,
+          '/',
+          {
+            in: { json: Payload }
+            out: { json: Payload }
+          }
+        >
+      >()
     }
     test('Context', () => {
       const route = app.get(middleware, (c) => {

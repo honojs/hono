@@ -56,6 +56,20 @@ describe('compose', () => {
     expect((await context.res.json())['message']).toBe('new response')
     expect(context.get('zzz')).toBe('xxx')
   })
+
+  it('next() returns the current context', async () => {
+    let nextContext: Context | undefined
+    const composed = compose([
+      buildMiddlewareTuple(async (_c: Context, next: Next) => {
+        nextContext = await next()
+      }),
+    ])
+    const context = new Context(new Request('http://localhost/'))
+
+    await composed(context)
+
+    expect(nextContext).toBe(context)
+  })
 })
 
 describe('compose with returning a promise, non-async function', () => {
