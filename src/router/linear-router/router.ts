@@ -111,14 +111,10 @@ export class LinearRouter<T> implements Router<T> {
               } else {
                 let endValuePos = path.indexOf('/', pos + 1)
                 if (endValuePos === -1) {
-                  if (pos + 1 === path.length) {
-                    continue ROUTES_LOOP
-                  }
                   endValuePos = path.length
-                } else if (endValuePos === pos + 1) {
-                  // an empty segment, as in `/u//posts`. A trailing empty segment
-                  // is already rejected above; reject it mid-path too instead of
-                  // capturing an empty param value.
+                }
+                if (endValuePos === pos + 1) {
+                  // an empty segment, as in `/u/` or `/u//posts`
                   continue ROUTES_LOOP
                 }
                 value = path.slice(pos + 1, endValuePos)
