@@ -1,0 +1,19 @@
+src/router/linear-router/router.ts
+  s_4d1db9202be13a::t_0ab03e18f03445 115-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bb5188235746f917f92ea2f707211b96fec1c260",
+  "prompts": {},
+  "sessions": {
+    "s_4d1db9202be13a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eedeb66c-5ed3-4328-ab6d-965ea11f5a26",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
