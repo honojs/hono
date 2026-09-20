@@ -35,7 +35,7 @@ export class LinearRouter<T> implements Router<T> {
         const hasStar = routePath.indexOf('*') !== -1
         const hasLabel = routePath.indexOf(':') !== -1
         if (!hasStar && !hasLabel) {
-          if (routePath === path || routePath + '/' === path) {
+          if (routePath === path) {
             handlers.push([handler, emptyParams])
           }
         } else if (hasStar && !hasLabel) {
@@ -77,6 +77,9 @@ export class LinearRouter<T> implements Router<T> {
         } else if (hasLabel && !hasStar) {
           const params: Record<string, string> = Object.create(null)
           const parts = routePath.match(splitPathRe) as string[]
+          // A trailing slash in the registered route is significant under strict
+          // routing: `/users/:id/` matches `/users/42/` but not `/users/42`.
+          const routeEndsWithSlash = routePath.charCodeAt(routePath.length - 1) === 47
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -131,10 +134,11 @@ export class LinearRouter<T> implements Router<T> {
             }
 
             if (j === lastIndex) {
-              if (
-                pos !== path.length &&
-                !(pos === path.length - 1 && path.charCodeAt(pos) === 47)
-              ) {
+              if (routeEndsWithSlash) {
+                if (pos !== path.length - 1 || path.charCodeAt(pos) !== 47) {
+                  continue ROUTES_LOOP
+                }
+              } else if (pos !== path.length) {
                 continue ROUTES_LOOP
               }
             }
