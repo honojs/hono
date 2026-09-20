@@ -10,7 +10,16 @@ export class PatternRouter<T> implements Router<T> {
   #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
-    const suffix = path.endsWith('/*') ? '(?:$|/)' : path.endsWith('*') ? '' : '/?$'
+    // A trailing slash in the registered route is significant under strict routing:
+    // `/hello/` matches `/hello/` but not `/hello`. The part splitter drops the
+    // trailing slash, so it is re-attached here as a literal `/$` suffix.
+    const suffix = path.endsWith('/*')
+      ? '(?:$|/)'
+      : path.endsWith('*')
+        ? ''
+        : path === '' || path.endsWith('/')
+          ? '/$'
+          : '$'
     path = path.replace(/\*$/, '')
     if (path.at(-1) === '?') {
       path = path.slice(0, -1)
