@@ -1,0 +1,19 @@
+src/helper/accepts/accepts.test.ts
+  s_4d1db9202be13a::t_6922d0810695f4 244-249,255-256,260-261,267-268,272-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "79e50aa8a38bbe27f7617cf59c9aebbf57864d9a",
+  "prompts": {},
+  "sessions": {
+    "s_4d1db9202be13a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eedeb66c-5ed3-4328-ab6d-965ea11f5a26",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
