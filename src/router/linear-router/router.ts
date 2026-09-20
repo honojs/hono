@@ -111,10 +111,11 @@ export class LinearRouter<T> implements Router<T> {
               } else {
                 let endValuePos = path.indexOf('/', pos + 1)
                 if (endValuePos === -1) {
-                  if (pos + 1 === path.length) {
-                    continue ROUTES_LOOP
-                  }
                   endValuePos = path.length
+                }
+                if (endValuePos === pos + 1) {
+                  // an empty segment, as in `/u/` or `/u//posts`
+                  continue ROUTES_LOOP
                 }
                 value = path.slice(pos + 1, endValuePos)
                 pos = endValuePos
