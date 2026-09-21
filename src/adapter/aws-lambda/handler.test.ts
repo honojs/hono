@@ -107,6 +107,12 @@ describe('isContentTypeBinary', () => {
     ['application/epub+zip', true],
     ['application/ld+json', false],
     ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
+    ['application/vnd.apple.installer+xml; charset=UTF-8', true],
+    ['application/vnd.mozilla.xul+xml', true],
+    ['APPLICATION/VND.APPLE.INSTALLER+XML', true],
+    ['APPLICATION/JSON', false],
+    ['TEXT/PLAIN', false],
   ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
     expect(defaultIsContentTypeBinary(mimeType)).toBe(expected)
   })
