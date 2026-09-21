@@ -212,7 +212,11 @@ export const createBody = (
 }
 
 export const isContentTypeBinary = (contentType: string): boolean => {
-  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
+  if (/^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i.test(contentType)) {
+    return true
+  }
+
+  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/i.test(
     contentType
   )
 }

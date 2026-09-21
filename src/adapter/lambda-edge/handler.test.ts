@@ -7,18 +7,31 @@ import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler
 import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
-  it('Should determine whether it is binary', () => {
-    expect(isContentTypeBinary('image/png')).toBe(true)
-    expect(isContentTypeBinary('font/woff2')).toBe(true)
-    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/plain')).toBe(false)
-    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/css')).toBe(false)
-    expect(isContentTypeBinary('text/javascript')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
-    expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+  it.each([
+    ['image/png', true],
+    ['font/woff2', true],
+    ['image/svg+xml', false],
+    ['image/svg+xml; charset=UTF-8', false],
+    ['text/plain', false],
+    ['text/plain; charset=UTF-8', false],
+    ['text/css', false],
+    ['text/javascript', false],
+    ['application/json', false],
+    ['application/ld+json', false],
+    ['application/json', false],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', true],
+    ['application/msword', true],
+    ['application/epub+zip', true],
+    ['application/ld+json', false],
+    ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
+    ['application/vnd.apple.installer+xml; charset=UTF-8', true],
+    ['application/vnd.mozilla.xul+xml', true],
+    ['APPLICATION/VND.APPLE.INSTALLER+XML', true],
+    ['APPLICATION/JSON', false],
+    ['TEXT/PLAIN', false],
+  ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
+    expect(isContentTypeBinary(mimeType)).toBe(expected)
   })
 })
 
