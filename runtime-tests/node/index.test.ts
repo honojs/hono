@@ -1,5 +1,6 @@
 import { createAdaptorServer, serve } from '@hono/node-server'
 import { once } from 'node:events'
+import { createServer } from 'node:http'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { Hono } from '../../src'
@@ -9,6 +10,7 @@ import { stream, streamSSE } from '../../src/helper/streaming'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { compress } from '../../src/middleware/compress'
 import { jwt } from '../../src/middleware/jwt'
+import { getTimeoutSignal, timeout } from '../../src/middleware/timeout'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -269,6 +271,37 @@ describe('Buffers', () => {
     const res = await agent.get('/uint8array')
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe('hello')
+  })
+})
+
+describe('timeout cancellation', () => {
+  it('aborts a native fetch waiting for upstream headers', async () => {
+    const upstream = createServer()
+    await new Promise<void>((resolve) => upstream.listen(0, '127.0.0.1', resolve))
+    const { port } = upstream.address() as AddressInfo
+    const cancelled = vi.fn()
+    const app = new Hono()
+    app.use(timeout(100))
+    app.get('/', async (c) => {
+      const signal = getTimeoutSignal(c)!
+      try {
+        return await fetch(`http://127.0.0.1:${port}`, { signal })
+      } catch (error) {
+        cancelled(error)
+        return c.text('cancelled')
+      }
+    })
+    try {
+      const response = await app.request('/')
+      expect(response.status).toBe(504)
+      await vi.waitFor(() => expect(cancelled).toHaveBeenCalledOnce())
+      expect(cancelled.mock.calls[0][0].status).toBe(504)
+    } finally {
+      upstream.closeAllConnections()
+      await new Promise<void>((resolve, reject) => {
+        upstream.close((error) => (error ? reject(error) : resolve()))
+      })
+    }
   })
 })
 
