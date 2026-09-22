@@ -51,6 +51,14 @@ const getSpecificity = (type: string): number => {
 
 export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string => {
   const { supports, default: defaultSupport } = config
+  // An exact media type determines its quality even when a subtype wildcard
+  // has a higher q (RFC 9110 §12.5.1). Keep q=0 entries here so a wildcard
+  // cannot re-enable a type the client explicitly rejected.
+  const exactTypes = new Set(
+    accepts
+      .filter((accept) => getSpecificity(accept.type) === 3)
+      .map((accept) => accept.type.toLowerCase())
+  )
   // A quality value of 0 means "not acceptable" (RFC 9110 §12.5.1), so such
   // entries must never match, the same rule the compress middleware applies.
   const sortedAccepts = accepts
@@ -63,7 +71,11 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string =
     })
 
   for (const accept of sortedAccepts) {
-    const matched = supports.find((supported) => matchType(accept.type, supported))
+    const matched = supports.find(
+      (supported) =>
+        matchType(accept.type, supported) &&
+        (getSpecificity(accept.type) !== 2 || !exactTypes.has(supported.toLowerCase()))
+    )
     if (matched) {
       return matched
     }

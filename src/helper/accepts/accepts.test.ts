@@ -276,6 +276,52 @@ describe('accepts', () => {
 })
 
 describe('Usage', () => {
+  test.each([
+    ['text/html;q=0, text/*;q=1, application/json;q=0.5', 'application/json'],
+    ['text/*;q=1, application/json;q=0.5, text/html;q=0', 'application/json'],
+    ['text/html;q=0.1, text/*;q=1, application/json;q=0.5', 'application/json'],
+    ['TEXT/HTML;q=0, TEXT/*;q=1, application/json;q=0.5', 'application/json'],
+    ['text/*;q=0, text/html;q=0.8, application/json;q=0.5', 'text/html'],
+    ['text/*;q=0.8, application/json;q=0.5', 'text/html'],
+    ['text/*;q=0.5, application/json;q=0.5', 'application/json'],
+    ['application/json;q=0.5, text/html;q=0.5', 'application/json'],
+    ['text/html;q=0.5, application/json;q=0.5', 'text/html'],
+    ['*/*', 'application/json'],
+  ])('negotiates %s using the most specific media range', async (header, expected) => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['text/html', 'application/json'],
+          default: 'application/json',
+        })
+      )
+    )
+
+    const res = await app.request('/', { headers: { Accept: header } })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(expected)
+  })
+
+  test('a subtype wildcard can still select another supported type after an exact rejection', async () => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.text(
+        accepts(c, {
+          header: 'Accept',
+          supports: ['text/html', 'Text/Plain', 'application/json'],
+          default: 'application/json',
+        })
+      )
+    )
+
+    const res = await app.request('/', {
+      headers: { Accept: 'text/html;q=0, text/*;q=1, application/json;q=0.5' },
+    })
+    expect(await res.text()).toBe('Text/Plain')
+  })
+
   test('decide compression by Accept-Encoding header', async () => {
     const app = new Hono()
     app.get('/compressed', async (c) => {
