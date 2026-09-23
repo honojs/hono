@@ -1,5 +1,6 @@
 import { Hono } from '../..'
 import { parseAccept } from '../../utils/accept'
+import type { AcceptHeader } from '../../utils/headers'
 import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
 import { accepts, defaultMatch } from './accepts'
 
@@ -237,6 +238,40 @@ describe('accepts', () => {
     }
     const result = accepts(c, options)
     expect(result).toBe('text/html')
+  })
+
+  describe('case insensitivity', () => {
+    const pick = (header: AcceptHeader, value: string, supports: string[]) => {
+      const c = {
+        req: { header: () => value },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
+      return accepts(c, { header, supports, default: 'DEFAULT' })
+    }
+
+    // Media types are case-insensitive (RFC 9110 §8.3.1)
+    test.each(['text/html', 'TEXT/HTML', 'Text/Html', 'text/HTML'])(
+      'Accept: %s matches text/html',
+      (value) => {
+        expect(pick('Accept', value, ['text/html'])).toBe('text/html')
+      }
+    )
+
+    test('a case-different subtype wildcard still matches', () => {
+      expect(pick('Accept', 'TEXT/*', ['text/html'])).toBe('text/html')
+    })
+
+    // Language tags are case-insensitive (RFC 4647 §2.1)
+    test.each(['en-US', 'EN-US', 'en-us', 'En-Us'])(
+      'Accept-Language: %s matches en-US',
+      (value) => {
+        expect(pick('Accept-Language', value, ['en-US'])).toBe('en-US')
+      }
+    )
+
+    test('a case-different entry with q=0 is still not acceptable', () => {
+      expect(pick('Accept-Language', 'EN;q=0', ['en'])).toBe('DEFAULT')
+    })
   })
 })
 

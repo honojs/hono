@@ -126,7 +126,7 @@ export const ErrorBoundary: FC<
     // `catchCallback` would otherwise capture too late.
     getResume()
     const index = errorBoundaryCounter++
-    const replaceRe = RegExp(`(<template id="E:${index}"></template>.*?)(.*?)(<!--E:${index}-->)`)
+    const replaceRe = RegExp(`(<template id="E:${index}"></template>)(.*?)(<!--E:${index}-->)`, 's')
     let caught = false
     const catchCallback = async ({ error, buffer }: { error: Error; buffer?: [string] }) => {
       if (caught) {

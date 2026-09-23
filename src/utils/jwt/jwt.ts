@@ -174,12 +174,13 @@ export const verify = async (
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
-  const verified = await verifying(
-    publicKey,
-    alg,
-    decodeBase64Url(tokenParts[2]),
-    utf8Encoder.encode(headerPayload)
-  )
+  let signature: Uint8Array<ArrayBuffer>
+  try {
+    signature = decodeBase64Url(tokenParts[2])
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+  const verified = await verifying(publicKey, alg, signature, utf8Encoder.encode(headerPayload))
   if (!verified) {
     throw new JwtTokenSignatureMismatched(token)
   }
