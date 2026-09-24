@@ -51,7 +51,7 @@ describe('defineWebSocketHelper', () => {
       return
     })
     const c = new Context(new Request('http://localhost'))
-    expect(() => upgradeWebSocket(c, {})).rejects.toThrow()
+    await expect(() => upgradeWebSocket(c, {})).rejects.toThrow()
   })
 })
 describe('WSContext', () => {
