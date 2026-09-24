@@ -49,11 +49,9 @@ export interface HonoJsonWebKey {
   kid?: string
 }
 
-type ResolvedCryptoKey = typeof globalThis extends { CryptoKey: { prototype: infer T } }
-  ? T
-  : CryptoKey
+type RuntimeCryptoKey = Awaited<ReturnType<typeof crypto.subtle.importKey>>
 
-export type SignatureKey = string | HonoJsonWebKey | ResolvedCryptoKey
+export type SignatureKey = string | HonoJsonWebKey | RuntimeCryptoKey
 
 export async function signing(
   privateKey: SignatureKey,
