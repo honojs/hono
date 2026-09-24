@@ -1,0 +1,29 @@
+.oxfmtrc.json
+  s_a4a87a428148c2::t_7a74bc45aa66de 8-15
+package.json
+  s_a4a87a428148c2::t_cd7f4a9fa4558b 26-27,692
+pnpm-lock.yaml
+  s_a4a87a428148c2::t_ff95f69b2832da 214-216,2112-2233,4541-4553,5124-5127,6943-6999,9281-9304,9903-9904
+src/router/reg-exp-router/trie.ts
+  s_a4a87a428148c2::t_958ae6c5aec4e6 25
+src/types.ts
+  s_a4a87a428148c2::t_494469be752fb3 2580-2584,2593-2597
+src/utils/types.ts
+  s_a4a87a428148c2::t_df8ee94cdda243 77-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9b64d92c90d928fba38eb9d43861579fa1f6c049",
+  "prompts": {},
+  "sessions": {
+    "s_a4a87a428148c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f417d84f-7abb-4beb-aaf1-2ea05e3b1495",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
