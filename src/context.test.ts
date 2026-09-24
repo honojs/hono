@@ -1,5 +1,6 @@
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
+import { Hono } from './hono'
 
 const makeResponseHeaderImmutable = (res: Response) => {
   Object.defineProperty(res, 'headers', {
@@ -513,6 +514,91 @@ describe('Context header', () => {
       'x-custom': 'second',
     })
     expect(res.headers.get('X-Custom')).toBe('second')
+  })
+})
+
+describe('c.preparedHeaders', () => {
+  const req = new Request('http://localhost/')
+
+  it('Should be undefined when no header has been set', () => {
+    const c = new Context(req)
+    expect(c.preparedHeaders).toBeUndefined()
+  })
+
+  it('Should expose the headers set with c.header()', () => {
+    const c = new Context(req)
+    c.header('X-Message', 'Hello')
+    expect(c.preparedHeaders?.get('X-Message')).toBe('Hello')
+  })
+
+  it('Should not create a Response, unlike c.res', () => {
+    const respond = (observe?: (c: Context) => void) => {
+      const c = new Context(req)
+      observe?.(c)
+      return c.text('Hi')
+    }
+
+    const untouched = respond().headers.get('Content-Type')
+
+    // reading c.preparedHeaders leaves the response exactly as it was
+    expect(respond((c) => void c.preparedHeaders).headers.get('Content-Type')).toBe(untouched)
+
+    // reading c.res materialises one, which is what this getter exists to avoid
+    expect(respond((c) => void c.res).headers.get('Content-Type')).not.toBe(untouched)
+  })
+
+  it('Should follow c.header() once a Response has been materialised', () => {
+    const c = new Context(req)
+    c.header('X-Before', 'a')
+    void c.res
+    c.header('X-After', 'b')
+    expect(c.preparedHeaders).toBe(c.res.headers)
+    expect(c.preparedHeaders?.get('X-Before')).toBe('a')
+    expect(c.preparedHeaders?.get('X-After')).toBe('b')
+  })
+
+  it('Should reflect the append option', () => {
+    const c = new Context(req)
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Vary', 'User-Agent', { append: true })
+    expect(c.preparedHeaders?.get('Vary')).toBe('Accept-Encoding, User-Agent')
+  })
+
+  it('Should reflect a header removed with an undefined value', () => {
+    const c = new Context(req)
+    c.header('X-Temp', 'val')
+    c.header('X-Temp', undefined)
+    expect(c.preparedHeaders?.get('X-Temp')).toBeNull()
+  })
+
+  it('Should create an empty Headers when deleting a header that was never set', () => {
+    // header() unconditionally does #preparedHeaders ??= new Headers() before
+    // the delete, even when there is nothing to delete
+    const c = new Context(req)
+    c.header('X-Never-Set', undefined)
+    expect(c.preparedHeaders).toBeInstanceOf(Headers)
+    expect(c.preparedHeaders?.get('X-Never-Set')).toBeNull()
+  })
+
+  it('Should work from middleware without forcing finalized or breaking the fast path', async () => {
+    let inspected: Headers | undefined
+    let finalizedDuringMiddleware: boolean | undefined
+
+    const app = new Hono()
+    app.use(async (ctx, next) => {
+      ctx.header('X-From-Middleware', 'yes')
+      inspected = ctx.preparedHeaders
+      finalizedDuringMiddleware = ctx.finalized
+      await next()
+    })
+    app.get('/', (ctx) => ctx.text('hi'))
+
+    const res = await app.request('/')
+
+    expect(finalizedDuringMiddleware).toBe(false)
+    expect(inspected?.get('X-From-Middleware')).toBe('yes')
+    expect(res.headers.get('X-From-Middleware')).toBe('yes')
+    expect(await res.text()).toBe('hi')
   })
 })
 
