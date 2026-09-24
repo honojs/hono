@@ -68,6 +68,7 @@ const typeCheckedRules = {
   '@typescript-eslint/consistent-generic-constructors': 'off',
   '@typescript-eslint/array-type': 'off',
   '@typescript-eslint/no-extraneous-class': 'off',
+  '@typescript-eslint/no-generated-empty-object-type': 'off',
 }
 
 export default defineConfig(globalIgnores(['.wrangler', '**/coverage', '**/dist']), {
