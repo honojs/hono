@@ -11,19 +11,41 @@
  *
  * @returns {boolean}
  */
+import { hasTTY, isCI, isWindows } from './flags'
+
 export function getColorEnabled(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { process, Deno } = globalThis as any
+
+  const isColorSupported = () => {
+    if (globalThis.process?.env?.NO_COLOR) {
+      return false
+    }
+    if (globalThis.process?.env?.FORCE_COLOR) {
+      return true
+    }
+    return ((hasTTY || isWindows) && globalThis.process?.env?.TERM !== 'dumb') || isCI
+  }
 
   const isNoColor =
     typeof Deno?.noColor === 'boolean'
       ? (Deno.noColor as boolean)
       : process !== undefined
-        ? // eslint-disable-next-line no-unsafe-optional-chaining
-          'NO_COLOR' in process?.env
+        ? !isColorSupported()
         : false
 
-  return !isNoColor
+  if (isNoColor) {
+    return false
+  }
+
+  // Fallback for Deno TTY if it wasn't caught by process
+  if (Deno?.stdout) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stdout = Deno.stdout as any
+    return !!(stdout.isTerminal?.() || (Deno.isatty && Deno.isatty(stdout.rid)))
+  }
+
+  return true
 }
 
 /**
