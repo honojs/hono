@@ -1,0 +1,27 @@
+.vscode/settings.json
+  s_a4a87a428148c2::t_b7b8466c071d9d 4
+benchmarks/routers-deno/.vscode/settings.json
+  s_a4a87a428148c2::t_ccdc92f1ff98e8 3
+package.json
+  s_a4a87a428148c2::t_8ccc4892dfa372 24-25,691
+pnpm-lock.yaml
+  s_a4a87a428148c2::t_cc7b1fd0ae935d 211-213,2165-2286,4239-4251,6507-6564,6567,6570,6573,6576,6579,6582,6585,6588,6591,6594,6597,6600,6603,6606,6609,6612,6615,6618,7747-7748,8578-8599
+runtime-tests/deno/.vscode/settings.json
+  s_a4a87a428148c2::t_fe2a1c159b17ab 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "88bdc311ce1eb4bd480aa69a7f5de2c146698585",
+  "prompts": {},
+  "sessions": {
+    "s_a4a87a428148c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f417d84f-7abb-4beb-aaf1-2ea05e3b1495",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
