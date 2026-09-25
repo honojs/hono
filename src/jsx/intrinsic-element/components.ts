@@ -186,7 +186,8 @@ export const form: FC<
   }>
 > = (props) => {
   if (typeof props.action === 'function') {
-    props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
+    props.action =
+      PERMALINK in props.action ? (props.action[PERMALINK] as () => string)() : undefined
   }
   return newJSXNode('form', props)
 }
@@ -199,7 +200,7 @@ const formActionableElement = (
 ) => {
   if (typeof props.formAction === 'function') {
     props.formAction =
-      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as string) : undefined
+      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as () => string)() : undefined
   }
   return newJSXNode(tag, props)
 }
