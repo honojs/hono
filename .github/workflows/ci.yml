@@ -52,8 +52,7 @@ jobs:
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version-file: '.tool-versions'
-      - run: pnpm run format
-      - run: pnpm run lint
+      - run: pnpm run check
       - run: pnpm run editorconfig-checker -format github-actions
       - run: pnpm run build
       - run: pnpm run test
