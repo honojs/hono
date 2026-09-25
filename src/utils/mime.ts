@@ -16,7 +16,7 @@ export const getMimeType = (
 }
 
 export const getExtension = (mimeType: string): string | undefined => {
-  const baseType = mimeType.split(';', 1)[0].trim()
+  const baseType = mimeType.split(';', 1)[0].trim().toLowerCase()
   for (const ext in baseMimes) {
     const stored = baseMimes[ext]
     if (stored === mimeType || stored.split(';', 1)[0].trim() === baseType) {
