@@ -1,0 +1,39 @@
+{
+  "name": "@hono/bun",
+  "version": "0.0.0",
+  "description": "Bun adapter for Hono",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && vp pack && cp ../../package.cjs.json dist/cjs/package.json && cp ../../package.cjs.json dist/types/package.json && publint",
+    "test": "tsc -p tsconfig.json && vp test --run"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/honojs/hono.git",
+    "directory": "adapters/bun"
+  },
+  "homepage": "https://hono.dev",
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "peerDependencies": {
+    "hono": ">=4.13.9"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  },
+  "devDependencies": {
+    "hono": "workspace:*"
+  }
+}
