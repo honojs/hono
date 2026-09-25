@@ -1,6 +1,21 @@
 import { serveStatic as baseServeStatic } from '.'
 import { Hono } from '../../hono'
 
+describe('Serve Static Middleware with a Blob body', () => {
+  it('Should serve content returned as a Blob', async () => {
+    const app = new Hono()
+    app.use(
+      '/static/*',
+      baseServeStatic({
+        getContent: async (path) => new Blob([`Hello in ${path}`]),
+      })
+    )
+    const res = await app.request('http://localhost/static/hello.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello in static/hello.txt')
+  })
+})
+
 describe('Serve Static Middleware', () => {
   const app = new Hono()
   const getContent = vi.fn(async (path) => {
