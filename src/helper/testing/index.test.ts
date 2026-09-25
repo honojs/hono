@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { testClient } from '.'
+import { Hono } from '../../hono'
 
 describe('hono testClient', () => {
   it('Should return the correct search result', async () => {

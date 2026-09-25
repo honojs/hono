@@ -1,6 +1,6 @@
+import { requestId } from '.'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
-import { requestId } from '.'
 
 const regexUUIDv4 = /([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})/
 

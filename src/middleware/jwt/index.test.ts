@@ -1,8 +1,8 @@
 import { describe, expectTypeOf } from 'vitest'
-import { Hono } from '../../hono'
-import { HTTPException } from '../../http-exception'
 import { jwt } from '.'
 import type { JwtVariables } from '.'
+import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
 
 describe('JWT', () => {
   describe('Credentials in header', () => {

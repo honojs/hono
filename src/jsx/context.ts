@@ -1,9 +1,9 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
+import type { FC, PropsWithChildren } from './'
 import { isUntrustedObject, JSXFragmentNode, renderChildren, renderUntrustedObject } from './base'
 import { DOM_RENDERER } from './constants'
 import { createContextProviderFunction } from './dom/context'
-import type { FC, PropsWithChildren } from './'
 
 export interface Context<T> extends FC<PropsWithChildren<{ value: T }>> {
   values: T[]

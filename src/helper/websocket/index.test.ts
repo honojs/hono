@@ -1,6 +1,6 @@
-import { Context } from '../../context'
 import type { WSContextInit } from '.'
 import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
+import { Context } from '../../context'
 
 describe('`createWSMessageEvent`', () => {
   it('Should `createWSMessageEvent` is working for string', () => {

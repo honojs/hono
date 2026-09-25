@@ -1,5 +1,5 @@
-import { vi } from 'vitest'
 import { Writable } from 'node:stream'
+import { vi } from 'vitest'
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,

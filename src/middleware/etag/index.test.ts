@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { RETAINED_304_HEADERS, etag } from '.'
+import { Hono } from '../../hono'
 
 const createPatternedBody = (length: number) => {
   const body = new Uint8Array(length)

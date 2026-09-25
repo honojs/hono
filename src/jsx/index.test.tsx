@@ -1,10 +1,3 @@
-/** @jsxImportSource ./ */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { html, raw } from '../helper/html'
-import { Hono } from '../hono'
-import { DOM_MEMO } from './constants'
-import { captureRenderContext } from './context'
-import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, {
   ErrorBoundary,
   Fragment,
@@ -17,6 +10,13 @@ import DefaultExport, {
   version,
 } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
+/** @jsxImportSource ./ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { html, raw } from '../helper/html'
+import { Hono } from '../hono'
+import { DOM_MEMO } from './constants'
+import { captureRenderContext } from './context'
+import { Suspense, renderToReadableStream } from './streaming'
 
 interface SiteData {
   title: string

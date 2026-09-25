@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { proxy } from '.'
+import { Hono } from '../../hono'
 
 describe('Proxy Middleware', () => {
   describe('proxy', () => {

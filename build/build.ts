@@ -7,11 +7,11 @@
 
 /// <reference types="bun-types" />
 
+import fs from 'fs'
+import path from 'path'
 import { $, Glob } from 'bun'
 import { build, context } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import fs from 'fs'
-import path from 'path'
 import { removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 

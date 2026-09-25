@@ -1,5 +1,4 @@
 import { assertEquals } from '@std/assert'
-
 import { Context } from '../../src/context.ts'
 import { env, getRuntimeKey } from '../../src/helper/adapter/index.ts'
 import { Hono } from '../../src/hono.ts'
