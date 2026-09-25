@@ -1,0 +1,35 @@
+.github/pull_request_template.md
+  s_a4a87a428148c2::t_1133ce36bcdc86 5
+.github/workflows/autofix.yml
+  s_a4a87a428148c2::t_7298b184ea262b 33
+.github/workflows/ci.yml
+  s_a4a87a428148c2::t_440422a2179ee5 55
+.oxfmtrc.json
+  s_a4a87a428148c2::t_abebb91544cead 17-19
+build/strip-private-fields.ts
+  s_a4a87a428148c2::t_0c7636fc784c66 1-8
+build/validate-package-exports.ts
+  s_a4a87a428148c2::t_e53c77ee6c185d 1-2
+package.json
+  s_a4a87a428148c2::t_826aca91c0955d 14-15,18-22,24-29,32-34,683,695-696
+pnpm-lock.yaml
+  s_a4a87a428148c2::t_59a0415bbfc482 185,220-222,224,2031-2034,2038-2040,2169-2198,2321-2324,2870-2872,2884-3127,4524-4527,5280-5292,5560-5568,5616,5625,6810-6811,6814-6815,6877-6894,6952-6953,6966,7146,7272-7283,7295-7312,7353-7362,7376-7382,7401-7512,7515-7522,7577,7814,7932,7936,8196,8234,8734,8812,9038,9061,9063-9072,9093-9094,9207,9284,9718,9877-9931,9954-9978,9997,10149-10187
+vite.config.ts
+  s_a4a87a428148c2::t_56f57667be9d69 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6ec29b018b69552c18b3c3a67f4821582ca80cf5",
+  "prompts": {},
+  "sessions": {
+    "s_a4a87a428148c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f417d84f-7abb-4beb-aaf1-2ea05e3b1495",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
