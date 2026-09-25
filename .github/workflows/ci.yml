@@ -2,9 +2,12 @@ name: ci
 on:
   push:
     branches: [main, next]
+    paths-ignore:
+      - 'adapters/**'
   pull_request:
     branches: ['*']
     paths-ignore:
+      - 'adapters/**'
       - 'docs/**'
       - '.vscode/**'
       - 'README.md'
@@ -56,8 +59,6 @@ jobs:
       - run: pnpm run editorconfig-checker -format github-actions
       - run: pnpm run build
       - run: pnpm run test
-      - run: pnpm run build:adapters
-      - run: pnpm run test:adapters
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: coverage-main
