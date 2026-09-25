@@ -1,0 +1,21 @@
+.github/workflows/ci-adapters.yml
+  s_a34d594424e4c1::t_f9b95ec475943e 1-48
+.github/workflows/ci.yml
+  s_a34d594424e4c1::t_2d3756a8857adc 5-6,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d4fb602544c9ccee98f8e734178b3658674a25d7",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
