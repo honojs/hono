@@ -1,8 +1,8 @@
+import { ipRestriction } from '.'
+import type { IPRestrictionRule } from '.'
 import { Context } from '../../context'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { Hono } from '../../hono'
-import { ipRestriction } from '.'
-import type { IPRestrictionRule } from '.'
 
 describe('ipRestriction middleware', () => {
   it('Should restrict', async () => {

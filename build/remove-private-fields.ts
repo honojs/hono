@@ -1,6 +1,6 @@
+import { readFile, writeFile } from 'fs/promises'
 import type { PropertyDefinition, ParseResult } from 'oxc-parser'
 import { parseSync, Visitor } from 'oxc-parser'
-import { readFile, writeFile } from 'fs/promises'
 
 export async function removePrivateFields(files: string[]) {
   const start = performance.now()

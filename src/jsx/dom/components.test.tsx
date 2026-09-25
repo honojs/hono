@@ -1,10 +1,10 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
+import { ErrorBoundary as ErrorBoundaryDom, Suspense as SuspenseDom, render } from '.' // for dom
 import { ErrorBoundary as ErrorBoundaryCommon, Suspense as SuspenseCommon } from '..' // for common
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 import { use, useState } from '../hooks'
-import { ErrorBoundary as ErrorBoundaryDom, Suspense as SuspenseDom, render } from '.' // for dom
 
 runner('Common', SuspenseCommon, ErrorBoundaryCommon)
 runner('DOM', SuspenseDom, ErrorBoundaryDom)

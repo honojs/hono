@@ -1,6 +1,6 @@
+import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
 import { Context } from '../../context'
 import { Hono } from '../../hono'
-import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
 
 const defaultContextOptions = {
   executionCtx: {

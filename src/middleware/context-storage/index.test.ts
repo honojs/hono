@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { contextStorage, getContext, tryGetContext } from '.'
+import { Hono } from '../../hono'
 
 describe('Context Storage Middleware', () => {
   type Env = {

@@ -77,5 +77,9 @@ export default defineConfig(globalIgnores(['.wrangler', '**/coverage', '**/dist'
     reportUnusedDisableDirectives: 'error',
     reportUnusedInlineConfigs: 'error',
   },
-  rules: typeCheckedRules,
+  rules: {
+    ...typeCheckedRules,
+    // Import order is handled by oxfmt's `sortImports`.
+    'import-x/order': 'off',
+  },
 })

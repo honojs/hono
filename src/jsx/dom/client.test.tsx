@@ -1,7 +1,7 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
-import DefaultExport, { createRoot, hydrateRoot } from './client'
 import { useEffect } from '.'
+import DefaultExport, { createRoot, hydrateRoot } from './client'
 
 describe('createRoot', () => {
   beforeAll(() => {

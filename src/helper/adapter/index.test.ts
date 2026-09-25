@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { env, getRuntimeKey } from '.'
+import { Hono } from '../../hono'
 
 describe('getRuntimeKey', () => {
   it('Should return the current runtime key', () => {

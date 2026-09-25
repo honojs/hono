@@ -1,7 +1,7 @@
+import { streamSSE } from '.'
 /** @jsxImportSource ../../jsx */
 import { Context } from '../../context'
 import { ErrorBoundary, Suspense } from '../../jsx'
-import { streamSSE } from '.'
 
 describe('SSE Streaming helper', () => {
   const req = new Request('http://localhost/')

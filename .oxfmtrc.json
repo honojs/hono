@@ -6,6 +6,9 @@
   "singleQuote": true,
   "jsxSingleQuote": true,
   "endOfLine": "lf",
+  "sortImports": {
+    "newlinesBetween": false
+  },
   "sortPackageJson": false,
   "ignorePatterns": [
     "dist/",

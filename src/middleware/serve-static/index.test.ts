@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { serveStatic as baseServeStatic } from '.'
+import { Hono } from '../../hono'
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()

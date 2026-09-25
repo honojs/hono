@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
-import { Hono } from '../../hono'
 import { basicAuth } from '.'
+import { Hono } from '../../hono'
 
 describe('Basic Auth by Middleware', () => {
   let handlerExecuted: boolean
