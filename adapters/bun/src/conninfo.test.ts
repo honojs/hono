@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'bun:test'
 import { Context } from 'hono'
 import type { AddressType } from 'hono/conninfo'
 import { getConnInfo } from './conninfo'

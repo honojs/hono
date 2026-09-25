@@ -31,7 +31,4 @@ export default defineConfig({
       outExtensions: () => ({ dts: '.d.ts' }),
     },
   ],
-  test: {
-    globals: true,
-  },
 })

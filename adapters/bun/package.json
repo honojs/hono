@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && vp pack && cp ../../package.cjs.json dist/cjs/package.json && cp ../../package.cjs.json dist/types/package.json && publint",
-    "test": "tsc -p tsconfig.json && vp test --run"
+    "test": "tsc -p tsconfig.json && bun test"
   },
   "license": "MIT",
   "repository": {

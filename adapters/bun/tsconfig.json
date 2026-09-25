@@ -4,7 +4,7 @@
     "module": "ES2020",
     "rootDir": "./src/",
     "outDir": "./dist/",
-    "types": ["bun-types", "vitest/globals"],
+    "types": ["bun-types"],
     "noEmit": true
   },
   "include": ["src/**/*.ts"]

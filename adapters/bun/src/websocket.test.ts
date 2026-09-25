@@ -1,11 +1,12 @@
+import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test'
 import { Context } from 'hono'
 import type { BunWebSocketData, BunServerWebSocket } from './websocket'
 import { createWSContext, websocket, upgradeWebSocket, createBunWebSocket } from './websocket'
 
 describe('createWSContext()', () => {
   it('Should send() and close() works', () => {
-    const send = vi.fn()
-    const close = vi.fn()
+    const send = mock()
+    const close = mock()
     const ws = createWSContext({
       send(data) {
         send(data)
@@ -41,7 +42,7 @@ describe('upgradeWebSocket()', () => {
         () => Promise.resolve()
       )
 
-    await expect(run).rejects.toThrowError(/env has/)
+    await expect(run()).rejects.toThrowError(/env has/)
   })
   it('Should response null when upgraded', async () => {
     const upgraded = await upgradeWebSocket(() => ({}))(
@@ -105,9 +106,9 @@ describe('upgradeWebSocket()', () => {
     expect(ws.protocol).toBe('')
   })
   it('Should events are called', async () => {
-    const open = vi.fn()
-    const message = vi.fn()
-    const close = vi.fn()
+    const open = mock()
+    const message = mock()
+    const close = mock()
 
     const ws = {
       data: {
