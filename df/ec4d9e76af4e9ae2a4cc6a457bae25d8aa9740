@@ -1,0 +1,205 @@
+.oxfmtrc.json
+  s_a4a87a428148c2::t_6a0a5efb0bdd23 9
+benchmarks/jsx/src/nano.ts
+  s_a4a87a428148c2::t_c57803668a2996 2
+benchmarks/jsx/src/preact.ts
+  s_a4a87a428148c2::t_cbc9d785be887c 3
+benchmarks/jsx/src/react-jsx/nano.ts
+  s_a4a87a428148c2::t_6ccdc39a8c4ef6 2
+benchmarks/jsx/src/react-jsx/preact.ts
+  s_a4a87a428148c2::t_5d2e61fceffd76 2
+benchmarks/jsx/src/react-jsx/react.ts
+  s_a4a87a428148c2::t_7d7dd170c02595 2
+benchmarks/jsx/src/react.ts
+  s_a4a87a428148c2::t_43c4503b4921ca 3
+build/build.ts
+  s_a4a87a428148c2::t_c52895a93780fc 10-12,16
+build/remove-private-fields.test.ts
+  s_a4a87a428148c2::t_4154c42c6ca1a6 4
+build/remove-private-fields.ts
+  s_a4a87a428148c2::t_d995b1e0c33240 1-2
+eslint.config.mjs
+  s_a4a87a428148c2::t_1b11963b55d70b 80-84
+perf-measures/bundle-check/scripts/check-bundle-size.ts
+  s_a4a87a428148c2::t_dc7794b650b252 5-6
+runtime-tests/bun/index.test.tsx
+  s_a4a87a428148c2::t_b253e07d561eae 3-5
+runtime-tests/deno-jsx/jsx.test.tsx
+  s_a4a87a428148c2::t_aed5537b434f89 3
+runtime-tests/deno/middleware.test.tsx
+  s_a4a87a428148c2::t_6c2791ab1ef29b 4
+runtime-tests/deno/ssg.test.tsx
+  s_a4a87a428148c2::t_be798fd8fbbd26 2
+runtime-tests/deno/stream.test.ts
+  s_a4a87a428148c2::t_d7985dbb5195ed 2
+runtime-tests/fastly/index.test.ts
+  s_a4a87a428148c2::t_bacd66df056653 2
+runtime-tests/lambda/index.test.ts
+  s_a4a87a428148c2::t_83f680462227af 2
+runtime-tests/lambda/mock.ts
+  s_a4a87a428148c2::t_0b00372c5ff417 2
+runtime-tests/lambda/stream-backpressure.test.ts
+  s_a4a87a428148c2::t_41477d23c3ab3e 2
+runtime-tests/lambda/stream-mock.ts
+  s_a4a87a428148c2::t_5bf647e17604dd 2-4
+runtime-tests/node/index.test.ts
+  s_a4a87a428148c2::t_9a6675164ead1d 4-6
+src/adapter/aws-lambda/handler.ts
+  s_a4a87a428148c2::t_cb7c3861080895 2
+src/adapter/bun/serve-static.ts
+  s_a4a87a428148c2::t_40b2b632148c91 4
+src/adapter/cloudflare-workers/websocket.test.ts
+  s_a4a87a428148c2::t_dabfa685c70d00 1
+src/adapter/deno/serve-static.ts
+  s_a4a87a428148c2::t_a7063b6304cadf 2
+src/adapter/lambda-edge/handler.test.ts
+  s_a4a87a428148c2::t_0c4b60defc3e45 2
+src/adapter/lambda-edge/handler.ts
+  s_a4a87a428148c2::t_6559ca1ca55de9 3
+src/client/client.test.ts
+  s_a4a87a428148c2::t_38711a72bf3157 7
+src/client/types.test.ts
+  s_a4a87a428148c2::t_a8458def5afd50 3-4
+src/client/utils.test.ts
+  s_a4a87a428148c2::t_cf70e47c238054 3
+src/helper/adapter/index.test.ts
+  s_a4a87a428148c2::t_5269a2b544246f 2
+src/helper/cookie/index.test.ts
+  s_a4a87a428148c2::t_36717363a55d70 10
+src/helper/dev/index.test.ts
+  s_a4a87a428148c2::t_6dafb0a4b711eb 1
+src/helper/factory/index.test.ts
+  s_a4a87a428148c2::t_e0807bbe16ccc0 3
+src/helper/html/index.test.ts
+  s_a4a87a428148c2::t_61f10e1e96bb41 2
+src/helper/proxy/index.test.ts
+  s_a4a87a428148c2::t_1934750bfe3e65 2
+src/helper/route/index.test.ts
+  s_a4a87a428148c2::t_7587752d3d9273 1
+src/helper/ssg/utils.test.ts
+  s_a4a87a428148c2::t_afef401b95e11c 2
+src/helper/streaming/sse.test.tsx
+  s_a4a87a428148c2::t_3fb8ff0b7ca0b1 1
+src/helper/streaming/stream.test.ts
+  s_a4a87a428148c2::t_d9a0ba4baf233e 2
+src/helper/streaming/text.test.ts
+  s_a4a87a428148c2::t_9df558fad4508e 2
+src/helper/testing/index.test.ts
+  s_a4a87a428148c2::t_ab1b930285305d 2
+src/helper/websocket/index.test.ts
+  s_a4a87a428148c2::t_51c7944b016dfa 3
+src/hono.test.ts
+  s_a4a87a428148c2::t_a947ed93beeaf3 4
+src/jsx/children.test.ts
+  s_a4a87a428148c2::t_8d22294e77e83c 2
+src/jsx/components.test.tsx
+  s_a4a87a428148c2::t_86f4b6a004a1ac 4
+src/jsx/components.ts
+  s_a4a87a428148c2::t_3bf83f550be9a4 4
+src/jsx/context.ts
+  s_a4a87a428148c2::t_b40fe0c927ba69 3
+src/jsx/dom/client.test.tsx
+  s_a4a87a428148c2::t_6d597a4d8760ac 3,5
+src/jsx/dom/components.test.tsx
+  s_a4a87a428148c2::t_006c7314574fc1 3-4
+src/jsx/dom/context.test.tsx
+  s_a4a87a428148c2::t_e1b83170efc8c4 3-6
+src/jsx/dom/css.test.tsx
+  s_a4a87a428148c2::t_aaa53dedb6fead 6
+src/jsx/dom/hooks/index.test.tsx
+  s_a4a87a428148c2::t_0885465b24a273 3,5
+src/jsx/dom/index.test.tsx
+  s_a4a87a428148c2::t_17141e0c8c0d1f 3-16
+src/jsx/dom/intrinsic-element/components.test.tsx
+  s_a4a87a428148c2::t_6611a6ca996652 3
+src/jsx/hooks/dom.test.tsx
+  s_a4a87a428148c2::t_6294dbde76f15b 3,21-23
+src/jsx/index.test.tsx
+  s_a4a87a428148c2::t_674f828a8e650b 13-19
+src/jsx/streaming.test.tsx
+  s_a4a87a428148c2::t_cd03e7b38c4e34 4
+src/jsx/streaming.ts
+  s_a4a87a428148c2::t_c63ca85584d34b 9
+src/middleware/basic-auth/index.test.ts
+  s_a4a87a428148c2::t_5daf997439ed00 2,4
+src/middleware/bearer-auth/index.test.ts
+  s_a4a87a428148c2::t_9c294fb273cb16 2-3
+src/middleware/body-limit/index.test.ts
+  s_a4a87a428148c2::t_7005c7e45c3d79 2
+src/middleware/cache/index.test.ts
+  s_a4a87a428148c2::t_191a58682a5f5e 2-3
+src/middleware/combine/index.test.ts
+  s_a4a87a428148c2::t_35a523ec9d9a59 1
+src/middleware/compress/index.test.ts
+  s_a4a87a428148c2::t_b7a36c9c385991 1
+src/middleware/context-storage/index.test.ts
+  s_a4a87a428148c2::t_f69bfaa8df02f8 2
+src/middleware/context-storage/index.ts
+  s_a4a87a428148c2::t_5049b81de181cb 7
+src/middleware/etag/index.test.ts
+  s_a4a87a428148c2::t_fa43e5973d7e8c 2
+src/middleware/ip-restriction/index.test.ts
+  s_a4a87a428148c2::t_850b84462a748a 1-2
+src/middleware/jsx-renderer/index.test.tsx
+  s_a4a87a428148c2::t_181b543f99f320 3-4
+src/middleware/jwk/index.test.ts
+  s_a4a87a428148c2::t_d52504b76698c1 3-4
+src/middleware/jwt/index.test.ts
+  s_a4a87a428148c2::t_9ce59fd939e6ce 2,5-6
+src/middleware/language/index.test.ts
+  s_a4a87a428148c2::t_b0b97f72e8f8d5 1
+src/middleware/logger/index.test.ts
+  s_a4a87a428148c2::t_4bfdc23bce8db8 2
+src/middleware/method-not-allowed/index.test.ts
+  s_a4a87a428148c2::t_f08593b254f76b 2
+src/middleware/powered-by/index.test.ts
+  s_a4a87a428148c2::t_4bb5c7b34395a2 2
+src/middleware/pretty-json/index.test.ts
+  s_a4a87a428148c2::t_b5d57eb5a8e882 2
+src/middleware/request-id/index.test.ts
+  s_a4a87a428148c2::t_cc39376e17baf6 1
+src/middleware/secure-headers/index.test.ts
+  s_a4a87a428148c2::t_af098dde2a46e1 3-4
+src/middleware/serve-static/index.test.ts
+  s_a4a87a428148c2::t_e61c8486217a5a 2
+src/middleware/serve-static/path.test.ts
+  s_a4a87a428148c2::t_82e21d86de18cd 2
+src/middleware/timeout/index.test.ts
+  s_a4a87a428148c2::t_c7b54c22e5ce74 1-2
+src/middleware/timing/index.test.ts
+  s_a4a87a428148c2::t_7e7860616bd41a 2
+src/middleware/trailing-slash/index.test.ts
+  s_a4a87a428148c2::t_6bb9f32f1d93f0 2
+src/router/common.case.test.ts
+  s_a4a87a428148c2::t_3f8464dbd5c007 2
+src/types.test.ts
+  s_a4a87a428148c2::t_0cf9e76d9d1ee3 3
+src/utils/buffer.test.ts
+  s_a4a87a428148c2::t_e18d77397a9dbb 2
+src/utils/color.test.ts
+  s_a4a87a428148c2::t_3eaf397b966720 2
+src/utils/crypto.test.ts
+  s_a4a87a428148c2::t_aaca9154f933c5 2
+src/utils/jwt/jwt.test.ts
+  s_a4a87a428148c2::t_1c697f59680346 3
+src/validator/utils.test.ts
+  s_a4a87a428148c2::t_6d24c2cb1a256d 2
+src/validator/validator.test.ts
+  s_a4a87a428148c2::t_f3b5d6074147fe 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "dfec4d9e76af4e9ae2a4cc6a457bae25d8aa9740",
+  "prompts": {},
+  "sessions": {
+    "s_a4a87a428148c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f417d84f-7abb-4beb-aaf1-2ea05e3b1495",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
