@@ -178,6 +178,25 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('Hello in static/hello.unknown.br')
   })
 
+  it('Should return a pre-compressed response when Accept-Encoding has q-values', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.html', {
+      headers: { 'Accept-Encoding': 'br;q=0, zstd;q=1.0, gzip;q=0.5' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBe('zstd')
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    expect(await res.text()).toBe('Hello in static/hello.html.zst')
+  })
+
   it('Should not return a pre-compressed response - /static/not-found.txt', async () => {
     const app = new Hono().use(
       '*',

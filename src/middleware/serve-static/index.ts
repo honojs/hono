@@ -5,6 +5,7 @@
 
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
+import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getMimeType } from '../../utils/mime'
 import { tryDecodeURI } from '../../utils/url'
@@ -95,10 +96,9 @@ export const serveStatic = <E extends Env = Env>(
 
       if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
         const acceptEncodingSet = new Set(
-          c.req
-            .header('Accept-Encoding')
-            ?.split(',')
-            .map((encoding) => encoding.trim())
+          parseAccept(c.req.header('Accept-Encoding') ?? '')
+            .filter((encoding) => encoding.q > 0)
+            .map((encoding) => encoding.type)
         )
 
         for (const encoding of ENCODINGS_ORDERED_KEYS) {
