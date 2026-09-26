@@ -367,6 +367,11 @@
       "import": "./dist/adapter/bun/index.js",
       "require": "./dist/cjs/adapter/bun/index.js"
     },
+    "./ant": {
+      "types": "./dist/types/adapter/ant/index.d.ts",
+      "import": "./dist/adapter/ant/index.js",
+      "require": "./dist/cjs/adapter/ant/index.js"
+    },
     "./aws-lambda": {
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",
@@ -615,6 +620,9 @@
       "bun": [
         "./dist/types/adapter/bun"
       ],
+      "ant": [
+        "./dist/types/adapter/ant"
+      ],
       "aws-lambda": [
         "./dist/types/adapter/aws-lambda"
       ],
@@ -671,6 +679,7 @@
     "compute",
     "deno",
     "bun",
+    "ant",
     "lambda",
     "nodejs"
   ],
