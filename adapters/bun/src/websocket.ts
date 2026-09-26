@@ -104,7 +104,7 @@ export const websocket: BunWebSocketHandler<BunWebSocketData> = {
 }
 
 /**
- * @deprecated Import `upgradeWebSocket` and `websocket` directly from `hono/bun` instead.
+ * @deprecated Import `upgradeWebSocket` and `websocket` directly from `@hono/bun` instead.
  * @returns A function to create a Bun WebSocket handler.
  */
 export const createBunWebSocket = <T>(): CreateWebSocket<T> => ({
