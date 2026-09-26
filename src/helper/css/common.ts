@@ -81,7 +81,7 @@ const cssStringReStr: string = [
 
   "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
 
-  'url\\([^)"\'\\s]*\\)', // unquoted url, which may contain "//"
+  'url\\(\\s*[^)"\'\\s]*\\s*\\)', // unquoted url, which may contain "//"
 ].join('|')
 const minifyCssRe: RegExp = new RegExp(
   [
