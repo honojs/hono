@@ -209,6 +209,20 @@ describe('every', () => {
     expect(middleware2).not.toBeCalled()
   })
 
+  it('Should continue the chain when a condition returns true', async () => {
+    const condition = vi.fn(() => true)
+    const middleware = vi.fn(nextMiddleware)
+
+    app.use('/', every(condition, middleware))
+    app.get('/', (c) => c.text('Hello World'))
+    const res = await app.request('http://localhost/')
+
+    expect(condition).toBeCalled()
+    expect(middleware).toBeCalled()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello World')
+  })
+
   it('Should pass the path params to middlewares', async () => {
     const app = new Hono()
     app.use('*', nextMiddleware)
