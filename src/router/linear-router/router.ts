@@ -6,7 +6,7 @@ type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number
 
 const emptyParams = Object.create(null)
 
-const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
+const splitPathRe = /\/(:[^\/\{\}\?]+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
 export class LinearRouter<T> implements Router<T> {
   name: string = 'LinearRouter'
