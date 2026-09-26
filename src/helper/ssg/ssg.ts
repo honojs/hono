@@ -104,6 +104,10 @@ const determineExtension = (
   if (mimeType in extensionMap) {
     return extensionMap[mimeType]
   }
+  const lowerCasedMimeType = mimeType.toLowerCase()
+  if (lowerCasedMimeType in extensionMap) {
+    return extensionMap[lowerCasedMimeType]
+  }
   return getExtension(mimeType) || 'html'
 }
 
