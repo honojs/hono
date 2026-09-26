@@ -264,9 +264,12 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
+    const hasUnvariedCookie = c.req.raw.headers.has('Cookie') && !varyDirectives?.has('cookie')
+
     if (
       (c.req.method !== 'GET' && c.req.method !== 'QUERY') ||
-      c.req.raw.headers.has('Authorization')
+      c.req.raw.headers.has('Authorization') ||
+      hasUnvariedCookie
     ) {
       await next()
       return
