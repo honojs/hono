@@ -247,6 +247,69 @@ describe('RegExpRouter', () => {
     })
   })
 
+  describe('Wildcard matching paths with line terminators', () => {
+    // Regression test for https://github.com/honojs/hono/issues/5345
+    // getPath() decodes the URL, so %0A becomes a real newline.
+    // The wildcard pattern must match all characters including line terminators.
+    it('Only-wildcard should match a path containing a newline', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '*', 'wildcard')
+
+      const [res] = router.match('GET', '/a\nb')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+
+    it('Only-wildcard should match a path containing a carriage return', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '*', 'wildcard')
+
+      const [res] = router.match('GET', '/a\rb')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+
+    it('Only-wildcard should match a path containing LS and PS', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '*', 'wildcard')
+
+      for (const ch of ['\u2028', '\u2029']) {
+        const [res] = router.match('GET', `/a${ch}b`)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toBe('wildcard')
+      }
+    })
+
+    it('Tail-wildcard should match a path containing a newline', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/files/*', 'wildcard')
+
+      const [res] = router.match('GET', '/files/a\nb')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+
+    it('Tail-wildcard should match a path containing a carriage return', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/files/*', 'wildcard')
+
+      const [res] = router.match('GET', '/files/a\rb')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('wildcard')
+    })
+
+    it('Tail-wildcard should match a path containing LS and PS', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/files/*', 'wildcard')
+
+      for (const ch of ['\u2028', '\u2029']) {
+        const [res] = router.match('GET', `/files/a${ch}b`)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toBe('wildcard')
+      }
+    })
+  })
+
   describe('Static path including a colon in the middle', () => {
     it('Should be treated as a static path', () => {
       for (const paths of [
