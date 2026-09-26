@@ -84,6 +84,21 @@ describe('Serve Static Middleware', () => {
     expect(getContent).toBeCalledTimes(1)
   })
 
+  it('Should fall through for non-GET/HEAD requests without accessing the file', async () => {
+    const localApp = new Hono().use('/static/*', baseServeStatic({ getContent }))
+    const res = await localApp.request('/static/hello.html', { method: 'POST' })
+    // the middleware hands over to `next()`, so the request ends as a 404
+    expect(res.status).toBe(404)
+    expect(getContent).toBeCalledTimes(0)
+  })
+
+  it('Should still serve files for HEAD requests', async () => {
+    const localApp = new Hono().use('/static/*', baseServeStatic({ getContent }))
+    const res = await localApp.request('/static/hello.html', { method: 'HEAD' })
+    expect(res.status).toBe(200)
+    expect(getContent).toBeCalledTimes(1)
+  })
+
   it('Should return 200 response for empty string content - /static/empty.txt', async () => {
     const onNotFound = vi.fn()
     const app = new Hono().use(

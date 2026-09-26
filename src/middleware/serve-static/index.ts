@@ -57,6 +57,14 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    // Serve static files only for GET and HEAD requests. Any other method
+    // falls through before the path is resolved or the file is accessed, so
+    // a POST to an existing file is not answered with the file's content and
+    // `methodNotAllowed` can derive the 405 from the 404. (#5223)
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {
