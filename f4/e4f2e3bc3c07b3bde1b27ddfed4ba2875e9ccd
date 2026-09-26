@@ -1,0 +1,27 @@
+src/adapter/bun/conninfo.ts
+  s_a34d594424e4c1::t_8f5fae085a5253 9
+src/adapter/bun/serve-static.ts
+  s_a34d594424e4c1::t_0d866abe1a3041 8-10
+src/adapter/bun/server.ts
+  s_a34d594424e4c1::t_bb039203f49ba8 12
+src/adapter/bun/ssg.ts
+  s_a34d594424e4c1::t_17e279a56562b4 12,25
+src/adapter/bun/websocket.ts
+  s_a34d594424e4c1::t_ceed97f9cd1334 7,16-18,28-30,39,56-58,87-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f4e4f2e3bc3c07b3bde1b27ddfed4ba2875e9ccd",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
