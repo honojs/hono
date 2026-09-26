@@ -18,9 +18,12 @@ type KeyAlgorithm =
   | (EcdsaParams & EcKeyImportParams)
   | HmacImportParams
 
-// Extending the JsonWebKey interface to include the "kid" property.
-// https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4
+// `kty` is required by RFC 7517, but is optional in the DOM JsonWebKey type.
+// Requiring it prevents unrelated objects (e.g. Promise<CryptoKey>) from being
+// accepted through broad index signatures in some runtime typings.
+// https://datatracker.ietf.org/doc/html/rfc7517#section-4.1
 export interface HonoJsonWebKey extends JsonWebKey {
+  kty: string
   kid?: string
 }
 
