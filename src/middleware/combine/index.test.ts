@@ -133,6 +133,25 @@ describe('some', () => {
     expect(middleware2).not.toBeCalled()
     expect(await res.text()).toBe('oops')
   })
+
+  it('Should return a Response from a middleware that short-circuits', async () => {
+    // A validator-style middleware returns a Response without calling `next()`.
+    // `every` has handled this since #3441.
+    const shortCircuit: MiddlewareHandler = async (c) => c.json({ error: 'bad request' }, 400)
+    const next = vi.fn(async (_c, n) => {
+      await n()
+    })
+
+    const app = new Hono()
+    app.use('/', some(shortCircuit, next))
+    app.get('/', (c) => c.text('handler'))
+
+    const res = await app.request('http://localhost/')
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'bad request' })
+    expect(next).not.toBeCalled()
+  })
 })
 
 describe('every', () => {
