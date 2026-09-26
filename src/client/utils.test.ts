@@ -7,6 +7,8 @@ import {
   buildSearchParams,
   deepMerge,
   parseResponse,
+  parseResponseWithError,
+  DetailedError,
   mergePath,
   removeIndexString,
   replaceUrlParam,
@@ -214,6 +216,7 @@ describe('parseResponse', async () => {
   const _app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/error-json', (c) => c.json({ error: 'error' }, 500))
     .get('/might-error-json', (c) => {
       if (Math.random() > 0.5) {
         return c.json({ error: 'error' }, 500)
@@ -250,6 +253,9 @@ describe('parseResponse', async () => {
     }),
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/error-json', () => {
+      return HttpResponse.json({ error: 'error' }, { status: 500 })
     }),
     http.get('http://localhost/might-error-json', () => {
       if (Math.random() > 0.5) {
@@ -328,6 +334,21 @@ describe('parseResponse', async () => {
     it('should throw error when the response is not ok', async () => {
       await expect(parseResponse(client['404'].$get())).rejects.toThrowError('404 Not Found')
     }),
+    it('should return the parsed result without an error', async () => {
+      const { result, error } = await parseResponseWithError(client.json.$get())
+      expect(result).toEqual({ message: 'hi' })
+      expect(error).toBeUndefined()
+    }),
+    it('should return the parsed error without throwing', async () => {
+      const { result, error } = await parseResponseWithError(client['error-json'].$get())
+      expect(result).toBeUndefined()
+      expect(error).toBeInstanceOf(DetailedError)
+      expect(error?.data).toEqual({ error: 'error' })
+      expect(error?.detail).toEqual({
+        data: { error: 'error' },
+        statusText: 'Internal Server Error',
+      })
+    }),
     it('should parse as text for raw responses without content-type header', async () => {
       const result = await parseResponse(client.raw.$get())
       expect(result).toBe('hello')
@@ -379,6 +400,19 @@ describe('parseResponse', async () => {
         >
       >
       type _verify = Expect<Equal<ResultType, { message: string }>>
+    }),
+    it('(type-only) should infer success and error data with parseResponseWithError', async () => {
+      type ResultType = Awaited<
+        ReturnType<
+          typeof parseResponseWithError<Awaited<ReturnType<(typeof client)['error-json']['$get']>>>
+        >
+      >
+      type ErrorResult = NonNullable<ResultType['error']>
+      type ErrorFromEndpoint = DetailedError<(typeof client)['error-json']['$get']>
+      type _verifyError = Expect<Equal<NonNullable<ErrorResult['data']>, { error: string }>>
+      type _verifyDetailedError = Expect<
+        Equal<NonNullable<ErrorFromEndpoint['data']>, { error: string }>
+      >
     }),
   ])
 
