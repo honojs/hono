@@ -292,7 +292,8 @@ describe('parseResponse', async () => {
           'content-type': 'x/custom-type',
         },
       })
-    })
+    }),
+    http.get('http://localhost/noRoute', () => HttpResponse.error())
   )
 
   beforeAll(() => server.listen())
@@ -349,12 +350,12 @@ describe('parseResponse', async () => {
         '[DetailedError: 500 Internal Server Error]'
       )
 
-      // Not defined route
+      // Not defined route: MSW simulates a network error, so fetch itself rejects
       // Note: the error in this test case is thrown at the `fetch` call (.$get()), not during the `parseResponse` call, so I think `parseResponse` should not try to catch and wrap it into a structured error, which could be inconsistent, if the user awaited the fetch.
       await expect(
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
-      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: Failed to fetch]')
     }),
     it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
       type ResultType = Awaited<
