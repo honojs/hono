@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
-import type { ServeStaticOptions } from '../../middleware/serve-static'
-import type { Env, MiddlewareHandler } from '../../types'
+import { serveStatic as baseServeStatic } from 'hono/serve-static'
+import type { ServeStaticOptions } from 'hono/serve-static'
+import type { Env, MiddlewareHandler } from 'hono/types'
 
-/**
- * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
- */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> = {}
 ): MiddlewareHandler => {

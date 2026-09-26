@@ -168,7 +168,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.0.12
-        version: 2.1.1(hono@4.13.8)
+        version: 2.1.1(hono@4.13.9)
       '@types/jsdom':
         specifier: ^21.1.7
         version: 21.1.7
@@ -232,6 +232,12 @@ importers:
       zod:
         specifier: ^3.23.8
         version: 3.25.76
+
+  adapters/bun:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
 
 packages:
 
@@ -3886,8 +3892,8 @@ packages:
   headers-polyfill@5.0.1:
     resolution: {integrity: sha512-1TJ6Fih/b8h5TIcv+1+Hw0PDQWJTKDKzFZzcKOiW1wJza3XoAQlkCuXLbymPYB8+ZQyw8mHvdw560e8zVFIWyA==}
 
-  hono@4.13.8:
-    resolution: {integrity: sha512-/Gng7NfoykZl2pjukW5Z6+8Yxm3BPRf86GTbQnt0SbySkvax4fyL4H3HhY1cCpBGmiW9XDRFzRV+CXK2W8QudQ==}
+  hono@4.13.9:
+    resolution: {integrity: sha512-7dMkQmZoC4E6F7AtaQSPhlWAdnBti+j7rreMZl8QB4jFiEhP9TWbGWUMi8WYzBCgmgulxuvLQupKqo+Co6Omyg==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@9.0.3:
@@ -6176,9 +6182,9 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
-  '@hono/node-server@2.1.1(hono@4.13.8)':
+  '@hono/node-server@2.1.1(hono@4.13.9)':
     dependencies:
-      hono: 4.13.8
+      hono: 4.13.9
 
   '@img/colour@1.1.0': {}
 
@@ -8331,7 +8337,7 @@ snapshots:
       '@types/set-cookie-parser': 2.4.10
       set-cookie-parser: 3.1.2
 
-  hono@4.13.8: {}
+  hono@4.13.9: {}
 
   hosted-git-info@9.0.3:
     dependencies:

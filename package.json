@@ -23,10 +23,10 @@
     "test:all": "pnpm run test && pnpm run test:deno && pnpm run test:bun",
     "check": "vp check",
     "check:fix": "vp check --fix",
-    "lint": "vp lint src runtime-tests build perf-measures benchmarks",
-    "lint:fix": "vp lint --fix src runtime-tests build perf-measures benchmarks",
-    "format": "vp fmt --check \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
-    "format:fix": "vp fmt \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
+    "lint": "vp lint src runtime-tests build perf-measures benchmarks adapters",
+    "lint:fix": "vp lint --fix src runtime-tests build perf-measures benchmarks adapters",
+    "format": "vp fmt --check \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\" \"adapters/**/*.{js,ts,tsx}\"",
+    "format:fix": "vp fmt \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\" \"adapters/**/*.{js,ts,tsx}\"",
     "editorconfig-checker": "editorconfig-checker",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
     "build": "pnpm run remove-dist && vp pack && pnpm run copy:package.cjs.json && publint",
@@ -34,7 +34,10 @@
     "coverage": "vp test --run --coverage",
     "prerelease": "pnpm run test:deno && pnpm run build",
     "release": "np --no-publish",
-    "remove-dist": "rm -rf dist"
+    "remove-dist": "rm -rf dist",
+    "build:adapters": "pnpm -r --filter \"./adapters/*\" run build",
+    "test:adapters": "pnpm -r --filter \"./adapters/*\" run test",
+    "release:adapter": "node ./build/release-adapter.ts"
   },
   "exports": {
     ".": {

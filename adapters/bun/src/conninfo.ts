@@ -1,12 +1,11 @@
-import type { Context } from '../..'
-import type { GetConnInfo } from '../../helper/conninfo'
+import type { Context } from 'hono'
+import type { GetConnInfo } from 'hono/conninfo'
 import { getBunServer } from './server'
 
 /**
  * Get ConnInfo with Bun
  * @param c Context
  * @returns ConnInfo
- * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
   const server = getBunServer<{
