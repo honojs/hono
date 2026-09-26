@@ -305,6 +305,22 @@ export const runTest = ({
         expect(res[0].params['id']).toBe('123')
       })
 
+      it('self with trailing static', () => {
+        router.add('GET', '/:id/:id/x', 'foo')
+        const res = match('GET', '/123/456/x')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('foo')
+        expect(res[0].params['id']).toBe('123')
+      })
+
+      it('self three times', () => {
+        router.add('GET', '/:id/:id/:id', 'foo')
+        const res = match('GET', '/1/2/3')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('foo')
+        expect(res[0].params['id']).toBe('1')
+      })
+
       it('parent', () => {
         router.add('GET', '/:id/:action', 'foo')
         router.add('GET', '/posts/:id', 'bar')
