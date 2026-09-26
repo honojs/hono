@@ -83,7 +83,7 @@ export const createCssContext = ({
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
   const nonceMap: WeakMap<object, string | undefined> = new WeakMap()
 
-  const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`)
+  const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`, 's')
 
   const newCssClassNameObject = (cssClassName: CssClassNameCommon): Promise<string> => {
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
