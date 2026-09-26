@@ -746,6 +746,48 @@ describe('Cache Skipping Logic', () => {
     expect(putSpy).not.toHaveBeenCalled()
   })
 
+  it('Should bypass cache for Cookie requests unless Cookie is configured as a vary header', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let requestCount = 0
+    app.use('*', cache({ cacheName: 'cookie-isolation-test', wait: true }))
+    app.get('/', (c) => {
+      requestCount++
+      return c.text(c.req.header('Cookie') ?? 'anonymous')
+    })
+
+    const alice = await app.request('/', { headers: { Cookie: 'session=alice' } })
+    const bob = await app.request('/', { headers: { Cookie: 'session=bob' } })
+
+    expect(await alice.text()).toBe('session=alice')
+    expect(await bob.text()).toBe('session=bob')
+    expect(requestCount).toBe(2)
+    expect(mockCache.match).not.toHaveBeenCalled()
+    expect(mockCache.put).not.toHaveBeenCalled()
+  })
+
+  it('Should allow Cookie caching when Cookie is explicitly configured as a vary header', async () => {
+    const { mockCache } = stubStoreBackedCache()
+    const app = new Hono()
+    let requestCount = 0
+    app.use('*', cache({ cacheName: 'cookie-vary-test', wait: true, vary: 'Cookie' }))
+    app.get('/', (c) => {
+      requestCount++
+      return c.text(c.req.header('Cookie') ?? 'anonymous')
+    })
+
+    const alice = await app.request('/', { headers: { Cookie: 'session=alice' } })
+    const bob = await app.request('/', { headers: { Cookie: 'session=bob' } })
+    const cachedAlice = await app.request('/', { headers: { Cookie: 'session=alice' } })
+
+    expect(await alice.text()).toBe('session=alice')
+    expect(await bob.text()).toBe('session=bob')
+    expect(await cachedAlice.text()).toBe('session=alice')
+    expect(cachedAlice.headers.get('Vary')).toBe('cookie')
+    expect(requestCount).toBe(2)
+    expect(mockCache.put).toHaveBeenCalledTimes(2)
+  })
+
   it('Should cache request URLs containing a fragment', async () => {
     const { mockCache } = stubStoreBackedCache()
     const app = new Hono()
