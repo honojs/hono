@@ -68,10 +68,10 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
     if (!(options.header || options.query)) {
       const contentType = c.req.header('content-type')
       const methodFormName = options.form || DEFAULT_METHOD_FORM_NAME
-      const clonedRequest = c.req.raw.clone()
-      const newRequest = clonedRequest.clone()
       // Content-Type is `multipart/form-data`
       if (contentType?.startsWith('multipart/form-data')) {
+        const clonedRequest = c.req.raw.clone()
+        const newRequest = clonedRequest.clone()
         const form = await clonedRequest.formData()
         const method = form.get(methodFormName)
         if (method) {
@@ -90,6 +90,8 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
       // Content-Type is `application/x-www-form-urlencoded`
       if (contentType?.startsWith('application/x-www-form-urlencoded')) {
+        const clonedRequest = c.req.raw.clone()
+        const newRequest = clonedRequest.clone()
         const params = await parseBody<Record<string, string>>(clonedRequest)
         const method = params[methodFormName]
         if (method) {
