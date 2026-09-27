@@ -133,9 +133,22 @@ export const getPath = (request: Request): string => {
   return url.slice(start, i)
 }
 
+/**
+ * @deprecated
+ * Use the `URL` API instead.
+ */
 export const getQueryStrings = (url: string): string => {
   const queryIndex = url.indexOf('?', 8)
-  return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)
+  if (queryIndex === -1) {
+    return ''
+  }
+
+  const hashIndex = url.indexOf('#', 8)
+  return hashIndex === -1
+    ? url.slice(queryIndex)
+    : queryIndex < hashIndex
+      ? url.slice(queryIndex, hashIndex)
+      : ''
 }
 
 export const getPathNoStrict = (request: Request): string => {
@@ -187,13 +200,13 @@ export const checkOptionalParameter = (path: string): string[] | null => {
     if (segment !== '' && !/\:/.test(segment)) {
       basePath += '/' + segment
     } else if (/\:/.test(segment)) {
-      if (/\?/.test(segment)) {
+      if (segment.charCodeAt(segment.length - 1) === 63) {
         if (results.length === 0 && basePath === '') {
           results.push('/')
         } else {
           results.push(basePath)
         }
-        const optionalSegment = segment.replace('?', '')
+        const optionalSegment = segment.slice(0, -1)
         basePath += '/' + optionalSegment
         results.push(basePath)
       } else {
@@ -205,15 +218,15 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return results.filter((v, i, a) => a.indexOf(v) === i)
 }
 
+export const tryDecodeURIComponent = (str: string): string =>
+  str.indexOf('%') !== -1 ? tryDecode(str, decodeURIComponent_) : str
+
 // Optimized
-const _decodeURI = (value: string) => {
-  if (!/[%+]/.test(value)) {
-    return value
-  }
+const _decodeURI = (value: string): string => {
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
-  return value.indexOf('%') !== -1 ? tryDecode(value, decodeURIComponent_) : value
+  return tryDecodeURIComponent(value)
 }
 
 const _getQueryParam = (
@@ -221,9 +234,14 @@ const _getQueryParam = (
   key?: string,
   multiple?: boolean
 ): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  const hashIndex = url.indexOf('#', 8)
+  if (hashIndex !== -1) {
+    url = url.slice(0, hashIndex)
+  }
+
   let encoded
 
-  if (!multiple && key && !/[%+]/.test(key)) {
+  if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
     // optimized for unencoded key
 
     let keyIndex = url.indexOf('?', 8)
@@ -252,7 +270,7 @@ const _getQueryParam = (
     // fallback to default routine
   }
 
-  const results: Record<string, string> | Record<string, string[]> = {}
+  const results: Record<string, string> | Record<string, string[]> = Object.create(null)
   encoded ??= /[%+]/.test(url)
 
   let keyIndex = url.indexOf('?', 8)

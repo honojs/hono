@@ -1,6 +1,6 @@
+import { every, except, some } from '.'
 import { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
-import { every, except, some } from '.'
 
 const nextMiddleware: MiddlewareHandler = async (_, next) => await next()
 

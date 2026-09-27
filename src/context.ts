@@ -21,9 +21,9 @@ type HeaderRecord =
   | Record<string, string | string[]>
 
 /**
- * Data type can be a string, ArrayBuffer, Uint8Array (buffer), or ReadableStream.
+ * Data type can be a string, ArrayBuffer, Blob, Uint8Array (buffer), or ReadableStream.
  */
-export type Data = string | ArrayBuffer | ReadableStream | Uint8Array<ArrayBuffer>
+export type Data = string | ArrayBuffer | Blob | ReadableStream | Uint8Array<ArrayBuffer>
 
 /**
  * Interface for the execution context in a web worker or similar environment.
@@ -512,6 +512,10 @@ export class Context<
    *   c.header('X-Message', 'Hello!')
    *   c.header('Content-Type', 'text/plain')
    *
+   *   // Append multiple headers using the append option (e.g. Vary)
+   *   c.header('Vary', 'Accept-Encoding', { append: true })
+   *   c.header('Vary', 'User-Agent', { append: true })
+   *
    *   return c.body('Thank you for coming')
    * })
    * ```
@@ -555,11 +559,11 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
   > {
-    return (key: string, value: unknown) => {
+    return (key: PropertyKey, value: unknown) => {
       this.#var ??= new Map()
       this.#var.set(key, value)
     }
@@ -582,11 +586,11 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
   > {
-    return (key: string) => {
+    return (key: PropertyKey) => {
       return this.#var ? this.#var.get(key) : undefined
     }
   }
@@ -618,14 +622,12 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    const responseHeaders = this.#res
-      ? new Headers(this.#res.headers)
-      : (this.#preparedHeaders ?? new Headers())
+    let responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders
 
-    if (typeof arg === 'object' && 'headers' in arg) {
-      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
-      for (const [key, value] of argHeaders) {
-        if (key.toLowerCase() === 'set-cookie') {
+    if (typeof arg === 'object' && arg.headers) {
+      responseHeaders ??= new Headers()
+      for (const [key, value] of new Headers(arg.headers)) {
+        if (key === 'set-cookie') {
           responseHeaders.append(key, value)
         } else {
           responseHeaders.set(key, value)
@@ -634,20 +636,35 @@ export class Context<
     }
 
     if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
-        if (typeof v === 'string') {
-          responseHeaders.set(k, v)
-        } else {
-          responseHeaders.delete(k)
-          for (const v2 of v) {
-            responseHeaders.append(k, v2)
+      if (!responseHeaders) {
+        let count = 0
+        for (const k in headers) {
+          if (++count > 1 || typeof headers[k as keyof HeaderRecord] !== 'string') {
+            responseHeaders = new Headers()
+            break
+          }
+        }
+      }
+      if (responseHeaders) {
+        for (const k in headers) {
+          const v = headers[k as keyof HeaderRecord]
+          if (typeof v === 'string') {
+            responseHeaders.set(k, v)
+          } else {
+            responseHeaders.delete(k)
+            for (const v2 of v) {
+              responseHeaders.append(k, v2)
+            }
           }
         }
       }
     }
 
     const status = typeof arg === 'number' ? arg : (arg?.status ?? this.#status)
-    return createResponseInstance(data, { status, headers: responseHeaders })
+    return createResponseInstance(data, {
+      status,
+      headers: responseHeaders ?? (headers as Record<string, string> | undefined),
+    })
   }
 
   get newResponse(): NewResponse {
@@ -777,7 +794,7 @@ export class Context<
       const locationString = String(location)
       this.header(
         'Location',
-        // Multibyes should be encoded
+        // Multibytes should be encoded
         // eslint-disable-next-line no-control-regex
         !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
       )

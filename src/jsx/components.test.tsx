@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** @jsxImportSource ./ */
 import { JSDOM } from 'jsdom'
+import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
 import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
+
+const unsafeHtml = '<img src=x onerror=alert(1)>'
+const escapedUnsafeHtml = '&lt;img src=x onerror=alert(1)&gt;'
 
 function resolveCallback(template: string | HtmlEscapedString) {
   return rawResolveCallback(template, HtmlEscapedCallbackPhase.Stream, false, {})
@@ -14,6 +18,21 @@ function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
   document.querySelectorAll('template, script').forEach((e) => e.remove())
   return document.body.innerHTML
+}
+
+async function stringify(node: { toString(): string | Promise<string> }): Promise<string> {
+  return String(
+    await rawResolveCallback(await node.toString(), HtmlEscapedCallbackPhase.Stringify, false, {})
+  )
+}
+
+async function drainStream(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const decoder = new TextDecoder()
+  let result = ''
+  for await (const chunk of stream) {
+    result += decoder.decode(chunk)
+  }
+  return result
 }
 
 const Fallback = () => <div>Out Of Service</div>
@@ -514,6 +533,115 @@ d.remove()
         '<div>Out Of Service</div>'
       )
     })
+
+    it('renders fallback and reports error once when multiple children reject', async () => {
+      let fallbackRenderCount = 0
+      let onErrorCount = 0
+      const stream = renderToReadableStream(
+        <ErrorBoundary
+          fallbackRender={() => {
+            fallbackRenderCount++
+            return <Fallback />
+          }}
+          onError={() => {
+            onErrorCount++
+          }}
+        >
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={2} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={3} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+      handlers[2].reject()
+      handlers[3].resolve(undefined)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Out Of Service</div>'
+      )
+      expect(fallbackRenderCount).toBe(1)
+      expect(onErrorCount).toBe(1)
+    })
+
+    it('preserves callbacks from a thenable fallback', async () => {
+      const fallback = Promise.resolve(
+        raw('<span>Recovering</span>', [
+          ({ phase }) =>
+            phase === HtmlEscapedCallbackPhase.Stream
+              ? Promise.resolve('<span>Recovered</span>')
+              : undefined,
+        ])
+      )
+      const stream = renderToReadableStream(
+        <ErrorBoundary fallback={fallback}>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<span>Recovering</span><span>Recovered</span>'
+      )
+    })
+
+    it('waits for an in-flight async fallback when multiple children reject', async () => {
+      let resolveFallback!: (value: HtmlEscapedString | PromiseLike<HtmlEscapedString>) => void
+      const fallback = new Promise<HtmlEscapedString>((resolve) => {
+        resolveFallback = resolve
+      })
+
+      const stream = renderToReadableStream(
+        <ErrorBoundary fallback={fallback}>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={1} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={2} />
+          </Suspense>
+          <Suspense fallback={<p>Loading...</p>}>
+            <Component id={3} />
+          </Suspense>
+        </ErrorBoundary>
+      )
+
+      handlers[1].reject()
+      handlers[2].reject()
+      handlers[3].resolve(undefined)
+      await Promise.resolve()
+      resolveFallback(<Fallback />)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Out Of Service</div>'
+      )
+    })
   })
 
   describe('streaming : nested', async () => {
@@ -686,6 +814,123 @@ d.remove()
       )
 
       suspenseCounter--
+    })
+  })
+
+  describe('escaping', () => {
+    const Broken = () => {
+      throw new Error('boom')
+    }
+
+    it('escapes strings when an asynchronous sibling is present', async () => {
+      const Async = async () => <span>done</span>
+      const node = (
+        <ErrorBoundary fallback='error'>
+          {unsafeHtml}
+          <Async />
+        </ErrorBoundary>
+      )
+
+      expect(await stringify(node)).toBe(`${escapedUnsafeHtml}<span>done</span>`)
+      const streamed = await drainStream(renderToReadableStream(node))
+      expect(streamed).toContain(escapedUnsafeHtml)
+      expect(streamed).not.toContain(unsafeHtml)
+    })
+
+    it('escapes untrusted object fallbacks', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const fallback of [object, asyncObject, rawObject]) {
+        expect(
+          await stringify(
+            <ErrorBoundary fallback={fallback as never}>
+              <Broken />
+            </ErrorBoundary>
+          )
+        ).toBe(escapedUnsafeHtml)
+      }
+    })
+
+    it('preserves an explicitly trusted fallback', async () => {
+      expect(
+        await stringify(
+          <ErrorBoundary fallback={raw('<strong>trusted</strong>')}>
+            <Broken />
+          </ErrorBoundary>
+        )
+      ).toBe('<strong>trusted</strong>')
+    })
+
+    it('does not interpret replacement patterns in content', async () => {
+      const content = "literal $& $` $'"
+      const Async = async () => <span>done</span>
+
+      expect(
+        await stringify(
+          <ErrorBoundary fallback='error'>
+            {content}
+            <Async />
+          </ErrorBoundary>
+        )
+      ).toBe('literal $&amp; $` $&#39;<span>done</span>')
+    })
+
+    it('escapes untrusted object children', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const child of [object, asyncObject, rawObject]) {
+        const node = <ErrorBoundary fallback='error'>{child as never}</ErrorBoundary>
+        expect(await stringify(node)).toBe(escapedUnsafeHtml)
+        const streamed = await drainStream(renderToReadableStream(node))
+        expect(streamed).toContain(escapedUnsafeHtml)
+        expect(streamed).not.toContain(unsafeHtml)
+      }
+    })
+
+    it('preserves explicitly trusted children', async () => {
+      expect(
+        await stringify(
+          <ErrorBoundary fallback='error'>{raw('<strong>trusted</strong>')}</ErrorBoundary>
+        )
+      ).toBe('<strong>trusted</strong>')
+    })
+
+    it('keeps benign object stringification visible', async () => {
+      expect(await stringify(<ErrorBoundary fallback='error'>{{} as never}</ErrorBoundary>)).toBe(
+        '[object Object]'
+      )
+    })
+
+    it('escapes nested fallback arrays', async () => {
+      expect(
+        await stringify(
+          <ErrorBoundary fallback={[[unsafeHtml]]}>
+            <Broken />
+          </ErrorBoundary>
+        )
+      ).toBe(escapedUnsafeHtml)
+    })
+
+    it('keeps the existing falsy fallbackRender behavior', async () => {
+      expect(
+        await stringify(
+          <ErrorBoundary fallbackRender={() => 0}>
+            <Broken />
+          </ErrorBoundary>
+        )
+      ).toBe('')
+    })
+
+    it('keeps a direct Promise child unchanged', async () => {
+      expect(
+        await stringify(
+          <ErrorBoundary fallback='error'>{Promise.resolve('resolved')}</ErrorBoundary>
+        )
+      ).toBe('[object Promise]')
     })
   })
 })

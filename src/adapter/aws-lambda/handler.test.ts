@@ -1,13 +1,14 @@
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
-import type { LambdaEvent, LatticeProxyEventV2 } from './handler'
+import type { APIGatewayProxyEventV2, LambdaEvent, LatticeProxyEventV2 } from './handler'
 import {
   getProcessor,
   handle,
   isContentEncodingBinary,
   defaultIsContentTypeBinary,
 } from './handler'
+import type { ApiGatewayRequestContextV2 } from './types'
 
 // Base event objects to reduce duplication
 const baseV1Event: LambdaEvent = {
@@ -106,6 +107,12 @@ describe('isContentTypeBinary', () => {
     ['application/epub+zip', true],
     ['application/ld+json', false],
     ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
+    ['application/vnd.apple.installer+xml; charset=UTF-8', true],
+    ['application/vnd.mozilla.xul+xml', true],
+    ['APPLICATION/VND.APPLE.INSTALLER+XML', true],
+    ['APPLICATION/JSON', false],
+    ['TEXT/PLAIN', false],
   ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
     expect(defaultIsContentTypeBinary(mimeType)).toBe(expected)
   })
@@ -118,8 +125,10 @@ describe('isContentEncodingBinary', () => {
     expect(isContentEncodingBinary('deflate')).toBe(true)
     expect(isContentEncodingBinary('br')).toBe(true)
     expect(isContentEncodingBinary('deflate, gzip')).toBe(true)
+    expect(isContentEncodingBinary('zstd')).toBe(true)
     expect(isContentEncodingBinary('')).toBe(false)
-    expect(isContentEncodingBinary('unknown')).toBe(false)
+    expect(isContentEncodingBinary('identity')).toBe(false)
+    expect(isContentEncodingBinary(null)).toBe(false)
   })
 })
 
@@ -228,6 +237,45 @@ describe('EventProcessor.createRequest', () => {
     expect(url.searchParams.get('ampersand')).toBe('a&b&c')
   })
 
+  it('Should preserve empty query parameters for version 1.0', () => {
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      queryStringParameters: {
+        empty: '',
+        present: '0',
+        omitted: undefined,
+      },
+    }
+
+    const request = getProcessor(event).createRequest(event)
+
+    expect(request.url).toBe(
+      'https://id.execute-api.us-east-1.amazonaws.com/my/path?empty=&present=0'
+    )
+  })
+
+  it('Should preserve empty query parameters for ALB events', () => {
+    const event: LambdaEvent = {
+      httpMethod: 'GET',
+      path: '/my/path',
+      headers: { host: 'example.test' },
+      body: null,
+      isBase64Encoded: false,
+      queryStringParameters: {
+        empty: '',
+        present: '0',
+        omitted: undefined,
+      },
+      requestContext: {
+        elb: { targetGroupArn: 'arn:aws:elasticloadbalancing:...' },
+      },
+    }
+
+    const request = getProcessor(event).createRequest(event)
+
+    expect(request.url).toBe('https://example.test/my/path?empty=&present=0')
+  })
+
   it('Should return valid Request object from version 1.0 API Gateway event', () => {
     const event: LambdaEvent = {
       ...baseV1Event,
@@ -264,6 +312,23 @@ describe('EventProcessor.createRequest', () => {
       header1: 'value1',
       header2: 'value1, value2, value3',
     })
+  })
+
+  it('Should preserve every repeated header value for version 1.0 API Gateway event', () => {
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      headers: {
+        'x-forwarded-for': '203.0.113.10',
+      },
+      multiValueHeaders: {
+        'x-forwarded-for': ['203.0.113.1', '203.0.113.10'],
+      },
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.headers.get('x-forwarded-for')).toEqual('203.0.113.1, 203.0.113.10')
   })
 
   it('Should return valid Request object from version 2.0 API Gateway event', () => {
@@ -353,6 +418,34 @@ describe('EventProcessor.createRequest', () => {
     })
   })
 
+  it('Should preserve every repeated header value for Lattice event', async () => {
+    const event: LatticeProxyEventV2 = {
+      version: '2.0',
+      path: '/my/path',
+      method: 'GET',
+      headers: {
+        host: ['example.test'],
+        'x-forwarded-for': ['203.0.113.1', '203.0.113.10'],
+      },
+      queryStringParameters: {},
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        serviceNetworkArn: '',
+        serviceArn: '',
+        targetGroupArn: '',
+        identity: {},
+        region: 'us-east-1',
+        timeEpoch: '1583348638390123',
+      },
+    }
+
+    const processor = getProcessor(event)
+    const request = processor.createRequest(event)
+
+    expect(request.headers.get('x-forwarded-for')).toEqual('203.0.113.1, 203.0.113.10')
+  })
+
   describe('non-ASCII header value processing', () => {
     it('Should encode non-ASCII header values with encodeURIComponent', async () => {
       const event: LambdaEvent = {
@@ -372,6 +465,24 @@ describe('EventProcessor.createRequest', () => {
 })
 
 describe('handle', () => {
+  it('Should route a V1 REST event by its path even when a base path mapping adds rawPath', async () => {
+    const app = new Hono()
+    app.get('/my/path', (c) => c.text('Hello'))
+    const handler = handle(app)
+
+    // A custom domain base path mapping makes API Gateway add a `rawPath` to the
+    // V1 (REST API) event, holding the path before the mapping was stripped. The
+    // event is still V1: it carries `path` and a V1 request context with no `http`.
+    const event: LambdaEvent = {
+      ...baseV1Event,
+      rawPath: '/base/my/path',
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(result.body).toBe('Hello')
+  })
+
   it('Should return 400 when request contains invalid header names (v2)', async () => {
     const app = new Hono()
     app.get('/my/path', (c) => c.text('Hello'))
@@ -505,5 +616,63 @@ describe('handle', () => {
 
     const result = await handler(event)
     expect(result.statusCode).toBe(413)
+  })
+})
+
+describe('V2 request context authorizer', () => {
+  const baseV2RequestContext = baseV2Event.requestContext as ApiGatewayRequestContextV2
+
+  it('Should expose the context of a Lambda (REQUEST) authorizer', async () => {
+    const app = new Hono<{ Bindings: { event: APIGatewayProxyEventV2 } }>()
+    app.get('/my/path', (c) => c.json(c.env.event.requestContext.authorizer.lambda))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      requestContext: {
+        ...baseV2RequestContext,
+        http: { ...baseV2RequestContext.http, method: 'GET' },
+        authorizer: { lambda: { userId: 'user-123', isAdmin: true } },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(JSON.parse(result.body)).toEqual({ userId: 'user-123', isAdmin: true })
+  })
+
+  it('Should expose the claims and scopes of a JWT authorizer', async () => {
+    const app = new Hono<{ Bindings: { event: APIGatewayProxyEventV2 } }>()
+    app.get('/my/path', (c) => c.json(c.env.event.requestContext.authorizer.jwt))
+    const handler = handle(app)
+
+    const event: LambdaEvent = {
+      ...baseV2Event,
+      requestContext: {
+        ...baseV2RequestContext,
+        http: { ...baseV2RequestContext.http, method: 'GET' },
+        authorizer: {
+          jwt: { claims: { sub: 'user-123', email_verified: true }, scopes: ['read'] },
+        },
+      },
+    }
+
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    expect(JSON.parse(result.body)).toEqual({
+      claims: { sub: 'user-123', email_verified: true },
+      scopes: ['read'],
+    })
+  })
+
+  it('Should type each authorizer variant as optional', () => {
+    const authorizer: ApiGatewayRequestContextV2['authorizer'] = {}
+    expectTypeOf(authorizer.lambda).toEqualTypeOf<Record<string, unknown> | null | undefined>()
+    expectTypeOf(authorizer.jwt).toEqualTypeOf<
+      | { claims: Record<string, string | number | boolean | string[]>; scopes: string[] | null }
+      | undefined
+    >()
+    // A JWT authorizer reports no scopes as `null`.
+    expectTypeOf<null>().toMatchTypeOf<NonNullable<typeof authorizer.jwt>['scopes']>()
   })
 })

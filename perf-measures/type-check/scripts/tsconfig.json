@@ -2,6 +2,7 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "module": "esnext",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   }
 }

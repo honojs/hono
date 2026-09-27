@@ -2,12 +2,11 @@
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-
+import { render } from '.'
 import type { JSXNode } from '..'
 import { Style, createCssContext, css, rawCssString } from '../../helper/css'
 import { minify } from '../../helper/css/common'
 import { renderTest } from '../../helper/css/common.case.test'
-import { render } from '.'
 
 describe('Style and css for jsx/dom', () => {
   beforeAll(() => {

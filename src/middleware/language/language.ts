@@ -107,13 +107,22 @@ export const normalizeLanguage = (
     }
 
     // Progressive truncation (RFC 4647 Lookup)
-    const parts = compLang.split('-')
-    for (let i = parts.length - 1; i > 0; i--) {
-      const candidate = parts.slice(0, i).join('-')
-      const prefixIndex = compSupported.indexOf(candidate)
-      if (prefixIndex !== -1) {
-        return options.supportedLanguages[prefixIndex]
+    let longestMatchIndex = -1
+    let longestMatchLength = -1
+    for (let i = 0; i < compSupported.length; i++) {
+      const candidate = compSupported[i]
+      if (
+        candidate.length < compLang.length &&
+        candidate.length > longestMatchLength &&
+        compLang.startsWith(candidate) &&
+        compLang[candidate.length] === '-'
+      ) {
+        longestMatchIndex = i
+        longestMatchLength = candidate.length
       }
+    }
+    if (longestMatchIndex !== -1) {
+      return options.supportedLanguages[longestMatchIndex]
     }
 
     return undefined
@@ -149,7 +158,12 @@ export function detectFromHeader(c: Context, options: DetectorOptions): string |
     }
 
     const languages = parseAcceptLanguage(acceptLanguage)
-    for (const { lang } of languages) {
+    for (const { lang, q } of languages) {
+      // A quality value of 0 means the language is explicitly rejected
+      // (RFC 9110 §12.5.4), so it must not be detected.
+      if (q === 0) {
+        continue
+      }
       const normalizedLang = normalizeLanguage(lang, options)
       if (normalizedLang) {
         return normalizedLang
@@ -261,6 +275,24 @@ const detectLanguage = (c: Context, options: DetectorOptions): string => {
  * Language detector middleware factory
  * @param userOptions Configuration options for the language detector
  * @returns Hono middleware function
+ *
+ * @example
+ * ```ts
+ * type Variables = LanguageVariables
+ * const app = new Hono<{ Variables: Variables }>()
+ *
+ * app.use(
+ *   languageDetector({
+ *     supportedLanguages: ['en', 'ja'], // Must include fallback
+ *     fallbackLanguage: 'en', // Required
+ *   })
+ * )
+ *
+ * app.get('/', (c) => {
+ *   const lang = c.get('language')
+ *   return c.text(`Current language: ${lang}`)
+ * })
+ * ```
  */
 export const languageDetector = (userOptions: Partial<DetectorOptions>): MiddlewareHandler => {
   const options: DetectorOptions = {

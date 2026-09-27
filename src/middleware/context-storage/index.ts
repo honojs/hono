@@ -29,11 +29,11 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  * app.use(contextStorage())
  *
  * app.use(async (c, next) => {
- *   c.set('message', 'Hono is hot!!)
+ *   c.set('message', 'Hono is hot!!')
  *   await next()
  * })
  *
- * app.get('/', async (c) => { c.text(getMessage()) })
+ * app.get('/', async (c) => c.text(getMessage()))
  *
  * const getMessage = () => {
  *   return getContext<Env>().var.message

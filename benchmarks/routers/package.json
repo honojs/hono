@@ -11,14 +11,14 @@
   },
   "dependencies": {
     "@medley/router": "^0.2.1",
-    "express": "^4.21.2",
-    "find-my-way": "^9.3.0",
-    "koa-router": "^12.0.1",
+    "express": "^5.2.1",
+    "find-my-way": "^9.6.0",
+    "koa-router": "^14.0.0",
     "koa-tree-router": "^0.13.1",
-    "memoirist": "^0.4.0",
+    "memoirist": "^1.1.0",
     "mitata": "^1.0.34",
     "radix3": "^1.1.2",
-    "rou3": "^0.7.3",
+    "rou3": "^0.9.1",
     "trek-router": "^1.2.0"
   }
 }

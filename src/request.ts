@@ -15,7 +15,7 @@ import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
-import { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'
+import { getQueryParam, getQueryParams, tryDecodeURIComponent } from './utils/url'
 
 type Body = {
   json: any
@@ -30,8 +30,6 @@ type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
   [Key in OptionalRequestInitProperties]?: RequestInit[Key]
 }
-
-const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
@@ -50,7 +48,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   raw: Request
 
-  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  #validatedData: { [K in keyof ValidationTargets]?: {} } | undefined // Short name of validatedData
   #matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
   /**
@@ -76,7 +74,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.raw = request
     this.path = path
     this.#matchResult = matchResult
-    this.#validatedData = {}
   }
 
   /**
@@ -104,19 +101,19 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   #getDecodedParam(key: string): string | undefined {
-    const paramKey = this.#matchResult[0][this.routeIndex][1][key]
+    const paramKey = this.#matchResult[0][this.routeIndex]?.[1][key]
     const param = this.#getParamValue(paramKey)
-    return param && /\%/.test(param) ? tryDecodeURIComponent(param) : param
+    return param && tryDecodeURIComponent(param)
   }
 
   #getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
 
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
+    const keys = Object.keys(this.#matchResult[0][this.routeIndex]?.[1] ?? {})
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value !== undefined) {
-        decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
+        decoded[key] = tryDecodeURIComponent(value)
       }
     }
 
@@ -190,7 +187,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return this.raw.headers.get(name) ?? undefined
     }
 
-    const headerData: Record<string, string | undefined> = {}
+    const headerData: Record<string, string | undefined> = Object.create(null)
     this.raw.headers.forEach((value, key) => {
       headerData[key] = value
     })
@@ -225,13 +222,21 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    const anyCachedKey = Object.keys(bodyCache)[0]
-    if (anyCachedKey) {
+    for (const anyCachedKey in bodyCache) {
       return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
         }
-        return new Response(body)[key]()
+        // Rebuilding the body through a bare `Response` loses the request's media
+        // type, so a representation that needs it (e.g. `formData()`) can no longer
+        // be produced even though the bytes are still available. Carry the original
+        // `Content-Type` over, except for `FormData`, where `Response` must generate
+        // a fresh multipart boundary of its own.
+        const contentType =
+          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
+        return new Response(body, {
+          headers: contentType ? { 'Content-Type': contentType } : undefined,
+        })[key]()
       })
     }
 
@@ -337,7 +342,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @param data - The validated data to add.
    */
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.#validatedData[target] = data
+    ;(this.#validatedData ??= {})[target] = data
   }
 
   /**
@@ -350,7 +355,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.#validatedData[target] as unknown
+    return this.#validatedData?.[target] as unknown
   }
 
   /**
@@ -486,11 +491,21 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     })
   }
 
+  let body: BodyInit = await req[cacheKey]()
+  const headers = req.header()
+  if (cacheKey === 'json') {
+    body = JSON.stringify(body)
+    delete headers['content-length']
+  } else if (body instanceof FormData) {
+    delete headers['content-type']
+    delete headers['content-length']
+  }
+
   const requestInit: RequiredRequestInit = {
-    body: await req[cacheKey](),
+    body,
     cache: req.raw.cache,
     credentials: req.raw.credentials,
-    headers: req.header(),
+    headers,
     integrity: req.raw.integrity,
     keepalive: req.raw.keepalive,
     method: req.method,

@@ -129,6 +129,79 @@ describe('CSS Helper', () => {
         '<style id="hono-css">.css-3358636561{border-radius:4px;color:white}</style><h1 class="css-3358636561 external-class external-class2">Hello!</h1>'
       )
     })
+
+    it('Should escape external class name to prevent XSS via attribute injection', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, '" onmouseover=alert(1) x="')}>Hello!</h1>
+        </>
+      )
+      // the injected `"` is escaped to `&quot;`, so it cannot close the class attribute
+      const result = await toString(template)
+      expect(result).toContain('class="css-3467431616 &quot; onmouseover=alert(1) x=&quot;"')
+    })
+
+    it('Should keep special characters in external class name working in attribute context', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, '[&>*]:p-1')}>Hello!</h1>
+        </>
+      )
+      // escaped entities are decoded back to the original class name by the browser
+      expect(await toString(template)).toContain('class="css-3467431616 [&amp;&gt;*]:p-1"')
+    })
+
+    it('Should keep special characters in external class name working as a selector', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const wrapper = css`
+        ${cx(btn, '[&>*]:p-1')} {
+          color: red;
+        }
+      `
+
+      const template = (
+        <>
+          <Style />
+          <div class={wrapper}>Hello!</div>
+        </>
+      )
+      // legitimate class names (incl. Tailwind arbitrary values) are kept verbatim in the selector
+      expect(await toString(template)).toContain('.css-3467431616 [&>*]:p-1{')
+    })
+
+    it('Should drop external class names that could break out of a style element', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      // `</style>` (HTML breakout) and `{}` (CSS rule injection) are dropped from the selector
+      for (const payload of ['</style><script>alert(1)</script>', 'a{}body{display:none}']) {
+        const wrapper = css`
+          ${cx(btn, payload)} {
+            color: red;
+          }
+        `
+        const result = await toString(
+          <>
+            <Style />
+            <div class={wrapper}>Hello!</div>
+          </>
+        )
+        expect(result).not.toContain('</style><script>')
+        expect(result).not.toContain('body{display:none}')
+      }
+    })
   })
 
   describe('minify', () => {

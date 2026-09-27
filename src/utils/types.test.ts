@@ -116,6 +116,16 @@ describe('JSONParsed', () => {
       type Expected = { key: readonly number[] }
       expectTypeOf<Actual>().toEqualTypeOf<Expected>()
     })
+    it('should convert T[] with additional properties to T[]', () => {
+      type Actual = JSONParsed<{ foo: 'bar' }[] & { meta: 'v1' }>
+      type Expected = { foo: 'bar' }[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert elements of T[] with additional properties', () => {
+      type Actual = JSONParsed<(number | undefined)[] & { meta: 'v1' }>
+      type Expected = (number | null)[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
   })
 
   describe('tuple', () => {

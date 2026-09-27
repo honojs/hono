@@ -1,9 +1,5 @@
-/** @jsxImportSource ./ */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { html } from '../helper/html'
-import { Hono } from '../hono'
-import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, {
+  ErrorBoundary,
   Fragment,
   StrictMode,
   createContext,
@@ -14,6 +10,13 @@ import DefaultExport, {
   version,
 } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
+/** @jsxImportSource ./ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { html, raw } from '../helper/html'
+import { Hono } from '../hono'
+import { DOM_MEMO } from './constants'
+import { captureRenderContext } from './context'
+import { Suspense, renderToReadableStream } from './streaming'
 
 interface SiteData {
   title: string
@@ -167,6 +170,68 @@ describe('render to string', () => {
       </p>
     )
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
+  })
+
+  it('Component returning an array', () => {
+    const Item = ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Component returning a nested array', () => {
+    const Items = () => [['a', 'b'], [<span>c</span>], null]
+    const template = <Items />
+    expect(template.toString()).toBe('ab<span>c</span>')
+  })
+
+  it('Component returning an array preserves escaped string callbacks', () => {
+    const Items = () => [
+      raw('a', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] += 'b'
+          }
+        },
+      ]),
+    ]
+    expect((<Items />).toString()).toBe('ab')
+  })
+
+  it('Component returning an array escapes strings', async () => {
+    const SyncItems = () => ['<script>alert(1)</script>']
+    const AsyncItems = async () => ['<script>alert(1)</script>']
+    const expected = '&lt;script&gt;alert(1)&lt;/script&gt;'
+
+    expect((<SyncItems />).toString()).toBe(expected)
+    expect((await (<AsyncItems />).toString()).toString()).toBe(expected)
+  })
+
+  it('Component returning an array including async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const Items = () => [0, 1].map((x) => <AsyncItem key={x} x={x} />)
+    const template = <Items />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Component typed as FC returning an array', () => {
+    const Item: FC<{ x: number }> = ({ x }) => <span>{x}</span>
+    const Items: FC = () => [0, 1].map((x) => <Item key={x} x={x} />)
+    const template = <Items />
+    expect(template.toString()).toBe('<span>0</span><span>1</span>')
+  })
+
+  it('Async component returning an array', async () => {
+    const AsyncItems = async () => [<span>a</span>, <span>b</span>]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>a</span><span>b</span>')
+  })
+
+  it('Async component returning an array of async components', async () => {
+    const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
+    const AsyncItems = async () => [<AsyncItem key={0} x={0} />, <AsyncItem key={1} x={1} />]
+    const template = <AsyncItems />
+    expect((await template.toString()).toString()).toBe('<span>0</span><span>1</span>')
   })
 
   it('Empty elements are rended without closing tag', () => {
@@ -740,7 +805,7 @@ describe('className', () => {
 })
 
 describe('memo', () => {
-  it('memoized', () => {
+  it('does not reuse the result of a previous render', () => {
     let counter = 0
     const Header = memo(() => <title>Test Site {counter}</title>)
     const Body = () => <span>{counter}</span>
@@ -771,8 +836,22 @@ describe('memo', () => {
       </html>
     )
     expect(template.toString()).toBe(
-      '<html><head><title>Test Site 0</title></head><body><span>1</span></body></html>'
+      '<html><head><title>Test Site 1</title></head><body><span>1</span></body></html>'
     )
+  })
+
+  it('does not carry a context value into a later render', () => {
+    const NameContext = createContext('anonymous')
+    const Panel = memo(() => <p>{useContext(NameContext)}</p>)
+    const render = (name: string) =>
+      (
+        <NameContext.Provider value={name}>
+          <Panel />
+        </NameContext.Provider>
+      ).toString()
+
+    expect(render('alice')).toBe('<p>alice</p>')
+    expect(render('bob')).toBe('<p>bob</p>')
   })
 
   it('props are updated', () => {
@@ -785,20 +864,15 @@ describe('memo', () => {
     expect(template.toString()).toBe('<span>1</span>')
   })
 
-  it('custom propsAreEqual', () => {
-    const Body = memo(
-      ({ counter }: { counter: number; refresh?: boolean }) => <span>{counter}</span>,
-      (_, nextProps) => (typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh)
-    )
+  it('custom propsAreEqual is handed to the DOM renderer', () => {
+    const propsAreEqual = (_: { counter: number }, nextProps: { counter: number }) =>
+      nextProps.counter === 0
+    const Body = memo(({ counter }: { counter: number }) => <span>{counter}</span>, propsAreEqual)
 
-    let template = <Body counter={0} />
-    expect(template.toString()).toBe('<span>0</span>')
+    expect((Body as any)[DOM_MEMO]).toBe(propsAreEqual)
 
-    template = <Body counter={1} />
-    expect(template.toString()).toBe('<span>0</span>')
-
-    template = <Body counter={2} refresh={true} />
-    expect(template.toString()).toBe('<span>2</span>')
+    expect((<Body counter={0} />).toString()).toBe('<span>0</span>')
+    expect((<Body counter={1} />).toString()).toBe('<span>1</span>')
   })
 })
 
@@ -1105,6 +1179,65 @@ describe('Context', () => {
       expect(template.toString()).toBe('<div><span>dark</span>!</div><div><span>dark</span>!</div>')
     })
 
+    it('escapes a single string child', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>{'<img src=x onerror=alert(1)>'}</ThemeContext.Provider>
+      )
+
+      expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+    })
+
+    it('escapes a string returned by an asynchronous child', async () => {
+      const Async = async () => '<img src=x onerror=alert(1)>' as any
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Async />
+        </ThemeContext.Provider>
+      )
+
+      expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+    })
+
+    it('preserves explicitly trusted content', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          {raw('<strong>trusted</strong>')}
+        </ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('<strong>trusted</strong>')
+    })
+
+    it('escapes untrusted object stringification', async () => {
+      const object = { toString: () => '<img src=x onerror=alert(1)>' }
+      const asyncObject = { toString: async () => '<img src=x onerror=alert(1)>' }
+      const rawObject = { toString: () => raw('<img src=x onerror=alert(1)>') }
+
+      for (const child of [object, asyncObject, rawObject]) {
+        const template = (
+          <ThemeContext.Provider value='dark'>{child as never}</ThemeContext.Provider>
+        )
+        expect(String(await template.toString())).toBe('&lt;img src=x onerror=alert(1)&gt;')
+      }
+    })
+
+    it('continues to omit unsupported objects in child arrays', async () => {
+      const object = { toString: () => '<img src=x onerror=alert(1)>' }
+      const template = (
+        <ThemeContext.Provider value='dark'>{[object as never, 'safe']}</ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('safe')
+    })
+
+    it('keeps a direct Promise child unchanged', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>{Promise.resolve('resolved')}</ThemeContext.Provider>
+      )
+
+      expect(await template.toString()).toBe('[object Promise]')
+    })
+
     it('nested', () => {
       const template = (
         <ThemeContext.Provider value='dark'>
@@ -1240,6 +1373,38 @@ d.replaceWith(c.content)
       expect((await template.toString()).toString()).toBe('<span>dark</span>')
     })
 
+    it('returning an array', async () => {
+      const ArrayConsumer = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return [<span>{useContext(ThemeContext)}</span>, <span>x</span>]
+      }
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ArrayConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<span>dark</span><span>x</span>')
+    })
+
+    it('isolates a shared async result between providers', async () => {
+      const sharedResult = Promise.resolve(<Consumer />)
+      const SharedConsumer = () => sharedResult
+      const [dark, black] = await Promise.all([
+        (
+          <ThemeContext.Provider value='dark'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+        (
+          <ThemeContext.Provider value='black'>
+            <SharedConsumer />
+          </ThemeContext.Provider>
+        ).toString(),
+      ])
+      expect(dark.toString()).toBe('<span>dark</span>')
+      expect(black.toString()).toBe('<span>black</span>')
+    })
+
     it('nested', async () => {
       const template = (
         <ThemeContext.Provider value='dark'>
@@ -1261,6 +1426,167 @@ d.replaceWith(c.content)
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+
+    it('should keep captured context until a resumed async callback settles', async () => {
+      let resolveReader!: () => void
+      const readerWait = new Promise<void>((resolve) => {
+        resolveReader = resolve
+      })
+      let markReaderEntered!: () => void
+      const readerEntered = new Promise<void>((resolve) => {
+        markReaderEntered = resolve
+      })
+
+      const ResumedReader = () => {
+        const resume = captureRenderContext()
+        return resume(async () => {
+          markReaderEntered()
+          await readerWait
+          return <>{useContext(ThemeContext)}</>
+        })
+      }
+
+      const htmlPromise = (
+        <ThemeContext.Provider value='dark'>
+          <ResumedReader />
+        </ThemeContext.Provider>
+      ).toString()
+
+      await readerEntered
+      resolveReader()
+
+      expect(`${await htmlPromise}`).toBe('dark')
+    })
+
+    it('should pop captured context when a resumed callback throws', async () => {
+      const ThrowThenRead = ({ resume }: { resume: ReturnType<typeof captureRenderContext> }) => {
+        try {
+          resume(() => {
+            throw new Error('boom')
+          })
+        } catch {}
+        return <>{useContext(ThemeContext)}</>
+      }
+      const CaptureOuter = () => {
+        const resume = captureRenderContext()
+        return (
+          <ThemeContext.Provider value='inner'>
+            <ThrowThenRead resume={resume} />
+          </ThemeContext.Provider>
+        )
+      }
+
+      expect(
+        `${await (
+          <ThemeContext.Provider value='outer'>
+            <CaptureOuter />
+          </ThemeContext.Provider>
+        ).toString()}`
+      ).toBe('inner')
+    })
+
+    it('should pop captured context when a resumed async callback rejects', async () => {
+      const RejectThenRead = async ({
+        resume,
+      }: {
+        resume: ReturnType<typeof captureRenderContext>
+      }) => {
+        try {
+          await resume(async () => {
+            await Promise.resolve()
+            throw new Error('boom')
+          })
+        } catch {}
+        return <>{useContext(ThemeContext)}</>
+      }
+      const CaptureOuter = () => {
+        const resume = captureRenderContext()
+        return (
+          <ThemeContext.Provider value='inner'>
+            <RejectThenRead resume={resume} />
+          </ThemeContext.Provider>
+        )
+      }
+
+      expect(
+        `${await (
+          <ThemeContext.Provider value='outer'>
+            <CaptureOuter />
+          </ThemeContext.Provider>
+        ).toString()}`
+      ).toBe('inner')
+    })
+
+    it('should isolate async component context between concurrent requests', async () => {
+      const app = new Hono()
+      const SessionContext = createContext({ username: 'guest', role: 'guest' })
+      const waits = new Map<string, Promise<void>>()
+      const entered = new Map<string, () => void>()
+
+      const AdminDashboard = async ({ wait }: { wait: Promise<void> }) => {
+        entered.get(useContext(SessionContext).username)?.()
+        await wait
+        const session = useContext(SessionContext)
+
+        if (session.role !== 'admin') {
+          return <div>Access Denied for {session.username}</div>
+        }
+
+        return <div>Welcome Admin {session.username}. Secret Data: 42</div>
+      }
+
+      app.get('/', (c) => {
+        const session = {
+          username: c.req.query('user') || 'guest',
+          role: c.req.query('role') || 'guest',
+        }
+        const wait = waits.get(session.username) || Promise.resolve()
+
+        return c.html(
+          <SessionContext.Provider value={session}>
+            <AdminDashboard wait={wait} />
+          </SessionContext.Provider>
+        )
+      })
+
+      let resolveAdmin!: () => void
+      let resolveAttacker!: () => void
+      waits.set(
+        'admin',
+        new Promise<void>((resolve) => {
+          resolveAdmin = resolve
+        })
+      )
+      waits.set(
+        'attacker',
+        new Promise<void>((resolve) => {
+          resolveAttacker = resolve
+        })
+      )
+      const adminEntered = new Promise<void>((resolve) => {
+        entered.set('admin', resolve)
+      })
+      const attackerEntered = new Promise<void>((resolve) => {
+        entered.set('attacker', resolve)
+      })
+
+      const adminReq = app.fetch(new Request('http://localhost/?user=admin&role=admin'))
+      const attackerReq = app.fetch(new Request('http://localhost/?user=attacker&role=guest'))
+
+      await Promise.all([adminEntered, attackerEntered])
+      resolveAttacker()
+      await Promise.resolve()
+      resolveAdmin()
+
+      const [adminRes, attackerRes] = await Promise.all([adminReq, attackerReq])
+      const adminHtml = await adminRes.text()
+      const attackerHtml = await attackerRes.text()
+
+      // Each request must render with exactly its own provided value: no
+      // cross-request leak, and no degradation to the context default.
+      expect(adminHtml).toBe('<div>Welcome Admin admin. Secret Data: 42</div>')
+      expect(attackerHtml).toBe('<div>Access Denied for attacker</div>')
     })
   })
 
@@ -1300,6 +1626,74 @@ d.replaceWith(c.content)
       )
       expect((await template.toString()).toString()).toBe('<div><span>black</span></div>')
     })
+  })
+})
+
+describe('ErrorBoundary', () => {
+  it('awaits thenable fallback values', async () => {
+    const Broken = () => {
+      throw new Error('boom')
+    }
+    const fallback = {
+      then(resolve: (value: unknown) => void) {
+        resolve(<span>Recovered</span>)
+      },
+    }
+
+    expect(
+      `${await (
+        <ErrorBoundary fallback={fallback as any}>
+          <Broken />
+        </ErrorBoundary>
+      ).toString()}`
+    ).toBe('<span>Recovered</span>')
+  })
+
+  it('prefers an empty fallback over fallbackRender', async () => {
+    const Broken = () => {
+      throw new Error('boom')
+    }
+    let fallbackRenderCalled = false
+
+    expect(
+      `${await (
+        <ErrorBoundary
+          fallback=''
+          fallbackRender={() => {
+            fallbackRenderCalled = true
+            return <span>fallbackRender</span>
+          }}
+        >
+          <Broken />
+        </ErrorBoundary>
+      ).toString()}`
+    ).toBe('')
+    expect(fallbackRenderCalled).toBe(false)
+  })
+
+  it('renders async rejection fallback with the captured context while streaming', async () => {
+    const ThemeContext = createContext('default')
+    const Fallback = () => <span>{useContext(ThemeContext)}</span>
+    const Broken = async () => {
+      await Promise.resolve()
+      throw new Error('boom')
+    }
+
+    const stream = renderToReadableStream(
+      <ThemeContext.Provider value='outer'>
+        <ErrorBoundary fallbackRender={() => <Fallback />}>
+          <Broken />
+        </ErrorBoundary>
+      </ThemeContext.Provider>
+    )
+    const decoder = new TextDecoder()
+    let html = ''
+    for await (const chunk of stream) {
+      html += decoder.decode(chunk)
+    }
+
+    expect(html).toContain('<span>outer</span>')
+    expect(html).not.toContain('<span>default</span>')
   })
 })
 

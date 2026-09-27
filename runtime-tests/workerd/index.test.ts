@@ -10,6 +10,7 @@ describe('workerd', () => {
       vars: {
         NAME: 'Hono',
       },
+      compatibilityDate: '2026-07-01',
       experimental: { disableExperimentalWarning: true },
     })
   })
@@ -42,6 +43,7 @@ describe('workerd with WebSocket', () => {
   // https://github.com/cloudflare/workers-sdk/issues/4573#issuecomment-1850420973
   it('Should handle the WebSocket connection correctly', async () => {
     const worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
+      compatibilityDate: '2026-07-01',
       experimental: { disableExperimentalWarning: true },
     })
     const ws = new WebSocket(`ws://${worker.address}:${worker.port}/ws`)
@@ -82,6 +84,7 @@ describe('workerd with NO_COLOR', () => {
       vars: {
         NO_COLOR: true,
       },
+      compatibilityDate: '2026-07-01',
       experimental: { disableExperimentalWarning: true },
     })
   })

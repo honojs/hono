@@ -1,3 +1,4 @@
+import { pipeline } from 'node:stream/promises'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
@@ -123,17 +124,20 @@ const getRequestContext = (
   return event.requestContext
 }
 
-const streamToNodeStream = async (
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  writer: NodeJS.WritableStream
-): Promise<void> => {
+async function* readWebStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>
+): AsyncGenerator<Uint8Array> {
   let readResult = await reader.read()
   while (!readResult.done) {
-    writer.write(readResult.value)
+    yield readResult.value
     readResult = await reader.read()
   }
-  writer.end()
 }
+
+const streamToNodeStream = (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writer: NodeJS.WritableStream
+): Promise<void> => pipeline(readWebStream(reader), writer)
 
 export const streamHandle = <
   E extends Env = Env,
@@ -248,7 +252,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       ? WithMultiValueHeaders
       : WithHeaders)
 >) => {
-  // @ts-expect-error FIXME: Fix return typing
+  // @ts-expect-error conditional return type is not inferable
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
@@ -461,7 +465,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
         .join('&')
     } else {
       return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
+        .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
         .join('&')
     }
@@ -474,24 +478,17 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
   protected getHeaders(event: APIGatewayProxyEvent): Headers {
     const headers = new Headers()
     this.getCookies(event, headers)
-    if (event.headers) {
-      for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
-          headers.set(k, sanitizeHeaderValue(v))
-        }
-      }
-    }
     if (event.multiValueHeaders) {
       for (const [k, values] of Object.entries(event.multiValueHeaders)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
+        }
+      }
+    }
+    if (event.headers) {
+      for (const [k, v] of Object.entries(event.headers)) {
+        if (v && !headers.has(k)) {
+          headers.set(k, sanitizeHeaderValue(v))
         }
       }
     }
@@ -558,7 +555,7 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
         .join('&')
     } else {
       return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
+        .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}=${value}`)
         .join('&')
     }
@@ -607,14 +604,7 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
     if (event.headers) {
       for (const [k, values] of Object.entries(event.headers)) {
         if (values) {
-          // avoid duplicating already set headers
-          const foundK = headers.get(k)
-          values.forEach((v) => {
-            const sanitizedValue = sanitizeHeaderValue(v)
-            return (
-              (!foundK || !foundK.includes(sanitizedValue)) && headers.append(k, sanitizedValue)
-            )
-          })
+          values.forEach((v) => headers.append(k, sanitizeHeaderValue(v)))
         }
       }
     }
@@ -658,7 +648,10 @@ const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
-  return Object.hasOwn(event, 'rawPath')
+  // A V1 (REST API) event behind a custom domain base path mapping also carries a
+  // `rawPath`, so `rawPath` alone is not enough to identify a V2 event. Every V2
+  // (HTTP API / function URL) event has an `http` object on its request context.
+  return Object.hasOwn(event, 'rawPath') && Object.hasOwn(event.requestContext ?? {}, 'http')
 }
 
 const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
@@ -675,14 +668,15 @@ const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
  * @returns True if the content type is binary, false otherwise.
  */
 export const defaultIsContentTypeBinary = (contentType: string): boolean => {
-  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/.test(
+  if (/^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i.test(contentType)) {
+    return true
+  }
+
+  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/i.test(
     contentType
   )
 }
 
 export const isContentEncodingBinary = (contentEncoding: string | null) => {
-  if (contentEncoding === null) {
-    return false
-  }
-  return /^(gzip|deflate|compress|br)/.test(contentEncoding)
+  return !!contentEncoding && !/^identity$/i.test(contentEncoding)
 }

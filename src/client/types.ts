@@ -12,7 +12,7 @@ type MethodNameAll = `$${typeof METHOD_NAME_ALL_LOWERCASE}`
 
 /**
  * Type representing all standard HTTP methods prefixed with '$'
- * e.g., '$get' | '$post' | '$put' | '$delete' | '$options' | '$patch'
+ * e.g., '$get' | '$post' | '$put' | '$delete' | '$options' | '$patch' | '$query'
  */
 type StandardMethods = `$${(typeof METHODS)[number]}`
 

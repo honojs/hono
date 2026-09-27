@@ -181,9 +181,12 @@ describe('url', () => {
       expect(qs).toBe('?')
       qs = getQueryStrings('https://example.com/hello')
       expect(qs).toBe('')
-      // Allows to contain hash
       qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20#hash')
-      expect(qs).toBe('?name=foo&name=bar&age=20#hash')
+      expect(qs).toBe('?name=foo&name=bar&age=20')
+      qs = getQueryStrings('https://example.com/hello#?name=probe')
+      expect(qs).toBe('')
+      qs = getQueryStrings('https://example.com/hello?name=foo%23bar#hash')
+      expect(qs).toBe('?name=foo%23bar')
     })
   })
 
@@ -253,13 +256,19 @@ describe('url', () => {
         '/api/:version/animal',
         '/api/:version/animal/:type',
       ])
+      expect(checkOptionalParameter('/api/:id{[0-9]?}?')).toEqual(['/api', '/api/:id{[0-9]?}'])
     })
   })
 
   describe('getQueryParam', () => {
     it('Parse URL query strings', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
-      expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey#fragment')
+      expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey')
+      expect(getQueryParam('http://example.com/#?name=probe', 'name')).toBe(undefined)
+      expect(getQueryParam('http://example.com/?name=hey%23there#fragment', 'name')).toBe(
+        'hey#there'
+      )
+      expect(getQueryParam('http://example.com/?safe=1#&admin=true')).toEqual({ safe: '1' })
       expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'age')).toBe('20')
       expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
         'a web framework'
@@ -307,9 +316,12 @@ describe('url', () => {
   describe('getQueryParams', () => {
     it('Parse URL query strings', () => {
       expect(getQueryParams('http://example.com/?name=hey', 'name')).toEqual(['hey'])
-      expect(getQueryParams('http://example.com/?name=hey#fragment', 'name')).toEqual([
-        'hey#fragment',
+      expect(getQueryParams('http://example.com/?name=hey#fragment', 'name')).toEqual(['hey'])
+      expect(getQueryParams('http://example.com/#?name=probe', 'name')).toBe(undefined)
+      expect(getQueryParams('http://example.com/?name=hey%23there#fragment', 'name')).toEqual([
+        'hey#there',
       ])
+      expect(getQueryParams('http://example.com/?safe=1#&admin=true')).toEqual({ safe: ['1'] })
       expect(getQueryParams('http://example.com/?name=hey&name=foo', 'name')).toEqual([
         'hey',
         'foo',
@@ -358,6 +370,15 @@ describe('url', () => {
       expect(getQueryParams('http://example.com/?toString')).toEqual({
         toString: [''],
       })
+    })
+
+    it('should treat `__proto__` as a normal key without changing the prototype', () => {
+      const params = getQueryParams('http://example.com/?__proto__=a&__proto__=b') as Record<
+        string,
+        string[]
+      >
+      expect(Object.getPrototypeOf(params)).toBeNull()
+      expect(params['__proto__']).toEqual(['a', 'b'])
     })
   })
 })

@@ -123,12 +123,14 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  * If there are multiple targets to match any of them, they can be passed as an array.
  * If a string is passed, it will be treated as a path pattern to match.
  * If a Condition function is passed, it will be evaluated against the request context.
- * @param middleware - A composed middleware
+ * @param middleware - Middleware to run when the condition is not met.
+ * Multiple middleware can be passed, and they are applied in the order they are passed.
+ * @returns A composed middleware.
  *
  * @example
  * ```ts
  * import { except } from 'hono/combine'
- * import { bearerAuth } from 'hono/bearer-auth
+ * import { bearerAuth } from 'hono/bearer-auth'
  *
  * // If client is accessing public API, then skip authentication.
  * // Otherwise, require a valid token.

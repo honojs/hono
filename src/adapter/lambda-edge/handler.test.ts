@@ -2,23 +2,36 @@ import { describe } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
-import { encodeBase64 } from '../../utils/encode'
-import type { Callback, CloudFrontEdgeEvent } from './handler'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
+import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler'
 import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
-  it('Should determine whether it is binary', () => {
-    expect(isContentTypeBinary('image/png')).toBe(true)
-    expect(isContentTypeBinary('font/woff2')).toBe(true)
-    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/plain')).toBe(false)
-    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/css')).toBe(false)
-    expect(isContentTypeBinary('text/javascript')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
-    expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+  it.each([
+    ['image/png', true],
+    ['font/woff2', true],
+    ['image/svg+xml', false],
+    ['image/svg+xml; charset=UTF-8', false],
+    ['text/plain', false],
+    ['text/plain; charset=UTF-8', false],
+    ['text/css', false],
+    ['text/javascript', false],
+    ['application/json', false],
+    ['application/ld+json', false],
+    ['application/json', false],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', true],
+    ['application/msword', true],
+    ['application/epub+zip', true],
+    ['application/ld+json', false],
+    ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
+    ['application/vnd.apple.installer+xml; charset=UTF-8', true],
+    ['application/vnd.mozilla.xul+xml', true],
+    ['APPLICATION/VND.APPLE.INSTALLER+XML', true],
+    ['APPLICATION/JSON', false],
+    ['TEXT/PLAIN', false],
+  ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
+    expect(isContentTypeBinary(mimeType)).toBe(expected)
   })
 })
 
@@ -220,6 +233,218 @@ describe('handle', () => {
     }
 
     const res = await handler(event)
-    expect(res.status).toBe('413')
+    expect(res).toMatchObject({ status: '413' })
+  })
+
+  it('Should resolve with the request passed to the callback for origin forwarding', async () => {
+    type Env = { Bindings: { callback: Callback; request: CloudFrontRequest } }
+    const app = new Hono<Env>()
+    const callback = vi.fn()
+
+    app.get('*', async (c, next) => {
+      await next()
+      c.env.callback(null, c.env.request)
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent, undefined, callback)
+
+    expect(result).toBe(cloudFrontEdgeEvent.Records[0].cf.request)
+    expect(callback).toHaveBeenCalledWith(null, cloudFrontEdgeEvent.Records[0].cf.request)
+  })
+
+  it('Should resolve with the result passed to the callback over the app response', async () => {
+    type Env = { Bindings: { callback: Callback } }
+    const app = new Hono<Env>()
+    const customResult = {
+      status: '302',
+      headers: {
+        location: [{ key: 'location', value: 'https://example.com' }],
+      },
+    }
+
+    app.get('/test-path', (c) => {
+      c.env.callback(null, customResult)
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent)
+
+    expect(result).toBe(customResult)
+  })
+
+  it('Should only honor the first callback invocation', async () => {
+    type Env = { Bindings: { callback: Callback; request: CloudFrontRequest } }
+    const app = new Hono<Env>()
+
+    app.get('/test-path', (c) => {
+      c.env.callback(null, c.env.request)
+      c.env.callback(null, { status: '500' })
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+    const result = await handler(cloudFrontEdgeEvent)
+
+    expect(result).toBe(cloudFrontEdgeEvent.Records[0].cf.request)
+  })
+
+  it('Should reject when the callback is called with an error', async () => {
+    type Env = { Bindings: { callback: Callback } }
+    const app = new Hono<Env>()
+    const error = new Error('edge failure')
+
+    app.get('/test-path', (c) => {
+      c.env.callback(error)
+      return c.text('ok')
+    })
+
+    const handler = handle(app)
+
+    await expect(handler(cloudFrontEdgeEvent)).rejects.toThrow('edge failure')
+  })
+
+  it('Should resolve with the app response when the callback is not used', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text('normal'))
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+    expect(res).toMatchObject({ status: '200', body: 'normal' })
+  })
+
+  it('Should base64 encode a compressed response with a textual content-type', async () => {
+    const payload = new TextEncoder().encode('a'.repeat(100))
+    const gzipped = await new Response(
+      new Blob([payload]).stream().pipeThrough(new CompressionStream('gzip'))
+    ).arrayBuffer()
+
+    const app = new Hono()
+    app.get('/test-path', () => {
+      return new Response(gzipped, {
+        headers: {
+          'content-type': 'text/html; charset=UTF-8',
+          'content-encoding': 'gzip',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const body = encodeBase64(gzipped)
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ bodyEncoding: 'base64', body })
+
+    const decompressed = await new Response(
+      new Blob([decodeBase64(body)]).stream().pipeThrough(new DecompressionStream('gzip'))
+    ).text()
+    expect(decompressed).toBe('a'.repeat(100))
+  })
+
+  it('Should base64 encode a response with an unknown content-encoding', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text('zstd bytes', {
+        headers: {
+          'content-encoding': 'zstd',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({
+      bodyEncoding: 'base64',
+      body: encodeBase64(new TextEncoder().encode('zstd bytes').buffer),
+    })
+  })
+
+  it('Should not base64 encode a response with the identity content-encoding', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text('plain', {
+        headers: {
+          'content-encoding': 'identity',
+        },
+      })
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ body: 'plain' })
+    expect(res).not.toHaveProperty('bodyEncoding')
+  })
+})
+
+describe('handle with a malformed event', () => {
+  const invalidEventMessage =
+    'Unable to map the CloudFront event to a Request: expected `Records[0].cf.request` in the Lambda@Edge event.'
+
+  it('Should reject with a descriptive error when Records holds no CloudFront record', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    // The payload the AWS Lambda console prefills is an array of dummy ids.
+    const event = { Records: ['foo', 'bar'] } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(TypeError)
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should reject with a descriptive error when Records is empty or absent', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    for (const event of [{ Records: [] }, {}] as unknown as CloudFrontEdgeEvent[]) {
+      await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+    }
+  })
+
+  it('Should reject with a descriptive error when cf carries no request', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    const event = {
+      Records: [{ cf: { config: { distributionDomainName: 'd111111abcdef8.cloudfront.net' } } }],
+    } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should fall back to the distribution domain name when the request has no headers', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text(c.req.url))
+    const handler = handle(app)
+
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-request',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '1.2.3.4',
+              method: 'GET',
+              querystring: '',
+              uri: '/test-path',
+            },
+          },
+        },
+      ],
+    } as unknown as CloudFrontEdgeEvent
+
+    const res = await handler(event)
+
+    expect(res).toMatchObject({
+      status: '200',
+      body: 'https://d111111abcdef8.cloudfront.net/test-path',
+    })
   })
 })

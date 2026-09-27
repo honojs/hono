@@ -2,8 +2,14 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
 import { DOM_RENDERER, DOM_MEMO } from './constants'
+import {
+  captureRenderContext,
+  createContext,
+  globalContexts,
+  runWithRenderContext,
+  useContext,
+} from './context'
 import type { Context } from './context'
-import { createContext, globalContexts, useContext } from './context'
 import { domRenderers } from './intrinsic-element/common'
 import * as intrinsicElementTags from './intrinsic-element/components'
 import type {
@@ -19,8 +25,13 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
+type FunctionComponentResult =
+  | HtmlEscapedString
+  | Child[]
+  | Promise<HtmlEscapedString | Child[]>
+  | null
 export type FC<P = Props> = {
-  (props: P): HtmlEscapedString | Promise<HtmlEscapedString> | null
+  (props: P): FunctionComponentResult
   defaultProps?: Partial<P> | undefined
   displayName?: string | undefined
 }
@@ -29,6 +40,7 @@ export type DOMAttributes = HonoJSX.HTMLAttributes
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
+  export type ElementType = string | ((props: never) => FunctionComponentResult)
   export interface ElementChildrenAttribute {
     children: Child
   }
@@ -99,6 +111,31 @@ export const booleanAttributes = [
   'selected',
 ]
 
+type SuspendedContext = <T>(callback: () => T) => T
+
+const resolveFunctionComponentResult = (
+  result: Promise<string | JSXNode | Child[]>,
+  suspendedContext?: SuspendedContext
+): Promise<string> =>
+  result.then((resolved) => {
+    if (
+      typeof resolved !== 'string' &&
+      !Array.isArray(resolved) &&
+      !(resolved instanceof JSXNode)
+    ) {
+      return resolved
+    }
+    const children = Array.isArray(resolved) ? resolved : [resolved as Child]
+    const render = () => {
+      const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+      childrenToStringToBuffer(children, buffer)
+      return buffer.length === 1
+        ? raw(buffer[0], buffer.callbacks)
+        : stringBufferToString(buffer, buffer.callbacks)
+    }
+    return suspendedContext ? suspendedContext(render) : runWithRenderContext(render)
+  })
+
 const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
   for (let i = 0, len = children.length; i < len; i++) {
     const child = children[i]
@@ -108,11 +145,15 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
       continue
     } else if (child instanceof JSXNode) {
       child.toStringToBuffer(buffer)
-    } else if (
-      typeof child === 'number' ||
-      (child as unknown as { isEscaped: boolean }).isEscaped
-    ) {
+    } else if (typeof child === 'number') {
       ;(buffer[0] as string) += child
+    } else if ((child as unknown as HtmlEscaped).isEscaped) {
+      ;(buffer[0] as string) += child
+      const callbacks = (child as unknown as HtmlEscapedString).callbacks
+      if (callbacks) {
+        buffer.callbacks ||= []
+        buffer.callbacks.push(...callbacks)
+      }
     } else if (child instanceof Promise) {
       buffer.unshift('', child)
     } else {
@@ -122,7 +163,6 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
   }
 }
 
-type LocalContexts = [Context<unknown>, unknown][]
 export type Child =
   | string
   | Promise<string>
@@ -132,13 +172,39 @@ export type Child =
   | undefined
   | boolean
   | Child[]
+
+export const renderChildren = (children: Child[]): HtmlEscapedString | Promise<HtmlEscapedString> =>
+  runWithRenderContext(() => {
+    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+    childrenToStringToBuffer(children, buffer)
+    return buffer.length === 1
+      ? raw(buffer[0], buffer.callbacks)
+      : stringBufferToString(buffer, buffer.callbacks)
+  })
+
+export const isUntrustedObject = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  !(value instanceof JSXNode) &&
+  !(value instanceof Promise) &&
+  !(value as HtmlEscaped).isEscaped &&
+  typeof (value as { toString?: unknown }).toString === 'function'
+
+export const renderUntrustedObject = (
+  value: unknown
+): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  const stringified = (value as { toString(): unknown }).toString()
+  const escape = (result: unknown) => renderChildren([String(result)])
+  return stringified instanceof Promise ? stringified.then(escape) : escape(stringified)
+}
+
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
   key?: string
   children: Child[]
   isEscaped: true = true as const
-  localContexts?: LocalContexts
   constructor(tag: string | Function, props: Props, children: Child[]) {
     if (typeof tag !== 'function' && !isValidTagName(tag)) {
       throw new Error(`Invalid JSX tag name: ${tag}`)
@@ -159,22 +225,16 @@ export class JSXNode implements HtmlEscaped {
   }
 
   toString(): string | Promise<string> {
-    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
-    this.localContexts?.forEach(([context, value]) => {
-      context.values.push(value)
-    })
-    try {
+    const render = () => {
+      const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
       this.toStringToBuffer(buffer)
-    } finally {
-      this.localContexts?.forEach(([context]) => {
-        context.values.pop()
-      })
+      return buffer.length === 1
+        ? 'callbacks' in buffer
+          ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
+          : buffer[0]
+        : stringBufferToString(buffer, buffer.callbacks)
     }
-    return buffer.length === 1
-      ? 'callbacks' in buffer
-        ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
-        : buffer[0]
-      : stringBufferToString(buffer, buffer.callbacks)
+    return runWithRenderContext(render)
   }
 
   toStringToBuffer(buffer: StringBufferWithCallbacks): void {
@@ -268,22 +328,15 @@ class JSXFunctionNode extends JSXNode {
       return
     } else if (res instanceof Promise) {
       if (globalContexts.length === 0) {
-        buffer.unshift('', res)
+        buffer.unshift('', resolveFunctionComponentResult(res))
       } else {
-        // save current contexts for resuming
-        const currentContexts: LocalContexts = globalContexts.map((c) => [c, c.values.at(-1)])
-        buffer.unshift(
-          '',
-          res.then((childRes) => {
-            if (childRes instanceof JSXNode) {
-              childRes.localContexts = currentContexts
-            }
-            return childRes
-          })
-        )
+        // save the current context state for resuming the suspended subtree
+        buffer.unshift('', resolveFunctionComponentResult(res, captureRenderContext()))
       }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
+    } else if (Array.isArray(res)) {
+      childrenToStringToBuffer(res, buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
       if (res.callbacks) {
@@ -385,15 +438,7 @@ export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
-  let computed: ReturnType<FC<T>> = null
-  let prevProps: T | undefined = undefined
-  const wrapper: MemorableFC<T> = ((props: T) => {
-    if (prevProps && !propsAreEqual(prevProps, props)) {
-      computed = null
-    }
-    prevProps = props
-    return (computed ||= component(props))
-  }) as MemorableFC<T>
+  const wrapper: MemorableFC<T> = ((props: T) => component(props)) as MemorableFC<T>
 
   // This function is for toString(), but it can also be used for DOM renderer.
   // So, set DOM_MEMO and DOM_RENDERER for DOM renderer.

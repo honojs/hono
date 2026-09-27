@@ -145,17 +145,37 @@ describe('CORS by Middleware', () => {
   })
 
   it('Preflight default', async () => {
-    const req = new Request('https://localhost/api/abc', { method: 'OPTIONS' })
-    req.headers.append('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type')
+    const req = new Request('https://localhost/api/abc', {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'QUERY',
+        'Access-Control-Request-Headers': 'X-PINGOTHER, Content-Type',
+      },
+    })
     const res = await app.request(req)
 
     expect(res.status).toBe(204)
     expect(res.statusText).toBe('No Content')
-    expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')[0]).toBe('GET')
+    expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')).toEqual([
+      'GET',
+      'HEAD',
+      'PUT',
+      'POST',
+      'DELETE',
+      'PATCH',
+      'QUERY',
+    ])
     expect(res.headers.get('Access-Control-Allow-Headers')?.split(',')).toEqual([
       'X-PINGOTHER',
       'Content-Type',
     ])
+  })
+
+  it('Preflight handles a large Access-Control-Request-Headers value', async () => {
+    const req = new Request('https://localhost/api/abc', { method: 'OPTIONS' })
+    req.headers.append('Access-Control-Request-Headers', 'x' + ' '.repeat(200000) + 'x')
+    const res = await app.request(req)
+    expect(res.status).toBe(204)
   })
 
   it('Preflight with options', async () => {
@@ -255,6 +275,34 @@ describe('CORS by Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
     expect(res.headers.get('Vary')).toBe('X-Custom-Vary-Value, Origin')
+  })
+
+  it('Append "Origin" to Vary header on OPTIONS preflight, if response has some Vary header', async () => {
+    const testApp = new Hono()
+    testApp.use('/api/*', async (c, next) => {
+      c.header('Vary', 'Accept-Encoding', { append: true })
+      await next()
+    })
+    testApp.use(
+      '/api/*',
+      cors({
+        origin: 'http://example.com',
+        allowHeaders: ['X-Custom-Header'],
+      })
+    )
+    testApp.all('/api/test', (c) => c.text('ok'))
+
+    const res = await testApp.request('http://localhost/api/test', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://example.com',
+        'Access-Control-Request-Headers': 'X-Custom-Header',
+      },
+    })
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding, Origin, Access-Control-Request-Headers')
   })
 
   it('Allow origins by function', async () => {
@@ -360,6 +408,17 @@ describe('CORS by Middleware', () => {
     const res2 = await app.request(req2)
     expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
+  })
+
+  it('Does not set allow methods when function returns an empty array', async () => {
+    for (const allowMethods of [() => [], async () => []]) {
+      const app = new Hono()
+      app.use(cors({ allowMethods }))
+
+      const res = await app.request('http://localhost/', { method: 'OPTIONS' })
+
+      expect(res.headers.get('Access-Control-Allow-Methods')).toBeNull()
+    }
   })
 
   it('Emits the wildcard, not the reflected origin, when credentials is true with wildcard origin', async () => {

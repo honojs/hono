@@ -3,7 +3,11 @@
  * Body utility.
  */
 
-import { HonoRequest } from '../request'
+import type { HonoRequest } from '../request'
+import { bufferToFormData } from './buffer'
+
+const MAX_NESTING_DEPTH = 32
+const MAX_NESTED_OBJECTS = 10_000
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
@@ -73,6 +77,8 @@ export type ParseBodyOptions = {
   dot: boolean
 }
 
+const isRawRequest = (request: HonoRequest | Request): request is Request => 'headers' in request // 'headers' method exists only on Request, not on HonoRequest.
+
 /**
  * Parses the body of a request based on the provided options.
  *
@@ -97,13 +103,12 @@ export const parseBody: ParseBody = async (
 ) => {
   const { all = false, dot = false } = options
 
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
   const contentType = headers.get('Content-Type')
 
-  if (
-    contentType?.startsWith('multipart/form-data') ||
-    contentType?.startsWith('application/x-www-form-urlencoded')
-  ) {
+  const mediaType = contentType?.split(';')[0].trim().toLowerCase()
+
+  if (mediaType === 'multipart/form-data' || mediaType === 'application/x-www-form-urlencoded') {
     return parseFormData(request, { all, dot })
   }
 
@@ -122,7 +127,20 @@ async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
-  const formData = await (request as Request).formData()
+  if (!isRawRequest(request) && request.bodyCache.formData) {
+    return convertFormDataToBodyData<T>(
+      await (request.bodyCache.formData as FormData | Promise<FormData>),
+      options
+    )
+  }
+  const headers = isRawRequest(request) ? request.headers : request.raw.headers
+  const arrayBuffer = await (request as Request).arrayBuffer()
+  const formDataPromise = bufferToFormData(arrayBuffer, headers.get('Content-Type') || '')
+  if (!isRawRequest(request)) {
+    // Cache so that a later `c.req.formData()` reuses the already-consumed body
+    request.bodyCache.formData = formDataPromise as unknown as FormData
+  }
+  const formData = await formDataPromise
 
   if (formData) {
     return convertFormDataToBodyData<T>(formData, options)
@@ -144,6 +162,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   options: ParseBodyOptions
 ): T {
   const form: BodyData = Object.create(null)
+  const nestingState = { count: 0 }
 
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
@@ -160,7 +179,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
       const shouldParseDotValues = key.includes('.')
 
       if (shouldParseDotValues) {
-        handleParsingNestedValues(form, key, value)
+        handleParsingNestedValues(form, key, value, nestingState)
         delete form[key]
       }
     })
@@ -206,14 +225,18 @@ const handleParsingAllValues = (
 const handleParsingNestedValues = (
   form: BodyData,
   key: string,
-  value: BodyDataValue<Partial<ParseBodyOptions>>
+  value: BodyDataValue<Partial<ParseBodyOptions>>,
+  state: { count: number }
 ): void => {
   if (/(?:^|\.)__proto__\./.test(key)) {
     return
   }
 
   let nestedForm = form
-  const keys = key.split('.')
+  const keys = key.split('.', MAX_NESTING_DEPTH + 2)
+  if (keys.length > MAX_NESTING_DEPTH + 1) {
+    throwNestingLimitExceeded()
+  }
 
   keys.forEach((key, index) => {
     if (index === keys.length - 1) {
@@ -225,9 +248,16 @@ const handleParsingNestedValues = (
         Array.isArray(nestedForm[key]) ||
         nestedForm[key] instanceof File
       ) {
+        if (state.count++ >= MAX_NESTED_OBJECTS) {
+          throwNestingLimitExceeded()
+        }
         nestedForm[key] = Object.create(null)
       }
       nestedForm = nestedForm[key] as unknown as BodyData
     }
   })
+}
+
+const throwNestingLimitExceeded = (): never => {
+  throw new Error('Nesting limit exceeded')
 }

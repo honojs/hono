@@ -1,6 +1,6 @@
-import { Context } from '../../context'
 import type { WSContextInit } from '.'
 import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
+import { Context } from '../../context'
 
 describe('`createWSMessageEvent`', () => {
   it('Should `createWSMessageEvent` is working for string', () => {
@@ -51,7 +51,7 @@ describe('defineWebSocketHelper', () => {
       return
     })
     const c = new Context(new Request('http://localhost'))
-    expect(() => upgradeWebSocket(c, {})).rejects.toThrow()
+    await expect(() => upgradeWebSocket(c, {})).rejects.toThrow()
   })
 })
 describe('WSContext', () => {

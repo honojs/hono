@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { bodyLimit } from '.'
+import { Hono } from '../../hono'
 
 const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half' } => {
   const headers: Record<string, string> = {

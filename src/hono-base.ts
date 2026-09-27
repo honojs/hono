@@ -107,6 +107,7 @@ class Hono<
   delete!: HandlerInterface<E, 'delete', S, BasePath, CurrentPath>
   options!: HandlerInterface<E, 'options', S, BasePath, CurrentPath>
   patch!: HandlerInterface<E, 'patch', S, BasePath, CurrentPath>
+  query!: HandlerInterface<E, 'query', S, BasePath, CurrentPath>
   all!: HandlerInterface<E, 'all', S, BasePath, CurrentPath>
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
@@ -128,13 +129,14 @@ class Hono<
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.forEach((method) => {
       this[method] = (args1: string | H, ...args: H[]) => {
+        const methodName = method.toUpperCase()
         if (typeof args1 === 'string') {
           this.#path = args1
         } else {
-          this.#addRoute(method, this.#path, args1)
+          this.#addRoute(methodName, this.#path, args1)
         }
         args.forEach((handler) => {
-          this.#addRoute(method, this.#path, handler)
+          this.#addRoute(methodName, this.#path, handler)
         })
         return this as any
       }
@@ -145,9 +147,10 @@ class Hono<
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
-          handlers.map((handler) => {
-            this.#addRoute(m.toUpperCase(), this.#path, handler)
-          })
+          const methodName = m.toUpperCase()
+          for (const handler of handlers) {
+            this.#addRoute(methodName, this.#path, handler)
+          }
         }
       }
       return this as any
@@ -383,7 +386,6 @@ class Hono<
   }
 
   #addRoute(method: string, path: string, handler: H, baseRoutePath?: string): void {
-    method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = {
       basePath:
@@ -471,14 +473,14 @@ class Hono<
    * @see {@link https://hono.dev/docs/api/hono#fetch}
    *
    * @param {Request} request - request Object of request
-   * @param {Env} Env - env Object
-   * @param {ExecutionContext} - context of execution
+   * @param {Env} env - env Object
+   * @param {ExecutionContext} executionCtx - context of execution
    * @returns {Response | Promise<Response>} response of request
    *
    */
   fetch: (
     request: Request,
-    Env?: E['Bindings'] | {},
+    env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
   ) => Response | Promise<Response> = (request, ...rest) => {
     return this.#dispatch(request, rest[1], rest[0], request.method)

@@ -57,6 +57,44 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
   })
 
+  it('pipe() re-acquires writer lock when pipeTo() throws', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+
+    const erroringReadable = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream error'))
+      },
+    })
+
+    await expect(api.pipe(erroringReadable)).rejects.toThrow('upstream error')
+    api.write('after pipe')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('after pipe'))
+  })
+
+  it('pipe() can be called again after a previous pipe() throws', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+
+    const erroringReadable = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream error'))
+      },
+    })
+    await expect(api.pipe(erroringReadable)).rejects.toThrow('upstream error')
+
+    const src = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('second pipe'))
+        controller.close()
+      },
+    })
+    await api.pipe(src)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('second pipe'))
+  })
+
   it('close()', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable, readable)
@@ -117,5 +155,58 @@ describe('StreamingApi', () => {
     expect(handleAbort1).toHaveBeenCalledOnce()
     expect(handleAbort2).toHaveBeenCalledOnce()
     expect(api.aborted).toBe(true)
+  })
+
+  it('abort() continues when an abort listener throws', async () => {
+    const { readable, writable } = new TransformStream()
+    const handleAbort = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(() => {
+      throw new Error('cleanup failed')
+    })
+    api.onAbort(handleAbort)
+    api.abort()
+    expect(api.aborted).toBe(true)
+    expect(handleAbort).toHaveBeenCalledOnce()
+  })
+
+  it('abort() handles a rejecting thenable returned by a listener', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    try {
+      api.onAbort(
+        () =>
+          ({
+            then: (_resolve: unknown, reject: (reason: unknown) => void) =>
+              reject(new Error('thenable cleanup failed')),
+          }) as unknown as Promise<void>
+      )
+      api.abort()
+      expect(api.aborted).toBe(true)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(unhandled).not.toHaveBeenCalled()
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
+  it('abort() does not leave an unhandled rejection when an async listener rejects', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    try {
+      api.onAbort(async () => {
+        throw new Error('async cleanup failed')
+      })
+      api.abort()
+      expect(api.aborted).toBe(true)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(unhandled).not.toHaveBeenCalled()
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
   })
 })

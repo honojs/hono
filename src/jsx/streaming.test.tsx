@@ -4,8 +4,13 @@ import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { createContext, useContext } from './context'
+import { buildDataStack } from './dom/render'
 import { use } from './hooks'
 import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
+
+const unsafeHtml = '<img src=x onerror=alert(1)>'
+const escapedUnsafeHtml = '&lt;img src=x onerror=alert(1)&gt;'
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
@@ -13,10 +18,86 @@ function replacementResult(html: string) {
   return document.body.innerHTML
 }
 
+async function drainStream(stream: unknown): Promise<string> {
+  const textDecoder = new TextDecoder()
+  let html = ''
+  for await (const chunk of stream as any) {
+    html += textDecoder.decode(chunk)
+  }
+  return html
+}
+
+async function stringify(node: { toString(): string | Promise<string> }): Promise<string> {
+  return String(
+    await resolveCallback(await node.toString(), HtmlEscapedCallbackPhase.Stringify, false, {})
+  )
+}
+
+async function readInitialSuspenseChunk(fallback: unknown): Promise<string> {
+  let resolve!: () => void
+  const promise = new Promise<void>((done) => (resolve = done))
+  const Async = async () => {
+    await promise
+    return <span>done</span>
+  }
+  const reader = renderToReadableStream(
+    <Suspense fallback={fallback}>
+      <Async />
+    </Suspense>
+  ).getReader()
+
+  const first = await reader.read()
+  resolve()
+  while (!(await reader.read()).done) {
+    // Drain the retry so it cannot outlive the test.
+  }
+  return new TextDecoder().decode(first.value)
+}
+
 describe('Streaming', () => {
   let suspenseCounter = 0
   afterEach(() => {
     suspenseCounter++
+  })
+
+  it('Suspense / async component returning an array', async () => {
+    const Content = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return [<h1>Hello</h1>, <h2>World</h2>]
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks[0]).toBe(
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`
+    )
+    expect(chunks[1]).toContain(
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><h2>World</h2></template>`
+    )
+  })
+
+  it('preserves callbacks in a streamed async component array', async () => {
+    const phases: number[] = []
+    const Content = async () => [
+      raw('Hello', [({ phase }) => void phases.push(phase)]),
+      <span>World</span>,
+    ]
+
+    const html = await drainStream(renderToReadableStream(<Content />))
+
+    expect(html).toBe('Hello<span>World</span>')
+    expect(phases).toEqual([HtmlEscapedCallbackPhase.BeforeStream, HtmlEscapedCallbackPhase.Stream])
+    suspenseCounter--
   })
 
   it('Suspense / renderToReadableStream', async () => {
@@ -638,6 +719,33 @@ d.replaceWith(c.content)
     )
   })
 
+  it('renders Suspense fallback with outer context values', async () => {
+    const ThemeContext = createContext('default')
+    const Fallback = () => <p>Loading {useContext(ThemeContext)}</p>
+    const Content = () =>
+      new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<h1>Done</h1>), 10))
+
+    const stream = renderToReadableStream(
+      <ThemeContext.Provider value='outer'>
+        <Suspense fallback={<Fallback />}>
+          <Content />
+        </Suspense>
+      </ThemeContext.Provider>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks[0]).toBe(
+      `<template id="H:${suspenseCounter}"></template><p>Loading outer</p><!--/$-->`
+    )
+    expect(chunks.join('')).toContain('<h1>Done</h1>')
+    expect(chunks.join('')).not.toContain('default')
+  })
+
   it('nested Suspense', async () => {
     const SubContent = () => {
       const content = new Promise<HtmlEscapedString>((resolve) =>
@@ -984,5 +1092,190 @@ d.replaceWith(c.content)
     expect(onError).not.toHaveBeenCalled()
 
     process.off('unhandledRejection', onRejection)
+  })
+
+  it('pops buildDataStack when a deferred re-render rejects', async () => {
+    const baseLength = buildDataStack.length
+
+    const deferred = new Promise<string>((resolve) => setTimeout(() => resolve('x'), 10))
+    let first = true
+    const Content = () => {
+      if (first) {
+        // Suspend like use() does so Suspense defers the re-render.
+        first = false
+        throw deferred
+      }
+      throw new Error('boom')
+    }
+
+    const onError = vi.fn(() => '')
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading</p>}>
+        <Content />
+      </Suspense>,
+      onError
+    )
+    for await (const _ of stream as any) {
+      // drain
+    }
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    // The deferred re-render pushed a stack frame; rejecting must still pop it.
+    expect(buildDataStack.length).toBe(baseLength)
+  })
+
+  it('isolates context between concurrent streaming renders', async () => {
+    // Default value is distinct from both requests so a cross-request leak
+    // (reading the other request's value) would be detectable.
+    const SessionContext = createContext('nobody')
+    const waits = new Map<string, Promise<void>>()
+    const entered = new Map<string, () => void>()
+
+    const Dashboard = async ({ name }: { name: string }) => {
+      // Read context only after suspending, the pattern that previously leaked.
+      entered.get(name)?.()
+      await waits.get(name)
+      return <span>role:{useContext(SessionContext)}</span>
+    }
+
+    const drain = async (value: string) => {
+      return drainStream(
+        renderToReadableStream(
+          <SessionContext.Provider value={value}>
+            <Dashboard name={value} />
+          </SessionContext.Provider>
+        )
+      )
+    }
+
+    let resolveAdmin!: () => void
+    let resolveGuest!: () => void
+    waits.set(
+      'admin',
+      new Promise<void>((resolve) => {
+        resolveAdmin = resolve
+      })
+    )
+    waits.set(
+      'guest',
+      new Promise<void>((resolve) => {
+        resolveGuest = resolve
+      })
+    )
+    const adminEntered = new Promise<void>((resolve) => {
+      entered.set('admin', resolve)
+    })
+    const guestEntered = new Promise<void>((resolve) => {
+      entered.set('guest', resolve)
+    })
+
+    const adminDrain = drain('admin')
+    const guestDrain = drain('guest')
+
+    await Promise.all([adminEntered, guestEntered])
+    resolveGuest()
+    await Promise.resolve()
+    resolveAdmin()
+
+    const [adminHtml, guestHtml] = await Promise.all([adminDrain, guestDrain])
+
+    expect(adminHtml).toContain('role:admin')
+    expect(adminHtml).not.toContain('role:guest')
+    expect(guestHtml).toContain('role:guest')
+    expect(guestHtml).not.toContain('role:admin')
+  })
+
+  describe('escaping', () => {
+    it('escapes string children with an asynchronous sibling', async () => {
+      const Async = async () => <span>done</span>
+      const node = (
+        <Suspense fallback='loading'>
+          {unsafeHtml}
+          <Async />
+        </Suspense>
+      )
+
+      expect(await stringify(node)).toBe(`${escapedUnsafeHtml}<span>done</span>`)
+      const streamed = await drainStream(renderToReadableStream(node))
+      expect(streamed).toContain(escapedUnsafeHtml)
+      expect(streamed).not.toContain(unsafeHtml)
+    })
+
+    it('escapes nested array strings', async () => {
+      expect(await stringify(<Suspense fallback='loading'>{[[[unsafeHtml]]]}</Suspense>)).toBe(
+        escapedUnsafeHtml
+      )
+    })
+
+    it('escapes a primitive fallback in the initial stream chunk', async () => {
+      const initialChunk = await readInitialSuspenseChunk(unsafeHtml)
+
+      expect(initialChunk).toContain(escapedUnsafeHtml)
+      expect(initialChunk).not.toContain(unsafeHtml)
+    })
+
+    it('escapes untrusted object fallbacks', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const fallback of [object, asyncObject, rawObject]) {
+        const initialChunk = await readInitialSuspenseChunk(fallback)
+        expect(initialChunk).toContain(escapedUnsafeHtml)
+        expect(initialChunk).not.toContain(unsafeHtml)
+      }
+    })
+
+    it('preserves an explicitly trusted fallback', async () => {
+      expect(await readInitialSuspenseChunk(raw('<strong>trusted</strong>'))).toContain(
+        '<strong>trusted</strong>'
+      )
+    })
+
+    it('does not interpret replacement patterns in content', async () => {
+      const content = "literal $& $` $'"
+      const Async = async () => <span>done</span>
+
+      expect(
+        await stringify(
+          <Suspense fallback='loading'>
+            {content}
+            <Async />
+          </Suspense>
+        )
+      ).toBe('literal $&amp; $` $&#39;<span>done</span>')
+    })
+
+    it('escapes untrusted object children', async () => {
+      const object = { toString: () => unsafeHtml }
+      const asyncObject = { toString: async () => unsafeHtml }
+      const rawObject = { toString: () => raw(unsafeHtml) }
+
+      for (const child of [object, asyncObject, rawObject]) {
+        const node = <Suspense fallback='loading'>{child as never}</Suspense>
+        expect(await stringify(node)).toBe(escapedUnsafeHtml)
+        const streamed = await drainStream(renderToReadableStream(node))
+        expect(streamed).toContain(escapedUnsafeHtml)
+        expect(streamed).not.toContain(unsafeHtml)
+      }
+    })
+
+    it('preserves explicitly trusted children', async () => {
+      expect(
+        await stringify(<Suspense fallback='loading'>{raw('<strong>trusted</strong>')}</Suspense>)
+      ).toBe('<strong>trusted</strong>')
+    })
+
+    it('keeps benign object stringification visible', async () => {
+      expect(await stringify(<Suspense fallback='loading'>{{} as never}</Suspense>)).toBe(
+        '[object Object]'
+      )
+    })
+
+    it('keeps a direct Promise child unchanged', async () => {
+      expect(
+        await stringify(<Suspense fallback='loading'>{Promise.resolve('resolved')}</Suspense>)
+      ).toBe('[object Promise]')
+    })
   })
 })

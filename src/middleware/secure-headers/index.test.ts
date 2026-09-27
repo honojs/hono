@@ -1,7 +1,7 @@
-import { Hono } from '../../hono'
-import { poweredBy } from '../powered-by'
 import { NONCE, secureHeaders } from '.'
 import type { ContentSecurityPolicyOptionHandler } from '.'
+import { Hono } from '../../hono'
+import { poweredBy } from '../powered-by'
 
 declare module '../..' {
   interface ContextVariableMap {
@@ -181,16 +181,19 @@ describe('Secure Headers Middleware', () => {
           accelerometer: ['https://*.example.com'],
           gyroscope: ['src'],
           magnetometer: ['https://a.example.com', 'https://b.example.com'],
+          mediasession: ['self'],
+          deferredFetch: ['none'],
         },
       })
     )
 
     const res = await app.request('/test')
     expect(res.headers.get('Permissions-Policy')).toEqual(
-      'fullscreen=(self), bluetooth=none, payment=(self "example.com"), sync-xhr=(), camera=none, microphone=*, ' +
+      'fullscreen=(self), bluetooth=(), payment=(self "example.com"), sync-xhr=(), camera=(), microphone=*, ' +
         'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
         'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
-        'magnetometer=("https://a.example.com" "https://b.example.com")'
+        'magnetometer=("https://a.example.com" "https://b.example.com"), ' +
+        'mediasession=(self), deferred-fetch=()'
     )
   })
 
@@ -478,6 +481,81 @@ describe('Secure Headers Middleware', () => {
       expect(csp).toMatch("script-src 'self' 'nonce-scriptSrc'")
       expect(csp).toMatch("style-src 'self' 'nonce-styleSrc'")
       expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
+    })
+  })
+
+  describe('CSP with combined modes', () => {
+    it('keeps the enforced policy when report-only uses a nonce', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            defaultSrc: ["'self'"],
+          },
+          contentSecurityPolicyReportOnly: {
+            scriptSrc: ["'self'", NONCE],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'self'")
+      expect(res.headers.get('Content-Security-Policy-Report-Only')).toMatch(
+        /^script-src 'self' 'nonce-[a-zA-Z0-9+/]+=*'$/
+      )
+    })
+
+    it('keeps the report-only policy when the enforced policy uses a nonce', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            scriptSrc: ["'self'", NONCE],
+          },
+          contentSecurityPolicyReportOnly: {
+            defaultSrc: ["'self'"],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Security-Policy')).toMatch(
+        /^script-src 'self' 'nonce-[a-zA-Z0-9+/]+=*'$/
+      )
+      expect(res.headers.get('Content-Security-Policy-Report-Only')).toBe("default-src 'self'")
+    })
+
+    it('supports nonces in both policies', async () => {
+      const app = new Hono()
+      app.use(
+        '/test',
+        secureHeaders({
+          contentSecurityPolicy: {
+            scriptSrc: ["'self'", NONCE],
+          },
+          contentSecurityPolicyReportOnly: {
+            styleSrc: ["'self'", NONCE],
+          },
+        })
+      )
+      app.all('*', (c) => c.text('test'))
+
+      const res = await app.request('/test')
+      const csp = res.headers.get('Content-Security-Policy')
+      const reportOnly = res.headers.get('Content-Security-Policy-Report-Only')
+      const nonce = csp?.match(/'nonce-([^']+)'/)?.[1]
+
+      expect(res.status).toBe(200)
+      expect(nonce).toBeTruthy()
+      expect(reportOnly).toContain(`'nonce-${nonce}'`)
     })
   })
 

@@ -1,6 +1,5 @@
 import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
-
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -120,25 +119,38 @@ export const handle = (
   event: CloudFrontEdgeEvent,
   context?: CloudFrontContext,
   callback?: Callback
-) => Promise<CloudFrontResult>) => {
+) => Promise<CloudFrontResult | CloudFrontRequest>) => {
   return async (event, ...args: [context?: CloudFrontContext, callback?: Callback]) => {
     const [context, callback] = args
-    const res = await app.fetch(createRequest(event), {
+    let callbackError: Error | null = null
+    let callbackResult: CloudFrontResult | CloudFrontRequest | undefined
+    const cf = getCloudFrontRecord(event)
+    const res = await app.fetch(createRequest(cf), {
       event,
       context,
       callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
+        if (!callbackError && !callbackResult) {
+          callbackError = err
+          callbackResult = result
+        }
         callback?.(err, result)
       },
-      config: event.Records[0].cf.config,
-      request: event.Records[0].cf.request,
-      response: event.Records[0].cf.response,
+      config: cf.config,
+      request: cf.request,
+      response: cf.response,
     })
-    return createResult(res)
+    if (callbackError) {
+      throw callbackError
+    }
+    return callbackResult ?? createResult(res)
   }
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  const contentEncoding = res.headers.get('content-encoding')
+  const isBase64Encoded =
+    isContentTypeBinary(res.headers.get('content-type') || '') ||
+    (!!contentEncoding && !/^identity$/i.test(contentEncoding))
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
   return {
@@ -149,21 +161,38 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
   }
 }
 
-const createRequest = (event: CloudFrontEdgeEvent): Request => {
-  const queryString = event.Records[0].cf.request.querystring
-  const host =
-    event.Records[0].cf.request.headers?.host?.[0]?.value ||
-    event.Records[0].cf.config.distributionDomainName
-  const urlPath = `https://${host}${event.Records[0].cf.request.uri}`
+/**
+ * Reads the CloudFront record out of a Lambda@Edge event.
+ *
+ * The event is supplied by the runtime, so a malformed one means the function
+ * was invoked with something other than a Lambda@Edge event. Fail with a
+ * message naming the adapter and the missing field, rather than letting an
+ * unattributable property access error escape.
+ */
+const getCloudFrontRecord = (event: CloudFrontEdgeEvent): CloudFrontEvent['cf'] => {
+  const cf = event?.Records?.[0]?.cf
+  if (!cf?.request) {
+    throw new TypeError(
+      'Unable to map the CloudFront event to a Request: expected `Records[0].cf.request` in the Lambda@Edge event.'
+    )
+  }
+  return cf
+}
+
+const createRequest = (cf: CloudFrontEvent['cf']): Request => {
+  const request = cf.request
+  const queryString = request.querystring
+  const host = request.headers?.host?.[0]?.value || cf.config?.distributionDomainName
+  const urlPath = `https://${host}${request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
-  Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
+  Object.entries(request.headers ?? {}).forEach(([k, v]) => {
     v.forEach((header) => headers.append(k, header.value))
   })
 
-  const requestBody = event.Records[0].cf.request.body
-  const method = event.Records[0].cf.request.method
+  const requestBody = request.body
+  const method = request.method
   const rawBody = createBody(method, requestBody)
 
   let body: string | Uint8Array<ArrayBuffer> | undefined = rawBody
@@ -200,7 +229,11 @@ export const createBody = (
 }
 
 export const isContentTypeBinary = (contentType: string): boolean => {
-  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
+  if (/^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i.test(contentType)) {
+    return true
+  }
+
+  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/i.test(
     contentType
   )
 }

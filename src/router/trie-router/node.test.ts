@@ -37,6 +37,33 @@ describe('Get with * including JS reserved words', () => {
   })
 })
 
+describe('Get with a suffix wildcard', () => {
+  const node = new Node()
+  node.insert('get', '/assets*', 'assets')
+
+  it.each(['/assets', '/assets-v2', '/assets/app.js'])('matches %s', (path) => {
+    expect(node.search('get', path)[0]).toEqual([['assets', {}]])
+  })
+
+  it('does not match a shorter prefix', () => {
+    expect(node.search('get', '/asset')[0]).toEqual([])
+  })
+
+  it('treats regular expression characters in the prefix literally', () => {
+    const node = new Node()
+    node.insert('get', '/file.+*', 'file')
+    expect(node.search('get', '/file.+js')[0]).toEqual([['file', {}]])
+    expect(node.search('get', '/fileZZjs')[0]).toEqual([])
+  })
+
+  it('registers the pattern when its child already exists', () => {
+    const node = new Node()
+    node.insert('get', '/assets*/x', 'literal')
+    node.insert('get', '/assets*', 'assets')
+    expect(node.search('get', '/assets/app.js')[0]).toEqual([['assets', {}]])
+  })
+})
+
 describe('Basic Usage', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')
@@ -410,7 +437,7 @@ describe('Multi match', () => {
     const node = new Node()
     node.insert('get', '/regex-abc/:id{[0-9]+}/*', 'middleware a')
     node.insert('get', '/regex-abc/:id{[0-9]+}/def', 'regexp')
-    it('/regexp-abc/123/def', () => {
+    it('/regex-abc/123/def', () => {
       const [res] = node.search('get', '/regex-abc/123/def')
       expect(res.length).toBe(2)
       expect(res[0][0]).toEqual('middleware a')
@@ -418,10 +445,17 @@ describe('Multi match', () => {
       expect(res[1][0]).toEqual('regexp')
       expect(res[1][1]['id']).toBe('123')
     })
-    it('/regexp-abc/123', () => {
+    it('/regex-abc/123/ghi', () => {
       const [res] = node.search('get', '/regex-abc/123/ghi')
       expect(res.length).toBe(1)
       expect(res[0][0]).toEqual('middleware a')
+      expect(res[0][1]['id']).toBe('123')
+    })
+    it('/regex-abc/123', () => {
+      const [res] = node.search('get', '/regex-abc/123')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('middleware a')
+      expect(res[0][1]['id']).toBe('123')
     })
   })
   describe('Trailing slash', () => {
@@ -805,12 +839,31 @@ describe('The same name is used for path params', () => {
   })
 })
 
-describe('Node with initial method and handler', () => {
-  it('should create a node with method and handler via constructor', () => {
-    const node = new Node('get', 'initial handler')
-    node.insert('get', '/hello', 'hello handler')
-    const [res] = node.search('get', '/hello')
-    expect(res.length).toBe(1)
-    expect(res[0][0]).toEqual('hello handler')
+describe('Pattern spanning multiple parts', () => {
+  describe('followed by a wildcard', () => {
+    const node = new Node()
+    node.insert('get', '/:file{.*}/*', 'file')
+
+    it('should return the handler once per matching part count', () => {
+      for (const path of ['/a', '/a/b', '/a/b/c', '/a/b/c/d']) {
+        const [res] = node.search('get', path)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toEqual('file')
+      }
+    })
+  })
+
+  describe('followed by a static part', () => {
+    const node = new Node()
+    node.insert('get', '/:dirs{.+}/file.html', 'file.html')
+
+    it('should match however many parts the pattern spans', () => {
+      for (const dirs of ['foo', 'foo/bar', 'foo/bar/baz', 'a/b/c/d']) {
+        const [res] = node.search('get', `/${dirs}/file.html`)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toEqual('file.html')
+        expect(res[0][1]).toEqual({ dirs })
+      }
+    })
   })
 })

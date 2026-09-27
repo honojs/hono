@@ -1,7 +1,7 @@
+import { streamSSE } from '.'
 /** @jsxImportSource ../../jsx */
 import { Context } from '../../context'
-import { ErrorBoundary } from '../../jsx'
-import { streamSSE } from '.'
+import { ErrorBoundary, Suspense } from '../../jsx'
 
 describe('SSE Streaming helper', () => {
   const req = new Request('http://localhost/')
@@ -132,6 +132,39 @@ describe('SSE Streaming helper', () => {
     expect(decodedValue).toContain(expectedRetryValue)
   })
 
+  it('Should accept retry: 0 and not skip it', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'This is a test message',
+        retry: 0,
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    expect(decodedValue).toContain('retry: 0\n\n')
+  })
+
+  it('Should emit an empty id to reset Last-Event-ID', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'reset',
+        id: '',
+      })
+    })
+
+    expect(await res.text()).toBe('data: reset\nid: \n\n')
+  })
+
   it('Check stream Response if error occurred', async () => {
     const onError = vi.fn()
     const res = streamSSE(
@@ -237,6 +270,132 @@ describe('SSE Streaming helper', () => {
     const { value } = await reader.read()
     const decodedValue = decoder.decode(value)
     expect(decodedValue).toBe('data: <div>Error</div>\n\n')
+  })
+
+  it('Check streamSSE Response via Suspense with a multi-line fallback', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>Async Hello</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <Suspense fallback={<div>{'Loading...\nPlease wait'}</div>}>
+            <AsyncComponent />
+          </Suspense>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary with multi-line content', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>{'Async\nHello'}</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AsyncComponent />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async\ndata: Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via sibling Suspense boundaries with multi-line fallbacks', async () => {
+    const One = async () => Promise.resolve(<div>One</div>)
+    const Two = async () => Promise.resolve(<div>Two</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <div>
+            <Suspense fallback={<div>{'Loading1...\nwait'}</div>}>
+              <One />
+            </Suspense>
+            <Suspense fallback={<div>{'Loading2...\nwait'}</div>}>
+              <Two />
+            </Suspense>
+          </div>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let decodedValue = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      decodedValue += decoder.decode(value)
+    }
+    expect(decodedValue).toBe('data: <div><div>One</div><div>Two</div></div>\n\n')
+  })
+
+  it('Check streamSSE Response via nested Suspense boundaries with multi-line fallback and content', async () => {
+    const Inner = async () => Promise.resolve(<div>{'Inner\nContent'}</div>)
+    const Outer = async () =>
+      Promise.resolve(
+        <Suspense fallback={<div>{'B\nb'}</div>}>
+          <Inner />
+        </Suspense>
+      )
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <Suspense fallback={<div>{'A\na'}</div>}>
+            <Outer />
+          </Suspense>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let decodedValue = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      decodedValue += decoder.decode(value)
+    }
+    expect(decodedValue).toBe('data: <div>Inner\ndata: Content</div>\n\n')
   })
 
   it('Check streamSSE handles \\r (CR) line ending correctly', async () => {

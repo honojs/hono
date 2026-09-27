@@ -7,7 +7,8 @@ const router = new KoaRouter()
 
 for (const route of routes) {
   if (route.method === 'GET') {
-    router.get(route.path.replace('*', '(.*)'), handler)
+    // path-to-regexp v8 (koa-router 14) requires named wildcards
+    router.get(route.path.replace(/\/\*$/, '/*splat'), handler)
   } else {
     router.post(route.path, handler)
   }

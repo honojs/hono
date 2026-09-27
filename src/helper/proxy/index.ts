@@ -116,7 +116,7 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  * Fetch API wrapper for proxy.
  * The parameters and return value are the same as for `fetch` (except for the proxy-specific options).
  *
- * The “Accept-Encoding” header is replaced with an encoding that the current runtime can handle.
+ * The "Accept-Encoding" header is replaced with an encoding that the current runtime can handle.
  * Unnecessary response headers are deleted and a Response object is returned that can be returned
  * as is as a response from the handler.
  *
@@ -173,6 +173,18 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
 
   const res = await (customFetch || fetch)(req)
   const resHeaders = new Headers(res.headers)
+
+  // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
+  // Remove headers listed in the response's own Connection header (MUST per RFC 9110)
+  const connectionValue = resHeaders.get('connection')
+  if (connectionValue) {
+    connectionValue
+      .split(',')
+      .map((h) => h.trim())
+      .filter((h) => ALLOWED_TOKEN_PATTERN.test(h))
+      .forEach((h) => resHeaders.delete(h))
+  }
+
   hopByHopHeaders.forEach((header) => {
     resHeaders.delete(header)
   })

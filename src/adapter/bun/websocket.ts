@@ -62,7 +62,9 @@ export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c,
     data: {
       events,
       url: new URL(c.req.url),
-      protocol: c.req.url,
+      // The first requested subprotocol, exposed via WSContext.protocol to
+      // match the deno and cloudflare adapters.
+      protocol: c.req.header('sec-websocket-protocol')?.split(',')[0]?.trim() ?? '',
     },
   })
   if (upgradeResult) {

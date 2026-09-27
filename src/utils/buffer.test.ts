@@ -117,6 +117,20 @@ describe('bufferToFormData', () => {
     expect(result.get('test')).toBe('Hello')
   })
 
+  it('Should parse mixed-case multipart/form-data media type while keeping the boundary', async () => {
+    const encoder = new TextEncoder()
+    const testData =
+      '--sampleBoundary\r\nContent-Disposition: form-data; name="test"\r\n\r\nHello\r\n--sampleBoundary--'
+    const arrayBuffer = encoder.encode(testData).buffer
+
+    const result = await bufferToFormData(
+      arrayBuffer,
+      'Multipart/Form-Data; boundary=sampleBoundary'
+    )
+
+    expect(result.get('test')).toBe('Hello')
+  })
+
   it('Should parse application/x-www-form-urlencoded from ArrayBuffer', async () => {
     const encoder = new TextEncoder()
     const searchParams = new URLSearchParams()

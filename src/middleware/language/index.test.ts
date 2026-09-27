@@ -1,6 +1,6 @@
-import { Hono } from '../../hono'
-import { detectors } from './language'
 import { languageDetector } from '.'
+import { Hono } from '../../hono'
+import { DEFAULT_OPTIONS, detectors, normalizeLanguage } from './language'
 
 describe('languageDetector', () => {
   const createTestApp = (options = {}) => {
@@ -92,10 +92,69 @@ describe('languageDetector', () => {
       expect(await res.text()).toBe('ja')
     })
 
+    it('should not detect a language explicitly rejected with q=0', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should skip q=0 languages before falling back to the default', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en'],
+        fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'fr;q=0,de;q=0.8',
+        },
+      })
+      expect(await res.text()).toBe('en')
+    })
+
+    it('should continue to the next detector after a zero-quality language', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['fr', 'en', 'ja'],
+        fallbackLanguage: 'en',
+        order: ['header', 'querystring'],
+      })
+
+      const res = await app.request('/?lang=ja', {
+        headers: { 'accept-language': 'fr;q=0' },
+      })
+      expect(await res.text()).toBe('ja')
+      expect(res.headers.get('set-cookie')).toContain('language=ja')
+    })
+
     it('should match after multiple truncations', async () => {
       const app = createTestApp({
         supportedLanguages: ['zh-Hant', 'en'],
         fallbackLanguage: 'en',
+        order: ['header'],
+      })
+
+      const res = await app.request('/', {
+        headers: {
+          'accept-language': 'zh-Hant-CN',
+        },
+      })
+      expect(await res.text()).toBe('zh-Hant')
+    })
+
+    it('should select the longest truncated match regardless of supported language order', async () => {
+      const app = createTestApp({
+        supportedLanguages: ['zh', 'zh-Hant'],
+        fallbackLanguage: 'zh',
         order: ['header'],
       })
 
@@ -182,6 +241,28 @@ describe('languageDetector', () => {
       })
 
       expect(await res.text()).toBe('en')
+    })
+  })
+
+  describe('Language Normalization', () => {
+    it('should preserve the configured value for a case-insensitive truncated match', () => {
+      expect(
+        normalizeLanguage('zh-HANT-CN', {
+          ...DEFAULT_OPTIONS,
+          supportedLanguages: ['en', 'ZH-Hant'],
+        })
+      ).toBe('ZH-Hant')
+    })
+
+    it('should handle a large unsupported language tag', () => {
+      const unsupportedLanguage = 'x-'.repeat(30_000).slice(0, -1)
+
+      expect(
+        normalizeLanguage(unsupportedLanguage, {
+          ...DEFAULT_OPTIONS,
+          supportedLanguages: ['en', 'ja'],
+        })
+      ).toBeUndefined()
     })
   })
 

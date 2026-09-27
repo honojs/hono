@@ -1,6 +1,6 @@
+import { compress } from '.'
 import { stream, streamSSE } from '../../helper/streaming'
 import { Hono } from '../../hono'
-import { compress } from '.'
 
 describe('Compress Middleware', () => {
   const app = new Hono()
@@ -57,6 +57,12 @@ describe('Compress Middleware', () => {
     c.header('Transfer-Encoding', 'chunked')
     c.header('Content-Length', '1024')
     return c.body(new Uint8Array(1024)) // Simulated chunked data
+  })
+  app.get('/partial', (c) => {
+    c.header('Content-Type', 'text/plain')
+    c.header('Content-Length', '1024')
+    c.header('Content-Range', 'bytes 0-1023/2048')
+    return c.body('a'.repeat(1024), 206)
   })
   app.get('/stream', (c) =>
     stream(c, async (stream) => {
@@ -157,6 +163,14 @@ describe('Compress Middleware', () => {
       expect(res.headers.get('Content-Length')).toBe('1024')
       expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
     })
+
+    it('should not compress 206 Partial Content responses', async () => {
+      const res = await testCompression('/partial', 'gzip', null)
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-1023/2048')
+      expect(await res.text()).toBe('a'.repeat(1024))
+    })
   })
 
   describe('JSON Handling', () => {
@@ -242,6 +256,93 @@ describe('Compress Middleware', () => {
       })
       expect(res.headers.get('Content-Encoding')).toBe('gzip')
       expect(res.headers.get('ETag')).toBeNull()
+    })
+  })
+
+  describe('Vary Header', () => {
+    const app = new Hono()
+    app.use('*', compress())
+    app.get('/no-vary', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/existing-vary', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('Vary', 'Cookie')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/already-accept-encoding', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('Vary', 'Accept-Encoding')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/wildcard-vary', (c) => {
+      c.header('Content-Type', 'text/plain')
+      c.header('Content-Length', '1024')
+      c.header('Vary', '*')
+      return c.text('a'.repeat(1024))
+    })
+    app.get('/not-compressible', (c) => {
+      c.header('Content-Type', 'image/png')
+      c.header('Content-Length', '1024')
+      return c.body('a'.repeat(1024))
+    })
+
+    it('should set Vary: Accept-Encoding when compressing', async () => {
+      const res = await app.request('/no-vary', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should append Accept-Encoding to an existing Vary header', async () => {
+      const res = await app.request('/existing-vary', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('Cookie, Accept-Encoding')
+    })
+
+    it('should not duplicate Accept-Encoding when Vary already lists it', async () => {
+      const res = await app.request('/already-accept-encoding', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should leave Vary: * unchanged', async () => {
+      const res = await app.request('/wildcard-vary', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Vary')).toBe('*')
+    })
+
+    it('should set Vary on an identity response when Accept-Encoding is absent', async () => {
+      const res = await app.request('/no-vary')
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should set Vary on an identity response when no offered encoding is accepted', async () => {
+      const res = await app.request('/no-vary', {
+        headers: { 'Accept-Encoding': 'br' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    })
+
+    it('should not add a Vary header when the response is not eligible for compression', async () => {
+      const res = await app.request('/not-compressible', {
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBeNull()
     })
   })
 

@@ -46,7 +46,7 @@ export type JSONValue = JSONObject | JSONArray | JSONPrimitive
  * `JSON.stringify()` throws a `TypeError` when it encounters a `bigint` value,
  * unless a custom `replacer` function or `.toJSON()` method is provided.
  *
- * This behaviour can be controlled by the `TError` generic type parameter,
+ * This behavior can be controlled by the `TError` generic type parameter,
  * which defaults to `bigint | ReadonlyArray<bigint>`.
  * You can set it to `never` to disable this check.
  */
@@ -63,16 +63,20 @@ export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
     : T extends InvalidJSONValue
       ? never
       : T extends ReadonlyArray<unknown>
-        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> }
+        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> } extends infer A
+          ? A extends ReadonlyArray<unknown>
+            ? A // plain array or tuple; the mapped type preserves array-ness
+            : JSONParsed<InvalidToNull<T[number]>, TError>[] // array with extra properties; JSON.stringify drops them
+          : never
         : T extends Set<unknown> | Map<unknown, unknown> | Record<string, never>
           ? {}
           : T extends object
             ? T[keyof T] extends TError
               ? never
               : {
-                  [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
-                    ? never
-                    : K]: boolean extends IsInvalid<T[K]>
+                  [
+                    K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true ? never : K
+                  ]: boolean extends IsInvalid<T[K]>
                     ? JSONParsed<T[K], TError> | undefined
                     : JSONParsed<T[K], TError>
                 }

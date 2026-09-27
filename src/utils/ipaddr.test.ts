@@ -27,6 +27,9 @@ describe('expandIPv6', () => {
     expect(expandIPv6('2001:2::')).toBe('2001:0002:0000:0000:0000:0000:0000:0000')
     expect(expandIPv6('2001:0:0:db8::1')).toBe('2001:0000:0000:0db8:0000:0000:0000:0001')
     expect(expandIPv6('::ffff:127.0.0.1')).toBe('0000:0000:0000:0000:0000:ffff:7f00:0001')
+    expect(expandIPv6('::ffff:0.0.0.1')).toBe('0000:0000:0000:0000:0000:ffff:0000:0001')
+    expect(expandIPv6('2001:db8:1:2:3:4:0.0.0.1')).toBe('2001:0db8:0001:0002:0003:0004:0000:0001')
+    expect(expandIPv6('::0.0.0.0')).toBe('0000:0000:0000:0000:0000:0000:0000:0000')
   })
 
   it('Should expand the unspecified address "::" to eight zero groups', () => {

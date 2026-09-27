@@ -6,6 +6,7 @@
 import { raw } from '../../helper/html'
 import { DOM_RENDERER } from '../../jsx/constants'
 import { createCssJsxDomObjects } from '../../jsx/dom/css'
+import { escapeToBuffer } from '../../utils/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import type {
   ClassNameSlug,
@@ -145,7 +146,16 @@ export const createCssContext = ({
       return Promise.resolve(raw('', [appendStyle]))
     }
 
-    const className = new String(cssClassName[CLASS_NAME]) as CssClassName
+    // external class names from cx() are untrusted but the result is marked isEscaped,
+    // so escape it here. skip the buffer when there is nothing to escape.
+    const rawClassName = cssClassName[CLASS_NAME]
+    let escapedClassName = rawClassName
+    if (/[&<>'"]/.test(rawClassName)) {
+      const escapedBuffer: [string] = ['']
+      escapeToBuffer(rawClassName, escapedBuffer)
+      escapedClassName = escapedBuffer[0]
+    }
+    const className = new String(escapedClassName) as CssClassName
     Object.assign(className, cssClassName)
     ;(className as HtmlEscapedString).isEscaped = true
     ;(className as HtmlEscapedString).callbacks = [addClassNameToContext]

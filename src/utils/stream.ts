@@ -77,8 +77,11 @@ export class StreamingApi {
 
   async pipe(body: ReadableStream) {
     this.writer.releaseLock()
-    await body.pipeTo(this.writable, { preventClose: true })
-    this.writer = this.writable.getWriter()
+    try {
+      await body.pipeTo(this.writable, { preventClose: true, preventAbort: true })
+    } finally {
+      this.writer = this.writable.getWriter()
+    }
   }
 
   onAbort(listener: () => void | Promise<void>) {
@@ -92,7 +95,13 @@ export class StreamingApi {
   abort() {
     if (!this.aborted) {
       this.aborted = true
-      this.abortSubscribers.forEach((subscriber) => subscriber())
+      this.abortSubscribers.forEach((subscriber) => {
+        try {
+          void Promise.resolve(subscriber()).catch(() => {})
+        } catch {
+          // Ignore synchronous listener errors.
+        }
+      })
     }
   }
 }

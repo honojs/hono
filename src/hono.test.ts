@@ -473,6 +473,20 @@ describe('Routing', () => {
     expect(await res.text()).toBe('get /add-path-after-route-call')
   })
 
+  it('Should match a suffix wildcard after falling back to TrieRouter', async () => {
+    const app = new Hono()
+    const sub = new Hono()
+    sub.post('/items', (c) => c.text('items'))
+    sub.post('/:slug', (c) => c.text('slug'))
+    app.route('/api', sub)
+    app.get('/assets*', (c) => c.text('asset'))
+
+    const res = await app.request('http://localhost/assets/app.js')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('asset')
+    expect(app.router.name).toBe('SmartRouter + TrieRouter')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')
@@ -2076,6 +2090,47 @@ describe('Multiple methods with `app.on`', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(404)
+  })
+})
+
+describe('Using QUERY with `app.query` and `app.on`', () => {
+  it('Should handle QUERY method with app.query()', async () => {
+    const app = new Hono()
+
+    app.query('/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle QUERY method with RegExpRouter', async () => {
+    const app = new Hono({ router: new RegExpRouter() })
+
+    app.on('QUERY', '/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle QUERY method with TrieRouter', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+
+    app.on('QUERY', '/query', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/query', {
+      method: 'QUERY',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
   })
 })
 

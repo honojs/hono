@@ -31,7 +31,8 @@ const stripWeak = (tag: string) => tag.replace(/^W\//, '')
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
   return (
-    ifNoneMatch != null && ifNoneMatch.split(/,\s*/).some((t) => stripWeak(t) === stripWeak(etag))
+    ifNoneMatch != null &&
+    ifNoneMatch.split(',').some((t) => stripWeak(t.trim()) === stripWeak(etag))
   )
 }
 
@@ -86,6 +87,13 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
 
     await next()
 
+    if (
+      !(c.req.method === 'GET' || c.req.method === 'HEAD' || c.req.method === 'QUERY') ||
+      !c.res.ok
+    ) {
+      return
+    }
+
     const res = c.res as Response
     let etag = res.headers.get('ETag')
 
@@ -104,7 +112,9 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
-    if (etagMatches(etag, ifNoneMatch)) {
+    const matched = ifNoneMatch === '*' || etagMatches(etag, ifNoneMatch)
+
+    if (matched) {
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
@@ -112,11 +122,11 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
           ETag: etag,
         },
       })
-      c.res.headers.forEach((_, key) => {
+      for (const key of Array.from(c.res.headers.keys())) {
         if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {
           c.res.headers.delete(key)
         }
-      })
+      }
     } else {
       c.res.headers.set('ETag', etag)
     }

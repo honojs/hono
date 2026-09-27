@@ -321,7 +321,8 @@ export const saveContentToFile = async (
   const filePath = generateFilePath(routePath, outDir, mimeType, extensionMap)
   const dirPath = dirname(filePath)
 
-  if (!createdDirs.has(dirPath)) {
+  // `dirPath` is empty when outDir itself is the current directory
+  if (dirPath !== '' && !createdDirs.has(dirPath)) {
     await fsModule.mkdir(dirPath, { recursive: true })
     createdDirs.add(dirPath)
   }

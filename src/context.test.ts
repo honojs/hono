@@ -129,6 +129,16 @@ describe('Context', () => {
     })
   })
 
+  it('c.body() - Blob', async () => {
+    const res = c.body(new Blob(['Hi']))
+    expect(await res.text()).toBe('Hi')
+  })
+
+  it('c.body() - File', async () => {
+    const res = c.body(new File(['Hi'], 'greeting.txt'))
+    expect(await res.text()).toBe('Hi')
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
@@ -142,6 +152,13 @@ describe('Context', () => {
     const res = c.body('Hi')
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar, Buzz')
+  })
+
+  it('c.set() and c.get() with symbol key', () => {
+    const sym = Symbol('key')
+    expect(c.get(sym)).toBe(undefined)
+    c.set(sym, 'value')
+    expect(c.get(sym)).toBe('value')
   })
 
   it('c.set() and c.get()', async () => {
@@ -491,6 +508,21 @@ describe('Context header', () => {
       'X-Test': [],
     })
     expect(res.headers.get('X-Test')).toBeNull()
+  })
+
+  it('Should override the default Content-Type even if the header name casing differs', async () => {
+    const res = c.json({ type: 'urn:example:error' }, 400, {
+      'content-type': 'application/problem+json',
+    })
+    expect(res.headers.get('Content-Type')).toBe('application/problem+json')
+  })
+
+  it('Should apply the last value when header names differ only in casing', async () => {
+    const res = c.body('foo', 200, {
+      'X-Custom': 'first',
+      'x-custom': 'second',
+    })
+    expect(res.headers.get('X-Custom')).toBe('second')
   })
 })
 

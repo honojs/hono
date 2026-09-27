@@ -1,43 +1,42 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
-import { jsx, Fragment } from './base'
+import type { Child, FC, PropsWithChildren } from './'
+import { jsx, Fragment, isUntrustedObject, renderChildren, renderUntrustedObject } from './base'
 import { DOM_RENDERER } from './constants'
-import { useContext } from './context'
+import { captureRenderContext, useContext } from './context'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
 import { StreamingContext } from './streaming'
-import type { Child, FC, PropsWithChildren } from './'
 
 let errorBoundaryCounter = 0
 
 export const childrenToString = async (children: Child[]): Promise<HtmlEscapedString[]> => {
   try {
-    return children
-      .flat()
-      .map((c) => (c == null || typeof c === 'boolean' ? '' : c.toString())) as HtmlEscapedString[]
+    return children.flat().map(resolveChildEarly) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
+      // Capture before `await`: on the fallback path the render context is
+      // only observable during this synchronous window.
+      const resume = captureRenderContext()
       await e
-      return childrenToString(children)
+      return resume(() => childrenToString(children))
     } else {
       throw e
     }
   }
 }
 
-const resolveChildEarly = (c: Child): HtmlEscapedString | Promise<HtmlEscapedString> => {
-  if (c == null || typeof c === 'boolean') {
+const resolveChildEarly = (child: Child): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  if (child == null || typeof child === 'boolean') {
     return '' as HtmlEscapedString
-  } else if (typeof c === 'string') {
-    return c as HtmlEscapedString
+  } else if (typeof child === 'string' || Array.isArray(child)) {
+    return renderChildren([child])
+  } else if (isUntrustedObject(child)) {
+    return renderUntrustedObject(child)
   } else {
-    const str = c.toString()
-    if (!(str instanceof Promise)) {
-      return raw(str)
-    } else {
-      return str as Promise<HtmlEscapedString>
-    }
+    const str = child.toString()
+    return str instanceof Promise ? (str as Promise<HtmlEscapedString>) : raw(str)
   }
 }
 
@@ -66,58 +65,83 @@ export const ErrorBoundary: FC<
 
   const nonce = useContext(StreamingContext)?.scriptNonce
 
-  let fallbackStr: string | undefined
-  const resolveFallbackStr = async () => {
-    const awaitedFallback = await fallback
-    if (typeof awaitedFallback === 'string') {
-      fallbackStr = awaitedFallback
-    } else {
-      fallbackStr = await awaitedFallback?.toString()
-      if (typeof fallbackStr === 'string') {
-        // should not apply `raw` if fallbackStr is undefined, null, or boolean
-        fallbackStr = raw(fallbackStr)
+  let resume: ReturnType<typeof captureRenderContext> | undefined
+  const getResume = () => (resume ||= captureRenderContext())
+
+  let fallbackStrPromise: Promise<HtmlEscapedString | string | undefined> | undefined
+  const resolveFallbackStr = (): Promise<HtmlEscapedString | string | undefined> =>
+    (fallbackStrPromise ||= (async () => {
+      const awaitedFallback = await fallback
+      if (awaitedFallback === null || awaitedFallback === undefined) {
+        return
       }
-    }
-  }
-  const fallbackRes = (error: Error): HtmlEscapedString | Promise<HtmlEscapedString> => {
-    onError?.(error)
-    return (fallbackStr ||
-      (fallbackRender && jsx(Fragment, {}, fallbackRender(error) as HtmlEscapedString)) ||
-      '') as HtmlEscapedString
+      if (typeof awaitedFallback === 'string' || Array.isArray(awaitedFallback)) {
+        return getResume()(() => renderChildren([awaitedFallback]))
+      }
+      if (isUntrustedObject(awaitedFallback)) {
+        return getResume()(() => renderUntrustedObject(awaitedFallback))
+      }
+      const fallbackResult = await getResume()(() => awaitedFallback.toString())
+      return raw(
+        fallbackResult,
+        (fallbackResult as HtmlEscapedString).callbacks ||
+          (awaitedFallback as unknown as HtmlEscapedString).callbacks
+      )
+    })())
+  const renderFallback = async (error: Error): Promise<HtmlEscapedString> => {
+    const fallbackStr = await resolveFallbackStr()
+    return getResume()(async () => {
+      onError?.(error)
+      const fallbackRes = (
+        fallbackStr !== undefined
+          ? fallbackStr
+          : (fallbackRender && jsx(Fragment, {}, fallbackRender(error) as HtmlEscapedString)) || ''
+      ) as HtmlEscapedString
+      const fallbackResString = await Fragment({ children: fallbackRes }).toString()
+      return raw(
+        fallbackResString,
+        (fallbackResString as HtmlEscapedString).callbacks || fallbackRes.callbacks
+      )
+    })
   }
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
     resArray = children.map(resolveChildEarly) as unknown as HtmlEscapedString[]
   } catch (e) {
-    await resolveFallbackStr()
+    const resume = getResume()
     if (e instanceof Promise) {
       resArray = [
-        e.then(() => childrenToString(children as Child[])).catch((e) => fallbackRes(e)),
+        e
+          .then(() => resume(() => childrenToString(children as Child[])))
+          .catch((e) => renderFallback(e)),
       ] as Promise<HtmlEscapedString[]>[]
     } else {
-      resArray = [fallbackRes(e as Error) as HtmlEscapedString]
+      resArray = [await renderFallback(e as Error)]
     }
   }
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
-    await resolveFallbackStr()
+    // Prime the context capture while still synchronous: a child that returned
+    // a Promise from `resolveChildEarly` skipped the `catch`, so the deferred
+    // `catchCallback` would otherwise capture too late.
+    getResume()
     const index = errorBoundaryCounter++
-    const replaceRe = RegExp(`(<template id="E:${index}"></template>.*?)(.*?)(<!--E:${index}-->)`)
-    const caught = false
+    const replaceRe = RegExp(`(<template id="E:${index}"></template>)(.*?)(<!--E:${index}-->)`, 's')
+    let caught = false
     const catchCallback = async ({ error, buffer }: { error: Error; buffer?: [string] }) => {
       if (caught) {
         return ''
       }
+      caught = true
 
-      const fallbackResString = await Fragment({
-        children: fallbackRes(error),
-      }).toString()
+      const fallbackResString = await renderFallback(error)
+      const fallbackCallbacks = fallbackResString.callbacks
       if (buffer) {
-        buffer[0] = buffer[0].replace(replaceRe, fallbackResString)
+        buffer[0] = buffer[0].replace(replaceRe, () => fallbackResString)
+        return fallbackCallbacks?.length ? raw('', fallbackCallbacks) : ''
       }
-      return buffer
-        ? ''
-        : `<template data-hono-target="E:${index}">${fallbackResString}</template><script>
+      return raw(
+        `<template data-hono-target="E:${index}">${fallbackResString}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -125,7 +149,9 @@ if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='E:${index}')
 d.replaceWith(c.content)
 })(document)
-</script>`
+</script>`,
+        fallbackCallbacks
+      )
     }
 
     let error: unknown
@@ -157,7 +183,7 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
 
             if (htmlArray.every((html) => !(html as HtmlEscapedString).callbacks?.length)) {
               if (buffer) {
-                buffer[0] = buffer[0].replace(replaceRe, content)
+                buffer[0] = buffer[0].replace(replaceRe, () => content)
               }
               return html
             }

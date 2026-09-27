@@ -10,7 +10,6 @@ import { Fragment, createContext, jsx, useContext } from '../../jsx'
 import type { FC, Context as JSXContext, JSXNode, PropsWithChildren } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
-import type { HtmlEscapedString } from '../../utils/html'
 
 export const RequestContext: JSXContext<Context<any, any, {}> | null> =
   createContext<Context | null>(null)
@@ -20,15 +19,14 @@ type RendererOptions = {
   stream?: boolean | Record<string, string>
 }
 
-type Component = (
-  props: PropsForRenderer & { Layout: FC },
-  c: Context
-) => HtmlEscapedString | Promise<HtmlEscapedString>
+type ComponentResult = Exclude<ReturnType<FC>, null>
+
+type Component = (props: PropsForRenderer & { Layout: FC }, c: Context) => ComponentResult
 
 type ComponentWithChildren = (
   props: PropsWithChildren<PropsForRenderer & { Layout: FC }>,
   c: Context
-) => HtmlEscapedString | Promise<HtmlEscapedString>
+) => ComponentResult
 
 const createRenderer =
   (

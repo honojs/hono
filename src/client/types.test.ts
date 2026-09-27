@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
+import { hc } from '.'
 import { Hono } from '..'
 import { upgradeWebSocket } from '../adapter/deno/websocket'
 import type { TypedURL } from './types'
-import { hc } from '.'
 
 describe('WebSockets', () => {
   const app = new Hono()
@@ -117,6 +117,7 @@ describe('app.all()', () => {
     expectTypeOf(client['all-route']).toHaveProperty('$delete')
     expectTypeOf(client['all-route']).toHaveProperty('$options')
     expectTypeOf(client['all-route']).toHaveProperty('$patch')
+    expectTypeOf(client['all-route']).toHaveProperty('$query')
   })
 
   it('should have correct return type for expanded methods', async () => {
