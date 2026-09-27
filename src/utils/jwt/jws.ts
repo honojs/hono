@@ -18,16 +18,32 @@ type KeyAlgorithm =
   | (EcdsaParams & EcKeyImportParams)
   | HmacImportParams
 
-// `kty` is required by RFC 7517, but is optional in the DOM JsonWebKey type.
-// Requiring it prevents unrelated objects (e.g. Promise<CryptoKey>) from being
-// accepted through broad index signatures in some runtime typings.
-// https://datatracker.ietf.org/doc/html/rfc7517#section-4.1
-export interface HonoJsonWebKey extends JsonWebKey {
-  kty: string
+// Declare the JWK members without depending on the DOM JsonWebKey global.
+// Keep them optional for compatibility with keys exported by Web Crypto.
+export interface HonoJsonWebKey {
+  alg?: string
+  crv?: string
+  d?: string
+  dp?: string
+  dq?: string
+  e?: string
+  ext?: boolean
+  k?: string
+  key_ops?: string[]
+  kty?: string
+  n?: string
+  oth?: { d?: string; r?: string; t?: string }[]
+  p?: string
+  q?: string
+  qi?: string
+  use?: string
+  x?: string
+  y?: string
   kid?: string
 }
 
-export type SignatureKey = string | HonoJsonWebKey | CryptoKey
+type RuntimeCryptoKey = Awaited<ReturnType<typeof crypto.subtle.importKey>>
+export type SignatureKey = string | HonoJsonWebKey | RuntimeCryptoKey
 
 export async function signing(
   privateKey: SignatureKey,
