@@ -49,9 +49,14 @@ At the end the script prints a release-note draft built from the commits that to
 1. Copy `adapters/bun` as `adapters/<name>` and adjust `package.json` (`name`, `description`) and the sources.
 2. The workspace picks it up automatically (`pnpm-workspace.yaml` has `adapters/*`).
 3. Add it to the corresponding `src/adapter/<name>` with `@deprecated` on each export, pointing to the new package.
-4. **First publish is manual.** npm only allows a Trusted Publisher on a package that already exists:
-   1. Set the version in `adapters/<name>/package.json` and merge it.
-   2. Build it: `pnpm --filter @hono/<name> run build` (`pnpm publish` does not build).
-   3. In `adapters/<name>`, run `pnpm publish --access public` with your npm 2FA.
-   4. On npmjs.com, open the package settings and add a Trusted Publisher: repository `honojs/hono`, workflow `release.yml`.
+4. **First publish is manual.** See below.
 5. From the second release on, use `pnpm run release:adapter <name> <bump>`.
+
+#### First publish of a new adapter
+
+npm only allows a Trusted Publisher on a package that already exists, so the first version is published from a maintainer's machine:
+
+1. Set the version in `adapters/<name>/package.json` and merge it.
+2. Build it: `pnpm --filter @hono/<name> run build` (`pnpm publish` does not build).
+3. In `adapters/<name>`, run `pnpm publish --access public` with your npm 2FA.
+4. On npmjs.com, open the package settings and add a Trusted Publisher: repository `honojs/hono`, workflow `release.yml`.
