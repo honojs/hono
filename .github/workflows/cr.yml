@@ -42,8 +42,6 @@ jobs:
         with:
           node-version-file: '.tool-versions'
 
-      - name: Install Dependencies
-
       - name: Build
         run: pnpm run build
 
