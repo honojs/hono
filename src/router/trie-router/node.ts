@@ -112,9 +112,13 @@ export class Node<T> {
             if (nextNode.#children['*']) {
               this.#pushHandlerSets(handlerSets, nextNode.#children['*'], method, node.#params)
             }
-            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
+            if (!nextNode.#pattern) {
+              this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
+            }
           } else {
-            tempNodes.push(nextNode)
+            if (!nextNode.#pattern) {
+              tempNodes.push(nextNode)
+            }
           }
         }
 
