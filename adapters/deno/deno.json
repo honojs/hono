@@ -1,0 +1,23 @@
+{
+  "name": "@hono/deno",
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": "./src/index.ts",
+  "imports": {
+    "hono": "jsr:@hono/hono@^4.13.9",
+    "hono/types": "jsr:@hono/hono@^4.13.9/types",
+    "hono/conninfo": "jsr:@hono/hono@^4.13.9/conninfo",
+    "hono/serve-static": "jsr:@hono/hono@^4.13.9/serve-static",
+    "hono/ssg": "jsr:@hono/hono@^4.13.9/ssg",
+    "hono/ws": "jsr:@hono/hono@^4.13.9/ws"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "README.md"
+    ],
+    "exclude": [
+      "src/**/*.test.ts"
+    ]
+  }
+}

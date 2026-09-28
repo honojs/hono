@@ -9,7 +9,7 @@
  * the adapter since its previous tag, with a link to create a GitHub Release.
  */
 import { execSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const [name, bump] = process.argv.slice(2)
@@ -49,6 +49,15 @@ run(`npm version ${bump} --no-git-tag-version`, dir)
 
 const version: string = JSON.parse(readFileSync(pkgPath, 'utf8')).version
 const tag = `${pkgName}@${version}`
+
+// Adapters published to JSR keep their version in deno.json too.
+const denoJsonPath = join(dir, 'deno.json')
+if (existsSync(denoJsonPath)) {
+  const denoJson = JSON.parse(readFileSync(denoJsonPath, 'utf8'))
+  denoJson.version = version
+  writeFileSync(denoJsonPath, JSON.stringify(denoJson, null, 2) + '\n')
+  run(`git add ${denoJsonPath}`)
+}
 
 run(`git add ${pkgPath}`)
 run(`git commit -m "chore(adapters): release ${tag}"`)

@@ -253,6 +253,9 @@ importers:
 
   adapters/deno:
     devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.13.6
       hono:
         specifier: workspace:*
         version: link:../..

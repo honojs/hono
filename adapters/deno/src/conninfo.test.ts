@@ -1,5 +1,5 @@
 import { Context } from 'hono'
-import { getConnInfo } from './conninfo'
+import { getConnInfo } from './conninfo.ts'
 
 describe('getConnInfo', () => {
   it('Should info is valid', () => {
