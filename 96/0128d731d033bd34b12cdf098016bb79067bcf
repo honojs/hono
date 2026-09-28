@@ -1,0 +1,67 @@
+.github/workflows/ci-adapters.yml
+  s_a34d594424e4c1::t_092d8ad5fe7ce3 49-52
+adapters/aws-lambda/test/index.test.ts
+  s_a34d594424e4c1::t_0c11b871859956 2-5,13,19,25
+adapters/aws-lambda/test/mock.ts
+  s_a34d594424e4c1::t_5e002c1b3c7b9e 2-3
+adapters/aws-lambda/test/stream-backpressure.test.ts
+  s_a34d594424e4c1::t_9cb3e44deec151 2-4
+adapters/aws-lambda/test/stream-mock.ts
+  s_a34d594424e4c1::t_ff6a3404383936 3-4
+adapters/aws-lambda/test/stream.test.ts
+  s_a34d594424e4c1::t_b195f35da8a064 1-3,8
+adapters/aws-lambda/tsconfig.json
+  s_a34d594424e4c1::t_05c7434a65f1df 13-14
+adapters/bun/test/index.test.ts
+  s_a34d594424e4c1::t_d9f52293347e69 1-150
+adapters/bun/tsconfig.json
+  s_a34d594424e4c1::t_e23c57cc0a428d 6-8,11-14
+adapters/cloudflare-workers/package.json
+  s_a34d594424e4c1::t_d071491fb6763c 35-38
+adapters/cloudflare-workers/test/websocket.test.ts
+  s_a34d594424e4c1::t_b1ad78463671a9 1-38
+adapters/cloudflare-workers/test/worker.ts
+  s_a34d594424e4c1::t_bd007b1daffffc 1-2,4-10,12-15
+adapters/cloudflare-workers/tsconfig.json
+  s_a34d594424e4c1::t_14ae168b99cea6 13-14
+adapters/deno/package.json
+  s_a34d594424e4c1::t_10804695b08764 18-19
+adapters/deno/test/assert.ts
+  s_a34d594424e4c1::t_3dda9edac40843 1-11
+adapters/deno/test/deno.json
+  s_a34d594424e4c1::t_1e5f2ddd4d62f7 3-7,9-20
+adapters/deno/test/serve-static.test.ts
+  s_a34d594424e4c1::t_4181dfc58978fe 1-94
+adapters/deno/test/ssg.test.ts
+  s_a34d594424e4c1::t_9b429c8a2034d5 1-3,5-6,15-21,23
+adapters/deno/vite.config.ts
+  s_a34d594424e4c1::t_2c95a841d69438 14-15
+adapters/lambda-edge/test/index.test.ts
+  s_a34d594424e4c1::t_4d4c7f8f7e2e16 1-2,8-9
+adapters/lambda-edge/tsconfig.json
+  s_a34d594424e4c1::t_c88b2bd362d453 13-14
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_2abb47f6f47f88 55-57
+pnpm-lock.yaml
+  s_a34d594424e4c1::t_d09303f1267649 250-252,256-261
+runtime-tests/bun/index.test.tsx
+  s_a34d594424e4c1::t_c1dd3857852a07 1
+runtime-tests/deno/middleware.test.tsx
+  s_a34d594424e4c1::t_3f962d6ff94e8f 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "960128d731d033bd34b12cdf098016bb79067bcf",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
