@@ -901,6 +901,11 @@ describe('Pattern spanning multiple parts', () => {
       expect(res2.length).toBe(1)
       expect(res2[0][0]).toEqual('wildcard-param')
       expect(res2[0][1]).toEqual({ name: ':name' })
+
+      const [res3] = node.search('get', '/:name')
+      expect(res3.length).toBe(1)
+      expect(res3[0][0]).toEqual('wildcard-param')
+      expect(res3[0][1]).toEqual({ name: ':name' })
     })
   })
 })

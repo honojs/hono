@@ -105,20 +105,16 @@ export class Node<T> {
         const node = curNodes[j]
         const nextNode = node.#children[part]
 
-        if (nextNode) {
+        if (nextNode && !nextNode.#pattern) {
           nextNode.#params = node.#params
           if (isLast) {
             // '/hello/*' => match '/hello'
             if (nextNode.#children['*']) {
               this.#pushHandlerSets(handlerSets, nextNode.#children['*'], method, node.#params)
             }
-            if (!nextNode.#pattern) {
-              this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
-            }
+            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
           } else {
-            if (!nextNode.#pattern) {
-              tempNodes.push(nextNode)
-            }
+            tempNodes.push(nextNode)
           }
         }
 
