@@ -37,6 +37,57 @@ describe('concurrent execution', () => {
     expect(results).toEqual(expectedResults)
   })
 
+  describe('error handling', () => {
+    it('should release the slot and propagate the error when fn throws', async () => {
+      const pool = createPool({ concurrency: 1 })
+      await expect(pool.run(() => Promise.reject(new Error('boom')))).rejects.toThrow('boom')
+      // the slot must have been released so a following task can run
+      await expect(pool.run(() => Promise.resolve('ok'))).resolves.toBe('ok')
+    })
+
+    it('should reject the queued promise instead of hanging', async () => {
+      const pool = createPool({ concurrency: 1 })
+      let unblock!: () => void
+      const blocker = new Promise<void>((r) => (unblock = r))
+
+      const first = pool.run(() => blocker)
+      const failing = pool.run(() => Promise.reject(new Error('queued boom')))
+      const after = pool.run(() => Promise.resolve('after'))
+
+      unblock()
+      await first
+      await expect(failing).rejects.toThrow('queued boom')
+      await expect(after).resolves.toBe('after')
+    })
+
+    it('should not produce an unhandled rejection for a failing queued task', async () => {
+      const pool = createPool({ concurrency: 1 })
+      const unhandled = vi.fn()
+      process.on('unhandledRejection', unhandled)
+      try {
+        let unblock!: () => void
+        const blocker = new Promise<void>((r) => (unblock = r))
+
+        const first = pool.run(() => blocker)
+        const failing = pool.run(() => Promise.reject(new Error('queued boom')))
+
+        unblock()
+        await first
+        await expect(failing).rejects.toThrow('queued boom')
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        expect(unhandled).not.toHaveBeenCalled()
+      } finally {
+        process.off('unhandledRejection', unhandled)
+      }
+    })
+
+    it('should release the slot on failure when interval is set', async () => {
+      const pool = createPool({ concurrency: 1, interval: 5 })
+      await expect(pool.run(() => Promise.reject(new Error('boom')))).rejects.toThrow('boom')
+      await expect(pool.run(() => Promise.resolve('ok'))).resolves.toBe('ok')
+    })
+  })
+
   describe('with interval', () => {
     test.each`
       concurrency | interval
