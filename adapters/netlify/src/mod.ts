@@ -1,2 +1,2 @@
-export { handle } from './handler'
-export { getConnInfo } from './conninfo'
+export { handle } from './handler.ts'
+export { getConnInfo } from './conninfo.ts'
