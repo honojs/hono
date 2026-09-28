@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
-import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
+import type { LambdaEvent } from '../src/handler'
+import type { LambdaContext } from '../src/types'
 
 type StreamifyResponseHandler = (
   handlerFunc: (

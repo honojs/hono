@@ -2,10 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "ES2020",
-    "rootDir": "./src/",
     "outDir": "./dist/",
-    "types": ["bun-types"],
+    "types": [
+      "bun-types"
+    ],
     "noEmit": true
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
 }
