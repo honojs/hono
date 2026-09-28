@@ -3,20 +3,18 @@
   "version": "1.0.0",
   "description": "Bun adapter for Hono",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/types/index.d.ts",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/cjs/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "rm -rf dist && vp pack && cp ../../package.cjs.json dist/cjs/package.json && cp ../../package.cjs.json dist/types/package.json && publint",
+    "build": "rm -rf dist && vp pack && publint",
     "test": "tsc -p tsconfig.json && bun test"
   },
   "license": "MIT",

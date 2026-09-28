@@ -13,7 +13,7 @@ adapters/bun/
   src/            # imports hono via `hono`, `hono/ws`, ... (workspace link)
   src/*.test.ts   # runs with `bun test`
   package.json    # peerDependencies: hono >=x.y.z
-  vite.config.ts  # `vp pack` config, same three-pass layout as hono
+  vite.config.ts  # `vp pack` config (ESM only)
 ```
 
 ### Commands
