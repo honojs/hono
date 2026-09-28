@@ -1,6 +1,6 @@
 {
   "name": "@hono/deno",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Deno adapter for Hono",
   "type": "module",
   "types": "./dist/index.d.ts",
