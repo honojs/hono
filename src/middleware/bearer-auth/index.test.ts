@@ -1016,3 +1016,49 @@ describe('Bearer Auth options validation', () => {
     }).toThrow('bearer auth middleware requires options for "token" or "verifyToken"')
   })
 })
+
+describe('Bearer Auth with realm', () => {
+  it('Should escape double quotes in realm parameter in WWW-Authenticate header', async () => {
+    const app = new Hono()
+    app.use('/auth/*', bearerAuth({ token: 'test-token', realm: 'Hono "Admin" Area' }))
+    app.get('/auth/*', (c) => c.text('auth'))
+
+    const res = await app.request('http://localhost/auth/page')
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer realm="Hono \\"Admin\\" Area"')
+  })
+
+  it('Should support realm without quotes', async () => {
+    const app = new Hono()
+    app.use('/auth/*', bearerAuth({ token: 'test-token', realm: 'Admin Area' }))
+    app.get('/auth/*', (c) => c.text('auth'))
+
+    const res = await app.request('http://localhost/auth/page')
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer realm="Admin Area"')
+  })
+
+  it('Should handle empty realm by default', async () => {
+    const app = new Hono()
+    app.use('/auth/*', bearerAuth({ token: 'test-token' }))
+    app.get('/auth/*', (c) => c.text('auth'))
+
+    const res = await app.request('http://localhost/auth/page')
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer realm=""')
+  })
+
+  it('Should escape double quotes in realm with custom prefix', async () => {
+    const app = new Hono()
+    app.use(
+      '/auth/*',
+      bearerAuth({ token: 'test-token', prefix: 'Custom', realm: 'Hono "Admin" Area' })
+    )
+    app.get('/auth/*', (c) => c.text('auth'))
+
+    const res = await app.request('http://localhost/auth/page')
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Custom realm="Hono \\"Admin\\" Area"')
+  })
+})
+

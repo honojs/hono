@@ -114,7 +114,8 @@ export const bearerAuth = <E extends Env = Env>(
     options.prefix = PREFIX
   }
 
-  const realm = options.realm?.replace(/"/g, '\\"')
+  const realm = options.realm
+  const escapedRealm = realm.replace(/"/g, '\\"')
   const prefix = options.prefix
   const tokenRegexp = new RegExp(`^${TOKEN_STRINGS}$`)
   const wwwAuthenticatePrefix = prefix === '' ? '' : `${prefix} `
@@ -161,7 +162,7 @@ export const bearerAuth = <E extends Env = Env>(
         c,
         401,
         options.noAuthenticationHeader?.wwwAuthenticateHeader ||
-          `${wwwAuthenticatePrefix}realm="${realm}"`,
+          `${wwwAuthenticatePrefix}realm="${escapedRealm}"`,
         options.noAuthenticationHeader?.message ||
           options.noAuthenticationHeaderMessage ||
           'Unauthorized'
