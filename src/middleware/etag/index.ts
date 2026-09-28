@@ -78,7 +78,9 @@ function initializeGenerator(
  * ```
  */
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
-  const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
+  const retainedHeaders = (options?.retainedHeaders ?? RETAINED_304_HEADERS).map((header) =>
+    header.toLowerCase()
+  )
   const weak = options?.weak ?? false
   const generator = initializeGenerator(options?.generateDigest)
 

@@ -402,13 +402,14 @@ describe('Etag Middleware', () => {
     app.use(
       '/etag/*',
       etag({
-        retainedHeaders: ['x-message-retain', ...RETAINED_304_HEADERS],
+        retainedHeaders: ['x-message-retain', 'X-Message-Retain-Upper', ...RETAINED_304_HEADERS],
       })
     )
     app.get('/etag', (c) => {
       return c.text('Hono is hot', 200, {
         'cache-control': cacheControl,
         'x-message-retain': message,
+        'X-Message-Retain-Upper': message,
         'x-message': message,
       })
     })
@@ -422,6 +423,7 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
+    expect(res.headers.get('X-Message-Retain-Upper')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
   })
 
