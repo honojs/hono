@@ -1,0 +1,237 @@
+adapters/aws-lambda/README.md
+  s_a34d594424e4c1::t_6390f920fdb109 1-22
+adapters/aws-lambda/package.json
+  s_a34d594424e4c1::t_546a1f72a31c10 1-37
+adapters/aws-lambda/src/conninfo.test.ts
+  s_a34d594424e4c1::t_c9ceb5fc19740b 1-118
+adapters/aws-lambda/src/conninfo.ts
+  s_a34d594424e4c1::t_5f953ff9dc842e 1-73
+adapters/aws-lambda/src/handler.test.ts
+  s_a34d594424e4c1::t_0186339275b08a 1-678
+adapters/aws-lambda/src/handler.ts
+  s_a34d594424e4c1::t_d4eb3a52ac0337 1-682
+adapters/aws-lambda/src/index.ts
+  s_a34d594424e4c1::t_a7223dcd066ef7 1-14
+adapters/aws-lambda/src/types.ts
+  s_a34d594424e4c1::t_c8765995f42509 1-173
+adapters/aws-lambda/tsconfig.json
+  s_a34d594424e4c1::t_01f7f8a7a09525 1-16
+adapters/aws-lambda/vite.config.ts
+  s_a34d594424e4c1::t_471ca134097007 1-15
+adapters/cloudflare-pages/README.md
+  s_a34d594424e4c1::t_6bd7a914b6bd4c 1-22
+adapters/cloudflare-pages/package.json
+  s_a34d594424e4c1::t_51d4826ac00df6 1-37
+adapters/cloudflare-pages/src/conninfo.test.ts
+  s_a34d594424e4c1::t_4c8a27e5c486a4 1-27
+adapters/cloudflare-pages/src/conninfo.ts
+  s_a34d594424e4c1::t_620df34f5177ff 1-26
+adapters/cloudflare-pages/src/handler.test.ts
+  s_a34d594424e4c1::t_8a4e5f7c136bde 1-286
+adapters/cloudflare-pages/src/handler.ts
+  s_a34d594424e4c1::t_7bba6fe9dbd174 1-123
+adapters/cloudflare-pages/src/index.ts
+  s_a34d594424e4c1::t_82d32b575416d3 1-8
+adapters/cloudflare-pages/tsconfig.json
+  s_a34d594424e4c1::t_8325aa5118a06d 1-16
+adapters/cloudflare-pages/vite.config.ts
+  s_a34d594424e4c1::t_c631413198bdae 1-15
+adapters/cloudflare-workers/README.md
+  s_a34d594424e4c1::t_09cfc87c717410 1-22
+adapters/cloudflare-workers/package.json
+  s_a34d594424e4c1::t_2cc94901b23b23 1-37
+adapters/cloudflare-workers/src/conninfo.test.ts
+  s_a34d594424e4c1::t_40c54923fd2755 1-19
+adapters/cloudflare-workers/src/conninfo.ts
+  s_a34d594424e4c1::t_0f06c539fe856c 1-7
+adapters/cloudflare-workers/src/index.ts
+  s_a34d594424e4c1::t_bcfcada5ba6b42 1-8
+adapters/cloudflare-workers/src/serve-static-module.ts
+  s_a34d594424e4c1::t_ac4f152ef133a7 1-12
+adapters/cloudflare-workers/src/serve-static.test.ts
+  s_a34d594424e4c1::t_6d7bfeb6b8b01c 1-221
+adapters/cloudflare-workers/src/serve-static.ts
+  s_a34d594424e4c1::t_91ee2971afaf69 1-42
+adapters/cloudflare-workers/src/utils.test.ts
+  s_a34d594424e4c1::t_f3b8544f86c06c 1-33
+adapters/cloudflare-workers/src/utils.ts
+  s_a34d594424e4c1::t_f09f4949bf40a5 1-50
+adapters/cloudflare-workers/src/websocket.test.ts
+  s_a34d594424e4c1::t_2a57296f7b545b 1-161
+adapters/cloudflare-workers/src/websocket.ts
+  s_a34d594424e4c1::t_02deaef7349ca7 1-53
+adapters/cloudflare-workers/tsconfig.json
+  s_a34d594424e4c1::t_84f2de358f7315 1-16
+adapters/cloudflare-workers/vite.config.ts
+  s_a34d594424e4c1::t_cc46034dfc2052 1-15
+adapters/deno/README.md
+  s_a34d594424e4c1::t_72534eeb11c36c 1-22
+adapters/deno/package.json
+  s_a34d594424e4c1::t_ebbe22b9a4c51f 1-37
+adapters/deno/src/conninfo.test.ts
+  s_a34d594424e4c1::t_76088de60f6697 1-25
+adapters/deno/src/conninfo.ts
+  s_a34d594424e4c1::t_25f2a5f93a987c 1-17
+adapters/deno/src/deno.d.ts
+  s_a34d594424e4c1::t_a0356b5073de42 1-79
+adapters/deno/src/index.ts
+  s_a34d594424e4c1::t_db95f49f353b39 1-9
+adapters/deno/src/serve-static.ts
+  s_a34d594424e4c1::t_51069feeb765b8 1-42
+adapters/deno/src/ssg.ts
+  s_a34d594424e4c1::t_567da3f54ba456 1-27
+adapters/deno/src/websocket.test.ts
+  s_a34d594424e4c1::t_ec4ffaf537da99 1-161
+adapters/deno/src/websocket.ts
+  s_a34d594424e4c1::t_d79e68e29e176f 1-38
+adapters/deno/tsconfig.json
+  s_a34d594424e4c1::t_b8415af34257e9 1-16
+adapters/deno/vite.config.ts
+  s_a34d594424e4c1::t_67240809c0d598 1-15
+adapters/lambda-edge/README.md
+  s_a34d594424e4c1::t_f3586c7bd8648d 1-22
+adapters/lambda-edge/package.json
+  s_a34d594424e4c1::t_1a85b19ea9f7db 1-37
+adapters/lambda-edge/src/conninfo.test.ts
+  s_a34d594424e4c1::t_e45ffd81af9535 1-27
+adapters/lambda-edge/src/conninfo.ts
+  s_a34d594424e4c1::t_2bcc679b252d42 1-15
+adapters/lambda-edge/src/handler.test.ts
+  s_a34d594424e4c1::t_ce6f9d08d8d310 1-450
+adapters/lambda-edge/src/handler.ts
+  s_a34d594424e4c1::t_9164c1545eb369 1-239
+adapters/lambda-edge/src/index.ts
+  s_a34d594424e4c1::t_d9ed6720e545e9 1-14
+adapters/lambda-edge/tsconfig.json
+  s_a34d594424e4c1::t_3be76a24cb9fbe 1-16
+adapters/lambda-edge/vite.config.ts
+  s_a34d594424e4c1::t_7eed750ebdb7a2 1-15
+adapters/netlify/README.md
+  s_a34d594424e4c1::t_1110ddfdd6a102 1-22
+adapters/netlify/package.json
+  s_a34d594424e4c1::t_2e1186d0fd1fe5 1-37
+adapters/netlify/src/conninfo.test.ts
+  s_a34d594424e4c1::t_91b26d8ba3e39e 1-41
+adapters/netlify/src/conninfo.ts
+  s_a34d594424e4c1::t_269b746c0785b4 1-57
+adapters/netlify/src/handler.ts
+  s_a34d594424e4c1::t_a154a785c14543 1-10
+adapters/netlify/src/index.ts
+  s_a34d594424e4c1::t_08003f49e7a6b4 1-6
+adapters/netlify/src/mod.ts
+  s_a34d594424e4c1::t_8102805b5524ea 1-2
+adapters/netlify/tsconfig.json
+  s_a34d594424e4c1::t_f0837acabaeca4 1-16
+adapters/netlify/vite.config.ts
+  s_a34d594424e4c1::t_ca586bd8b926d0 1-15
+adapters/service-worker/README.md
+  s_a34d594424e4c1::t_06f4c6e9623d62 1-22
+adapters/service-worker/package.json
+  s_a34d594424e4c1::t_143659e5a05af8 1-37
+adapters/service-worker/src/handler.test.ts
+  s_a34d594424e4c1::t_f4e496f0516913 1-121
+adapters/service-worker/src/handler.ts
+  s_a34d594424e4c1::t_bfaec79c7f4993 1-37
+adapters/service-worker/src/index.ts
+  s_a34d594424e4c1::t_74c09b5c287171 1-36
+adapters/service-worker/src/types.ts
+  s_a34d594424e4c1::t_123e2db617c830 1-14
+adapters/service-worker/tsconfig.json
+  s_a34d594424e4c1::t_c62570684b09d6 1-16
+adapters/service-worker/vite.config.ts
+  s_a34d594424e4c1::t_1e71aa92c11893 1-15
+adapters/vercel/README.md
+  s_a34d594424e4c1::t_4b313ba2c44253 1-22
+adapters/vercel/package.json
+  s_a34d594424e4c1::t_2a3af5f758ac78 1-37
+adapters/vercel/src/conninfo.test.ts
+  s_a34d594424e4c1::t_9b67697162e58a 1-18
+adapters/vercel/src/conninfo.ts
+  s_a34d594424e4c1::t_725958524567b6 1-8
+adapters/vercel/src/handler.test.ts
+  s_a34d594424e4c1::t_d24e5530345ce6 1-38
+adapters/vercel/src/handler.ts
+  s_a34d594424e4c1::t_b8a68e296c5204 1-8
+adapters/vercel/src/index.ts
+  s_a34d594424e4c1::t_6a7603ea25e857 1-7
+adapters/vercel/tsconfig.json
+  s_a34d594424e4c1::t_020acec123995c 1-16
+adapters/vercel/vite.config.ts
+  s_a34d594424e4c1::t_4b8de7e521ac98 1-15
+pnpm-lock.yaml
+  s_a34d594424e4c1::t_45d5280fa2c6de 236-241,248-289
+src/adapter/aws-lambda/conninfo.ts
+  s_a34d594424e4c1::t_36e2a0ddd63221 44
+src/adapter/aws-lambda/handler.ts
+  s_a34d594424e4c1::t_c53f8d576c600e 24-26,33-35,48-50,74-76,98-100,124-126,160-162,263,304-306,433-435,475-477,538-540,622-624,666-668,709,721-723
+src/adapter/aws-lambda/index.ts
+  s_a34d594424e4c1::t_85b5e157907fe8 4-7
+src/adapter/aws-lambda/types.ts
+  s_a34d594424e4c1::t_fdcde2ebef1538 3-5,11-13,21-23,32-34,46,65-67,101-103,147-149,171-173,180-182
+src/adapter/cloudflare-pages/conninfo.ts
+  s_a34d594424e4c1::t_1846c23515db01 21
+src/adapter/cloudflare-pages/handler.ts
+  s_a34d594424e4c1::t_bf0c2bb29daf78 12-14,35-37,55-57,122
+src/adapter/cloudflare-pages/index.ts
+  s_a34d594424e4c1::t_41c56bf2edf496 4-7
+src/adapter/cloudflare-workers/conninfo.ts
+  s_a34d594424e4c1::t_229052003dd518 3-5
+src/adapter/cloudflare-workers/index.ts
+  s_a34d594424e4c1::t_85fa3e93ba775b 4-7
+src/adapter/cloudflare-workers/serve-static.ts
+  s_a34d594424e4c1::t_9cc36538f9c958 6-8
+src/adapter/cloudflare-workers/utils.ts
+  s_a34d594424e4c1::t_e66f163b178808 5-7,14-16
+src/adapter/cloudflare-workers/websocket.ts
+  s_a34d594424e4c1::t_6719d5297ebda4 5-7
+src/adapter/deno/conninfo.ts
+  s_a34d594424e4c1::t_ea928c73cfa138 7
+src/adapter/deno/index.ts
+  s_a34d594424e4c1::t_7fffc0012d7536 4-7
+src/adapter/deno/serve-static.ts
+  s_a34d594424e4c1::t_5cd1be39e33508 8-10
+src/adapter/deno/ssg.ts
+  s_a34d594424e4c1::t_a72010d2ebb8d6 8,25
+src/adapter/deno/websocket.ts
+  s_a34d594424e4c1::t_9b3f4c6eda3483 4-6
+src/adapter/lambda-edge/conninfo.ts
+  s_a34d594424e4c1::t_da5ebe4e1adb6d 11-13
+src/adapter/lambda-edge/handler.ts
+  s_a34d594424e4c1::t_c0e42d5a236156 40-42,58-60,67-69,85-87,94-96,130-132,233-235,252-254
+src/adapter/lambda-edge/index.ts
+  s_a34d594424e4c1::t_80a9b6544a669d 4-7
+src/adapter/netlify/conninfo.ts
+  s_a34d594424e4c1::t_12e25f38f0345e 52
+src/adapter/netlify/handler.ts
+  s_a34d594424e4c1::t_bae372cec2766f 4-6
+src/adapter/netlify/index.ts
+  s_a34d594424e4c1::t_0aecfac849d790 4-7
+src/adapter/service-worker/handler.ts
+  s_a34d594424e4c1::t_59e6fc1b203d07 11-13,20
+src/adapter/service-worker/index.ts
+  s_a34d594424e4c1::t_96b890963f7e41 4-7
+src/adapter/service-worker/types.ts
+  s_a34d594424e4c1::t_340a6fa1057edc 6-8
+src/adapter/vercel/conninfo.ts
+  s_a34d594424e4c1::t_8d82d7f935bc2c 3-5
+src/adapter/vercel/handler.ts
+  s_a34d594424e4c1::t_72b03ce4e26305 4-6
+src/adapter/vercel/index.ts
+  s_a34d594424e4c1::t_c74a96b65da48a 4-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d332ccefa5fb4d8accc39732f9bf2fccece88efc",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
