@@ -1,0 +1,37 @@
+.github/workflows/release.yml
+  s_a34d594424e4c1::t_b4df18d3f0ed43 100-110
+adapters/deno/deno.json
+  s_a34d594424e4c1::t_b310a328d7e2b7 1-23
+adapters/deno/package.json
+  s_a34d594424e4c1::t_f773a5c8509013 35-36
+adapters/deno/src/conninfo.test.ts
+  s_a34d594424e4c1::t_b2dc0e2e9bf74a 2
+adapters/deno/src/index.ts
+  s_a34d594424e4c1::t_a366ad8414f8c0 6-9
+adapters/deno/src/websocket.test.ts
+  s_a34d594424e4c1::t_a9877d108ffd41 2
+adapters/deno/tsconfig.json
+  s_a34d594424e4c1::t_1754f7e12d9667 11-12
+build/release-adapter.ts
+  s_a34d594424e4c1::t_87465d330a2317 12,53-61
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_1e0d5d6a3ccdb0 47-54
+pnpm-lock.yaml
+  s_a34d594424e4c1::t_8ac94fdb7c8b83 256-258
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "df207d2f9c9fecfc30a98ab00af60070b97df0db",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
