@@ -1,6 +1,6 @@
 {
   "name": "@hono/netlify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Netlify adapter for Hono",
   "type": "module",
   "types": "./dist/index.d.ts",
