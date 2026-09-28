@@ -2,9 +2,12 @@ name: ci
 on:
   push:
     branches: [main, next]
+    paths-ignore:
+      - 'adapters/**'
   pull_request:
     branches: ['*']
     paths-ignore:
+      - 'adapters/**'
       - 'docs/**'
       - '.vscode/**'
       - 'README.md'
