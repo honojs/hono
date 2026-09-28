@@ -1,0 +1,23 @@
+adapters/bun/package.json
+  s_a34d594424e4c1::t_8280c2f223529a 6,12-13,17
+adapters/bun/vite.config.ts
+  s_a34d594424e4c1::t_4863851ddfb391 4-11
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_5a300d6ee9ccee 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c37205e2f1ea1f110fa5205203a216a32db4108e",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
