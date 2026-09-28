@@ -245,12 +245,6 @@ importers:
         specifier: workspace:*
         version: link:../..
 
-  adapters/cloudflare-pages:
-    devDependencies:
-      hono:
-        specifier: workspace:*
-        version: link:../..
-
   adapters/cloudflare-workers:
     devDependencies:
       hono:

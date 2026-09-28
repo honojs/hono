@@ -10,7 +10,7 @@ type Params<P extends string = any> = Record<P, string | string[]>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
- * @deprecated `hono/cloudflare-pages` will be removed in v5. Install `@hono/cloudflare-pages` and import from there instead.
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export type EventContext<Env = {}, P extends string = any, Data = Record<string, unknown>> = {
   request: Request
@@ -33,7 +33,7 @@ declare type PagesFunction<
 > = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
 /**
- * @deprecated `hono/cloudflare-pages` will be removed in v5. Install `@hono/cloudflare-pages` and import from there instead.
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export const handle =
   <E extends Env = Env, S extends Schema = BlankSchema, BasePath extends string = '/'>(
@@ -53,7 +53,7 @@ export const handle =
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
- * @deprecated `hono/cloudflare-pages` will be removed in v5. Install `@hono/cloudflare-pages` and import from there instead.
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export function handleMiddleware<E extends Env = {}, P extends string = any, I extends Input = {}>(
   middleware: MiddlewareHandler<
@@ -119,7 +119,7 @@ declare abstract class FetcherLike {
  * @description `serveStatic()` is for advanced mode:
  * https://developers.cloudflare.com/pages/platform/functions/advanced-mode/#set-up-a-function
  *
- * @deprecated `hono/cloudflare-pages` will be removed in v5. Install `@hono/cloudflare-pages` and import from there instead.
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export const serveStatic = (): MiddlewareHandler => {
   return async (c) => {

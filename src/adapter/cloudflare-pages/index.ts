@@ -4,7 +4,7 @@
  *
  * @deprecated
  * This adapter will be removed from the `hono` package in v5.
- * Install `@hono/cloudflare-pages` and import from there instead.
+ * Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 
 export { handle, handleMiddleware, serveStatic } from './handler'
