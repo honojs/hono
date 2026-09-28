@@ -105,4 +105,5 @@ jobs:
       - name: Publish to JSR
         if: hashFiles(format('{0}/deno.json', steps.pkg.outputs.dir)) != ''
         working-directory: ${{ steps.pkg.outputs.dir }}
-        run: deno publish
+        # deno.json keeps version 0.0.0; the version comes from the tag, like jsr.json for hono
+        run: deno publish --set-version "${GITHUB_REF_NAME##*@}"
