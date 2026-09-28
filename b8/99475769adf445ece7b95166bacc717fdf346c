@@ -1,0 +1,25 @@
+.github/workflows/release.yml
+  s_a34d594424e4c1::t_8302554230c1c1 108-109
+adapters/deno/deno.json
+  s_a34d594424e4c1::t_0c07b7c7eb69a4 3
+build/release-adapter.ts
+  s_a34d594424e4c1::t_78ac89f6f05e17 12,34,50,53
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_6c16661fcd7e16 50-51,53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b899475769adf445ece7b95166bacc717fdf346c",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
