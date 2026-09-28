@@ -32,6 +32,9 @@
     "node": ">=16.9.0"
   },
   "devDependencies": {
-    "hono": "workspace:*"
+    "hono": "workspace:*",
+    "wrangler": "4.107.0",
+    "ws": "^8.21.0",
+    "@types/ws": "^8.18.1"
   }
 }

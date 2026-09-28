@@ -1,12 +1,12 @@
+import { Hono } from 'hono'
+import { basicAuth } from 'hono/basic-auth'
 import type {
   Callback,
   CloudFrontConfig,
   CloudFrontRequest,
   CloudFrontResponse,
-} from '../../src/adapter/lambda-edge/handler'
-import { handle } from '../../src/adapter/lambda-edge/handler'
-import { Hono } from '../../src/hono'
-import { basicAuth } from '../../src/middleware/basic-auth'
+} from '../src/handler'
+import { handle } from '../src/handler'
 
 type Bindings = {
   callback: Callback

@@ -52,6 +52,9 @@ The `release.yml` workflow runs `deno publish --set-version <version from the ta
 Before the first release, create the package on jsr.io under the `@hono` scope and link the `honojs/hono`
 repository so the workflow can publish with OIDC. `deno publish --dry-run --set-version 0.0.1` in `adapters/deno` checks the package locally.
 
+Tests under `adapters/deno/test` run on Deno (`pnpm --filter @hono/deno run test:deno`) with `test/deno.json`,
+which maps `hono` to the working tree instead.
+
 ### Adding a new adapter
 
 1. Copy `adapters/bun` as `adapters/<name>` and adjust `package.json` (`name`, `description`) and the sources.

@@ -11,5 +11,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    // test/ holds Deno tests, run with `pnpm run test:deno`
+    include: ['src/**/*.test.ts'],
   },
 })

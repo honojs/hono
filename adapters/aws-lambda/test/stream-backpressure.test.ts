@@ -1,7 +1,7 @@
 import { Writable } from 'node:stream'
-import { streamHandle } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
-import { Hono } from '../../src/hono'
+import { Hono } from 'hono'
+import { streamHandle } from '../src/handler'
+import type { LambdaContext } from '../src/types'
 
 const awslambda = {
   streamifyResponse: <T>(handlerFunc: T): T => handlerFunc,

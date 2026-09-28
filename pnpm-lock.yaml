@@ -247,9 +247,18 @@ importers:
 
   adapters/cloudflare-workers:
     devDependencies:
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       hono:
         specifier: workspace:*
         version: link:../..
+      wrangler:
+        specifier: 4.107.0
+        version: 4.107.0
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.3
 
   adapters/deno:
     devDependencies:

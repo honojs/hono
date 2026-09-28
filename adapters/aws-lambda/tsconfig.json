@@ -2,7 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "ES2020",
-    "rootDir": "./src/",
     "outDir": "./dist/",
     "types": [
       "node",
@@ -11,6 +10,7 @@
     "noEmit": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ]
 }

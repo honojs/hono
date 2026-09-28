@@ -1,11 +1,11 @@
-import { streamHandle } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
+import { Hono } from 'hono'
+import { streamHandle } from '../src/handler'
+import type { LambdaEvent } from '../src/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
   LambdaContext,
-} from '../../src/adapter/aws-lambda/types'
-import { Hono } from '../../src/hono'
+} from '../src/types'
 import './stream-mock'
 
 type Bindings = {

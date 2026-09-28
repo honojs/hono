@@ -1,4 +1,8 @@
 import { Readable } from 'stream'
+import { Hono } from 'hono'
+import { basicAuth } from 'hono/basic-auth'
+import { getCookie, setCookie } from 'hono/cookie'
+import { streamSSE, streamText } from 'hono/streaming'
 import {
   ALBProcessor,
   EventV1Processor,
@@ -6,23 +10,19 @@ import {
   getProcessor,
   handle,
   streamHandle,
-} from '../../src/adapter/aws-lambda/handler'
+} from '../src/handler'
 import type {
   ALBProxyEvent,
   APIGatewayProxyEventV2,
   LatticeProxyEventV2,
   LambdaEvent,
-} from '../../src/adapter/aws-lambda/handler'
+} from '../src/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
   LatticeRequestContextV2,
   LambdaContext,
-} from '../../src/adapter/aws-lambda/types'
-import { getCookie, setCookie } from '../../src/helper/cookie'
-import { streamSSE, streamText } from '../../src/helper/streaming'
-import { Hono } from '../../src/hono'
-import { basicAuth } from '../../src/middleware/basic-auth'
+} from '../src/types'
 import './mock'
 
 type Bindings = {
