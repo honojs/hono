@@ -88,15 +88,18 @@ describe('Body Limit Middleware', () => {
             value: new TextEncoder().encode(exampleText),
           }
         })
+        const cancelSpy = vi.fn().mockResolvedValue(undefined)
         const stream = new ReadableStream()
         vi.spyOn(stream, 'getReader').mockReturnValue({
           read: readSpy,
+          cancel: cancelSpy,
         } as unknown as ReadableStreamDefaultReader)
         const res = await app.request('/body-limit-15byte', buildRequestInit({ body: stream }))
 
         expect(res).not.toBeNull()
         expect(res.status).toBe(413)
         expect(readSpy).toHaveBeenCalledTimes(2)
+        expect(cancelSpy).toHaveBeenCalledTimes(1)
         expect(await res.text()).toBe('Payload Too Large')
       })
     })
@@ -174,6 +177,49 @@ describe('Body Limit Middleware', () => {
 
       expect(res.status).toBe(200)
       expect(await res.text()).toBe(smallContent)
+    })
+
+    it('should measure the body when Content-Length is not a number', async () => {
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Length': 'abc', // malformed: bypass attempt
+        },
+        body: 'this body is larger than 10 bytes',
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(413)
+    })
+
+    it('should measure the body when Content-Length is negative', async () => {
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Length': '-5',
+        },
+        body: 'this body is larger than 10 bytes',
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(413)
+    })
+
+    it('should pass through a malformed Content-Length body that is under the limit', async () => {
+      const res = await app.request('/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Length': 'abc',
+        },
+        body: 'small',
+        duplex: 'half',
+      } as RequestInit)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('small')
     })
 
     it('should handle only Transfer-Encoding header correctly', async () => {

@@ -68,9 +68,13 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
     const hasContentLength = c.req.raw.headers.has('content-length')
 
     if (hasContentLength && !hasTransferEncoding) {
-      // Only Content-Length present - we can trust it
-      const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
-      return contentLength > maxSize ? onError(c) : next()
+      // Only Content-Length present - we can trust it, but only when it
+      // parses as a non-negative finite number. A malformed value like
+      // 'abc' or '-5' falls through so the body is measured instead.
+      const contentLength = Number(c.req.raw.headers.get('content-length'))
+      if (Number.isFinite(contentLength) && contentLength >= 0) {
+        return contentLength > maxSize ? onError(c) : next()
+      }
     }
 
     // Transfer-Encoding present (chunked) or no length headers.
@@ -88,6 +92,8 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       }
       size += value.length
       if (size > maxSize) {
+        // Stop pulling the oversized body off the wire.
+        await rawReader.cancel().catch(() => {})
         return onError(c)
       }
       chunks.push(value)
