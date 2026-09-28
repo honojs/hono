@@ -48,9 +48,9 @@ At the end the script prints a release-note draft built from the commits that to
 
 `@hono/deno` and `@hono/netlify` are also published to JSR. Each has a `deno.json` that is the JSR package config: its `imports`
 map `hono` to `jsr:@hono/hono`, and its `version` stays `0.0.0` like the root `jsr.json`.
-The `release.yml` workflow runs `deno publish --set-version <version from the tag>` when the tagged adapter has a `deno.json`.
+The `release.yml` workflow writes the version from the tag into `deno.json` and runs `deno publish` when the tagged adapter has a `deno.json`.
 Before the first release, create the package on jsr.io under the `@hono` scope and link the `honojs/hono`
-repository so the workflow can publish with OIDC. `deno publish --dry-run --set-version 0.0.1` in the adapter directory checks the package locally.
+repository so the workflow can publish with OIDC. `deno publish --dry-run --set-version 0.0.1` in the adapter directory checks the package locally (`--set-version` is fine for a dry run; the real publish needs the version in `deno.json`).
 
 Tests under `adapters/deno/test` run on Deno (`pnpm --filter @hono/deno run test:deno`) with `test/deno.json`,
 which maps `hono` to the working tree instead.
