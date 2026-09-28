@@ -30,13 +30,25 @@ function buildWildcardRegExp(path: string): RegExp {
             ? TAIL_WILDCARD_REG_EXP_STR
             : match === '*'
               ? ONLY_WILDCARD_REG_EXP_STR
-              : `/:${LABEL_REG_EXP_STR}`
+              : // a `:label` segment covers any segment in route paths,
+                // including `*` and other `:label` segments
+                `/${LABEL_REG_EXP_STR}`
     )}$`
   ))
 }
 
+const sortedMiddlewareKeysCache = new WeakMap<Record<string, unknown[]>, string[]>()
+
 function findMiddleware<T>(middleware: Record<string, T[]>, path: string): T[] | undefined {
-  for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
+  const keys = Object.keys(middleware)
+  let sortedKeys = sortedMiddlewareKeysCache.get(middleware)
+  // keys are only ever added to the middleware map, so length is a reliable
+  // invalidation signal
+  if (!sortedKeys || sortedKeys.length !== keys.length) {
+    sortedKeys = keys.sort((a, b) => b.length - a.length)
+    sortedMiddlewareKeysCache.set(middleware, sortedKeys)
+  }
+  for (const k of sortedKeys) {
     if (buildWildcardRegExp(k).test(path)) {
       return [...middleware[k]]
     }
@@ -162,7 +174,12 @@ export class RegExpRouter<T> implements Router<T> {
         handlerData[pathData[0]] = handlers.map(([h, handlerPath]) => [
           h,
           trie.paths[handlerPath][1].reduceRight((map, [key], i) => {
-            map[key] = paramReplacementMap[pathData[1][i][1]]
+            // a middleware pattern can cover route segments (e.g. `*`) that
+            // have no param, so the positional param assoc may not exist
+            const assoc = pathData[1][i]
+            if (assoc) {
+              map[key] = paramReplacementMap[assoc[1]]
+            }
             return map
           }, createNullObject()),
         ])

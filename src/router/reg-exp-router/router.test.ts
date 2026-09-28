@@ -37,6 +37,28 @@ describe('RegExpRouter', () => {
     })
   })
 
+  describe('Empty-capable patterns', () => {
+    it('GET //y', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/:x{[0-9]*}/y', 'h')
+
+      const [res, stash] = router.match('GET', '//y')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('h')
+      expect((stash as ParamStash)[1]).toBe('')
+    })
+
+    it('GET /5/y', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/:x{[0-9]*}/y', 'h')
+
+      const [res, stash] = router.match('GET', '/5/y')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('h')
+      expect((stash as ParamStash)[1]).toBe('5')
+    })
+  })
+
   describe('UnsupportedPathError', () => {
     describe('Ambiguous', () => {
       it('GET /entry/:name', () => {

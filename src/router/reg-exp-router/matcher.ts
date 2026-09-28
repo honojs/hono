@@ -24,7 +24,13 @@ export function match<R extends Router<T>, T>(this: R, method: string, path: str
       return [[], emptyParam]
     }
 
-    const index = match.indexOf('', 1)
+    // The `$()` end marker always captures '', but an empty-capable param
+    // pattern (e.g. `:x{[0-9]*}`) can also capture ''. The marker is the
+    // last '' group that maps to a handler-data entry.
+    let index = match.lastIndexOf('')
+    while (index > 0 && !Array.isArray(matcher[1][index])) {
+      index = match.lastIndexOf('', index - 1)
+    }
     return [matcher[1][index], match]
   }) as Router<T>['match']
 
