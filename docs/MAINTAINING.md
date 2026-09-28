@@ -44,6 +44,14 @@ This bumps `adapters/bun/package.json`, commits, creates an annotated tag `@hono
 
 At the end the script prints a release-note draft built from the commits that touched `adapters/bun` since the previous adapter tag, plus a prefilled GitHub "new release" link. Creating a GitHub Release is optional.
 
+### JSR
+
+`@hono/deno` is also published to JSR. `adapters/deno/deno.json` is the JSR package config: its `imports`
+map `hono` to `jsr:@hono/hono`, and its `version` stays `0.0.0` like the root `jsr.json`.
+The `release.yml` workflow runs `deno publish --set-version <version from the tag>` when the tagged adapter has a `deno.json`.
+Before the first release, create the package on jsr.io under the `@hono` scope and link the `honojs/hono`
+repository so the workflow can publish with OIDC. `deno publish --dry-run --set-version 0.0.1` in `adapters/deno` checks the package locally.
+
 ### Adding a new adapter
 
 1. Copy `adapters/bun` as `adapters/<name>` and adjust `package.json` (`name`, `description`) and the sources.

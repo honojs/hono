@@ -32,6 +32,7 @@
     "node": ">=16.9.0"
   },
   "devDependencies": {
-    "hono": "workspace:*"
+    "hono": "workspace:*",
+    "@types/node": "^24.3.0"
   }
 }
