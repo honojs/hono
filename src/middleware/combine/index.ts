@@ -52,6 +52,11 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue
+        } else if (result instanceof Response && !c.finalized) {
+          // Handlers run directly here, not through compose(), so a middleware
+          // honoring the return-Response contract (e.g. cors() preflight or a
+          // redirect) would be dropped. Assign it like compose() does.
+          c.res = result
         }
         lastError = undefined
         break

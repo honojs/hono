@@ -1,6 +1,7 @@
 import { every, except, some } from '.'
 import { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
+import { cors } from '../cors'
 
 const nextMiddleware: MiddlewareHandler = async (_, next) => await next()
 
@@ -132,6 +133,36 @@ describe('some', () => {
 
     expect(middleware2).not.toBeCalled()
     expect(await res.text()).toBe('oops')
+  })
+
+  it('Should return the response a middleware returns', async () => {
+    const middleware1 = () => false
+    const middleware2: MiddlewareHandler = async (c) => c.text('Hello Middleware')
+
+    app.use('/', some(middleware1, middleware2))
+    app.get('/', (c) => c.text('Hello World'))
+    const res = await app.request('http://localhost/')
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello Middleware')
+  })
+
+  it('Should return the response produced by a short-circuiting middleware', async () => {
+    const fallback = vi.fn(nextMiddleware)
+
+    app.use('/api/*', some(cors(), fallback))
+    app.get('/api/data', (c) => c.text('Hello World'))
+    const res = await app.request('http://localhost/api/data', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://example.com',
+        'Access-Control-Request-Method': 'GET',
+      },
+    })
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(fallback).not.toBeCalled()
   })
 })
 
