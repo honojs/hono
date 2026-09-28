@@ -10,7 +10,9 @@ export class PatternRouter<T> implements Router<T> {
   #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
-    const suffix = path.endsWith('/*') ? '(?:$|/)' : path.endsWith('*') ? '' : '/?$'
+    const endsWithStar = path.endsWith('*')
+    const endsWithSlash = path.endsWith('/')
+    const suffix = path.endsWith('/*') ? '(?:$|/)' : endsWithStar ? '' : '$'
     path = path.replace(/\*$/, '')
     if (path.at(-1) === '?') {
       path = path.slice(0, -1)
@@ -27,6 +29,11 @@ export class PatternRouter<T> implements Router<T> {
             : part.replace(/[.\\+*[^\]$()]/g, '\\$&')
       }
     )
+
+    // A trailing slash is a part of the path, so it must not be dropped
+    if (endsWithSlash) {
+      parts.push('/')
+    }
 
     try {
       this.#routes.push([new RegExp(`^${parts.join('')}${suffix}`), method, handler])
