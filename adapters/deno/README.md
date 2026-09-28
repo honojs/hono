@@ -3,7 +3,7 @@
 Deno adapter for [Hono](https://hono.dev).
 
 ```sh
-deno add npm:@hono/deno
+deno add jsr:@hono/deno
 ```
 
 ## Migrating from `hono/deno`

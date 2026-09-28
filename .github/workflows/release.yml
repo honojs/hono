@@ -97,14 +97,12 @@ jobs:
         run: pnpm --filter "${{ steps.pkg.outputs.name }}" pack --pack-destination "$RUNNER_TEMP"
       - name: Publish to npm
         run: npm stage publish "$RUNNER_TEMP"/*.tgz --provenance --access public
-      - name: Check for a JSR package
-        id: jsr
-        run: echo "present=$([ -f "${{ steps.pkg.outputs.dir }}/deno.json" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      # Adapters with a deno.json are also published to JSR
       - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2
-        if: steps.jsr.outputs.present == 'true'
+        if: hashFiles(format('{0}/deno.json', steps.pkg.outputs.dir)) != ''
         with:
           deno-version-file: '.tool-versions'
       - name: Publish to JSR
-        if: steps.jsr.outputs.present == 'true'
+        if: hashFiles(format('{0}/deno.json', steps.pkg.outputs.dir)) != ''
         working-directory: ${{ steps.pkg.outputs.dir }}
         run: deno publish
