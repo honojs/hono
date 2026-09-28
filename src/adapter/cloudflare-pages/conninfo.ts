@@ -18,6 +18,7 @@ import type { GetConnInfo } from '../../helper/conninfo'
  *
  * export const onRequest = handle(app)
  * ```
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Install `@hono/cloudflare-pages` and import from there instead.
  */
 export const getConnInfo: GetConnInfo = (c) => ({
   remote: {

@@ -1,0 +1,37 @@
+{
+  "name": "@hono/aws-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda adapter for Hono",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && vp pack && publint",
+    "test": "tsc -p tsconfig.json && vp test --run"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/honojs/hono.git",
+    "directory": "adapters/aws-lambda"
+  },
+  "homepage": "https://hono.dev",
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "peerDependencies": {
+    "hono": ">=4.13.9"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  },
+  "devDependencies": {
+    "hono": "workspace:*"
+  }
+}

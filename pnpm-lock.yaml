@@ -233,7 +233,55 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  adapters/aws-lambda:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
   adapters/bun:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/cloudflare-pages:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/cloudflare-workers:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/deno:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/lambda-edge:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/netlify:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/service-worker:
+    devDependencies:
+      hono:
+        specifier: workspace:*
+        version: link:../..
+
+  adapters/vercel:
     devDependencies:
       hono:
         specifier: workspace:*

@@ -41,6 +41,7 @@ type Env = {
  *
  * export const handler = handle(app)
  * ```
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
  */
 export const getConnInfo: GetConnInfo = (c: Context<Env>) => {
   const requestContext = c.env.requestContext
