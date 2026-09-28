@@ -1,0 +1,33 @@
+adapters/netlify/README.md
+  s_a34d594424e4c1::t_70eeb118cbc657 9-14
+adapters/netlify/deno.json
+  s_a34d594424e4c1::t_1f014452bc79cb 1-19
+adapters/netlify/src/conninfo.test.ts
+  s_a34d594424e4c1::t_1f3c3aa7b28c4b 2
+adapters/netlify/src/conninfo.ts
+  s_a34d594424e4c1::t_c37d06a88210c7 41
+adapters/netlify/src/index.ts
+  s_a34d594424e4c1::t_fdd73079b93e4f 6
+adapters/netlify/src/mod.ts
+  s_a34d594424e4c1::t_ea25aebad1fc61 1-2
+adapters/netlify/tsconfig.json
+  s_a34d594424e4c1::t_b3635bafdddebe 11-12
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_f1c16a1cec1671 49,53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "02494ece652f66c21fa133da8641aeaf6e4146d3",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
