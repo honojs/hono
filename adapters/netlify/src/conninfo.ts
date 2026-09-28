@@ -38,7 +38,7 @@ type Env = {
  * @example
  * ```ts
  * import { Hono } from 'hono'
- * import { handle, getConnInfo } from './index'
+ * import { handle, getConnInfo } from '@hono/netlify'
  *
  * const app = new Hono()
  *
