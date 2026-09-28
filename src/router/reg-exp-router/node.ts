@@ -1,8 +1,13 @@
 import { createNullObject } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
-export const ONLY_WILDCARD_REG_EXP_STR = '.*'
-export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
+// A wildcard must match any character, including line terminators (`\n`, `\r`, U+2028, U+2029).
+// `getPath()` decodes the request path before routing, so `%0A`, `%0D`, `%E2%80%A8` and `%E2%80%A9`
+// arrive as real line terminators, which a bare `.` does not match. `[^]*` is equivalent to `.`
+// with the `s` flag, but unlike the flag it does not affect `.` in user-written `:label{...}`
+// patterns, which keep their normal RegExp semantics.
+export const ONLY_WILDCARD_REG_EXP_STR = '[^]*'
+export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[^]*)'
 export const PATH_ERROR = Symbol()
 
 export type ParamAssocArray = [string, number][]
@@ -27,7 +32,7 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard: the only wildcard (.*) precedes the tail wildcard
+  // wildcard: the only wildcard ([^]*) precedes the tail wildcard
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
     return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
@@ -69,7 +74,7 @@ export class Node {
               : ['', '', LABEL_REG_EXP_STR]
             : null
           : token === '/*'
-            ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
+            ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|[^]*)$
             : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
 
       let nextNode: Node
