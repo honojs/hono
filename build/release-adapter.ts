@@ -20,6 +20,7 @@ if (!name || !bump) {
 
 const dir = join('adapters', name)
 const run = (cmd: string, cwd = '.') => execSync(cmd, { cwd, stdio: 'inherit' })
+const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8'))
 const capture = (cmd: string) =>
   execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] })
     .toString()
@@ -31,7 +32,7 @@ if (capture('git status --porcelain')) {
 }
 
 const pkgPath = join(dir, 'package.json')
-const pkgName: string = JSON.parse(readFileSync(pkgPath, 'utf8')).name
+const pkgName: string = readJson(pkgPath).name
 
 // Collect commits that touched the adapter since its previous tag, before creating the new one.
 let previousTag = ''
@@ -47,19 +48,21 @@ const changes = capture(`git log ${range} --pretty=format:"- %s" -- ${dir}`)
 
 run(`npm version ${bump} --no-git-tag-version`, dir)
 
-const version: string = JSON.parse(readFileSync(pkgPath, 'utf8')).version
+const version: string = readJson(pkgPath).version
 const tag = `${pkgName}@${version}`
+
+const files = [pkgPath]
 
 // Adapters published to JSR keep their version in deno.json too.
 const denoJsonPath = join(dir, 'deno.json')
 if (existsSync(denoJsonPath)) {
-  const denoJson = JSON.parse(readFileSync(denoJsonPath, 'utf8'))
+  const denoJson = readJson(denoJsonPath)
   denoJson.version = version
   writeFileSync(denoJsonPath, JSON.stringify(denoJson, null, 2) + '\n')
-  run(`git add ${denoJsonPath}`)
+  files.push(denoJsonPath)
 }
 
-run(`git add ${pkgPath}`)
+run(`git add ${files.join(' ')}`)
 run(`git commit -m "chore(adapters): release ${tag}"`)
 run(`git tag -a ${tag} -m ${tag}`)
 run(`git push origin HEAD ${tag}`)
