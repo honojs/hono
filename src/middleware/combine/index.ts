@@ -54,10 +54,6 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
           lastError = new Error('No successful middleware found')
           continue
         } else if (result && result !== true) {
-          // A middleware that short-circuits returns a `Response` without calling
-          // `next()`, and `c.res` is not assigned in that case. Dropping it here
-          // leaves the context unfinalized, which surfaces as a 500. `every()`
-          // already handles this, see #3441.
           response = result
         }
         lastError = undefined
