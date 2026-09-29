@@ -921,4 +921,5 @@ export namespace JSX {
   }
 }
 
-export interface IntrinsicElements extends JSX.IntrinsicElements {}
+export interface IntrinsicElementsDefined extends JSX.IntrinsicElements {}
+export interface IntrinsicElements extends IntrinsicElementsDefined {}

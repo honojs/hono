@@ -1,7 +1,7 @@
 /** @jsxImportSource ./ */
 
 import type { HtmlEscapedString } from '../utils/html'
-import type { Child, JSXNode } from './base'
+import type { Child, JSX, JSXNode } from './base'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cloneElement, jsx, Fragment } from './base'
 
@@ -69,5 +69,12 @@ describe('createElement', () => {
     const object = { toString: () => 'plain-text' }
 
     expect((<div>{object as never}</div>).toString()).toBe('<div></div>')
+  })
+
+  it('should type intrinsic elements attributes without recursive reference', () => {
+    const buttonProps: JSX.IntrinsicElements['button'] = {
+      disabled: false,
+    }
+    expect(buttonProps.disabled).toBe(false)
   })
 })
