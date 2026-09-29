@@ -461,6 +461,21 @@ describe('EventProcessor.createRequest', () => {
       const xCity = request.headers.get('x-city') ?? ''
       expect(decodeURIComponent(xCity)).toBe('炎')
     })
+
+    it('Should encode non-ASCII header values with encodeURIComponent (v2)', async () => {
+      const event: LambdaEvent = {
+        ...baseV2Event,
+        headers: {
+          'x-city': '炎', // Non-ASCII character
+        },
+      }
+
+      const processor = getProcessor(event)
+      const request = processor.createRequest(event)
+
+      const xCity = request.headers.get('x-city') ?? ''
+      expect(decodeURIComponent(xCity)).toBe('炎')
+    })
   })
 })
 
