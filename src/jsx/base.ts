@@ -37,6 +37,9 @@ export type FC<P = Props> = {
 }
 export type DOMAttributes = HonoJSX.HTMLAttributes
 
+// Keep the imported interface outside JSX to avoid name shadowing in bundled declarations.
+type IntrinsicElementsBase = IntrinsicElementsDefined
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
@@ -44,7 +47,7 @@ export namespace JSX {
   export interface ElementChildrenAttribute {
     children: Child
   }
-  export interface IntrinsicElements extends IntrinsicElementsDefined {
+  export interface IntrinsicElements extends IntrinsicElementsBase {
     [tagName: string]: Props
   }
   export interface IntrinsicAttributes {
