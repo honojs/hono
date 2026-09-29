@@ -237,4 +237,23 @@ describe('basePath', () => {
 
     expect(basePath(c)).toBe('/sub-app-path/foo')
   })
+
+  it('should return basePath with custom regex pattern mounted with app.route()', async () => {
+    const app = new Hono()
+    const subApp = new Hono()
+
+    subApp.get('/posts/:id', (c) => c.text(basePath(c)))
+    app.route('/api/:version{v[0-9]+}', subApp)
+    app.route('/tags/:tag{foo|bar}', subApp)
+    app.route('/users/:name{[a-z]+}/:group', subApp)
+
+    let res = await app.request('/api/v2/posts/123')
+    expect(await res.text()).toBe('/api/v2')
+
+    res = await app.request('/tags/bar/posts/123')
+    expect(await res.text()).toBe('/tags/bar')
+
+    res = await app.request('/users/abc/def/posts/123')
+    expect(await res.text()).toBe('/users/abc/def')
+  })
 })
