@@ -107,7 +107,7 @@ describe('Serve Static Middleware', () => {
 
   it('Should not bypass authentication through a second decode', async () => {
     const app = new Hono()
-    app.use('/static/admin/*', (c) => c.text('Unauthorized', 401))
+    app.get('/static/admin/*', (c) => c.text('Unauthorized', 401))
     app.use('/static/*', baseServeStatic({ getContent }))
 
     const protectedRes = await app.request('/static/admin/secret.txt')
