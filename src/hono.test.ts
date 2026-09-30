@@ -3812,3 +3812,25 @@ describe('Catch-all route with empty segment', () => {
     expect(json).toEqual({ type: 'string', value: '' })
   })
 })
+
+describe('Param pattern that matches an empty string', () => {
+  const app = new Hono()
+  app.get('/api/:id{[0-9]?}', (c) => c.text(`id=${c.req.param('id')}`))
+
+  it('Should match an empty segment', async () => {
+    const res = await app.request('/api/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('id=')
+  })
+
+  it('Should match a non-empty segment', async () => {
+    const res = await app.request('/api/5')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('id=5')
+  })
+
+  it('Should not match a segment that does not satisfy the pattern', async () => {
+    const res = await app.request('/api/55')
+    expect(res.status).toBe(404)
+  })
+})
