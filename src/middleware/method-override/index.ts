@@ -83,7 +83,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           const request = new Request(c.req.url, {
             body: newForm,
             headers: newHeaders,
-            method: method as string,
+            method: (method as string).toUpperCase(),
           })
           return app.fetch(request, c.env, getExecutionCtx(c))
         }
@@ -97,7 +97,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           const newParams = new URLSearchParams(params)
           const request = new Request(newRequest, {
             body: newParams,
-            method: method as string,
+            method: (method as string).toUpperCase(),
           })
           return app.fetch(request, c.env, getExecutionCtx(c))
         }
@@ -112,7 +112,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
         newHeaders.delete(headerName)
         const request = new Request(c.req.raw, {
           headers: newHeaders,
-          method,
+          method: method.toUpperCase(),
         })
         return app.fetch(request, c.env, getExecutionCtx(c))
       }
@@ -127,7 +127,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
         const requestInit: RequestInit & { duplex?: 'half' } = {
           body: c.req.raw.body,
           headers: c.req.raw.headers,
-          method,
+          method: method.toUpperCase(),
           duplex: c.req.raw.body ? 'half' : undefined,
         }
         const request = new Request(url.toString(), requestInit)
