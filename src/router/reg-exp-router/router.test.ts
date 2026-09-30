@@ -262,4 +262,37 @@ describe('RegExpRouter', () => {
       }
     })
   })
+
+  describe('Literal `@` or `#` followed by digits in a dynamic path', () => {
+    it('Should match `@` literally', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/icons/:size/logo@2x.png', 'retina')
+
+      const [res, stash] = router.match('GET', '/icons/16/logo@2x.png')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('retina')
+      expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['size']]).toBe('16')
+      expect(router.match('GET', '/icons/16/logox.png')[0].length).toBe(0)
+    })
+
+    it('Should match `#` literally', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/tags/:name/#1', 'hash')
+
+      const [res, stash] = router.match('GET', '/tags/foo/#1')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('hash')
+      expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['name']]).toBe('foo')
+      expect(router.match('GET', '/tags/foo/')[0].length).toBe(0)
+    })
+
+    it('Should keep other routes working', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/users/:id/@1', 'at')
+      router.add('GET', '/users/:id/profile', 'profile')
+
+      expect(router.match('GET', '/users/1/@1')[0][0][0]).toBe('at')
+      expect(router.match('GET', '/users/1/profile')[0][0][0]).toBe('profile')
+    })
+  })
 })

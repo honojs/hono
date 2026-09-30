@@ -3812,3 +3812,19 @@ describe('Catch-all route with empty segment', () => {
     expect(json).toEqual({ type: 'string', value: '' })
   })
 })
+
+describe('Dynamic route including `@` followed by digits', () => {
+  const app = new Hono()
+  app.get('/icons/:size/logo@2x.png', (c) => c.text(`size=${c.req.param('size')}`))
+
+  it('Should match the path literally', async () => {
+    const res = await app.request('/icons/16/logo@2x.png')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('size=16')
+  })
+
+  it('Should not match a path without `@2`', async () => {
+    const res = await app.request('/icons/16/logox.png')
+    expect(res.status).toBe(404)
+  })
+})

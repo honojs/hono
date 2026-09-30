@@ -11,6 +11,9 @@ export interface Context {
 }
 
 const regExpMetaChars = new Set('.\\+*[^]$()')
+// `#` and `@` followed by digits are handler/param markers replaced in `Trie.buildRegExp()`,
+// so literal ones are written as hex escapes to keep them out of that replacement
+const markerCharEscapes: Record<string, string> = { '#': '\\x23', '@': '\\x40' }
 
 /**
  * Sort order:
@@ -150,7 +153,7 @@ export class Node {
               ? `(${k})@${c.#varIndex}`
               : regExpMetaChars.has(k)
                 ? `\\${k}`
-                : k) + childStr
+                : (markerCharEscapes[k] ?? k)) + childStr
       })
       .filter(Boolean)
 
