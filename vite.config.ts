@@ -4,6 +4,7 @@ import { defineConfig } from 'vite-plus'
 import type { TsdownPluginOption } from 'vite-plus/pack'
 import oxfmtConfig from './.oxfmtrc.json' with { type: 'json' }
 import oxlintConfig from './.oxlintrc.json' with { type: 'json' }
+import { appendExportEmptyToDts } from './build/dts-plugins'
 
 const entry = ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/*.test.tsx']
 const common = {
@@ -112,7 +113,7 @@ export default defineConfig({
       format: ['esm'],
       outDir: 'dist/types',
       dts: { emitDtsOnly: true },
-      plugins: [removeDtsPrivateFieldsPlugin],
+      plugins: [removeDtsPrivateFieldsPlugin, appendExportEmptyToDts],
       outExtensions: () => ({ dts: '.d.ts' }),
     },
   ],

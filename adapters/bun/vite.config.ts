@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite-plus'
+import { appendExportEmptyToDts } from '../../build/dts-plugins'
 
 export default defineConfig({
   pack: {
@@ -7,6 +8,7 @@ export default defineConfig({
     unbundle: true,
     format: ['esm'],
     dts: true,
+    plugins: [appendExportEmptyToDts],
     outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
   },
 })
