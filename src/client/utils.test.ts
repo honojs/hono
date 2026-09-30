@@ -272,6 +272,9 @@ describe('parseResponse', async () => {
     http.get('http://localhost/500', () => {
       return HttpResponse.text('500 Internal Server Error', { status: 500 })
     }),
+    http.get('http://localhost/noRoute', () => {
+      return HttpResponse.error()
+    }),
     http.get('http://localhost/raw', () => {
       return HttpResponse.text('hello', {
         headers: {
@@ -354,7 +357,7 @@ describe('parseResponse', async () => {
       await expect(
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
-      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: Failed to fetch]')
     }),
     it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
       type ResultType = Awaited<
