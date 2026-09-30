@@ -1,0 +1,39 @@
+adapters/aws-lambda/vite.config.ts
+  s_a34d594424e4c1::t_2715c416dd512c 2,11
+adapters/bun/vite.config.ts
+  s_a34d594424e4c1::t_59efb284d38eb9 2,11
+adapters/cloudflare-workers/vite.config.ts
+  s_a34d594424e4c1::t_39a49fe61478de 2,11
+adapters/deno/vite.config.ts
+  s_a34d594424e4c1::t_4b55feb0e4c06b 2,11
+adapters/lambda-edge/vite.config.ts
+  s_a34d594424e4c1::t_81123fb164ae14 2,11
+adapters/netlify/vite.config.ts
+  s_a34d594424e4c1::t_00b0ad9c15a4c6 2,11
+adapters/service-worker/vite.config.ts
+  s_a34d594424e4c1::t_b601c27268f5b2 2,11
+adapters/vercel/vite.config.ts
+  s_a34d594424e4c1::t_b8cba27e143e96 2,11
+src/jsx/base.ts
+  s_a34d594424e4c1::t_bb800cc3b8a787 15,44-46
+vite.config.ts
+  s_a34d594424e4c1::t_a04625d78228d2 7,116
+build/dts-plugins.ts
+  s_a34d594424e4c1::t_0ea4cea602bc73 1-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ef12c6bb980ee0aeda8617b08b3f77794f826178",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
