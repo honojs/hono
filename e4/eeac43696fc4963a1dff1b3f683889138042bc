@@ -1,0 +1,29 @@
+build/fixtures/declaration-emit/index.ts
+  s_a34d594424e4c1::t_a95855f3a08fc3 1-10
+build/fixtures/jsx-types/index.tsx
+  s_a34d594424e4c1::t_511eb11e19b8fb 1-26
+build/fixtures/jsx-types/tsconfig.json
+  s_a34d594424e4c1::t_3fc429cefd690d 1-14
+build/jsx-types.test.ts
+  s_a34d594424e4c1::t_d6a8c6299e1e7d 1-20
+build/declaration-emit.test.ts
+  s_a34d594424e4c1::t_832933886c1bd8 1-38
+build/fixtures/declaration-emit/tsconfig.json
+  s_a34d594424e4c1::t_26c53b74c72366 1-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e4eeac43696fc4963a1dff1b3f683889138042bc",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
