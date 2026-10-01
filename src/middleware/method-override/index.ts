@@ -6,7 +6,6 @@
 import type { Context, ExecutionContext } from '../../context'
 import type { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
-import { parseBody } from '../../utils/body'
 
 type MethodOverrideOptions = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,14 +89,13 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
       // Content-Type is `application/x-www-form-urlencoded`
       if (contentType?.startsWith('application/x-www-form-urlencoded')) {
-        const params = await parseBody<Record<string, string>>(clonedRequest)
-        const method = params[methodFormName]
+        const params = new URLSearchParams(await clonedRequest.text())
+        const method = params.getAll(methodFormName).at(-1)
         if (method) {
-          delete params[methodFormName]
-          const newParams = new URLSearchParams(params)
+          params.delete(methodFormName)
           const request = new Request(newRequest, {
-            body: newParams,
-            method: method as string,
+            body: params,
+            method,
           })
           return app.fetch(request, c.env, getExecutionCtx(c))
         }
