@@ -83,6 +83,13 @@ export const methodNotAllowed = <E extends Env = Env>(
           continue
         }
 
+        // A trailing wildcard (e.g. `app.get('/*', serveStatic())`) matches every
+        // path and is no evidence that a resource exists at any specific one, so
+        // it must not turn 404s for unknown paths into 405s. (#5223)
+        if (route.path.endsWith('*')) {
+          continue
+        }
+
         const methods = methodsByPath.get(route.path) ?? new Set<string>()
         methods.add(route.method)
 
