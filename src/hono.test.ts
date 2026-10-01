@@ -859,6 +859,20 @@ describe('Routing', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('posts of %25')
     })
+
+    // `getPath()` decodes the path with `decodeURI()`, which turns these into real line
+    // terminators before routing. See honojs/hono#5345.
+    it.each([
+      ['LF', '%0A', '\n'],
+      ['CR', '%0D', '\r'],
+      ['LS', '%E2%80%A8', '\u2028'],
+      ['PS', '%E2%80%A9', '\u2029'],
+    ])('should route a wildcard over a path containing %s', async (_, encoded) => {
+      app.get('/*', (c) => c.text('matched'))
+
+      expect((await app.request('http://localhost/a%20b')).status).toBe(200)
+      expect((await app.request(`http://localhost/a${encoded}b`)).status).toBe(200)
+    })
   })
 })
 

@@ -122,7 +122,7 @@ describe('buildInitParams() and serializeInitParams()', () => {
     })
     expect(params).toEqual([
       {
-        [METHOD_NAME_ALL]: [/^.*$()/, [0, []], {}],
+        [METHOD_NAME_ALL]: [/^[^]*$()/, [0, []], {}],
       },
       {},
     ])
@@ -136,7 +136,7 @@ describe('buildInitParams() and serializeInitParams()', () => {
     expect(params).toEqual([
       {
         [METHOD_NAME_ALL]: [
-          /^(?:\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())|.*$())/,
+          /^(?:\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())|[^]*$())/,
           [0, 0, [], 0, [], []],
           {
             '/hello': [[], []],

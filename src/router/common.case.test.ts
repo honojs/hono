@@ -548,6 +548,113 @@ export const runTest = ({
       })
     })
 
+    // `getPath()` runs the request path through `decodeURI()` before routing, and `decodeURI()`
+    // decodes `%0A`, `%0D`, `%E2%80%A8` and `%E2%80%A9` into real line terminators. A wildcard
+    // must match those, otherwise the very same path is routable through one router and not
+    // through another. See honojs/hono#5345.
+    describe('Line terminators in the path', () => {
+      // name, percent-encoded form, decoded character
+      const lineTerminators: [string, string, string][] = [
+        ['LF', '%0A', '\n'],
+        ['CR', '%0D', '\r'],
+        ['LS', '%E2%80%A8', '\u2028'],
+        ['PS', '%E2%80%A9', '\u2029'],
+      ]
+
+      describe('Tail wildcard', () => {
+        beforeEach(() => {
+          router.add('GET', '/*', 'wildcard')
+        })
+
+        it.each(lineTerminators)('GET /a%s b with %s', (_, encoded, char) => {
+          // both the percent-encoded form and the character `getPath()` decodes it to
+          expect(match('GET', `/a${encoded}b`)[0].handler).toEqual('wildcard')
+          expect(match('GET', `/a${char}b`)[0].handler).toEqual('wildcard')
+        })
+
+        it('GET /a%0D%0Ab', () => {
+          expect(match('GET', '/a%0D%0Ab').length).toBe(1)
+          expect(match('GET', '/a\r\nb').length).toBe(1)
+        })
+
+        it('GET /%0A and /%0A/foo', () => {
+          expect(match('GET', '/%0A').length).toBe(1)
+          expect(match('GET', '/%0A/foo').length).toBe(1)
+        })
+      })
+
+      describe('Tail wildcard under a path', () => {
+        beforeEach(() => {
+          router.add('GET', '/assets/*', 'assets')
+        })
+
+        it.each(lineTerminators)('GET /assets/a%s b with %s', (_, encoded, char) => {
+          expect(match('GET', `/assets/a${encoded}b`).length).toBe(1)
+          expect(match('GET', `/assets/a${char}b`).length).toBe(1)
+        })
+
+        it.each(lineTerminators)('GET /assets/%s with %s', (_, encoded, char) => {
+          expect(match('GET', `/assets/${encoded}`).length).toBe(1)
+          expect(match('GET', `/assets/${char}`).length).toBe(1)
+        })
+
+        // the wildcard still requires a `/` separator
+        it.each(lineTerminators)('GET /assets%s with %s does not match', (_, encoded, char) => {
+          expect(match('GET', `/assets${encoded}`).length).toBe(0)
+          expect(match('GET', `/assets${char}`).length).toBe(0)
+        })
+
+        it('GET /assetsfoo does not match', () => {
+          expect(match('GET', '/assetsfoo').length).toBe(0)
+        })
+      })
+
+      describe('Only wildcard', () => {
+        beforeEach(() => {
+          router.add('GET', '/a*', 'star')
+        })
+
+        it.each(lineTerminators)('GET /a%s b with %s', (_, encoded, char) => {
+          expect(match('GET', `/a${encoded}b`)[0].handler).toEqual('star')
+          expect(match('GET', `/a${char}b`)[0].handler).toEqual('star')
+        })
+
+        it.each(lineTerminators)('GET /a%s with %s', (_, encoded, char) => {
+          expect(match('GET', `/a${encoded}`).length).toBe(1)
+          expect(match('GET', `/a${char}`).length).toBe(1)
+        })
+      })
+
+      describe('Label', () => {
+        beforeEach(() => {
+          router.add('GET', '/:id', 'label')
+        })
+
+        // `[^/]+` matches line terminators already
+        it.each(lineTerminators)('GET /%s b with %s', (_, encoded, char) => {
+          // the router receives an already decoded path, so assert on the decoded form here
+          const res = match('GET', `/${char}b`)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('label')
+          expect(res[0].params['id']).toEqual(`${char}b`)
+          expect(match('GET', `/${encoded}b`)[0].params['id']).toEqual(`${encoded}b`)
+        })
+      })
+
+      // A `.` in a user-written pattern keeps its normal RegExp semantics, so only the wildcard
+      // is widened. Otherwise a `/{.+}` route would start matching paths that no other router
+      // matches.
+      describe('User-written pattern is not affected', () => {
+        beforeEach(() => {
+          router.add('GET', '/:id{.+}', 'pattern')
+        })
+
+        it.each(lineTerminators)('GET /a%s b with %s does not match', (_, _encoded, char) => {
+          expect(match('GET', `/a${char}b`).length).toBe(0)
+        })
+      })
+    })
+
     describe('Optional route', () => {
       beforeEach(() => {
         router.add('GET', '/api/animals/:type?', 'animals')
