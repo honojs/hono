@@ -10,7 +10,7 @@ export class PatternRouter<T> implements Router<T> {
   #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
-    const suffix = path.endsWith('/*') ? '(?:$|/)' : path.endsWith('*') ? '' : '/?$'
+    const suffix = path.endsWith('/*') ? '(?:$|/)' : path.endsWith('*') ? '' : '$'
     path = path.replace(/\*$/, '')
     if (path.at(-1) === '?') {
       path = path.slice(0, -1)
