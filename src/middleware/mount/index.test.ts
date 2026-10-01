@@ -1,8 +1,8 @@
+import { mount } from '.'
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { ExecutionContext } from '../../context'
 import { Hono } from '../../hono'
 import { getPath } from '../../utils/url'
-import { mount } from '.'
 
 describe('mount()', () => {
   describe('Basic', () => {
