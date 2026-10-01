@@ -4,6 +4,9 @@
  * @link https://www.npmjs.com/package/fetch-result-please
  */
 
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from '../utils/http-status'
+import type { ClientResponse, InferResponseType } from './types'
+
 const nullBodyResponses = new Set([101, 204, 205, 304])
 
 /**
@@ -43,7 +46,23 @@ export async function fetchRP(fetchRes: Response | Promise<Response>): Promise<a
   return _fetchRes._data
 }
 
-export class DetailedError extends Error {
+type ErrorStatusCode = ClientErrorStatusCode | ServerErrorStatusCode
+
+type DetailedErrorData<T> = T extends (...args: never[]) => Promise<unknown>
+  ? InferResponseType<T, ErrorStatusCode>
+  : T extends ClientResponse<infer RT, infer _, infer RF>
+    ? RF extends 'json'
+      ? RT
+      : RT extends string
+        ? RT
+        : string
+    : T
+
+export class DetailedError<T = unknown> extends Error {
+  /**
+   * Parsed error response data.
+   */
+  public readonly data?: DetailedErrorData<T>
   /**
    * Additional `message` that will be logged AND returned to client
    */
@@ -69,6 +88,7 @@ export class DetailedError extends Error {
     this.name = 'DetailedError'
     this.log = options.log
     this.detail = options.detail
+    this.data = options.detail?.data
     this.code = options.code
     this.statusCode = options.statusCode
   }
