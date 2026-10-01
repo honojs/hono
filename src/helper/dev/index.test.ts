@@ -41,6 +41,8 @@ describe('inspectRoutes()', () => {
     const subApp = new Hono()
 
     subApp.get('/', (c) => c.json(0))
+    subApp.catch(async (_c, next) => next())
+    subApp.catchNotFound(async (_c, next) => next())
     subApp.onError((_, c) => c.json(0))
 
     const mainApp = new Hono()
@@ -51,6 +53,26 @@ describe('inspectRoutes()', () => {
         method: 'GET',
         name: '[handler]',
         path: '/',
+      },
+    ])
+    expect(inspectRoutes(mainApp, { includeInternal: true })).toEqual([
+      {
+        isMiddleware: false,
+        method: 'GET',
+        name: '[handler]',
+        path: '/',
+      },
+      {
+        isMiddleware: true,
+        method: '@ERROR',
+        name: '[middleware]',
+        path: '/*',
+      },
+      {
+        isMiddleware: true,
+        method: '@NOT_FOUND',
+        name: '[middleware]',
+        path: '/*',
       },
     ])
   })
@@ -122,6 +144,28 @@ describe('showRoutes()', () => {
       'DELETE   /',
       'OPTIONS  /',
       'GET      /static',
+    ])
+  })
+
+  it('should render internal routes when includeInternal is true', async () => {
+    const fallbackApp = new Hono()
+    fallbackApp.catch(async function errorHandler(_c, next) {
+      return next()
+    })
+    fallbackApp.catchNotFound(async function notFoundHandler(_c, next) {
+      return next()
+    })
+
+    showRoutes(fallbackApp, { includeInternal: true, colorize: false })
+    expect(logs).toEqual(['@ERROR      /*', '@NOT_FOUND  /*'])
+
+    logs = []
+    showRoutes(fallbackApp, { includeInternal: true, verbose: true, colorize: false })
+    expect(logs).toEqual([
+      '@ERROR      /*',
+      '              errorHandler',
+      '@NOT_FOUND  /*',
+      '              notFoundHandler',
     ])
   })
 })

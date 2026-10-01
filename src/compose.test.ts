@@ -727,6 +727,28 @@ describe('Compose', function () {
     }
   })
 
+  it('should not update the route index when disabled', async () => {
+    const routeIndexes: number[] = []
+    const middleware = [
+      buildMiddlewareTuple(async (ctx: Context, next: Next) => {
+        routeIndexes.push(ctx.req.routeIndex)
+        await next()
+        routeIndexes.push(ctx.req.routeIndex)
+      }),
+      buildMiddlewareTuple((ctx: Context) => {
+        routeIndexes.push(ctx.req.routeIndex)
+        return ctx.text('OK')
+      }),
+    ]
+    const ctx = new Context(new Request('http://localhost/'))
+    ctx.req.routeIndex = 10
+
+    await compose(middleware, undefined, undefined, false)(ctx)
+
+    expect(routeIndexes).toEqual([10, 10, 10])
+    expect(ctx.req.routeIndex).toBe(10)
+  })
+
   it('should not get stuck on the passed in next', async () => {
     const middleware = [
       buildMiddlewareTuple((ctx: Context, next: Next) => {
