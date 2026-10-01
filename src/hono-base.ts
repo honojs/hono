@@ -299,6 +299,8 @@ class Hono<
   /**
    * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
+   * @deprecated Use `mount()` from `hono/mount` instead. `.mount()` will be removed in v5.
+   *
    * @see {@link https://hono.dev/docs/api/hono#mount}
    *
    * @param {string} path - base Path
