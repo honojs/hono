@@ -1,6 +1,6 @@
 import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
-import { JSXNode, getNameSpaceContext } from '../base'
+import { JSXNode, getNameSpaceContext, renderChildren } from '../base'
 import type { Child, Props } from '../base'
 import { toArray } from '../children'
 import { PERMALINK } from '../constants'
@@ -86,12 +86,12 @@ const insertIntoHead: (
       insertTags.forEach((tag) => {
         buffer[0] = buffer[0].replaceAll(tag, '')
       })
-      buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
+      buffer[0] = buffer[0].replace(/(?=<\/head>)/, () => insertTags.join(''))
     }
   }
 
 const returnWithoutSpecialBehavior = (tag: string, children: Child, props: Props) =>
-  raw(new JSXNode(tag, props, toArray(children ?? [])).toString())
+  renderChildren([new JSXNode(tag, props, toArray(children ?? []))])
 
 const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
   if ('itemProp' in props) {

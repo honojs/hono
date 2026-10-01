@@ -21,9 +21,9 @@ type HeaderRecord =
   | Record<string, string | string[]>
 
 /**
- * Data type can be a string, ArrayBuffer, Uint8Array (buffer), or ReadableStream.
+ * Data type can be a string, ArrayBuffer, Blob, Uint8Array (buffer), or ReadableStream.
  */
-export type Data = string | ArrayBuffer | ReadableStream | Uint8Array<ArrayBuffer>
+export type Data = string | ArrayBuffer | Blob | ReadableStream | Uint8Array<ArrayBuffer>
 
 /**
  * Interface for the execution context in a web worker or similar environment.
@@ -508,6 +508,10 @@ export class Context<
    *   c.header('X-Message', 'Hello!')
    *   c.header('Content-Type', 'text/plain')
    *
+   *   // Append multiple headers using the append option (e.g. Vary)
+   *   c.header('Vary', 'Accept-Encoding', { append: true })
+   *   c.header('Vary', 'User-Agent', { append: true })
+   *
    *   return c.body('Thank you for coming')
    * })
    * ```
@@ -547,10 +551,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string, value: unknown) => {
+  > = (key: PropertyKey, value: unknown) => {
     this.#var ??= new Map()
     this.#var.set(key, value)
   }
@@ -572,10 +576,10 @@ export class Context<
     IsAny<E> extends true
       ? {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          Variables: ContextVariableMap & Record<string, any>
+          Variables: ContextVariableMap & Record<PropertyKey, any>
         }
       : E
-  > = (key: string) => {
+  > = (key: PropertyKey) => {
     return this.#var ? this.#var.get(key) : undefined
   }
 
@@ -767,7 +771,7 @@ export class Context<
     const locationString = String(location)
     this.header(
       'Location',
-      // Multibyes should be encoded
+      // Multibytes should be encoded
       // eslint-disable-next-line no-control-regex
       !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
     )

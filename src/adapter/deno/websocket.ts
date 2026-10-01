@@ -1,6 +1,9 @@
 import type { UpgradeWebSocket, WSReadyState } from '../../helper/websocket'
 import { WSContext, defineWebSocketHelper } from '../../helper/websocket'
 
+/**
+ * @deprecated `hono/deno` will be removed in v5. Install `@hono/deno` and import from there instead.
+ */
 export const upgradeWebSocket: UpgradeWebSocket<WebSocket, Deno.UpgradeWebSocketOptions> =
   defineWebSocketHelper(async (c, events, options) => {
     if (c.req.header('upgrade') !== 'websocket') {

@@ -7,18 +7,31 @@ import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler
 import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
-  it('Should determine whether it is binary', () => {
-    expect(isContentTypeBinary('image/png')).toBe(true)
-    expect(isContentTypeBinary('font/woff2')).toBe(true)
-    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/plain')).toBe(false)
-    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/css')).toBe(false)
-    expect(isContentTypeBinary('text/javascript')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
-    expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+  it.each([
+    ['image/png', true],
+    ['font/woff2', true],
+    ['image/svg+xml', false],
+    ['image/svg+xml; charset=UTF-8', false],
+    ['text/plain', false],
+    ['text/plain; charset=UTF-8', false],
+    ['text/css', false],
+    ['text/javascript', false],
+    ['application/json', false],
+    ['application/ld+json', false],
+    ['application/json', false],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', true],
+    ['application/msword', true],
+    ['application/epub+zip', true],
+    ['application/ld+json', false],
+    ['application/vnd.oasis.opendocument.text', true],
+    ['application/vnd.apple.installer+xml', true],
+    ['application/vnd.apple.installer+xml; charset=UTF-8', true],
+    ['application/vnd.mozilla.xul+xml', true],
+    ['APPLICATION/VND.APPLE.INSTALLER+XML', true],
+    ['APPLICATION/JSON', false],
+    ['TEXT/PLAIN', false],
+  ])('Should determine whether %s it is binary', (mimeType: string, expected: boolean) => {
+    expect(isContentTypeBinary(mimeType)).toBe(expected)
   })
 })
 
@@ -363,5 +376,75 @@ describe('handle', () => {
 
     expect(res).toMatchObject({ body: 'plain' })
     expect(res).not.toHaveProperty('bodyEncoding')
+  })
+})
+
+describe('handle with a malformed event', () => {
+  const invalidEventMessage =
+    'Unable to map the CloudFront event to a Request: expected `Records[0].cf.request` in the Lambda@Edge event.'
+
+  it('Should reject with a descriptive error when Records holds no CloudFront record', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    // The payload the AWS Lambda console prefills is an array of dummy ids.
+    const event = { Records: ['foo', 'bar'] } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(TypeError)
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should reject with a descriptive error when Records is empty or absent', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    for (const event of [{ Records: [] }, {}] as unknown as CloudFrontEdgeEvent[]) {
+      await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+    }
+  })
+
+  it('Should reject with a descriptive error when cf carries no request', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+
+    const event = {
+      Records: [{ cf: { config: { distributionDomainName: 'd111111abcdef8.cloudfront.net' } } }],
+    } as unknown as CloudFrontEdgeEvent
+
+    await expect(handler(event)).rejects.toThrow(invalidEventMessage)
+  })
+
+  it('Should fall back to the distribution domain name when the request has no headers', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.text(c.req.url))
+    const handler = handle(app)
+
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-request',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '1.2.3.4',
+              method: 'GET',
+              querystring: '',
+              uri: '/test-path',
+            },
+          },
+        },
+      ],
+    } as unknown as CloudFrontEdgeEvent
+
+    const res = await handler(event)
+
+    expect(res).toMatchObject({
+      status: '200',
+      body: 'https://d111111abcdef8.cloudfront.net/test-path',
+    })
   })
 })

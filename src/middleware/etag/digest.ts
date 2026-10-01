@@ -51,7 +51,7 @@ export const generateDigest = async (
       const requiredLength = chunkLength + remaining
       if (requiredLength < CHUNK_SIZE) {
         if (!chunk) {
-          chunk = value.subarray(offset)
+          chunk = value.slice(offset)
         } else {
           if (chunk.byteLength < requiredLength) {
             const nextChunk = new Uint8Array<ArrayBuffer>(

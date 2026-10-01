@@ -1,5 +1,5 @@
-import { Context } from '../../context'
 import { streamText } from '.'
+import { Context } from '../../context'
 
 describe('Text Streaming Helper', () => {
   const req = new Request('http://localhost/')

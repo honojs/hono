@@ -1,0 +1,40 @@
+{
+  "name": "@hono/cloudflare-workers",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers adapter for Hono",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && vp pack && publint",
+    "test": "tsc -p tsconfig.json && vp test --run"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/honojs/hono.git",
+    "directory": "adapters/cloudflare-workers"
+  },
+  "homepage": "https://hono.dev",
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "peerDependencies": {
+    "hono": ">=4.13.9"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  },
+  "devDependencies": {
+    "hono": "workspace:*",
+    "wrangler": "4.107.0",
+    "ws": "^8.21.0",
+    "@types/ws": "^8.18.1"
+  }
+}

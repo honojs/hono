@@ -92,6 +92,20 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
   })
 
+  it('JwtTokenInvalid for a signature that is not valid base64url', async () => {
+    const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.@@@@'
+    const err = await JWT.verify(tok, 'a-secret', AlgorithmTypes.HS256).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(JwtTokenInvalid)
+    expect(err).toHaveProperty('message', `invalid JWT token: ${tok}`)
+  })
+
+  it('JwtTokenSignatureMismatched for an empty signature', async () => {
+    const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.'
+    const err = await JWT.verify(tok, 'a-secret', AlgorithmTypes.HS256).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(JwtTokenSignatureMismatched)
+    expect(err).toHaveProperty('message', `token(${tok}) signature mismatched`)
+  })
+
   it('JwtTokenNotBefore', async () => {
     const tok =
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'

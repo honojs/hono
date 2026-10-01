@@ -521,6 +521,107 @@ describe('Form - Undefined Values', () => {
   })
 })
 
+describe('Form arrays containing undefined', () => {
+  const app = new Hono().post(
+    '/',
+    validator('form', () => ({}) as { tag: (string | undefined)[] | undefined }),
+    async (c) => {
+      const body = await c.req.parseBody({ all: true })
+      return c.json({ tag: body['tag'] })
+    }
+  )
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should not send the literal string "undefined" for an absent entry', async () => {
+    const res = await client.index.$post({
+      form: {
+        tag: ['a', undefined, 'b'],
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ tag: ['a', 'b'] })
+  })
+
+  it('Should keep an empty string in an array', async () => {
+    const res = await client.index.$post({
+      form: {
+        tag: ['a', '', 'b'],
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ tag: ['a', '', 'b'] })
+  })
+})
+
+describe('Optional header and cookie values', () => {
+  const app = new Hono().get(
+    '/',
+    validator('header', () => {
+      return {} as {
+        'x-required': string
+        'x-optional'?: string
+      }
+    }),
+    validator('cookie', () => {
+      return {} as {
+        required: string
+        optional?: string
+      }
+    }),
+    (c) =>
+      c.json({
+        requiredHeader: c.req.header('x-required'),
+        optionalHeader: c.req.header('x-optional') ?? null,
+        cookies: parse(c.req.header('cookie') ?? ''),
+      })
+  )
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should skip undefined header and cookie values', async () => {
+    const res = await client.index.$get({
+      header: {
+        'x-required': 'header-value',
+        'x-optional': undefined,
+      },
+      cookie: {
+        required: 'cookie-value',
+        optional: undefined,
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      requiredHeader: 'header-value',
+      optionalHeader: null,
+      cookies: {
+        required: 'cookie-value',
+      },
+    })
+  })
+
+  it('Should not send a Cookie header if all cookie values are undefined', async () => {
+    const app = new Hono().get(
+      '/',
+      validator('cookie', () => {
+        return {} as {
+          optional?: string
+        }
+      }),
+      (c) => c.json({ cookieHeader: c.req.header('cookie') ?? null })
+    )
+    const client = hc<typeof app>('', { fetch: app.request })
+
+    const res = await client.index.$get({
+      cookie: {
+        optional: undefined,
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ cookieHeader: null })
+  })
+})
+
 describe('Infer the response/request type', () => {
   const app = new Hono()
   const route = app.get(
@@ -885,6 +986,20 @@ describe('Use custom fetch (app.request) method', () => {
     const res = await client.search.$get()
     expect(res.ok).toBe(true)
   })
+
+  it.each([false, 0, '', null])('Should send falsy JSON value: %j', async (json) => {
+    const app = new Hono().post(
+      '/json',
+      validator('json', (value) => value as boolean | number | string | null),
+      (c) => c.json(c.req.valid('json'))
+    )
+    const client = hc<typeof app>('', { fetch: app.request })
+
+    const res = await client.json.$post({ json })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toBe(json)
+  })
 })
 
 describe('Optional parameters in JSON response', () => {
@@ -1128,6 +1243,10 @@ describe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {
   const app = new Hono()
     .get('/posts/:id/comments', (c) => c.json({ ok: true }))
     .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
+    .get('/docs/:page', (c) => c.json({ ok: true }))
+    .get('/files/:dir/', (c) => c.json({ ok: true }))
+    .get('/:page', (c) => c.json({ ok: true }))
+    .get('/index/:v?', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -1155,16 +1274,54 @@ describe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {
     })
     expect(pathname(value)).toBe('/something/123/456')
   })
+
+  it('Should keep a param value of "index" - /docs/index', async () => {
+    const value = client.docs[':page'][cmd]({
+      param: {
+        page: 'index',
+      },
+    })
+    expect(pathname(value)).toBe('/docs/index')
+  })
+
+  it('Should keep a root-level param value of "index" - /index', async () => {
+    const value = client[':page'][cmd]({
+      param: {
+        page: 'index',
+      },
+    })
+    expect(pathname(value)).toBe('/index')
+  })
+
+  it('Should keep a literal index segment when an optional param is omitted - /index', async () => {
+    const value = client.index[':v?'][cmd]({
+      param: {
+        v: undefined,
+      },
+    })
+    expect(pathname(value)).toBe('/index')
+  })
+
+  it('Should still drop the index alias of a route with a param - /files/123', async () => {
+    const value = client.files[':dir'].index[cmd]({
+      param: {
+        dir: '123',
+      },
+    })
+    expect(pathname(value)).toBe('/files/123')
+  })
 })
 
 describe('$url() / $path() with a query option', () => {
-  const app = new Hono().get(
-    '/posts',
-    validator('query', () => {
-      return {} as { filter: 'test' }
-    }),
-    (c) => c.json({ ok: true })
-  )
+  const app = new Hono()
+    .get(
+      '/posts',
+      validator('query', () => {
+        return {} as { filter: 'test' }
+      }),
+      (c) => c.json({ ok: true })
+    )
+    .get('/docs/:page', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -1182,6 +1339,28 @@ describe('$url() / $path() with a query option', () => {
       },
     })
     expect(path).toBe('/posts?filter=test')
+  })
+
+  it('Should return the correct path - /docs/index?filter=test', async () => {
+    const url = client.docs[':page'].$url({
+      param: {
+        page: 'index',
+      },
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.href).toBe('http://localhost/docs/index?filter=test')
+
+    const path = client.docs[':page'].$path({
+      param: {
+        page: 'index',
+      },
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(path).toBe('/docs/index?filter=test')
   })
 })
 
@@ -1433,25 +1612,37 @@ describe('WebSocket URL Protocol Translation', () => {
   it('Translates HTTP to ws', async () => {
     const client = hc<AppType>('http://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Translates HTTPS to wss', async () => {
     const client = hc<AppType>('https://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
   })
 
   it('Keeps ws unchanged', async () => {
     const client = hc<AppType>('ws://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/')
   })
 
   it('Keeps wss unchanged', async () => {
     const client = hc<AppType>('wss://localhost')
     client.index.$ws()
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/')
+  })
+
+  it('Preserves an index path parameter value', async () => {
+    const dynamicRoute = new Hono().get(
+      '/:id',
+      upgradeWebSocket(() => ({}))
+    )
+    const client = hc<typeof dynamicRoute>('http://localhost')
+
+    client[':id'].$ws({ param: { id: 'index' } })
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
   })
 })
 
@@ -1493,7 +1684,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         tag: ['a', 'b'],
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test&tag=a&tag=b')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=123&type=test&tag=a&tag=b')
   })
 
   it('Translates HTTPS to wss and includes query parameters', async () => {
@@ -1504,7 +1695,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=456&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=456&type=secure')
   })
 
   it('Keeps ws unchanged and includes query parameters', async () => {
@@ -1515,7 +1706,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'plain',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=789&type=plain')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/?id=789&type=plain')
   })
 
   it('Keeps wss unchanged and includes query parameters', async () => {
@@ -1526,7 +1717,7 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
         type: 'secure',
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=1011&type=secure')
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/?id=1011&type=secure')
   })
 })
 
@@ -1681,13 +1872,13 @@ describe('WebSocket Provider Integration', () => {
       description: 'should initialize the WebSocket provider correctly',
       url: 'http://localhost',
       query: undefined,
-      expectedUrl: 'ws://localhost/index',
+      expectedUrl: 'ws://localhost/',
     },
     {
       description: 'should correctly add query parameters to the WebSocket URL',
       url: 'http://localhost',
       query: { id: '123', type: 'test', tag: ['a', 'b'] },
-      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+      expectedUrl: 'ws://localhost/?id=123&type=test&tag=a&tag=b',
     },
   ])('$description', ({ url, expectedUrl, query }) => {
     const webSocketMock = vi.fn()
@@ -1698,6 +1889,91 @@ describe('WebSocket Provider Integration', () => {
     })
     client.index.$ws({ query })
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+})
+
+describe('Query arrays containing undefined', () => {
+  // A validator whose query field is an optional union gives the client an input
+  // type of `(string | undefined)[] | undefined`, so this compiles with no cast.
+  const app = new Hono().get(
+    '/search',
+    validator('query', () => ({}) as { tag: (string | undefined)[] | undefined }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+
+  it('Should not send the literal string "undefined" for an absent entry', async () => {
+    let requestedUrl = ''
+    const client = hc<AppType>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+
+    await client.search.$get({ query: { tag: ['a', undefined, 'b'] } })
+
+    expect(requestedUrl).toBe('http://localhost/search?tag=a&tag=b')
+  })
+})
+
+describe('Empty serialized query', () => {
+  const app = new Hono().get(
+    '/search',
+    validator('query', () => ({}) as { q?: string }),
+    (c) => c.json({ ok: true })
+  )
+  const input = { query: { q: undefined } }
+
+  it('Should omit the query delimiter when no query values are serialized', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+
+    await client.search.$get(input)
+
+    expect(requestedUrl).toBe('http://localhost/search')
+    expect(client.search.$url(input).href).toBe('http://localhost/search')
+    expect(client.search.$path(input)).toBe('/search')
+  })
+
+  it('Should omit the query delimiter when a custom serializer returns no values', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      buildSearchParams: () => new URLSearchParams(),
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+    const customInput = { query: { q: 'ignored' } }
+
+    await client.search.$get(customInput)
+
+    expect(requestedUrl).toBe('http://localhost/search')
+    expect(client.search.$url(customInput).href).toBe('http://localhost/search')
+    expect(client.search.$path(customInput)).toBe('/search')
+  })
+
+  it('Should preserve empty-string query values', async () => {
+    let requestedUrl = ''
+    const client = hc<typeof app>('http://localhost', {
+      fetch: (input: RequestInfo | URL) => {
+        requestedUrl = input.toString()
+        return Promise.resolve(new Response('{}'))
+      },
+    })
+    const emptyStringInput = { query: { q: '' } }
+
+    await client.search.$get(emptyStringInput)
+
+    expect(requestedUrl).toBe('http://localhost/search?q=')
+    expect(client.search.$url(emptyStringInput).href).toBe('http://localhost/search?q=')
+    expect(client.search.$path(emptyStringInput)).toBe('/search?q=')
   })
 })
 
@@ -1778,6 +2054,36 @@ describe('Custom buildSearchParams', () => {
     const url = client.search.$url({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
 
     expect(url.href).toBe('http://localhost/search?q=test&tags=tag1&tags=tag2')
+  })
+
+  it('Should use custom buildSearchParams in $ws() method', () => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>('http://localhost', {
+      buildSearchParams: customBuildSearchParams,
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    // @ts-expect-error search route does not explicitly define $ws in mock AppType
+    client.search.$ws({ query: { q: 'test', tags: ['tag1', 'tag2'] } })
+
+    expect(webSocketMock).toHaveBeenCalledWith(
+      'ws://localhost/search?q=test&tags%5B%5D=tag1&tags%5B%5D=tag2',
+      undefined
+    )
+  })
+
+  it('Should filter out undefined query parameters in $ws()', () => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>('http://localhost', {
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    // @ts-expect-error search route does not explicitly define $ws in mock AppType
+    client.search.$ws({ query: { q: 'test', tags: undefined as any } })
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/search?q=test', undefined)
   })
 })
 

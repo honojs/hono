@@ -1,40 +1,41 @@
-import type { ParamIndexMap, Router } from '../../router'
+import type { Router } from '../../router'
 import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
   METHOD_NAME_ALL,
   UnsupportedPathError,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
+import { createNullObject } from '../utils'
 import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
 import { match, emptyParam } from './matcher'
-import { PATH_ERROR } from './node'
+import {
+  LABEL_REG_EXP_STR,
+  ONLY_WILDCARD_REG_EXP_STR,
+  PATH_ERROR,
+  TAIL_WILDCARD_REG_EXP_STR,
+} from './node'
 import { Trie } from './trie'
 
-type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
+type HandlerWithMetadata<T> = [T, string] // [handler, path]
 
-let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
+let wildcardRegExpCache: Record<string, RegExp> = createNullObject()
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
-    path === '*'
-      ? ''
-      : `^${path.replace(/\/\*$|([.\\+*[^\]$()])/g, (_, metaChar) =>
-          metaChar ? `\\${metaChar}` : '(?:|/.*)'
-        )}$`
+    `^${path.replace(
+      /\/:[^/{}]+(?:\{\[\^\/]\+})?(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()?{}|])/g,
+      (match, metaChar) =>
+        metaChar
+          ? `\\${metaChar}`
+          : match === '/*'
+            ? TAIL_WILDCARD_REG_EXP_STR
+            : match === '*'
+              ? ONLY_WILDCARD_REG_EXP_STR
+              : `/:${LABEL_REG_EXP_STR}`
+    )}$`
   ))
 }
 
-function clearWildcardRegExpCache() {
-  wildcardRegExpCache = Object.create(null)
-}
-
-function findMiddleware<T>(
-  middleware: Record<string, T[]> | undefined,
-  path: string
-): T[] | undefined {
-  if (!middleware) {
-    return undefined
-  }
-
+function findMiddleware<T>(middleware: Record<string, T[]>, path: string): T[] | undefined {
   for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
     if (buildWildcardRegExp(k).test(path)) {
       return [...middleware[k]]
@@ -51,8 +52,8 @@ export class RegExpRouter<T> implements Router<T> {
   #tries?: Record<string, Trie>
 
   constructor() {
-    this.#middleware = { [METHOD_NAME_ALL]: Object.create(null) }
-    this.#routes = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#middleware = { [METHOD_NAME_ALL]: createNullObject() }
+    this.#routes = { [METHOD_NAME_ALL]: createNullObject() }
     this.#tries = { [METHOD_NAME_ALL]: new Trie() }
   }
 
@@ -66,93 +67,77 @@ export class RegExpRouter<T> implements Router<T> {
 
   add(method: string, path: string, handler: T) {
     const middleware = this.#middleware
-    const routes = this.#routes
+    const routes = this.#routes!
 
-    if (!middleware || !routes) {
+    if (!middleware) {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
     if (!middleware[method]) {
       this.#tries![method] = new Trie()
-      ;[middleware, routes].forEach((handlerMap) => {
-        handlerMap[method] = Object.create(null)
-        Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
+      for (const handlerMap of [middleware, routes]) {
+        handlerMap[method] = createNullObject()
+        for (const p in handlerMap[METHOD_NAME_ALL]) {
           handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]]
           this.#insertPath(method, p)
-        })
-      })
+        }
+      }
     }
 
     if (path === '/*') {
       path = '*'
     }
-
-    const paramCount = (path.match(/\/:/g) || []).length
+    const methods = method === METHOD_NAME_ALL ? Object.keys(middleware) : [method]
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
-      Object.keys(middleware).forEach((m) => {
-        if ((method === METHOD_NAME_ALL || method === m) && !middleware[m][path]) {
+      for (const m of methods) {
+        if (!middleware[m][path]) {
           this.#insertPath(m, path)
           middleware[m][path] =
             findMiddleware(middleware[m], path) ||
             findMiddleware(middleware[METHOD_NAME_ALL], path) ||
             []
         }
-      })
-      Object.keys(middleware).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(middleware[m]).forEach((p) => {
-            re.test(p) && middleware[m][p].push([handler, paramCount])
-          })
+      }
+      for (const handlerMap of [middleware, routes]) {
+        for (const m of methods) {
+          for (const p in handlerMap[m]) {
+            re.test(p) && handlerMap[m][p].push([handler, path])
+          }
         }
-      })
-
-      Object.keys(routes).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(routes[m]).forEach(
-            (p) => re.test(p) && routes[m][p].push([handler, paramCount])
-          )
-        }
-      })
+      }
 
       return
     }
 
     const paths = checkOptionalParameter(path) || [path]
-    for (let i = 0, len = paths.length; i < len; i++) {
-      const path = paths[i]
-
-      Object.keys(routes).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          if (!routes[m][path]) {
-            this.#insertPath(m, path)
-            routes[m][path] = [
-              ...(findMiddleware(middleware[m], path) ||
-                findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-                []),
-            ]
-          }
-          routes[m][path].push([handler, paramCount - len + i + 1])
+    for (const path of paths) {
+      for (const m of methods) {
+        if (!routes[m][path]) {
+          this.#insertPath(m, path)
+          routes[m][path] =
+            findMiddleware(middleware[m], path) ||
+            findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+            []
         }
-      })
+        routes[m][path].push([handler, path])
+      }
     }
   }
 
   match: typeof match<Router<T>, T> = match
 
   protected buildAllMatchers(): MatcherMap<T> {
-    const matchers: MatcherMap<T> = Object.create(null)
+    const matchers: MatcherMap<T> = createNullObject()
 
-    Object.keys(this.#routes!)
-      .concat(Object.keys(this.#middleware!))
-      .forEach((method) => {
-        matchers[method] ||= this.#buildMatcher(method)
-      })
+    for (const method of Object.keys(this.#routes!)) {
+      matchers[method] = this.#buildMatcher(method)
+    }
 
     // Release cache
     this.#middleware = this.#routes = this.#tries = undefined
-    clearWildcardRegExpCache()
+    wildcardRegExpCache = createNullObject()
 
     return matchers
   }
@@ -162,50 +147,28 @@ export class RegExpRouter<T> implements Router<T> {
     const routes = this.#routes![method]
 
     const trie = this.#tries![method]
-    const staticMap: StaticMap<T> = Object.create(null)
+    const staticMap: StaticMap<T> = createNullObject()
     const handlerData: HandlerData<T>[] = []
+    const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
 
-    ;[middleware, routes].forEach((r) => {
+    for (const r of [middleware, routes]) {
       for (const path in r) {
         const handlers = r[path]
         const pathData = trie.paths[path]
         if (!pathData) {
-          staticMap[path] = [handlers.map(([h]) => [h, Object.create(null)]), emptyParam]
+          staticMap[path] = [handlers.map(([h]) => [h, createNullObject()]), emptyParam]
           continue
         }
-        const paramAssoc = pathData[1]
-        handlerData[pathData[0]] = handlers.map(([h, paramCount]) => {
-          const paramIndexMap: ParamIndexMap = Object.create(null)
-          paramCount -= 1
-          for (; paramCount >= 0; paramCount--) {
-            const [key, value] = paramAssoc[paramCount]
-            paramIndexMap[key] = value
-          }
-          return [h, paramIndexMap]
-        })
-      }
-    })
-
-    const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
-    for (let i = 0, len = handlerData.length; i < len; i++) {
-      for (let j = 0, len = handlerData[i].length; j < len; j++) {
-        const map = handlerData[i][j]?.[1]
-        if (!map) {
-          continue
-        }
-        const keys = Object.keys(map)
-        for (let k = 0, len = keys.length; k < len; k++) {
-          map[keys[k]] = paramReplacementMap[map[keys[k]]]
-        }
+        handlerData[pathData[0]] = handlers.map(([h, handlerPath]) => [
+          h,
+          trie.paths[handlerPath][1].reduceRight((map, [key], i) => {
+            map[key] = paramReplacementMap[pathData[1][i][1]]
+            return map
+          }, createNullObject()),
+        ])
       }
     }
 
-    const handlerMap: HandlerData<T>[] = []
-    // using `in` because indexReplacementMap is a sparse array
-    for (const i in indexReplacementMap) {
-      handlerMap[i] = handlerData[indexReplacementMap[i]]
-    }
-
-    return [regexp, handlerMap, staticMap] as Matcher<T>
+    return [regexp, indexReplacementMap.map((i) => handlerData[i]), staticMap] as Matcher<T>
   }
 }

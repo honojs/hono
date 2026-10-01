@@ -22,9 +22,13 @@ describe('joinPath', () => {
     expect(joinPaths('..', '..')).toBe('../..') // parent and parent
     expect(joinPaths('.test../test2/../')).toBe('.test..') //shuffle
     expect(joinPaths('.test./.test2/../')).toBe('.test.') //shuffle2
+    expect(joinPaths('static/a/b/../../../pwned')).toBe('pwned') // consecutive parents
+    expect(joinPaths('///tmp/out', 'index.html')).toBe('/tmp/out/index.html')
+    expect(joinPaths('//tmp', 'index.html')).toBe('/tmp/index.html')
   })
   it('Should windows path is valid.', () => {
     expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
+    expect(joinPaths('\\\\server\\share\\out', 'index.html')).toBe('//server/share/out/index.html')
   })
 })
 
@@ -41,6 +45,12 @@ describe('ensureWithinOutDir', () => {
     expect(() => ensureWithinOutDir('./static', 'static/sub/page.html')).not.toThrow()
     expect(() => ensureWithinOutDir('/out', '/out/index.html')).not.toThrow()
     expect(() => ensureWithinOutDir('./static', 'static/a/../b.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('./static', 'static/a/b/../../c.html')).not.toThrow()
+    expect(() =>
+      ensureWithinOutDir('\\\\server\\share\\out', '//server/share/out/index.html')
+    ).not.toThrow()
+    expect(() => ensureWithinOutDir('///tmp/out', '/tmp/out/index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('//tmp', '/tmp/index.html')).not.toThrow()
   })
 
   it('Should throw for paths outside outDir via traversal', () => {
@@ -50,11 +60,43 @@ describe('ensureWithinOutDir', () => {
     expect(() => ensureWithinOutDir('./static', 'static/../../pwned.txt')).toThrow(
       'Path traversal detected'
     )
+    expect(() => ensureWithinOutDir('./static', 'static/a/../../pwned.txt')).toThrow(
+      'Path traversal detected'
+    )
   })
 
   it('Should throw for paths that partially match outDir name', () => {
     expect(() => ensureWithinOutDir('./static', 'static-evil/pwned.html')).toThrow(
       'Path traversal detected'
     )
+  })
+
+  it('Should accept the current directory as outDir', () => {
+    expect(() => ensureWithinOutDir('.', 'index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('./', 'index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('', 'index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('.', '../pwned.html')).toThrow('Path traversal detected')
+  })
+
+  it('Should throw for paths that climb above a parent outDir', () => {
+    expect(() => ensureWithinOutDir('..', '../out/index.html')).not.toThrow()
+    expect(() => ensureWithinOutDir('..', '../../pwned.txt')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('../..', '../../../pwned.txt')).toThrow(
+      'Path traversal detected'
+    )
+  })
+
+  it('Should throw when outDir and filePath differ in absoluteness', () => {
+    expect(() => ensureWithinOutDir('/out', 'out/index.html')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('./out', '/out/index.html')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('.', '/etc/pwned.html')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('.', 'C:\\Windows\\pwned.html')).toThrow(
+      'Path traversal detected'
+    )
+    expect(() => ensureWithinOutDir('.', 'C:pwned.html')).toThrow('Path traversal detected')
+    expect(() => ensureWithinOutDir('C:', 'C:/pwned.html')).toThrow('Path traversal detected')
+    expect(() =>
+      ensureWithinOutDir('\\\\server\\share\\out', '/server/share/out/pwned.html')
+    ).toThrow('Path traversal detected')
   })
 })

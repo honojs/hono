@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { prettyJSON } from '.'
+import { Hono } from '../../hono'
 
 describe('JSON pretty by Middleware', () => {
   it('Should return pretty JSON output', async () => {
@@ -72,5 +72,147 @@ describe('JSON pretty by Middleware', () => {
     expect(resWithQuery).toBe(`{
   "message": "Hono!"
 }`)
+  })
+
+  it('Should return pretty JSON output for structured JSON content-types (+json)', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/problem', (c) => {
+      return c.newResponse(JSON.stringify({ type: 'about:blank', title: 'Bad Request' }), 400, {
+        'Content-Type': 'application/problem+json',
+      })
+    })
+    app.get('/jsonapi', (c) => {
+      return c.newResponse(JSON.stringify({ data: { id: '1', type: 'articles' } }), 200, {
+        'Content-Type': 'application/vnd.api+json',
+      })
+    })
+
+    const problemRes = await app.request('http://localhost/problem')
+    expect(await problemRes.text()).toBe(`{
+  "type": "about:blank",
+  "title": "Bad Request"
+}`)
+
+    const jsonApiRes = await app.request('http://localhost/jsonapi')
+    expect(await jsonApiRes.text()).toBe(`{
+  "data": {
+    "id": "1",
+    "type": "articles"
+  }
+}`)
+  })
+
+  it('Should not touch responses with non-JSON content-types', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/text', (c) => c.text('{"message":"Hono!"}'))
+    app.get('/json-seq', (c) => {
+      return c.body('{"message":"Hono!"}', 200, {
+        'Content-Type': 'application/json-seq',
+      })
+    })
+
+    const textRes = await app.request('http://localhost/text')
+    expect(await textRes.text()).toBe('{"message":"Hono!"}')
+
+    const jsonSeqRes = await app.request('http://localhost/json-seq')
+    expect(await jsonSeqRes.text()).toBe('{"message":"Hono!"}')
+  })
+
+  it('Should not break 204 responses with a JSON content-type', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.delete('/x', (c) => {
+      c.header('Content-Type', 'application/json')
+      return c.body(null, 204)
+    })
+
+    const res = await app.request('http://localhost/x', { method: 'DELETE' })
+    expect(res.status).toBe(204)
+    expect(res.body).toBeNull()
+  })
+
+  it('Should not break 304 responses with a JSON content-type', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get('/x', (c) => {
+      c.header('Content-Type', 'application/json')
+      return c.body(null, 304)
+    })
+
+    const res = await app.request('http://localhost/x')
+    expect(res.status).toBe(304)
+    expect(res.body).toBeNull()
+  })
+
+  it('Should not break empty responses with a JSON content-type', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON())
+    app.get('/x', () => new Response('', { headers: { 'Content-Type': 'application/json' } }))
+
+    const res = await app.request('http://localhost/x?pretty')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('')
+  })
+
+  it('Should pass through a response with an invalid JSON body unchanged', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get(
+      '/x',
+      () =>
+        new Response('not json', {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Custom': 'custom',
+            ETag: '"abc"',
+            'Content-Length': '8',
+          },
+        })
+    )
+
+    const res = await app.request('http://localhost/x')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Custom')).toBe('custom')
+    expect(res.headers.get('ETag')).toBe('"abc"')
+    expect(res.headers.get('Content-Length')).toBe('8')
+    expect(await res.text()).toBe('not json')
+  })
+
+  it('Should pass through a response whose body was already consumed by another middleware', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.use('*', async (c, next) => {
+      await next()
+      await c.res.text()
+    })
+    app.get('/x', (c) => c.json({ message: 'Hono!' }))
+
+    // The other middleware has read the body, so the bytes are no longer available;
+    // pretty JSON must not turn this into a 500 and must leave the response as is.
+    const res = await app.request('http://localhost/x')
+    expect(res.status).toBe(200)
+    expect(res.bodyUsed).toBe(true)
+    await expect(res.text()).rejects.toThrow()
+  })
+
+  it('Should remove a stale Content-Length when the body is prettified', async () => {
+    const app = new Hono()
+    app.use('*', prettyJSON({ force: true }))
+    app.get(
+      '/x',
+      () =>
+        new Response('{"message":"Hono!"}', {
+          headers: { 'Content-Type': 'application/json', 'Content-Length': '19' },
+        })
+    )
+
+    const res = await app.request('http://localhost/x')
+    expect(await res.text()).toBe(`{
+  "message": "Hono!"
+}`)
+    expect(res.headers.get('Content-Length')).toBeNull()
   })
 })

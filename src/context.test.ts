@@ -129,6 +129,16 @@ describe('Context', () => {
     })
   })
 
+  it('c.body() - Blob', async () => {
+    const res = c.body(new Blob(['Hi']))
+    expect(await res.text()).toBe('Hi')
+  })
+
+  it('c.body() - File', async () => {
+    const res = c.body(new File(['Hi'], 'greeting.txt'))
+    expect(await res.text()).toBe('Hi')
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
@@ -142,6 +152,13 @@ describe('Context', () => {
     const res = c.body('Hi')
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar, Buzz')
+  })
+
+  it('c.set() and c.get() with symbol key', () => {
+    const sym = Symbol('key')
+    expect(c.get(sym)).toBe(undefined)
+    c.set(sym, 'value')
+    expect(c.get(sym)).toBe('value')
   })
 
   it('c.set() and c.get()', async () => {

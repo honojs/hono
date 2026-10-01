@@ -101,7 +101,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   #getDecodedParam(key: string): string | undefined {
-    const paramKey = this.#matchResult[0][this.routeIndex][1][key]
+    const paramKey = this.#matchResult[0][this.routeIndex]?.[1][key]
     const param = this.#getParamValue(paramKey)
     return param && tryDecodeURIComponent(param)
   }
@@ -109,7 +109,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   #getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
 
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
+    const keys = Object.keys(this.#matchResult[0][this.routeIndex]?.[1] ?? {})
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value !== undefined) {
@@ -227,7 +227,16 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
         }
-        return new Response(body)[key]()
+        // Rebuilding the body through a bare `Response` loses the request's media
+        // type, so a representation that needs it (e.g. `formData()`) can no longer
+        // be produced even though the bytes are still available. Carry the original
+        // `Content-Type` over, except for `FormData`, where `Response` must generate
+        // a fresh multipart boundary of its own.
+        const contentType =
+          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
+        return new Response(body, {
+          headers: contentType ? { 'Content-Type': contentType } : undefined,
+        })[key]()
       })
     }
 
@@ -482,12 +491,14 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     })
   }
 
-  const body = await req[cacheKey]()
+  let body: BodyInit = await req[cacheKey]()
   const headers = req.header()
-  if (body instanceof FormData) {
-    // The FormData is re-serialized with a fresh multipart boundary, so the original
-    // Content-Type header no longer matches. Let the Request constructor generate it.
+  if (cacheKey === 'json') {
+    body = JSON.stringify(body)
+    delete headers['content-length']
+  } else if (body instanceof FormData) {
     delete headers['content-type']
+    delete headers['content-length']
   }
 
   const requestInit: RequiredRequestInit = {

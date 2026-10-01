@@ -5,6 +5,9 @@ import type { Env, MiddlewareHandler } from '../../types'
 
 const { open, lstatSync, errors } = Deno
 
+/**
+ * @deprecated `hono/deno` will be removed in v5. Install `@hono/deno` and import from there instead.
+ */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> = {}
 ): MiddlewareHandler => {

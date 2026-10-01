@@ -5,6 +5,9 @@ import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
 
+/**
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
+ */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> = {}
 ): MiddlewareHandler => {

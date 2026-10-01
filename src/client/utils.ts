@@ -18,7 +18,7 @@ export const mergePath = (base: string, path: string) => {
 export const replaceUrlParam = (urlString: string, params: Record<string, string | undefined>) => {
   for (const [k, v] of Object.entries(params)) {
     const reg = new RegExp('/:' + k + '(?:{[^/]+})?\\??(?=/|$)')
-    urlString = urlString.replace(reg, v ? `/${v}` : '')
+    urlString = urlString.replace(reg, () => (v ? `/${v}` : ''))
   }
   return urlString
 }
@@ -33,6 +33,9 @@ export const buildSearchParams = (query: Record<string, string | string[]>) => {
 
     if (Array.isArray(v)) {
       for (const v2 of v) {
+        if (v2 === undefined) {
+          continue
+        }
         searchParams.append(k, v2)
       }
     } else {

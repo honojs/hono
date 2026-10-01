@@ -1,7 +1,7 @@
-import { createAdaptorServer, serve } from '@hono/node-server'
 import { once } from 'node:events'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { createAdaptorServer, serve } from '@hono/node-server'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'

@@ -201,6 +201,13 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBe(false)
   })
 
+  it('Should parse signed cookie with empty string value', async () => {
+    const secret = 'secret ingredient'
+    const cookieString = await serializeSigned('empty_cookie', '', secret)
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['empty_cookie']).toBe('')
+  })
+
   it('Should parse signed cookies and return "false" for corrupt signature', async () => {
     const secret = 'secret ingredient'
     // yummy_cookie has corrupt signature (i.e. invalid base64 encoding)

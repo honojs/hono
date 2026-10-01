@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest'
+import { bearerAuth } from '.'
 import { Hono } from '../../hono'
 import type { Context, MiddlewareHandler } from '../../index'
-import { bearerAuth } from '.'
 
 describe('Bearer Auth by Middleware', () => {
   let app: Hono

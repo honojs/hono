@@ -1,5 +1,5 @@
-import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { html, raw } from '.'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 
 describe('Tagged Template Literals', () => {
   it('Should escape special characters', () => {

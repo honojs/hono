@@ -221,7 +221,9 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
   while (i < acceptHeader.length) {
     ;[i, accept] = getNextAcceptValue(acceptHeader, i)
     if (accept) {
-      accept.q = parseQuality(accept.params.q)
+      // The "q" parameter is case-insensitive (RFC 9110 §12.4.2). `params` keeps
+      // the name as it was sent, so both spellings are checked here.
+      accept.q = parseQuality(accept.params.q ?? accept.params.Q)
       values.push(accept)
       if (lastAccept && lastAccept.q < accept.q) {
         // find higher quality accept value, so we need to sort
@@ -249,16 +251,16 @@ const parseQuality = (qVal?: string): number => {
   }
 
   const num = Number(qVal)
-  if (num === Infinity) {
-    return 1
-  }
-  if (num === -Infinity) {
-    return 0
-  }
   if (Number.isNaN(num)) {
     return 1
   }
-  if (num < 0 || num > 1) {
+  // A qvalue is 0-1 (RFC 9110 12.4.2). Clamp rather than reject, but clamp each side to the
+  // bound it is past: sending a negative q below every real one instead of above them, which
+  // is what `-Infinity` already did.
+  if (num < 0) {
+    return 0
+  }
+  if (num > 1) {
     return 1
   }
 

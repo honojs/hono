@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { endTime, setMetric, startTime, timing, wrapTime } from '.'
+import { Hono } from '../../hono'
 
 describe('Server-Timing API', () => {
   const app = new Hono()
