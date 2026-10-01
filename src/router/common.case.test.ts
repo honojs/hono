@@ -106,6 +106,28 @@ export const runTest = ({
       })
     })
 
+    describe('Multiple params in one segment', () => {
+      // `ParamKey<':year-:month'>` in src/types.ts resolves to `'year-:month'`, and
+      // `getPattern()` in src/utils/url.ts reads the name as `[^{}]+` — everything up to
+      // the pattern brace. A router that stops the name at the first non-word character
+      // reports a different parameter than the one the types promise.
+      it('GET /date/2026-09', async () => {
+        router.add('GET', '/date/:year-:month', 'get date')
+        const res = match('GET', '/date/2026-09')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get date')
+        expect(res[0].params['year-:month']).toBe('2026-09')
+      })
+
+      it('GET /a/1.json', async () => {
+        router.add('GET', '/a/:id.json', 'get json')
+        const res = match('GET', '/a/1.json')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get json')
+        expect(res[0].params['id.json']).toBe('1.json')
+      })
+    })
+
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
