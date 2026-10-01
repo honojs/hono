@@ -21,6 +21,7 @@ describe('LinearRouter', () => {
           'Trailing wildcard after a pattern label > GET /files/foo/detail with regexp meta characters',
           'Trailing wildcard after a pattern label > GET /user/123/profile with the default pattern',
           'Trailing wildcard after a pattern label > GET /user/123/profile with the default pattern in reverse registration order',
+          'Trailing wildcard after a middle wildcard > GET /acme/x/y with a named parameter',
           'Complex > Parameter with {.*} regexp',
         ],
       },

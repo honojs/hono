@@ -58,6 +58,36 @@ describe('RegExpRouter', () => {
       })
     })
 
+    describe('Prefixed wildcard and tail wildcard as siblings', () => {
+      // `/x*/y` matches `/xz/y` but not `/x/z/y`, and `/x/*` is the other way
+      // round, so the two only partially overlap and cannot share a node.
+      it('GET /x*/y then /x/*', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x*/y', 'prefixed')
+        expect(() => {
+          router.add('GET', '/x/*', 'tail')
+        }).toThrowError(UnsupportedPathError)
+      })
+
+      it('GET /x/* then /x*/y', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x/*', 'tail')
+        expect(() => {
+          router.add('GET', '/x*/y', 'prefixed')
+        }).toThrowError(UnsupportedPathError)
+      })
+
+      it('a prefixed wildcard and a route-final wildcard still coexist', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x*/y', 'prefixed')
+        router.add('GET', '/x*', 'route final')
+        expect(router.match('GET', '/x/y')[0].map(([handler]) => handler)).toEqual([
+          'prefixed',
+          'route final',
+        ])
+      })
+    })
+
     it('parent', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/:id/:action', 'foo')
