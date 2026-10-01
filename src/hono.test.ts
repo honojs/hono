@@ -377,6 +377,24 @@ describe('Options', () => {
         expect(res).not.toBeNull()
         expect(res.status).toBe(200)
       })
+
+      it('should use custom getPath and apply strict: false behavior', async () => {
+        const customGetPath = vi.fn((req: Request) => '/custom' + getPath(req))
+        const customApp = new Hono({
+          strict: false,
+          getPath: customGetPath,
+        })
+        customApp.get('/custom/hello', (c) => c.text('hello custom'))
+
+        let res = await customApp.request('http://localhost/hello')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('hello custom')
+        expect(customGetPath).toHaveBeenCalled()
+
+        res = await customApp.request('http://localhost/hello/')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('hello custom')
+      })
     })
   })
 
