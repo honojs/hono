@@ -434,7 +434,7 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
     if (event.headers) {
       for (const [k, v] of Object.entries(event.headers)) {
         if (v) {
-          headers.set(k, v)
+          headers.set(k, sanitizeHeaderValue(v))
         }
       }
     }
