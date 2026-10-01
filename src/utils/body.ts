@@ -6,6 +6,9 @@
 import type { HonoRequest } from '../request'
 import { bufferToFormData } from './buffer'
 
+const MAX_NESTING_DEPTH = 32
+const MAX_NESTED_OBJECTS = 10_000
+
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
   [x: string]: string | File | (string | File)[] | BodyDataValueDotAll
@@ -159,6 +162,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   options: ParseBodyOptions
 ): T {
   const form: BodyData = Object.create(null)
+  const nestingState = { count: 0 }
 
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
@@ -175,7 +179,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
       const shouldParseDotValues = key.includes('.')
 
       if (shouldParseDotValues) {
-        handleParsingNestedValues(form, key, value)
+        handleParsingNestedValues(form, key, value, nestingState)
         delete form[key]
       }
     })
@@ -221,14 +225,18 @@ const handleParsingAllValues = (
 const handleParsingNestedValues = (
   form: BodyData,
   key: string,
-  value: BodyDataValue<Partial<ParseBodyOptions>>
+  value: BodyDataValue<Partial<ParseBodyOptions>>,
+  state: { count: number }
 ): void => {
   if (/(?:^|\.)__proto__\./.test(key)) {
     return
   }
 
   let nestedForm = form
-  const keys = key.split('.')
+  const keys = key.split('.', MAX_NESTING_DEPTH + 2)
+  if (keys.length > MAX_NESTING_DEPTH + 1) {
+    throwNestingLimitExceeded()
+  }
 
   keys.forEach((key, index) => {
     if (index === keys.length - 1) {
@@ -240,9 +248,16 @@ const handleParsingNestedValues = (
         Array.isArray(nestedForm[key]) ||
         nestedForm[key] instanceof File
       ) {
+        if (state.count++ >= MAX_NESTED_OBJECTS) {
+          throwNestingLimitExceeded()
+        }
         nestedForm[key] = Object.create(null)
       }
       nestedForm = nestedForm[key] as unknown as BodyData
     }
   })
+}
+
+const throwNestingLimitExceeded = (): never => {
+  throw new Error('Nesting limit exceeded')
 }

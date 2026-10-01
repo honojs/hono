@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { methodNotAllowed } from '.'
+import { Hono } from '../../hono'
 
 describe('Method Not Allowed Middleware', () => {
   it('infers the environment from the app', () => {

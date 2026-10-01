@@ -1,3 +1,4 @@
+import { pipeline } from 'node:stream/promises'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
@@ -20,12 +21,18 @@ function sanitizeHeaderValue(value: string): string {
   return encodeURIComponent(value)
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export type LambdaEvent =
   | APIGatewayProxyEvent
   | APIGatewayProxyEventV2
   | ALBProxyEvent
   | LatticeProxyEventV2
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface LatticeProxyEventV2 {
   version: string
   path: string
@@ -38,6 +45,9 @@ export interface LatticeProxyEventV2 {
 }
 
 // When calling HTTP API or Lambda directly through function urls
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface APIGatewayProxyEventV2 {
   version: string
   routeKey: string
@@ -61,6 +71,9 @@ export interface APIGatewayProxyEventV2 {
 }
 
 // When calling Lambda through an API Gateway
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface APIGatewayProxyEvent {
   version: string
   httpMethod: string
@@ -82,6 +95,9 @@ export interface APIGatewayProxyEvent {
 }
 
 // When calling Lambda through an Application Load Balancer
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ALBProxyEvent {
   httpMethod: string
   headers?: Record<string, string | undefined>
@@ -105,6 +121,9 @@ type WithMultiValueHeaders = {
   multiValueHeaders: Record<string, string[]>
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export type APIGatewayProxyResult = {
   statusCode: number
   statusDescription?: string
@@ -123,18 +142,24 @@ const getRequestContext = (
   return event.requestContext
 }
 
-const streamToNodeStream = async (
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  writer: NodeJS.WritableStream
-): Promise<void> => {
+async function* readWebStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>
+): AsyncGenerator<Uint8Array> {
   let readResult = await reader.read()
   while (!readResult.done) {
-    writer.write(readResult.value)
+    yield readResult.value
     readResult = await reader.read()
   }
-  writer.end()
 }
 
+const streamToNodeStream = (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writer: NodeJS.WritableStream
+): Promise<void> => pipeline(readWebStream(reader), writer)
+
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
@@ -235,6 +260,7 @@ type HandleOptions = {
  *   }
  * })
  * ```
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>,
@@ -275,6 +301,9 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export abstract class EventProcessor<E extends LambdaEvent> {
   protected abstract getPath(event: E): string
 
@@ -401,6 +430,9 @@ export abstract class EventProcessor<E extends LambdaEvent> {
   }
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   protected getPath(event: APIGatewayProxyEventV2): string {
     return event.rawPath
@@ -440,6 +472,9 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
 
 const v2Processor: EventV2Processor = new EventV2Processor()
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
   protected getPath(event: APIGatewayProxyEvent): string {
     return event.path
@@ -461,7 +496,7 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
         .join('&')
     } else {
       return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
+        .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
         .join('&')
     }
@@ -500,6 +535,9 @@ export class EventV1Processor extends EventProcessor<APIGatewayProxyEvent> {
 
 const v1Processor: EventV1Processor = new EventV1Processor()
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
   protected getHeaders(event: ALBProxyEvent): Headers {
     const headers = new Headers()
@@ -551,7 +589,7 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
         .join('&')
     } else {
       return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
+        .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}=${value}`)
         .join('&')
     }
@@ -581,6 +619,9 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
 
 const albProcessor: ALBProcessor = new ALBProcessor()
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
   protected getPath(event: LatticeProxyEventV2): string {
     return event.path
@@ -622,6 +663,9 @@ export class LatticeV2Processor extends EventProcessor<LatticeProxyEventV2> {
 
 const latticeV2Processor: LatticeV2Processor = new LatticeV2Processor()
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
   if (isProxyEventALB(event)) {
     return albProcessor
@@ -662,13 +706,21 @@ const isLatticeEventV2 = (event: LambdaEvent): event is LatticeProxyEventV2 => {
  * This is a default function and may be overwritten by the user via `isContentTypeBinary` option in handler().
  * @param contentType The content type to check.
  * @returns True if the content type is binary, false otherwise.
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
  */
 export const defaultIsContentTypeBinary = (contentType: string): boolean => {
-  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/.test(
+  if (/^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i.test(contentType)) {
+    return true
+  }
+
+  return !/^text\/(?:plain|html|css|javascript|csv)|(?:\/|\+)(?:json|xml)\s*(?:;|$)/i.test(
     contentType
   )
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export const isContentEncodingBinary = (contentEncoding: string | null) => {
   return !!contentEncoding && !/^identity$/i.test(contentEncoding)
 }

@@ -22,6 +22,11 @@ describe('Parse Body Util', () => {
     })
   }
 
+  const createNestedKey = (depth: number) =>
+    Array(depth + 1)
+      .fill('a')
+      .join('.')
+
   it('should parse `multipart/form-data`', async () => {
     const data = new FormData()
     data.append('message', 'hello')
@@ -177,6 +182,49 @@ describe('Parse Body Util', () => {
     expect(await parseBody(req, { dot: true })).toEqual({
       a: { b: { c: { d: 'value' } } },
     })
+  })
+
+  it('should allow 32 nesting levels by default', async () => {
+    const data = new FormData()
+    data.append(createNestedKey(32), 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+    let nested: unknown = await parseBody(req, { dot: true })
+
+    for (let i = 0; i <= 32; i++) {
+      nested = (nested as Record<string, unknown>).a
+    }
+    expect(nested).toBe('value')
+  })
+
+  it('should reject dot notation deeper than the default limit', async () => {
+    const data = new FormData()
+    data.append(createNestedKey(33), 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    await expect(parseBody(req, { dot: true })).rejects.toThrow('Nesting limit exceeded')
+  })
+
+  it('should reject deeply nested keys without splitting every segment', async () => {
+    const req = createRequest(SEARCH_URL, 'POST', `${'.'.repeat(65_530)}=value`, {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    })
+
+    await expect(parseBody(req, { dot: true })).rejects.toThrow('Nesting limit exceeded')
+  })
+
+  it('should reject too many nested objects across multiple fields', async () => {
+    const searchParams = new URLSearchParams()
+    for (let i = 0; i <= 10_000; i++) {
+      searchParams.append(`field${i}.value`, 'value')
+    }
+
+    const req = createRequest(SEARCH_URL, 'POST', searchParams, {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    })
+
+    await expect(parseBody(req, { dot: true })).rejects.toThrow('Nesting limit exceeded')
   })
 
   it('should skip keys starting with __proto__. to prevent prototype pollution', async () => {

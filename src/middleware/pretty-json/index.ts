@@ -25,6 +25,8 @@ interface PrettyOptions {
   force?: boolean
 }
 
+const jsonContentTypeRegex = /^application\/(?:[a-z0-9._-]+\+)?json(?=$|[;\s])/i
+
 /**
  * Pretty JSON Middleware for Hono.
  *
@@ -48,9 +50,19 @@ export const prettyJSON = (options?: PrettyOptions): MiddlewareHandler => {
   return async function prettyJSON(c, next) {
     const pretty = options?.force || c.req.query(targetQuery) || c.req.query(targetQuery) === ''
     await next()
-    if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
-      const obj = await c.res.json()
+    const contentType = c.res.headers.get('Content-Type')
+    if (pretty && contentType && jsonContentTypeRegex.test(contentType)) {
+      // Read from a clone so that the response is kept intact when the body is not parseable as JSON
+      let obj: unknown
+      try {
+        obj = await c.res.clone().json()
+      } catch {
+        // e.g. an empty 204 response or a body that is not valid JSON
+        return
+      }
       c.res = new Response(JSON.stringify(obj, null, options?.space ?? 2), c.res)
+      // The length of the body has changed, so remove the stale Content-Length
+      c.res.headers.delete('Content-Length')
     }
   }
 }

@@ -2,6 +2,9 @@ import { WSContext, defineWebSocketHelper } from '../../helper/websocket'
 import type { UpgradeWebSocket, WSEvents, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
+/**
+ * @deprecated `hono/cloudflare-workers` will be removed in v5. Install `@hono/cloudflare-workers` and import from there instead.
+ */
 export const upgradeWebSocket: UpgradeWebSocket<
   WebSocket,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

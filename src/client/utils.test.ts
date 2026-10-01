@@ -74,6 +74,21 @@ describe('replaceUrlParams', () => {
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/2/1')
   })
+
+  it('Should replace correctly when parameter value contains $ characters', () => {
+    expect(replaceUrlParam('http://localhost/items/:id', { id: 'item$&' })).toBe(
+      'http://localhost/items/item$&'
+    )
+    expect(replaceUrlParam('http://localhost/items/:id', { id: '$100' })).toBe(
+      'http://localhost/items/$100'
+    )
+    expect(replaceUrlParam('http://localhost/users/:id', { id: 'test$`' })).toBe(
+      'http://localhost/users/test$`'
+    )
+    expect(replaceUrlParam('http://localhost/users/:id/posts', { id: "test$'" })).toBe(
+      "http://localhost/users/test$'/posts"
+    )
+  })
 })
 
 describe('buildSearchParams', () => {
@@ -85,6 +100,27 @@ describe('buildSearchParams', () => {
     }
     const searchParams = buildSearchParams(query)
     expect(searchParams.toString()).toBe('id=123&type=test&tag=a&tag=b')
+  })
+
+  it('Should skip an undefined entry inside an array, as it does for a top-level value', () => {
+    // `['a', undefined, 'b']` used to serialise as `tag=a&tag=undefined&tag=b`,
+    // sending the literal string "undefined" to the server.
+    const searchParams = buildSearchParams({
+      tag: ['a', undefined as unknown as string, 'b'],
+    })
+    expect(searchParams.toString()).toBe('tag=a&tag=b')
+  })
+
+  it('Should keep an empty string in an array', () => {
+    const searchParams = buildSearchParams({ tag: ['a', '', 'b'] })
+    expect(searchParams.toString()).toBe('tag=a&tag=&tag=b')
+  })
+
+  it('Should drop an array whose entries are all undefined', () => {
+    const searchParams = buildSearchParams({
+      tag: [undefined, undefined] as unknown as string[],
+    })
+    expect(searchParams.toString()).toBe('')
   })
 })
 

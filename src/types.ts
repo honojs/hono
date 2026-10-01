@@ -2579,9 +2579,11 @@ type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T
               T['input'] & {
                 param: {
                   // Maps extracted keys, stripping braces, to a string-typed record.
-                  [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
-                    ? Prefix
-                    : K]: string
+                  [
+                    K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                      ? Prefix
+                      : K
+                  ]: string
                 }
               }
             >
@@ -2590,9 +2592,11 @@ type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T
           : T['input'] & {
               // Maps extracted keys, stripping braces, to a string-typed record.
               param: {
-                [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
-                  ? Prefix
-                  : K]: string
+                [
+                  K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                    ? Prefix
+                    : K
+                ]: string
               }
             }
       output: T['output']

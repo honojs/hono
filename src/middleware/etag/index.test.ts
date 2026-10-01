@@ -1,5 +1,13 @@
-import { Hono } from '../../hono'
 import { RETAINED_304_HEADERS, etag } from '.'
+import { Hono } from '../../hono'
+
+const createPatternedBody = (length: number) => {
+  const body = new Uint8Array(length)
+  for (let i = 0; i < body.byteLength; i++) {
+    body[i] = i % 256
+  }
+  return body
+}
 
 describe('Etag Middleware', () => {
   it('Should return etag header', async () => {
@@ -130,6 +138,49 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should return the same etag regardless of ReadableStream chunk boundaries', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    const body = createPatternedBody(1_000_000)
+    app.get('/etag/rs1', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(body)
+            controller.close()
+          },
+        })
+      )
+    })
+    app.get('/etag/rs2', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(body.slice(0, 1))
+            controller.enqueue(body.slice(1, 32_769))
+            controller.enqueue(body.slice(32_769))
+            controller.close()
+          },
+        })
+      )
+    })
+
+    const res1 = await app.request('http://localhost/etag/rs1')
+    const res2 = await app.request('http://localhost/etag/rs2')
+    const expected = '"550563e0460b33a3540278a8446a70bb96eb5172"'
+    expect(res1.headers.get('ETag')).toBe(expected)
+    expect(res2.headers.get('ETag')).toBe(expected)
+  })
+
+  it('Should preserve the SHA-1 digest for bodies up to 256 KiB', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag', (c) => c.body(createPatternedBody(256 * 1024)))
+
+    const res = await app.request('http://localhost/etag')
+    expect(res.headers.get('ETag')).toBe('"37ef77696fc255bf53b4cdd014b223676f2dc8bb"')
+  })
+
   it('Should not return etag header when the stream is empty', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
@@ -213,6 +264,14 @@ describe('Etag Middleware', () => {
     res = await app.request('http://localhost/etag/ghi', {
       headers: {
         'If-None-Match': `"mismatch 1", ${etagHeaderValue}, "mismatch 2"`,
+      },
+    })
+    expect(res.status).toBe(304)
+
+    // conditional GET with matching ETag among list, OWS before the comma (RFC 9110):
+    res = await app.request('http://localhost/etag/ghi', {
+      headers: {
+        'If-None-Match': `"mismatch 1", ${etagHeaderValue} , "mismatch 2"`,
       },
     })
     expect(res.status).toBe(304)
@@ -343,13 +402,14 @@ describe('Etag Middleware', () => {
     app.use(
       '/etag/*',
       etag({
-        retainedHeaders: ['x-message-retain', ...RETAINED_304_HEADERS],
+        retainedHeaders: ['x-message-retain', 'X-Message-Retain-Upper', ...RETAINED_304_HEADERS],
       })
     )
     app.get('/etag', (c) => {
       return c.text('Hono is hot', 200, {
         'cache-control': cacheControl,
         'x-message-retain': message,
+        'X-Message-Retain-Upper': message,
         'x-message': message,
       })
     })
@@ -363,6 +423,7 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
+    expect(res.headers.get('X-Message-Retain-Upper')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
   })
 
@@ -409,5 +470,34 @@ describe('Etag Middleware', () => {
       expect(res.status).toBe(200)
       expect(res.headers.get('ETag')).toBeNull()
     })
+  })
+
+  it('Should remove all non-retained headers on 304 without skipping any', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/multi-headers', (c) => {
+      c.header('X-Custom-1', 'val1')
+      c.header('X-Custom-2', 'val2')
+      c.header('X-Custom-3', 'val3')
+      c.header('X-Custom-4', 'val4')
+      c.header('Cache-Control', 'max-age=3600')
+      return c.text('Hono is hot')
+    })
+    const res1 = await app.request('http://localhost/etag/multi-headers')
+    const etagHeader = res1.headers.get('ETag')!
+    expect(res1.status).toBe(200)
+
+    const res2 = await app.request('http://localhost/etag/multi-headers', {
+      headers: {
+        'If-None-Match': etagHeader,
+      },
+    })
+    expect(res2.status).toBe(304)
+    expect(res2.headers.get('ETag')).toBe(etagHeader)
+    expect(res2.headers.get('Cache-Control')).toBe('max-age=3600')
+    expect(res2.headers.get('X-Custom-1')).toBeNull()
+    expect(res2.headers.get('X-Custom-2')).toBeNull()
+    expect(res2.headers.get('X-Custom-3')).toBeNull()
+    expect(res2.headers.get('X-Custom-4')).toBeNull()
   })
 })

@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { logger } from '.'
+import { Hono } from '../../hono'
 
 describe('Logger by Middleware', () => {
   let app: Hono

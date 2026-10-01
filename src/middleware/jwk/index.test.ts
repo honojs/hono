@@ -1,5 +1,6 @@
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
+import { jwk } from '.'
 import { setSignedCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
@@ -11,7 +12,6 @@ import { verifyWithJwks } from '../../utils/jwt/jwt'
 import type { JWTPayload } from '../../utils/jwt/types'
 import { utf8Encoder } from '../../utils/jwt/utf8'
 import * as test_keys from './keys.test.json'
-import { jwk } from '.'
 
 const verify_keys = test_keys.public_keys
 

@@ -12,10 +12,7 @@ import {
 import type { Context } from './context'
 import { domRenderers } from './intrinsic-element/common'
 import * as intrinsicElementTags from './intrinsic-element/components'
-import type {
-  JSX as HonoJSX,
-  IntrinsicElements as IntrinsicElementsDefined,
-} from './intrinsic-elements'
+import type { JSX as HonoJSX } from './intrinsic-elements'
 import {
   isValidAttributeName,
   isValidTagName,
@@ -44,7 +41,9 @@ export namespace JSX {
   export interface ElementChildrenAttribute {
     children: Child
   }
-  export interface IntrinsicElements extends IntrinsicElementsDefined {
+  // `HonoJSX.IntrinsicElements`, not the top-level alias: the bundled dts emit renames the namespace
+  // import correctly but drops an import alias that collides with this member name (TS2310).
+  export interface IntrinsicElements extends HonoJSX.IntrinsicElements {
     [tagName: string]: Props
   }
   export interface IntrinsicAttributes {
@@ -118,10 +117,14 @@ const resolveFunctionComponentResult = (
   suspendedContext?: SuspendedContext
 ): Promise<string> =>
   result.then((resolved) => {
-    if (!Array.isArray(resolved) && !(resolved instanceof JSXNode)) {
+    if (
+      typeof resolved !== 'string' &&
+      !Array.isArray(resolved) &&
+      !(resolved instanceof JSXNode)
+    ) {
       return resolved
     }
-    const children = Array.isArray(resolved) ? resolved : [resolved]
+    const children = Array.isArray(resolved) ? resolved : [resolved as Child]
     const render = () => {
       const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
       childrenToStringToBuffer(children, buffer)
@@ -168,6 +171,33 @@ export type Child =
   | undefined
   | boolean
   | Child[]
+
+export const renderChildren = (children: Child[]): HtmlEscapedString | Promise<HtmlEscapedString> =>
+  runWithRenderContext(() => {
+    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+    childrenToStringToBuffer(children, buffer)
+    return buffer.length === 1
+      ? raw(buffer[0], buffer.callbacks)
+      : stringBufferToString(buffer, buffer.callbacks)
+  })
+
+export const isUntrustedObject = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  !(value instanceof JSXNode) &&
+  !(value instanceof Promise) &&
+  !(value as HtmlEscaped).isEscaped &&
+  typeof (value as { toString?: unknown }).toString === 'function'
+
+export const renderUntrustedObject = (
+  value: unknown
+): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  const stringified = (value as { toString(): unknown }).toString()
+  const escape = (result: unknown) => renderChildren([String(result)])
+  return stringified instanceof Promise ? stringified.then(escape) : escape(stringified)
+}
+
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props

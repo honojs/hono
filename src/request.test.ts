@@ -39,6 +39,13 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
+  test('req.param() on an unmatched request', () => {
+    const req = new HonoRequest(new Request('http://localhost/'))
+
+    expect(req.param('id')).toBeUndefined()
+    expect(req.param()).toEqual({})
+  })
+
   test('req.param() should return empty string for zero-length match', () => {
     // Simulate a route like '/:remaining{.*}' matching '/'
     const rawRequest = new Request('http://localhost/')
@@ -370,6 +377,58 @@ describe('Body methods with caching', () => {
     expect(async () => await req.blob()).not.toThrow()
   })
 
+  describe('formData() after another representation has been cached', () => {
+    const urlencoded = 'application/x-www-form-urlencoded'
+    const body = 'foo=bar&baz=qux'
+
+    for (const first of ['text', 'arrayBuffer', 'bytes', 'blob'] as const) {
+      test(`req.formData() after req.${first}()`, async () => {
+        const req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            headers: { 'Content-Type': urlencoded },
+            body,
+          })
+        )
+        await req[first]()
+        const formData = await req.formData()
+        expect(formData.get('foo')).toBe('bar')
+        expect(formData.get('baz')).toBe('qux')
+      })
+    }
+
+    test('req.formData() after req.text() for multipart/form-data', async () => {
+      const boundary = '----hono-test-boundary'
+      const multipart =
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="foo"\r\n\r\n' +
+        'bar\r\n' +
+        `--${boundary}--\r\n`
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+          body: multipart,
+        })
+      )
+      await req.text()
+      expect((await req.formData()).get('foo')).toBe('bar')
+    })
+
+    test('the cached representation is still returned unchanged', async () => {
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': urlencoded },
+          body,
+        })
+      )
+      expect(await req.text()).toBe(body)
+      expect(await req.text()).toBe(body)
+      expect(await req.arrayBuffer()).toEqual(new TextEncoder().encode(body).buffer)
+    })
+  })
+
   describe('req.parseBody()', async () => {
     it('should parse form data', async () => {
       const data = new FormData()
@@ -447,7 +506,7 @@ describe('Body methods with caching', () => {
         const req = createReq()
         await req.parseBody()
         // application/json is not a valid formData content-type, so this should throw
-        expect(req.formData()).rejects.toThrow()
+        await expect(req.formData()).rejects.toThrow()
       })
     })
 
@@ -584,6 +643,52 @@ describe('cloneRawRequest', () => {
     const formData = await clonedReq.formData()
     expect(formData.get('foo')).toBe('bar')
     expect(formData.get('file')).toBeInstanceOf(File)
+  })
+
+  test('drops stale content length when cloning consumed multipart request', async () => {
+    const boundary = 'boundary'
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="foo"',
+      '',
+      'bar',
+      `--${boundary}--`,
+      '',
+    ].join('\r\n')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': new TextEncoder().encode(body).byteLength.toString(),
+        },
+        body,
+      })
+    )
+    await req.formData()
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(clonedReq.headers.has('Content-Length')).toBe(false)
+    expect((await clonedReq.formData()).get('foo')).toBe('bar')
+  })
+
+  test('clones request when external code populated bodyCache.json', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ foo: 'bar' }),
+      })
+    )
+    await req.raw.json()
+    req.bodyCache.json = Promise.resolve({ foo: 'bar' })
+
+    const clonedReq = await cloneRawRequest(req)
+
+    expect(await clonedReq.json()).toEqual({ foo: 'bar' })
   })
 
   test('clones GET request without body', async () => {

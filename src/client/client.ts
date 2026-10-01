@@ -30,6 +30,11 @@ const createProxy = (callback: Callback, path: string[]) => {
   return proxy
 }
 
+const appendQueryParams = (url: string, searchParams: URLSearchParams): string => {
+  const queryString = searchParams.toString()
+  return queryString ? `${url}?${queryString}` : url
+}
+
 class ClientRequestImpl {
   private url: string
   private method: string
@@ -69,6 +74,9 @@ class ClientRequestImpl {
           }
           if (Array.isArray(v)) {
             for (const v2 of v) {
+              if (v2 === undefined) {
+                continue
+              }
               form.append(k, v2)
             }
           } else {
@@ -78,7 +86,7 @@ class ClientRequestImpl {
         this.rBody = form
       }
 
-      if (args.json) {
+      if (args.json !== undefined) {
         this.rBody = JSON.stringify(args.json)
         this.cType = 'application/json'
       }
@@ -90,7 +98,7 @@ class ClientRequestImpl {
 
     let methodUpperCase = this.method.toUpperCase()
 
-    const headerValues: Record<string, string> = {
+    const headerValues: Record<string, string | undefined> = {
       ...args?.header,
       ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
@@ -98,23 +106,33 @@ class ClientRequestImpl {
     if (args?.cookie) {
       const cookies: string[] = []
       for (const [key, value] of Object.entries(args.cookie)) {
-        cookies.push(serialize(key, value, { path: '/' }))
+        if (value === undefined) {
+          continue
+        }
+        cookies.push(serialize(key, value))
       }
-      headerValues['Cookie'] = cookies.join(',')
+      if (cookies.length > 0) {
+        headerValues['Cookie'] = cookies.join('; ')
+      }
     }
 
     if (this.cType) {
       headerValues['Content-Type'] = this.cType
     }
 
-    const headers = new Headers(headerValues ?? undefined)
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(headerValues)) {
+      if (value !== undefined) {
+        headers.set(key, value)
+      }
+    }
     let url = this.url
 
     url = removeIndexString(url)
     url = replaceUrlParam(url, this.pathParams)
 
     if (this.queryParams) {
-      url = url + '?' + this.queryParams.toString()
+      url = appendQueryParams(url, this.queryParams)
     }
     methodUpperCase = this.method.toUpperCase()
     const setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
@@ -169,36 +187,35 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     if (method === 'url' || method === 'path') {
-      let result = url
+      // Strip the synthetic `index` segment before substituting params, so that a param
+      // whose value is `index` is not mistaken for one.
+      let result = removeIndexString(url)
       if (opts.args[0]) {
         if (opts.args[0].param) {
-          result = replaceUrlParam(url, opts.args[0].param)
+          result = replaceUrlParam(result, opts.args[0].param)
         }
         if (opts.args[0].query) {
-          result = result + '?' + buildSearchParamsOption(opts.args[0].query).toString()
+          result = appendQueryParams(result, buildSearchParamsOption(opts.args[0].query))
         }
       }
-      result = removeIndexString(result)
       if (method === 'url') {
         return new URL(result)
       }
       return result.slice(baseUrl.replace(/\/+$/, '').length).replace(/^\/?/, '/')
     }
     if (method === 'ws') {
+      const normalizedUrl = removeIndexString(url)
       const webSocketUrl = replaceUrlProtocol(
-        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
+        opts.args[0]?.param ? replaceUrlParam(normalizedUrl, opts.args[0].param) : normalizedUrl,
         'ws'
       )
       const targetUrl = new URL(webSocketUrl)
 
       const queryParams: Record<string, string | string[]> | undefined = opts.args[0]?.query
       if (queryParams) {
-        Object.entries(queryParams).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((item) => targetUrl.searchParams.append(key, item))
-          } else {
-            targetUrl.searchParams.set(key, value)
-          }
+        const searchParams = buildSearchParamsOption(queryParams)
+        searchParams.forEach((value, key) => {
+          targetUrl.searchParams.append(key, value)
         })
       }
       const establishWebSocket = (...args: ConstructorParameters<typeof WebSocket>) => {

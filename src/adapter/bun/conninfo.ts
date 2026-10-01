@@ -6,6 +6,7 @@ import { getBunServer } from './server'
  * Get ConnInfo with Bun
  * @param c Context
  * @returns ConnInfo
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
   const server = getBunServer<{

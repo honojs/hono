@@ -12,13 +12,14 @@ import type { AddressType } from '../helper/conninfo'
  */
 export const expandIPv6 = (ipV6: string): string => {
   const sections = ipV6.split(':')
-  if (IPV4_REGEX.test(sections.at(-1) as string)) {
+  const lastSection = sections.at(-1) as string
+  if (IPV4_REGEX.test(lastSection)) {
+    const octets = lastSection.split('.').map(Number)
     sections.splice(
       -1,
       1,
-      ...convertIPv6BinaryToString(convertIPv4ToBinary(sections.at(-1) as string)) // => ::7f00:0001
-        .substring(2) // => 7f00:0001
-        .split(':') // => ['7f00', '0001']
+      ((octets[0] << 8) | octets[1]).toString(16),
+      ((octets[2] << 8) | octets[3]).toString(16)
     )
   }
   for (let i = 0; i < sections.length; i++) {

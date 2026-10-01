@@ -1,5 +1,5 @@
-import { Children } from './children'
 import { createElement } from '.'
+import { Children } from './children'
 
 describe('map', () => {
   it('should map children', () => {

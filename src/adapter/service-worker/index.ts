@@ -1,6 +1,10 @@
 /**
  * Service Worker Adapter for Hono.
  * @module
+ *
+ * @deprecated
+ * This adapter will be removed from the `hono` package in v5.
+ * Install `@hono/service-worker` and import from there instead.
  */
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'

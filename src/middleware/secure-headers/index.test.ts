@@ -1,7 +1,7 @@
-import { Hono } from '../../hono'
-import { poweredBy } from '../powered-by'
 import { NONCE, secureHeaders } from '.'
 import type { ContentSecurityPolicyOptionHandler } from '.'
+import { Hono } from '../../hono'
+import { poweredBy } from '../powered-by'
 
 declare module '../..' {
   interface ContextVariableMap {
@@ -181,16 +181,19 @@ describe('Secure Headers Middleware', () => {
           accelerometer: ['https://*.example.com'],
           gyroscope: ['src'],
           magnetometer: ['https://a.example.com', 'https://b.example.com'],
+          mediasession: ['self'],
+          deferredFetch: ['none'],
         },
       })
     )
 
     const res = await app.request('/test')
     expect(res.headers.get('Permissions-Policy')).toEqual(
-      'fullscreen=(self), bluetooth=none, payment=(self "example.com"), sync-xhr=(), camera=none, microphone=*, ' +
+      'fullscreen=(self), bluetooth=(), payment=(self "example.com"), sync-xhr=(), camera=(), microphone=*, ' +
         'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
         'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
-        'magnetometer=("https://a.example.com" "https://b.example.com")'
+        'magnetometer=("https://a.example.com" "https://b.example.com"), ' +
+        'mediasession=(self), deferred-fetch=()'
     )
   })
 
