@@ -70,4 +70,36 @@ describe('createElement', () => {
 
     expect((<div>{object as never}</div>).toString()).toBe('<div></div>')
   })
+
+  it('should allow function component to return a single JSXNode', () => {
+    function Partial({
+      name,
+      children,
+      tag = 'div',
+      ...rest
+    }: {
+      name: string
+      children?: Child
+      tag?: string
+    }) {
+      return jsx(tag, { 'x-partial': name, ...rest }, children)
+    }
+
+    const element = (
+      <Partial name='header'>
+        <span>Hello</span>
+      </Partial>
+    )
+    expect(element.toString()).toBe('<div x-partial="header"><span>Hello</span></div>')
+  })
+
+  it('should allow async function component to return a Promise of JSXNode', async () => {
+    async function AsyncPartial({ name }: { name: string }) {
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      return jsx('div', { 'x-partial': name })
+    }
+
+    const element = <AsyncPartial name='async' />
+    expect(String(await element.toString())).toBe('<div x-partial="async"></div>')
+  })
 })

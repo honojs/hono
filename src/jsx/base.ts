@@ -23,9 +23,10 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
 type FunctionComponentResult =
+  | JSXNode
   | HtmlEscapedString
   | Child[]
-  | Promise<HtmlEscapedString | Child[]>
+  | Promise<JSXNode | HtmlEscapedString | Child[]>
   | null
 export type FC<P = Props> = {
   (props: P): FunctionComponentResult
