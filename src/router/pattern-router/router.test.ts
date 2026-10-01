@@ -9,10 +9,6 @@ describe('Pattern', () => {
         reason: 'UnsupportedPath',
         tests: ['Duplicate param name > self'],
       },
-      {
-        reason: 'PatternRouter allows trailing slashes',
-        tests: ['Trailing slash > GET /book/'],
-      },
     ],
     newRouter: () => new PatternRouter(),
   })
@@ -35,8 +31,7 @@ describe('Pattern', () => {
 
     it('GET /book/', () => {
       const [res] = router.match('GET', '/book/')
-      expect(res.length).toBe(1)
-      expect(res[0][0]).toBe('GET /book')
+      expect(res.length).toBe(0)
     })
   })
 })

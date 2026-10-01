@@ -7,10 +7,12 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { LinearRouter } from './router/linear-router'
+import { PatternRouter } from './router/pattern-router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
-import type { Handler, MiddlewareHandler, Next } from './types'
+import type { H, Handler, MiddlewareHandler, Next, RouterRoute } from './types'
 import type { Equal, Expect } from './utils/types'
 import { getPath } from './utils/url'
 
@@ -308,6 +310,32 @@ describe('Options', () => {
   })
 
   describe('strict parameter', () => {
+    describe.each([
+      ['RegExpRouter', () => new RegExpRouter<[H, RouterRoute]>()],
+      ['TrieRouter', () => new TrieRouter<[H, RouterRoute]>()],
+      ['LinearRouter', () => new LinearRouter<[H, RouterRoute]>()],
+      ['PatternRouter', () => new PatternRouter<[H, RouterRoute]>()],
+    ])('%s', (_name, createRouter) => {
+      it('does not match routes with a different trailing slash', async () => {
+        const cases = [
+          ['/hello', '/hello/'],
+          ['/hello/', '/hello'],
+          ['/users/:id', '/users/42/'],
+        ] as const
+
+        for (const [route, request] of cases) {
+          const app = new Hono({ router: createRouter() })
+          app.get(route, (c) => c.text('ok'))
+
+          const match = await app.request(`http://localhost${route}`)
+          expect(match.status).toBe(200)
+
+          const res = await app.request(`http://localhost${request}`)
+          expect(res.status).toBe(404)
+        }
+      })
+    })
+
     describe('strict is true with not slash', () => {
       const app = new Hono()
 
