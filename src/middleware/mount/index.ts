@@ -18,6 +18,22 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
+const defaultReplaceRequest = (c: Context): Request => {
+  // e.g. `/another-app/*` (basePath is already merged) -> `/another-app`
+  const pathPrefix = routePath(c).replace(/\/\*$/, '')
+  const url = new URL(c.req.raw.url)
+  url.pathname = c.req.path.slice(pathPrefix.length) || '/'
+  return new Request(url, c.req.raw)
+}
+
+const defaultGetOptions = (c: Context): unknown[] => {
+  let executionContext: ExecutionContext | undefined = undefined
+  try {
+    executionContext = c.executionCtx
+  } catch {} // Do nothing
+  return [c.env, executionContext]
+}
+
 /**
  * `mount()` allows you to mount applications built with other frameworks into your Hono application.
  *
@@ -76,21 +92,7 @@ export const mount = (
         const options = optionHandler!(c)
         return Array.isArray(options) ? options : [options]
       }
-    : (c) => {
-        let executionContext: ExecutionContext | undefined = undefined
-        try {
-          executionContext = c.executionCtx
-        } catch {} // Do nothing
-        return [c.env, executionContext]
-      }
-
-  const defaultReplaceRequest = (c: Context): Request => {
-    // e.g. `/another-app/*` (basePath is already merged) -> `/another-app`
-    const pathPrefix = routePath(c).replace(/\/\*$/, '')
-    const url = new URL(c.req.raw.url)
-    url.pathname = c.req.path.slice(pathPrefix.length) || '/'
-    return new Request(url, c.req.raw)
-  }
+    : defaultGetOptions
 
   return async (c, next) => {
     const request = replaceRequest ? replaceRequest(c.req.raw) : defaultReplaceRequest(c)
