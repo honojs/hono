@@ -876,6 +876,16 @@ export const runTest = ({
         const res = match('GET', '/book/')
         expect(res.length).toBe(0)
       })
+      it('GET /book/42', () => {
+        const res = match('GET', '/book/42')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('GET /book/:id')
+        expect(res[0].params['id']).toBe('42')
+      })
+      it('GET /book/42/', () => {
+        const res = match('GET', '/book/42/')
+        expect(res.length).toBe(0)
+      })
     })
 
     describe('Empty path segment', () => {

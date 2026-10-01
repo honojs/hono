@@ -7,6 +7,8 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { LinearRouter } from './router/linear-router'
+import { PatternRouter } from './router/pattern-router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
@@ -376,6 +378,74 @@ describe('Options', () => {
         res = await app.request('http://localhost/hello/')
         expect(res).not.toBeNull()
         expect(res.status).toBe(200)
+      })
+    })
+
+    describe('strict is true with a custom router', () => {
+      it('SmartRouter', async () => {
+        const app = new Hono({
+          router: new SmartRouter({ routers: [new RegExpRouter(), new TrieRouter()] }),
+        })
+        app.get('/hello', (c) => c.text('/hello'))
+        app.get('/book/:id', (c) => c.text('/book/:id'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(404)
+        expect((await app.request('http://localhost/book/42')).status).toBe(200)
+        expect((await app.request('http://localhost/book/42/')).status).toBe(404)
+      })
+
+      it('RegExpRouter', async () => {
+        const app = new Hono({ router: new RegExpRouter() })
+        app.get('/hello', (c) => c.text('/hello'))
+        app.get('/book/:id', (c) => c.text('/book/:id'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(404)
+        expect((await app.request('http://localhost/book/42')).status).toBe(200)
+        expect((await app.request('http://localhost/book/42/')).status).toBe(404)
+      })
+
+      it('TrieRouter', async () => {
+        const app = new Hono({ router: new TrieRouter() })
+        app.get('/hello', (c) => c.text('/hello'))
+        app.get('/book/:id', (c) => c.text('/book/:id'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(404)
+        expect((await app.request('http://localhost/book/42')).status).toBe(200)
+        expect((await app.request('http://localhost/book/42/')).status).toBe(404)
+      })
+
+      it('LinearRouter', async () => {
+        const app = new Hono({ router: new LinearRouter() })
+        app.get('/hello', (c) => c.text('/hello'))
+        app.get('/book/:id', (c) => c.text('/book/:id'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(404)
+        expect((await app.request('http://localhost/book/42')).status).toBe(200)
+        expect((await app.request('http://localhost/book/42/')).status).toBe(404)
+      })
+
+      it('PatternRouter', async () => {
+        const app = new Hono({ router: new PatternRouter() })
+        app.get('/hello', (c) => c.text('/hello'))
+        app.get('/book/:id', (c) => c.text('/book/:id'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(404)
+        expect((await app.request('http://localhost/book/42')).status).toBe(200)
+        expect((await app.request('http://localhost/book/42/')).status).toBe(404)
+      })
+
+      it('/hello/ is not found when the route ends with a slash', async () => {
+        const app = new Hono({ router: new LinearRouter() })
+        app.get('/hello/', (c) => c.text('/hello/'))
+        expect((await app.request('http://localhost/hello/')).status).toBe(200)
+        expect((await app.request('http://localhost/hello')).status).toBe(404)
+      })
+
+      it('/hello and /hello/ are treated as the same with strict false', async () => {
+        const app = new Hono({ router: new LinearRouter(), strict: false })
+        app.get('/hello', (c) => c.text('/hello'))
+        expect((await app.request('http://localhost/hello')).status).toBe(200)
+        expect((await app.request('http://localhost/hello/')).status).toBe(200)
       })
     })
   })
