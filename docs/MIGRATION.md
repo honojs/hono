@@ -48,6 +48,7 @@ import { serveStatic } from '@hono/bun'
   toSSG(app, fs, { plugins: [{ beforeRequestHook }, defaultPlugin()] })
   ```
 
+- Utils - `timingSafeEqual()` in `hono/utils/buffer` only accepts strings. The `hashFunction` option of Basic Auth Middleware and Bearer Auth Middleware is typed as `(input: string) => string | null | Promise<string | null>` accordingly.
 - Utils - `getQueryStrings()` in `hono/utils/url` is obsolete. Use the `URL` API instead.
 - Utils - `UnOfficalStatusCode` in `hono/utils/http-status` is obsolete. Use `UnofficialStatusCode` instead.
 
