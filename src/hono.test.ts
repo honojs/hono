@@ -3,6 +3,7 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context, ExecutionContext } from './context'
+import { routePath } from './helper/route'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
@@ -2141,7 +2142,7 @@ describe('Multiple paths with one handler', () => {
   app.on('GET', paths, (c) => {
     return c.json({
       path: c.req.path,
-      routePath: c.req.routePath,
+      routePath: routePath(c),
     })
   })
 
@@ -2954,22 +2955,6 @@ describe('app.request()', () => {
     })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('"hello"')
-  })
-})
-
-describe('app.fire()', () => {
-  it('Should call global.addEventListener', () => {
-    const app = new Hono()
-    const addEventListener = vi.fn()
-    global.addEventListener = addEventListener
-    app.fire()
-    expect(addEventListener).toHaveBeenCalledWith('fetch', expect.any(Function))
-
-    const fetchEventListener = addEventListener.mock.calls[0][1]
-    const respondWith = vi.fn()
-    const request = new Request('http://localhost')
-    fetchEventListener({ respondWith, request })
-    expect(respondWith).toHaveBeenCalledWith(expect.any(Promise))
   })
 })
 

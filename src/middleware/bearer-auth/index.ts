@@ -26,20 +26,8 @@ type BearerAuthOptions<E extends Env = Env> =
       prefix?: string
       headerName?: string
       hashFunction?: Function
-      /**
-       * @deprecated Use noAuthenticationHeader.message instead
-       */
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
-      /**
-       * @deprecated Use invalidAuthenticationHeader.message instead
-       */
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
-      /**
-       * @deprecated Use invalidToken.message instead
-       */
-      invalidTokenMessage?: string | object | MessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
   | {
@@ -48,20 +36,8 @@ type BearerAuthOptions<E extends Env = Env> =
       headerName?: string
       verifyToken: (token: string, c: Context<E>) => boolean | Promise<boolean>
       hashFunction?: Function
-      /**
-       * @deprecated Use noAuthenticationHeader.message instead
-       */
-      noAuthenticationHeaderMessage?: string | object | MessageFunction
       noAuthenticationHeader?: CustomizedErrorResponseOptions
-      /**
-       * @deprecated Use invalidAuthenticationHeader.message instead
-       */
-      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidAuthenticationHeader?: CustomizedErrorResponseOptions
-      /**
-       * @deprecated Use invalidToken.message instead
-       */
-      invalidTokenMessage?: string | object | MessageFunction
       invalidToken?: CustomizedErrorResponseOptions
     }
 
@@ -162,9 +138,7 @@ export const bearerAuth = <E extends Env = Env>(
         401,
         options.noAuthenticationHeader?.wwwAuthenticateHeader ||
           `${wwwAuthenticatePrefix}realm="${realm}"`,
-        options.noAuthenticationHeader?.message ||
-          options.noAuthenticationHeaderMessage ||
-          'Unauthorized'
+        options.noAuthenticationHeader?.message || 'Unauthorized'
       )
     } else {
       let tokenValue: string | undefined
@@ -186,9 +160,7 @@ export const bearerAuth = <E extends Env = Env>(
           400,
           options.invalidAuthenticationHeader?.wwwAuthenticateHeader ||
             `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeader?.message ||
-            options.invalidAuthenticationHeaderMessage ||
-            'Bad Request'
+          options.invalidAuthenticationHeader?.message || 'Bad Request'
         )
       } else {
         let equal = false
@@ -211,7 +183,7 @@ export const bearerAuth = <E extends Env = Env>(
             401,
             options.invalidToken?.wwwAuthenticateHeader ||
               `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidToken?.message || options.invalidTokenMessage || 'Unauthorized'
+            options.invalidToken?.message || 'Unauthorized'
           )
         }
       }
