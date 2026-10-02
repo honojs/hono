@@ -106,6 +106,52 @@ export const runTest = ({
       })
     })
 
+    describe('Path segment equal to a pattern token', () => {
+      it('Wildcard', async () => {
+        router.add('GET', '/a/*', 'wildcard')
+        const res = match('GET', '/a/*')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
+      })
+
+      it('Named parameter', async () => {
+        router.add('GET', '/a/:id', 'param')
+        const res = match('GET', '/a/:id')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('param')
+        expect(res[0].params['id']).toBe(':id')
+      })
+
+      it('Named parameters in every segment', async () => {
+        router.add('GET', '/:a/:b/:c', 'params')
+        const res = match('GET', '/:a/:b/:c')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('params')
+        expect(res[0].params['a']).toBe(':a')
+        expect(res[0].params['b']).toBe(':b')
+        expect(res[0].params['c']).toBe(':c')
+      })
+
+      it('Prefixed wildcard', async () => {
+        router.add('GET', '/a/foo*', 'prefixed')
+        const res = match('GET', '/a/foo*')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('prefixed')
+      })
+
+      it('Named parameter with a trailing wildcard', async () => {
+        router.add('GET', '/a/:id/*', 'param wildcard')
+        const res = match('GET', '/a/:id')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('param wildcard')
+      })
+
+      it('Constrained parameter matches nothing', async () => {
+        router.add('GET', '/a/:id{[0-9]+}', 'constrained')
+        expect(match('GET', '/a/:id{[0-9]+}').length).toBe(0)
+      })
+    })
+
     describe('Complex', () => {
       it('Named Param', async () => {
         router.add('GET', '/entry/:id', 'get entry')
