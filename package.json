@@ -348,51 +348,6 @@
       "import": "./dist/middleware/serve-static/index.js",
       "require": "./dist/cjs/middleware/serve-static/index.js"
     },
-    "./cloudflare-workers": {
-      "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
-      "import": "./dist/adapter/cloudflare-workers/index.js",
-      "require": "./dist/cjs/adapter/cloudflare-workers/index.js"
-    },
-    "./cloudflare-pages": {
-      "types": "./dist/types/adapter/cloudflare-pages/index.d.ts",
-      "import": "./dist/adapter/cloudflare-pages/index.js",
-      "require": "./dist/cjs/adapter/cloudflare-pages/index.js"
-    },
-    "./deno": {
-      "types": "./dist/types/adapter/deno/index.d.ts",
-      "import": "./dist/adapter/deno/index.js",
-      "require": "./dist/cjs/adapter/deno/index.js"
-    },
-    "./bun": {
-      "types": "./dist/types/adapter/bun/index.d.ts",
-      "import": "./dist/adapter/bun/index.js",
-      "require": "./dist/cjs/adapter/bun/index.js"
-    },
-    "./aws-lambda": {
-      "types": "./dist/types/adapter/aws-lambda/index.d.ts",
-      "import": "./dist/adapter/aws-lambda/index.js",
-      "require": "./dist/cjs/adapter/aws-lambda/index.js"
-    },
-    "./vercel": {
-      "types": "./dist/types/adapter/vercel/index.d.ts",
-      "import": "./dist/adapter/vercel/index.js",
-      "require": "./dist/cjs/adapter/vercel/index.js"
-    },
-    "./netlify": {
-      "types": "./dist/types/adapter/netlify/index.d.ts",
-      "import": "./dist/adapter/netlify/index.js",
-      "require": "./dist/cjs/adapter/netlify/index.js"
-    },
-    "./lambda-edge": {
-      "types": "./dist/types/adapter/lambda-edge/index.d.ts",
-      "import": "./dist/adapter/lambda-edge/index.js",
-      "require": "./dist/cjs/adapter/lambda-edge/index.js"
-    },
-    "./service-worker": {
-      "types": "./dist/types/adapter/service-worker/index.d.ts",
-      "import": "./dist/adapter/service-worker/index.js",
-      "require": "./dist/cjs/adapter/service-worker/index.js"
-    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -603,33 +558,6 @@
       ],
       "serve-static": [
         "./dist/types/middleware/serve-static"
-      ],
-      "cloudflare-workers": [
-        "./dist/types/adapter/cloudflare-workers"
-      ],
-      "cloudflare-pages": [
-        "./dist/types/adapter/cloudflare-pages"
-      ],
-      "deno": [
-        "./dist/types/adapter/deno"
-      ],
-      "bun": [
-        "./dist/types/adapter/bun"
-      ],
-      "aws-lambda": [
-        "./dist/types/adapter/aws-lambda"
-      ],
-      "vercel": [
-        "./dist/types/adapter/vercel"
-      ],
-      "netlify": [
-        "./dist/types/adapter/netlify"
-      ],
-      "lambda-edge": [
-        "./dist/types/adapter/lambda-edge"
-      ],
-      "service-worker": [
-        "./dist/types/adapter/service-worker"
       ],
       "testing": [
         "./dist/types/helper/testing"

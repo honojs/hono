@@ -59,9 +59,8 @@ which maps `hono` to the working tree instead.
 
 1. Copy `adapters/bun` as `adapters/<name>` and adjust `package.json` (`name`, `description`) and the sources.
 2. The workspace picks it up automatically (`pnpm-workspace.yaml` has `adapters/*`).
-3. Add it to the corresponding `src/adapter/<name>` with `@deprecated` on each export, pointing to the new package.
-4. **First publish is manual.** See below.
-5. From the second release on, use `pnpm run release:adapter <name> <bump>`.
+3. **First publish is manual.** See below.
+4. From the second release on, use `pnpm run release:adapter <name> <bump>`.
 
 #### First publish of a new adapter
 
