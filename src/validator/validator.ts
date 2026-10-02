@@ -87,7 +87,7 @@ export const validator = <
   validationFunc: VF
 ): MiddlewareHandler<E, P, V, ExtractValidationResponse<VF>> => {
   return async (c, next) => {
-    let value = {}
+    let value: unknown = {}
     const contentType = c.req.header('Content-Type')
 
     switch (target) {
