@@ -151,8 +151,12 @@ export const getQueryStrings = (url: string): string => {
       : ''
 }
 
-export const getPathNoStrict = (request: Request): string => {
-  const result = getPath(request)
+export const getPathNoStrict = (
+  request: Request,
+  options?: { getPath?: (request: Request, options?: any) => string }
+): string => {
+  const getPathFunc = options?.getPath ?? getPath
+  const result = getPathFunc(request, options)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
