@@ -393,6 +393,11 @@
       "import": "./dist/adapter/service-worker/index.js",
       "require": "./dist/cjs/adapter/service-worker/index.js"
     },
+    "./wintertc-sockets": {
+      "types": "./dist/types/adapter/wintertc-sockets/index.d.ts",
+      "import": "./dist/adapter/wintertc-sockets/index.js",
+      "require": "./dist/cjs/adapter/wintertc-sockets/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -630,6 +635,9 @@
       ],
       "service-worker": [
         "./dist/types/adapter/service-worker"
+      ],
+      "wintertc-sockets": [
+        "./dist/types/adapter/wintertc-sockets"
       ],
       "testing": [
         "./dist/types/helper/testing"
