@@ -245,6 +245,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.json()` can parse Request body of type `application/json`
+   * The result is `unknown` by default. Narrow it before use, or provide a type
+   * parameter when the body shape is known. A type parameter does not validate the body.
    *
    * @see {@link https://hono.dev/docs/api/request#json}
    *
@@ -255,7 +257,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
-  json<T = any>(): Promise<T> {
+  json<T = unknown>(): Promise<T> {
     return this.#cachedBody('text').then((text: string) => JSON.parse(text))
   }
 

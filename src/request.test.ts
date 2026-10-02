@@ -206,6 +206,29 @@ const json = { foo: 'bar' }
 const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
 
 describe('Body methods with caching', () => {
+  test('req.json() defaults to unknown and can be narrowed', async () => {
+    const req = new HonoRequest(new Request('http://localhost', { method: 'POST', body: text }))
+    const bodyPromise = req.json()
+    expectTypeOf(bodyPromise).toEqualTypeOf<Promise<unknown>>()
+    const body = await bodyPromise
+    expectTypeOf(body).toEqualTypeOf<unknown>()
+    if (typeof body === 'object' && body !== null && 'foo' in body) {
+      expect(body.foo).toBe('bar')
+    } else {
+      throw new Error('Expected an object with a foo property')
+    }
+  })
+
+  test('req.json<T>() preserves the explicit body type', async () => {
+    const req = new HonoRequest(new Request('http://localhost', { method: 'POST', body: text }))
+    const bodyPromise = req.json<{ foo: string }>()
+    expectTypeOf(bodyPromise).toEqualTypeOf<Promise<{ foo: string }>>()
+    const body = await bodyPromise
+    expectTypeOf(body).toEqualTypeOf<{ foo: string }>()
+    expect(body.foo).toBe('bar')
+    expect(await req.json()).toEqual(body)
+  })
+
   test('req.text()', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
