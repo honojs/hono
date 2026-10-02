@@ -1,0 +1,21 @@
+src/hono.test.ts
+  s_a34d594424e4c1::t_d5bbe730a4ff2c 6,2145
+src/middleware/bearer-auth/index.ts
+  s_a34d594424e4c1::t_223376bd64e9ed 141,163,186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6159f7c198fa1c75cf62d3d969f8914bab897830",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
