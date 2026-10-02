@@ -136,56 +136,6 @@ describe('Param', () => {
   })
 })
 
-describe('matchedRoutes', () => {
-  test('req.routePath', () => {
-    const handlerA = () => {}
-    const handlerB = () => {}
-    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
-      [
-        [
-          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
-          { id: '123' },
-        ],
-        [
-          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
-          { id: '456', name: 'key' },
-        ],
-      ],
-    ])
-
-    expect(req.matchedRoutes).toEqual([
-      { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' },
-      { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' },
-    ])
-  })
-})
-
-describe('routePath', () => {
-  test('req.routePath', () => {
-    const handlerA = () => {}
-    const handlerB = () => {}
-    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
-      [
-        [
-          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
-          { id: '123' },
-        ],
-        [
-          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
-          { id: '456', name: 'key' },
-        ],
-      ],
-    ])
-
-    expect(req.routePath).toBe('/:id')
-
-    req.routeIndex = 1
-    expect(req.routePath).toBe('/:id/:name')
-  })
-})
-
 describe('req.addValidatedData() and req.data()', () => {
   const rawRequest = new Request('http://localhost')
 

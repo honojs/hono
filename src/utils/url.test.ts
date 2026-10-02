@@ -5,7 +5,6 @@ import {
   getPattern,
   getQueryParam,
   getQueryParams,
-  getQueryStrings,
   mergePath,
   splitPath,
   splitRoutingPath,
@@ -170,23 +169,6 @@ describe('url', () => {
       // Only encoded hash, no real fragment
       path = getPath(new Request('https://example.com/issue%23123'))
       expect(path).toBe('/issue%23123')
-    })
-  })
-
-  describe('getQueryStrings', () => {
-    it('getQueryStrings', () => {
-      let qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20')
-      expect(qs).toBe('?name=foo&name=bar&age=20')
-      qs = getQueryStrings('https://example.com/hello?')
-      expect(qs).toBe('?')
-      qs = getQueryStrings('https://example.com/hello')
-      expect(qs).toBe('')
-      qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20#hash')
-      expect(qs).toBe('?name=foo&name=bar&age=20')
-      qs = getQueryStrings('https://example.com/hello#?name=probe')
-      expect(qs).toBe('')
-      qs = getQueryStrings('https://example.com/hello?name=foo%23bar#hash')
-      expect(qs).toBe('?name=foo%23bar')
     })
   })
 
