@@ -1,5 +1,56 @@
 # Migration Guide
 
+## v4.13.x to v5.0.0
+
+There are some breaking changes.
+
+### Runtime adapters moved to `@hono/*` packages
+
+The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
+
+| Before                    | After                      |
+| ------------------------- | -------------------------- |
+| `hono/aws-lambda`         | `@hono/aws-lambda`         |
+| `hono/bun`                | `@hono/bun`                |
+| `hono/cloudflare-workers` | `@hono/cloudflare-workers` |
+| `hono/deno`               | `@hono/deno`               |
+| `hono/lambda-edge`        | `@hono/lambda-edge`        |
+| `hono/netlify`            | `@hono/netlify`            |
+| `hono/service-worker`     | `@hono/service-worker`     |
+| `hono/vercel`             | `@hono/vercel`             |
+
+```ts
+// From
+import { serveStatic } from 'hono/bun'
+
+// To
+import { serveStatic } from '@hono/bun'
+```
+
+`hono/cloudflare-pages` is removed without a replacement. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
+
+`hono/adapter` (`env()`, `getRuntimeKey()`) stays in `hono`.
+
+### Removal of deprecated features
+
+- Hono - `app.fire()` is obsolete. Use `fire()` in `@hono/service-worker` instead.
+- HonoRequest - `req.matchedRoutes` and `req.routePath` are obsolete. Use `matchedRoutes()` and `routePath()` in `hono/route` instead.
+- Bearer Auth Middleware - `noAuthenticationHeaderMessage`, `invalidAuthenticationHeaderMessage`, and `invalidTokenMessage` are obsolete. Use `noAuthenticationHeader.message`, `invalidAuthenticationHeader.message`, and `invalidToken.message` instead.
+- Serve Static Middleware - the `pathResolve` option is removed. It was no longer used.
+- SSG Helper - `SSG_DISABLED_RESPONSE` is obsolete. Use `X_HONO_DISABLE_SSG_HEADER_KEY` instead.
+- SSG Helper - the `beforeRequestHook`, `afterResponseHook`, and `afterGenerateHook` options of `toSSG()` are obsolete. Pass them as a plugin via `plugins` instead. Note that `defaultPlugin()`, which skips non-200 responses, is applied only when `plugins` is omitted, so add it explicitly if you need it.
+
+  ```ts
+  // From
+  toSSG(app, fs, { beforeRequestHook })
+
+  // To
+  toSSG(app, fs, { plugins: [{ beforeRequestHook }, defaultPlugin()] })
+  ```
+
+- Utils - `getQueryStrings()` in `hono/utils/url` is obsolete. Use the `URL` API instead.
+- Utils - `UnOfficalStatusCode` in `hono/utils/http-status` is obsolete. Use `UnofficialStatusCode` instead.
+
 ## v4.3.11 to v4.4.0
 
 ### `deno.land/x` to JSR
