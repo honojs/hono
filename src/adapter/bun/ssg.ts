@@ -9,6 +9,7 @@ const { write } = Bun
  * @experimental
  * `bunFileSystemModule` is an experimental feature.
  * The API might be changed.
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export const bunFileSystemModule: FileSystemModule = {
   writeFile: async (path, data) => {
@@ -21,6 +22,7 @@ export const bunFileSystemModule: FileSystemModule = {
  * @experimental
  * `toSSG` is an experimental feature.
  * The API might be changed.
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
   return baseToSSG(app, bunFileSystemModule, options)

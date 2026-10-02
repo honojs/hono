@@ -506,7 +506,7 @@ describe('Body methods with caching', () => {
         const req = createReq()
         await req.parseBody()
         // application/json is not a valid formData content-type, so this should throw
-        expect(req.formData()).rejects.toThrow()
+        await expect(req.formData()).rejects.toThrow()
       })
     })
 

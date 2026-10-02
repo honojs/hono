@@ -1,4 +1,3 @@
-import { Hono } from '../../hono'
 import {
   deleteCookie,
   getCookie,
@@ -8,6 +7,7 @@ import {
   generateCookie,
   generateSignedCookie,
 } from '.'
+import { Hono } from '../../hono'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {

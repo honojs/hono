@@ -1,0 +1,19 @@
+{
+  "name": "@hono/netlify",
+  "version": "0.0.0",
+  "license": "MIT",
+  "exports": "./src/index.ts",
+  "imports": {
+    "hono": "jsr:@hono/hono@^4.13.9",
+    "hono/conninfo": "jsr:@hono/hono@^4.13.9/conninfo"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "README.md"
+    ],
+    "exclude": [
+      "src/**/*.test.ts"
+    ]
+  }
+}

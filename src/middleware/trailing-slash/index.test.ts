@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { appendTrailingSlash, trimTrailingSlash } from '.'
+import { Hono } from '../../hono'
 
 describe('Resolve trailing slash', () => {
   describe('trimTrailingSlash middleware', () => {

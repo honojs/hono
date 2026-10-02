@@ -1,8 +1,5 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
-// run tests by old style jsx default
-// hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-import { ErrorBoundary, Suspense, render } from '../dom'
 import {
   createRef,
   forwardRef,
@@ -20,6 +17,9 @@ import {
   useTransition,
   useViewTransition,
 } from '.'
+// run tests by old style jsx default
+// hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
+import { ErrorBoundary, Suspense, render } from '../dom'
 
 describe('Hooks', () => {
   beforeAll(() => {

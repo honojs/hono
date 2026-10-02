@@ -1,6 +1,5 @@
 import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
-
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -38,6 +37,9 @@ type CloudFrontOrigin =
   | { s3: CloudFrontS3Origin; custom?: never }
   | { custom: CloudFrontCustomOrigin; s3?: never }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export interface CloudFrontRequest {
   clientIp: string
   headers: CloudFrontHeaders
@@ -53,12 +55,18 @@ export interface CloudFrontRequest {
   origin?: CloudFrontOrigin
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export interface CloudFrontResponse {
   headers: CloudFrontHeaders
   status: string
   statusDescription?: string
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export interface CloudFrontConfig {
   distributionDomainName: string
   distributionId: string
@@ -74,12 +82,18 @@ interface CloudFrontEvent {
   }
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export interface CloudFrontEdgeEvent {
   Records: CloudFrontEvent[]
 }
 
 type CloudFrontContext = {}
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export interface Callback {
   (err: Error | null, result?: CloudFrontRequest | CloudFrontResult): void
 }
@@ -113,6 +127,9 @@ const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   return cfHeaders
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export const handle = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app: Hono<any>
@@ -213,6 +230,9 @@ const createRequest = (cf: CloudFrontEvent['cf']): Request => {
   })
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export const createBody = (
   method: string,
   requestBody: CloudFrontRequest['body']
@@ -229,6 +249,9 @@ export const createBody = (
   return requestBody.data
 }
 
+/**
+ * @deprecated `hono/lambda-edge` will be removed in v5. Install `@hono/lambda-edge` and import from there instead.
+ */
 export const isContentTypeBinary = (contentType: string): boolean => {
   if (/^application\/vnd\.(?:apple\.installer|mozilla\.xul)\+xml\s*(?:;|$)/i.test(contentType)) {
     return true

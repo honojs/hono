@@ -1,6 +1,6 @@
+import { languageDetector } from '.'
 import { Hono } from '../../hono'
 import { DEFAULT_OPTIONS, detectors, normalizeLanguage } from './language'
-import { languageDetector } from '.'
 
 describe('languageDetector', () => {
   const createTestApp = (options = {}) => {

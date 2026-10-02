@@ -1,5 +1,18 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
+import DefaultExport, {
+  cloneElement,
+  cloneElement as cloneElementForDom,
+  createElement as createElementForDom,
+  createContext,
+  useContext,
+  createPortal,
+  flushSync,
+  isValidElement,
+  memo,
+  render,
+  version,
+} from '.'
 import type { Child, FC } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
@@ -17,19 +30,6 @@ import {
 } from '../hooks'
 import type { NodeObject } from './render'
 import { build, buildNode } from './render'
-import DefaultExport, {
-  cloneElement,
-  cloneElement as cloneElementForDom,
-  createElement as createElementForDom,
-  createContext,
-  useContext,
-  createPortal,
-  flushSync,
-  isValidElement,
-  memo,
-  render,
-  version,
-} from '.'
 
 describe('Common', () => {
   ;[createElement, createElementForDom].forEach((createElement) => {
