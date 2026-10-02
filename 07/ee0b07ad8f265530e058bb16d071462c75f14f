@@ -1,0 +1,23 @@
+docs/MAINTAINING.md
+  s_a34d594424e4c1::t_de4818cfb931c0 62-63
+src/client/client.test.ts
+  s_a34d594424e4c1::t_a614e0ea0ca1ea 7,31-32
+src/client/types.test.ts
+  s_a34d594424e4c1::t_48f08131de5dca 5,8-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "07ee0b07ad8f265530e058bb16d071462c75f14f",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
