@@ -13,7 +13,7 @@ const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 describe('published declarations', () => {
   it('let consumers emit declarations for types inferred from hono', () => {
     // The fixture must live outside this package: inside it, tsc can always reach
-    // `dist/types/*` with a relative path and never reports TS2883.
+    // `dist/*` with a relative path and never reports TS2883.
     const project = mkdtempSync(join(tmpdir(), 'hono-declaration-emit-'))
     try {
       cpSync(fixture, project, { recursive: true })
@@ -28,7 +28,7 @@ describe('published declarations', () => {
       )
       // Without `export {}` in the bundled `.d.ts`, tsc fails with TS2883 here:
       // internal aliases such as the return type of `c.json()` look exported from
-      // `hono/dist/types/...`, which is not reachable through the package exports.
+      // `hono/dist/...`, which is not reachable through the package exports.
       expect(result.stdout + result.stderr).toBe('')
       expect(result.status).toBe(0)
     } finally {
