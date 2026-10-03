@@ -126,6 +126,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.query()` can get querystring parameters.
+   * Missing parameters are `undefined`, including when accessing the object
+   * returned without a key. Check for `undefined` before using a parameter.
    *
    * @see {@link https://hono.dev/docs/api/request#query}
    *
@@ -143,8 +145,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   query(key: string): string | undefined
-  query(): Record<string, string>
-  query(key?: string) {
+  query(): Record<string, string | undefined>
+  query(key?: string): string | undefined | Record<string, string | undefined> {
     return getQueryParam(this.url, key)
   }
 
