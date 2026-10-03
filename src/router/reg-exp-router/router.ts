@@ -19,6 +19,13 @@ import { Trie } from './trie'
 type HandlerWithMetadata<T> = [T, string] // [handler, path]
 
 let wildcardRegExpCache: Record<string, RegExp> = createNullObject()
+/**
+ * Builds and caches a regular expression for wildcard path matching.
+ * Uses the `s` (dotAll) flag to ensure wildcards match decoded line terminators.
+ *
+ * @param path - The route path containing wildcard patterns.
+ * @returns The compiled regular expression.
+ */
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     `^${path.replace(
