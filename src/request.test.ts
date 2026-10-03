@@ -7,6 +7,39 @@ type RecursiveRecord<K extends string, T> = {
 }
 
 describe('Query', () => {
+  test('req.query() accounts for missing parameters in its return type', () => {
+    const req = new HonoRequest(new Request('http://localhost?name=alice'))
+    const query = req.query()
+    expectTypeOf(query).toEqualTypeOf<Record<string, string | undefined>>()
+
+    const { name, missing } = query
+    expectTypeOf(name).toEqualTypeOf<string | undefined>()
+    expectTypeOf(missing).toEqualTypeOf<string | undefined>()
+    expectTypeOf(query['missing']).toEqualTypeOf<string | undefined>()
+    expectTypeOf(req.query('name')).toEqualTypeOf<string | undefined>()
+
+    expect(missing).toBeUndefined()
+    if (name !== undefined) {
+      expectTypeOf(name).toEqualTypeOf<string>()
+      expect(name.toUpperCase()).toBe('ALICE')
+    } else {
+      throw new Error('Expected the name parameter')
+    }
+  })
+
+  test.each([
+    ['', undefined],
+    ['?other=value', undefined],
+    ['?name=', ''],
+    ['?name=alice&name=bob', 'alice'],
+    ['?name=alice%20bob', 'alice bob'],
+  ])('req.query() preserves parameter values for %s', (search, expected) => {
+    const req = new HonoRequest(new Request(`http://localhost/${search}`))
+    expect(req.query().name).toBe(expected)
+    expect(req.query('name')).toBe(expected)
+    expect(req.query().missing).toBeUndefined()
+  })
+
   test('req.query() and req.queries()', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest(rawRequest)
