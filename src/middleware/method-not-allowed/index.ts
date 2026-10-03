@@ -19,6 +19,7 @@ type MethodNotAllowedOptions<E extends Env> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app: Hono<E, any, any>
   onMethodNotAllowed?: MethodNotAllowedHandler<E>
+  ignorePaths?: (string | RegExp)[]
 }
 
 /**
@@ -30,6 +31,7 @@ type MethodNotAllowedOptions<E extends Env> = {
  * @param {MethodNotAllowedOptions} options - The options for the middleware.
  * @param {Hono} options.app - The Hono instance used by the application.
  * @param {MethodNotAllowedHandler} [options.onMethodNotAllowed] - Generates the response, including its `Allow` header.
+ * @param {(string | RegExp)[]} [options.ignorePaths] - Route paths or patterns to exclude from contributing to the Allow header (e.g. wildcard routes like '/*').
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -79,7 +81,13 @@ export const methodNotAllowed = <E extends Env = Env>(
       for (const route of options.app.routes) {
         // Hono does not distinguish middleware registered with `app.use()` from handlers
         // registered with `app.all()`, so `ALL` routes cannot contribute to the Allow header.
-        if (route.method === METHOD_NAME_ALL || route.method === 'HEAD') {
+        if (
+          route.method === METHOD_NAME_ALL ||
+          route.method === 'HEAD' ||
+          options.ignorePaths?.some((p) =>
+            typeof p === 'string' ? route.path === p : p.test(route.path)
+          )
+        ) {
           continue
         }
 
