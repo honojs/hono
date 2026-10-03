@@ -24,10 +24,28 @@ interface GetSignedCookie {
   ): Promise<string | undefined | false>
 }
 
+const getSetCookieString = (c: Context): string => {
+  const setCookieHeaders = c.res.headers.getSetCookie()
+  return setCookieHeaders
+    .map((s) => {
+      const eqIdx = s.indexOf('=')
+      if (eqIdx === -1) {
+        return ''
+      }
+      const semiIdx = s.indexOf(';', eqIdx)
+      return semiIdx === -1 ? s : s.substring(0, semiIdx)
+    })
+    .filter(Boolean)
+    .join('; ')
+}
+
 export const getCookie: GetCookie = (c, key?, prefix?: CookiePrefixOptions) => {
   const cookie = c.req.raw.headers.get('Cookie')
+  const setCookie = getSetCookieString(c)
+  const combinedCookie = [setCookie, cookie].filter(Boolean).join('; ')
+
   if (typeof key === 'string') {
-    if (!cookie) {
+    if (!combinedCookie) {
       return undefined
     }
     let finalKey = key
@@ -36,13 +54,13 @@ export const getCookie: GetCookie = (c, key?, prefix?: CookiePrefixOptions) => {
     } else if (prefix === 'host') {
       finalKey = '__Host-' + key
     }
-    const obj = parse(cookie, finalKey)
+    const obj = parse(combinedCookie, finalKey)
     return obj[finalKey]
   }
-  if (!cookie) {
+  if (!combinedCookie) {
     return {}
   }
-  const obj = parse(cookie)
+  const obj = parse(combinedCookie)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return obj as any
 }
@@ -54,8 +72,11 @@ export const getSignedCookie: GetSignedCookie = async (
   prefix?: CookiePrefixOptions
 ) => {
   const cookie = c.req.raw.headers.get('Cookie')
+  const setCookie = getSetCookieString(c)
+  const combinedCookie = [setCookie, cookie].filter(Boolean).join('; ')
+
   if (typeof key === 'string') {
-    if (!cookie) {
+    if (!combinedCookie) {
       return undefined
     }
     let finalKey = key
@@ -64,13 +85,13 @@ export const getSignedCookie: GetSignedCookie = async (
     } else if (prefix === 'host') {
       finalKey = '__Host-' + key
     }
-    const obj = await parseSigned(cookie, secret, finalKey)
+    const obj = await parseSigned(combinedCookie, secret, finalKey)
     return obj[finalKey]
   }
-  if (!cookie) {
+  if (!combinedCookie) {
     return {}
   }
-  const obj = await parseSigned(cookie, secret)
+  const obj = await parseSigned(combinedCookie, secret)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return obj as any
 }
