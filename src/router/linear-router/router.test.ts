@@ -24,10 +24,6 @@ describe('LinearRouter', () => {
           'Complex > Parameter with {.*} regexp',
         ],
       },
-      {
-        reason: 'LinearRouter allows trailing slashes',
-        tests: ['Trailing slash > GET /book/'],
-      },
     ],
     newRouter: () => new LinearRouter(),
   })
@@ -47,21 +43,6 @@ describe('LinearRouter', () => {
           router.match('GET', '/entry/123/show')
         }).toThrowError(UnsupportedPathError)
       })
-    })
-  })
-
-  describe('Trailing slash', () => {
-    const router = new LinearRouter<string>()
-
-    beforeEach(() => {
-      router.add('GET', '/book', 'GET /book')
-      router.add('GET', '/book/:id', 'GET /book/:id')
-    })
-
-    it('GET /book/', () => {
-      const [res] = router.match('GET', '/book/')
-      expect(res.length).toBe(1)
-      expect(res[0][0]).toBe('GET /book')
     })
   })
 
