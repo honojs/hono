@@ -121,9 +121,12 @@ export const runTest = ({
 
       it('Wildcard', async () => {
         router.add('GET', '/wild/*/card', 'get wildcard')
-        const res = match('GET', '/wild/xxx/card')
+        let res = match('GET', '/wild/xxx/card')
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('get wildcard')
+
+        res = match('GET', '/wild/xxx/card/')
+        expect(res.length).toBe(0)
       })
 
       it('Default', async () => {
@@ -589,6 +592,16 @@ export const runTest = ({
       })
     })
 
+    describe('Optional parameters at the root', () => {
+      it.each(['/:id?', '/:id?/:action?'])('matches %s with omitted parameters', (path) => {
+        router.add('GET', path, 'optional')
+
+        expect(match('GET', '/')).toEqual([{ handler: 'optional', params: {} }])
+        expect(match('GET', '/42')).toEqual([{ handler: 'optional', params: { id: '42' } }])
+        expect(match('GET', '/42/')).toEqual([])
+      })
+    })
+
     describe('All', () => {
       beforeEach(() => {
         router.add('GET', '/hello', 'get hello')
@@ -875,6 +888,31 @@ export const runTest = ({
       it('GET /book/', () => {
         const res = match('GET', '/book/')
         expect(res.length).toBe(0)
+      })
+      it('GET /book/42', () => {
+        const res = match('GET', '/book/42')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('GET /book/:id')
+        expect(res[0].params['id']).toBe('42')
+      })
+      it('GET /book/42/', () => {
+        const res = match('GET', '/book/42/')
+        expect(res.length).toBe(0)
+      })
+    })
+
+    describe('Routes registered with a trailing slash', () => {
+      it.each([
+        ['/slash/', '/slash/', {}],
+        ['/users/:id/', '/users/42/', { id: '42' }],
+        ['/users/:id{[0-9]+}/', '/users/42/', { id: '42' }],
+        ['/users/:id/profile/', '/users/42/profile/', { id: '42' }],
+      ])('matches %s only with its trailing slash', (route, path, params) => {
+        router.add('GET', route, 'user')
+
+        expect(match('GET', path)).toEqual([{ handler: 'user', params }])
+        expect(match('GET', path.slice(0, -1))).toEqual([])
+        expect(match('GET', path + '/')).toEqual([])
       })
     })
 
