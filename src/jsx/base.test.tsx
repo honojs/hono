@@ -108,3 +108,13 @@ describe('attribute value escaping', () => {
     expect(String(await element.toString())).toBe('<div title="&lt;b&gt;x&lt;/b&gt;">x</div>')
   })
 })
+
+describe('declarative Shadow DOM boolean attributes', () => {
+  it.each(['shadowrootclonable', 'shadowrootdelegatesfocus', 'shadowrootserializable'])(
+    'should render %s only when true',
+    (key) => {
+      expect((<template {...{ [key]: true }} />).toString()).toBe(`<template ${key}=""></template>`)
+      expect((<template {...{ [key]: false }} />).toString()).toBe('<template></template>')
+    }
+  )
+})

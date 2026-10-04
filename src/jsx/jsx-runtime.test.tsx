@@ -56,6 +56,14 @@ describe('jsx-runtime', () => {
     expect(String(jsxAttr('data-flag', false as never))).toBe('data-flag="false"')
   })
 
+  it.each(['shadowrootclonable', 'shadowrootdelegatesfocus', 'shadowrootserializable'])(
+    'Should render %s only when true in jsxAttr()',
+    (key) => {
+      expect(String(jsxAttr(key, true as never))).toBe(`${key}=""`)
+      expect(String(jsxAttr(key, false as never))).toBe('')
+    }
+  )
+
   it('Should escape a JSX node resolved from a promise attribute in jsxAttr()', async () => {
     expect(String(await jsxAttr('title', Promise.resolve(<img src='y' />) as never))).toBe(
       'title="&lt;img src=&quot;y&quot;/&gt;"'

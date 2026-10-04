@@ -109,6 +109,9 @@ export const booleanAttributes = new Set([
   'required',
   'reversed',
   'selected',
+  'shadowrootclonable',
+  'shadowrootdelegatesfocus',
+  'shadowrootserializable',
 ])
 
 type SuspendedContext = <T>(callback: () => T) => T
