@@ -8,6 +8,10 @@ There are some breaking changes.
 
 `hono` is now published as ESM only, and the CommonJS build is removed. On Node.js, version 22.12 or later is required. `require('hono')` still works there, because Node.js 22.12 can `require()` ES modules.
 
+### Non-Error throws go to `onError`
+
+A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
