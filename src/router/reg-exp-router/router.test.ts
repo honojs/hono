@@ -1,6 +1,7 @@
 import type { ParamIndexMap, ParamStash } from '../../router'
 import { UnsupportedPathError } from '../../router'
 import { runTest } from '../common.case.test'
+import { ONLY_WILDCARD_REG_EXP_STR, TAIL_WILDCARD_REG_EXP_STR } from './node'
 import { RegExpRouter } from './router'
 
 describe('RegExpRouter', () => {
@@ -107,6 +108,17 @@ describe('RegExpRouter', () => {
         router.add('GET', '/:id/:action{delete}', 'bar')
       }).toThrowError(UnsupportedPathError)
     })
+
+    it.each([ONLY_WILDCARD_REG_EXP_STR, TAIL_WILDCARD_REG_EXP_STR])(
+      'Should distinguish %s from its grouped parameter pattern',
+      (pattern) => {
+        const router = new RegExpRouter<string>()
+        router.add('ALL', `/:value{${pattern}}/foo/*`, 'first')
+        expect(() => router.add('GET', `/:value{(?:${pattern})}/foo/end`, 'second')).toThrowError(
+          UnsupportedPathError
+        )
+      }
+    )
 
     it('ALL route added after a specific-method route', () => {
       const router = new RegExpRouter<string>()

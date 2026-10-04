@@ -1,8 +1,9 @@
 import { createNullObject } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
-export const ONLY_WILDCARD_REG_EXP_STR = '.*'
-export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
+// Match line terminators without changing the flags of user-defined parameter patterns.
+export const ONLY_WILDCARD_REG_EXP_STR = '[\\s\\S]*'
+export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[\\s\\S]*)'
 export const PATH_ERROR = Symbol()
 
 export type ParamAssocArray = [string, number][]
@@ -27,7 +28,7 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard: the only wildcard (.*) precedes the tail wildcard
+  // wildcard: the only wildcard precedes the tail wildcard
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
     return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
@@ -69,7 +70,7 @@ export class Node {
               : ['', '', LABEL_REG_EXP_STR]
             : null
           : token === '/*'
-            ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
+            ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' also matches '/path/to'
             : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
 
       let nextNode: Node
@@ -91,13 +92,18 @@ export class Node {
           }
         }
 
-        nextNode = node.#children[regexpStr]
+        // Namespace custom patterns without rewriting them or merging them with wildcards.
+        const key =
+          name && regexpStr.length > 1 && regexpStr !== LABEL_REG_EXP_STR
+            ? `:${regexpStr}`
+            : regexpStr
+        nextNode = node.#children[key]
         if (!nextNode) {
-          if (regexpStr !== ONLY_WILDCARD_REG_EXP_STR && regexpStr !== TAIL_WILDCARD_REG_EXP_STR) {
+          if (key !== ONLY_WILDCARD_REG_EXP_STR && key !== TAIL_WILDCARD_REG_EXP_STR) {
             for (const k in node.#children) {
               if (
                 // a single-char pattern coexists with single-char literals as a literal does
-                (regexpStr.length > 1 || k.length > 1) &&
+                (key.length > 1 || k.length > 1) &&
                 k !== ONLY_WILDCARD_REG_EXP_STR &&
                 k !== TAIL_WILDCARD_REG_EXP_STR
               ) {
@@ -105,7 +111,7 @@ export class Node {
               }
             }
           }
-          nextNode = node.#children[regexpStr] = new Node()
+          nextNode = node.#children[key] = new Node()
         }
         if (name !== '') {
           nextNode.#varIndex ??= context.varIndex++
@@ -147,7 +153,7 @@ export class Node {
         return childStr === ''
           ? ''
           : (typeof c.#varIndex === 'number'
-              ? `(${k})@${c.#varIndex}`
+              ? `(${k.length > 1 && k[0] === ':' ? k.slice(1) : k})@${c.#varIndex}`
               : regExpMetaChars.has(k)
                 ? `\\${k}`
                 : k) + childStr
