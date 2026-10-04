@@ -118,3 +118,9 @@ describe('declarative Shadow DOM boolean attributes', () => {
     }
   )
 })
+
+describe('style attributes', () => {
+  it.each([null, undefined])('should omit a %s style attribute', (style) => {
+    expect((<div style={style as never} />).toString()).toBe('<div></div>')
+  })
+})

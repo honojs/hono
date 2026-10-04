@@ -49,6 +49,10 @@ describe('jsx-runtime', () => {
     )
   })
 
+  it('Should render nothing for a null style object in jsxAttr()', () => {
+    expect(String(jsxAttr('style', null as never))).toBe('')
+  })
+
   it('Should handle boolean attributes in jsxAttr()', () => {
     expect(String(jsxAttr('disabled', false as never))).toBe('')
     expect(String(jsxAttr('disabled', true as never))).toBe('disabled=""')

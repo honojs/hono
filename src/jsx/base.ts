@@ -276,7 +276,7 @@ export class JSXNode implements HtmlEscaped {
       }
       if (key === 'children') {
         // skip children
-      } else if (key === 'style' && typeof v === 'object') {
+      } else if (key === 'style' && typeof v === 'object' && v !== null) {
         // object to style strings
         let styleStr = ''
         styleObjectForEach(v, (property, value) => {

@@ -31,7 +31,7 @@ export const jsxAttr = (
     return raw('')
   }
   const buffer: StringBuffer = [`${key}="`] as StringBuffer
-  if (key === 'style' && typeof v === 'object') {
+  if (key === 'style' && typeof v === 'object' && v !== null) {
     // object to style strings
     let styleStr = ''
     styleObjectForEach(v as Record<string, string | number>, (property, value) => {
