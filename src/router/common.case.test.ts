@@ -432,6 +432,22 @@ export const runTest = ({
       })
     })
 
+    describe('Middle wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/a/*/b', 'wildcard')
+      })
+
+      it('GET /a/x/b', () => {
+        const res = match('GET', '/a/x/b')
+        expect(res).toEqual([{ handler: 'wildcard', params: {} }])
+      })
+
+      it('GET /a//b does not match an empty wildcard segment', () => {
+        const res = match('GET', '/a//b')
+        expect(res).toEqual([])
+      })
+    })
+
     describe('Trailing wildcard after a label', () => {
       beforeEach(() => {
         router.add('GET', '/:name/*', 'middleware')
