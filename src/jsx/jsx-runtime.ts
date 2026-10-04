@@ -9,13 +9,13 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { attributeToBuffer, markJSXTemplate } from './base'
+import { attributeToBuffer, markRenderedJSX } from './base'
 import { PERMALINK } from './constants'
 import { isValidAttributeName } from './utils'
 
 export const jsxTemplate: typeof html = (strings, ...values) => {
   const result = html(strings, ...values)
-  return result instanceof Promise ? result.then(markJSXTemplate) : markJSXTemplate(result)
+  return result instanceof Promise ? result.then(markRenderedJSX) : markRenderedJSX(result)
 }
 
 export const jsxAttr = (

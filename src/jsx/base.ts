@@ -6,7 +6,7 @@ import type {
   StringBuffer,
   StringBufferWithCallbacks,
 } from '../utils/html'
-import { DOM_RENDERER, DOM_MEMO, JSX_TEMPLATE } from './constants'
+import { DOM_RENDERER, DOM_MEMO, RENDERED_JSX } from './constants'
 import {
   captureRenderContext,
   createContext,
@@ -145,13 +145,13 @@ const resolveFunctionComponentResult = (
   })
 
 // Rendered JSX is escaped for use as child content, but still contains markup.
-export const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
-  ;(value as unknown as Record<symbol, boolean>)[JSX_TEMPLATE] = true
+export const markRenderedJSX = (value: HtmlEscapedString): HtmlEscapedString => {
+  ;(value as unknown as Record<symbol, boolean>)[RENDERED_JSX] = true
   return value
 }
 
 const isEscapedAttribute = (value: unknown): value is HtmlEscapedString =>
-  value instanceof String && (value as unknown as HtmlEscaped).isEscaped && !(JSX_TEMPLATE in value)
+  value instanceof String && (value as unknown as HtmlEscaped).isEscaped && !(RENDERED_JSX in value)
 
 const objectToAttributeString = (v: object): string | Promise<string> => {
   const s = v.toString() as string | Promise<string>
@@ -312,7 +312,7 @@ export class JSXNode implements HtmlEscaped {
         ? 'callbacks' in buffer
           ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
           : buffer[0]
-        : stringBufferToString(buffer, buffer.callbacks).then(markJSXTemplate)
+        : stringBufferToString(buffer, buffer.callbacks).then(markRenderedJSX)
     }
     return runWithRenderContext(render)
   }
