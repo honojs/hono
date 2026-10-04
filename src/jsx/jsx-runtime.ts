@@ -10,7 +10,7 @@ import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import { attributeToBuffer } from './base'
-import { JSX_TEMPLATE } from './constants'
+import { JSX_TEMPLATE, PERMALINK } from './constants'
 import { isValidAttributeName } from './utils'
 
 const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
@@ -35,8 +35,13 @@ export const jsxAttr = (
     escapeToBuffer(v, buffer)
     return raw(buffer[0] + '"')
   }
+  let value: unknown = v
+  if (typeof value === 'function' && (key === 'action' || key === 'formaction')) {
+    // resolved in the same way as the form, input and button intrinsic elements
+    value = PERMALINK in value ? value[PERMALINK] : undefined
+  }
   const buffer: StringBuffer = ['']
-  attributeToBuffer(buffer, '', key, v)
+  attributeToBuffer(buffer, '', key, value)
   return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer, undefined)
 }
 

@@ -220,3 +220,16 @@ Deno.test('JSX: reject function values for non-event attributes', () => {
     "Invalid prop 'data-value' of type 'function'"
   )
 })
+
+Deno.test('JSX: function form actions', () => {
+  const action = () => {}
+  const html = (
+    <form action={action}>
+      <button formAction={action}>go</button>
+    </form>
+  )
+
+  // react-jsx : <form><button>
+  // precompile : <form ><button >
+  assertEquals(html.toString().replace(/ >/g, '>'), '<form><button>go</button></form>')
+})

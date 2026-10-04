@@ -5,6 +5,7 @@ import { html, raw } from '../helper/html'
 import { Hono } from '../hono'
 import { HtmlEscapedCallbackPhase } from '../utils/html'
 import type { HtmlEscapedCallback } from '../utils/html'
+import { PERMALINK } from './constants'
 import { jsxAttr, jsxTemplate } from './jsx-runtime'
 import { renderToReadableStream } from './streaming'
 
@@ -79,6 +80,12 @@ describe('jsx-runtime', () => {
     expect(() => jsxAttr(key, (() => 'source') as never)).toThrow(
       `Invalid prop '${key}' of type 'function'`
     )
+  })
+
+  it.each(['action', 'formaction'])('Should resolve function values for %s in jsxAttr()', (key) => {
+    expect(String(jsxAttr(key, (() => {}) as never))).toBe('')
+    const action = Object.assign(() => {}, { [PERMALINK]: '/permalink?a=1&b=2' })
+    expect(String(jsxAttr(key, action as never))).toBe(`${key}="/permalink?a=1&amp;b=2"`)
   })
 
   it('Should escape a JSX node resolved from a promise attribute in jsxAttr()', async () => {
