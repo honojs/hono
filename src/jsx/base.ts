@@ -144,7 +144,12 @@ const resolveFunctionComponentResult = (
     return suspendedContext ? suspendedContext(render) : runWithRenderContext(render)
   })
 
-// Precompiled JSX is escaped for use as child content, but still contains markup.
+// Rendered JSX is escaped for use as child content, but still contains markup.
+export const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
+  ;(value as unknown as Record<symbol, boolean>)[JSX_TEMPLATE] = true
+  return value
+}
+
 const isEscapedAttribute = (value: unknown): value is HtmlEscapedString =>
   value instanceof String && (value as unknown as HtmlEscaped).isEscaped && !(JSX_TEMPLATE in value)
 
@@ -307,7 +312,7 @@ export class JSXNode implements HtmlEscaped {
         ? 'callbacks' in buffer
           ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
           : buffer[0]
-        : stringBufferToString(buffer, buffer.callbacks)
+        : stringBufferToString(buffer, buffer.callbacks).then(markJSXTemplate)
     }
     return runWithRenderContext(render)
   }

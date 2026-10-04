@@ -94,6 +94,13 @@ describe('jsx-runtime', () => {
     )
   })
 
+  it('Should escape an async render result in jsxAttr()', async () => {
+    const Async = async () => <img src='y' />
+    expect(String(jsxAttr('title', await (<Async />).toString()))).toBe(
+      'title="&lt;img src=&quot;y&quot;/&gt;"'
+    )
+  })
+
   describe('precompiled JSX attribute values', () => {
     const input = 'x onmouseover=alert(1)//'
     const expected =

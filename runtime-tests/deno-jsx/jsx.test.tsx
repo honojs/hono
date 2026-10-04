@@ -197,6 +197,7 @@ Deno.test('JSX: escape elements used as attribute values', async () => {
     Promise.resolve(node),
     <span data-label={Promise.resolve(input) as never}>label</span>,
     <Async />,
+    (<Async />).toString(),
   ]
   const expected =
     '<div title="&lt;span data-label=&quot;x onmouseover=alert(1)//&quot;&gt;label&lt;/span&gt;">outer</div>'

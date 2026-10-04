@@ -9,14 +9,9 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { attributeToBuffer } from './base'
-import { JSX_TEMPLATE, PERMALINK } from './constants'
+import { attributeToBuffer, markJSXTemplate } from './base'
+import { PERMALINK } from './constants'
 import { isValidAttributeName } from './utils'
-
-const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
-  ;(value as unknown as Record<symbol, boolean>)[JSX_TEMPLATE] = true
-  return value
-}
 
 export const jsxTemplate: typeof html = (strings, ...values) => {
   const result = html(strings, ...values)
