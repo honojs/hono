@@ -7,11 +7,21 @@ export { jsxDEV as jsx, Fragment } from './jsx-dev-runtime'
 export { jsxDEV as jsxs } from './jsx-dev-runtime'
 export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
-import type { HtmlEscapedString, StringBuffer, HtmlEscaped } from '../utils/html'
+import type { HtmlEscapedString, StringBuffer } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
+import { isEscapedAttribute, resolveAttributePromise } from './base'
+import { JSX_TEMPLATE } from './constants'
 import { isValidAttributeName, styleObjectForEach } from './utils'
 
-export { html as jsxTemplate }
+const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
+  ;(value as unknown as Record<symbol, boolean>)[JSX_TEMPLATE] = true
+  return value
+}
+
+export const jsxTemplate: typeof html = (strings, ...values) => {
+  const result = html(strings, ...values)
+  return result instanceof Promise ? result.then(markJSXTemplate) : markJSXTemplate(result)
+}
 
 export const jsxAttr = (
   key: string,
@@ -36,13 +46,21 @@ export const jsxAttr = (
     buffer[0] += '"'
   } else if (v === null || v === undefined) {
     return raw('')
-  } else if (typeof v === 'number' || (v as unknown as HtmlEscaped).isEscaped) {
+  } else if (typeof v === 'number' || isEscapedAttribute(v)) {
     buffer[0] += `${v}"`
   } else if (v instanceof Promise) {
-    buffer.unshift('"', v)
+    buffer.unshift('"', resolveAttributePromise(v) as Promise<string>)
   } else {
-    escapeToBuffer(v.toString(), buffer)
-    buffer[0] += '"'
+    const s = (v as { toString(): string | Promise<string> }).toString()
+    if (s instanceof Promise) {
+      buffer.unshift(
+        '"',
+        s.then((resolved) => String(resolved))
+      )
+    } else {
+      escapeToBuffer(s, buffer)
+      buffer[0] += '"'
+    }
   }
 
   return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer, undefined)

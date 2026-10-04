@@ -187,3 +187,27 @@ Deno.test('JSX: style', async () => {
   const html = <div style={{ fontSize: '12px', color: null }}></div>
   assertEquals(html.toString(), '<div style="font-size:12px"></div>')
 })
+
+Deno.test('JSX: escape elements used as attribute values', async () => {
+  const input = 'x onmouseover=alert(1)//'
+  const node = <span data-label={input}>label</span>
+  const Async = async () => <span data-label={input}>label</span>
+  const values = [
+    node,
+    Promise.resolve(node),
+    <span data-label={Promise.resolve(input) as never}>label</span>,
+    <Async />,
+  ]
+  const expected =
+    '<div title="&lt;span data-label=&quot;x onmouseover=alert(1)//&quot;&gt;label&lt;/span&gt;">outer</div>'
+
+  for (const value of values) {
+    // A spread makes the precompile transform use JSXNode for the outer element.
+    for (const element of [
+      <div title={value as never}>outer</div>,
+      <div {...{ title: value as never }}>outer</div>,
+    ]) {
+      assertEquals(String(await (await element).toString()), expected)
+    }
+  }
+})

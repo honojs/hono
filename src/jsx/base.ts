@@ -1,7 +1,7 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
-import { DOM_RENDERER, DOM_MEMO } from './constants'
+import { DOM_RENDERER, DOM_MEMO, JSX_TEMPLATE } from './constants'
 import {
   captureRenderContext,
   createContext,
@@ -135,6 +135,24 @@ const resolveFunctionComponentResult = (
     }
     return suspendedContext ? suspendedContext(render) : runWithRenderContext(render)
   })
+
+// Precompiled JSX is escaped for use as child content, but still contains markup.
+export const isEscapedAttribute = (value: unknown): value is HtmlEscapedString =>
+  value instanceof String && (value as unknown as HtmlEscaped).isEscaped && !(JSX_TEMPLATE in value)
+
+/**
+ * Resolves a deferred attribute value. A JSX element (or any other non-string
+ * object) must render as escaped text inside `key="…"`, never spliced in as
+ * live markup, so it is converted to a plain string here.
+ */
+export const resolveAttributePromise = (v: Promise<unknown>): Promise<unknown> =>
+  v.then((resolved) =>
+    typeof resolved === 'object' && resolved !== null && !isEscapedAttribute(resolved)
+      ? Promise.resolve((resolved as { toString(): string | Promise<string> }).toString()).then(
+          (s) => String(s)
+        )
+      : resolved
+  )
 
 const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
   for (let i = 0, len = children.length; i < len; i++) {
@@ -272,7 +290,7 @@ export class JSXNode implements HtmlEscaped {
         buffer[0] += '"'
       } else if (v === null || v === undefined) {
         // Do nothing
-      } else if (typeof v === 'number' || (v as HtmlEscaped).isEscaped) {
+      } else if (typeof v === 'number' || isEscapedAttribute(v)) {
         buffer[0] += ` ${key}="${v}"`
       } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
         if (v) {
@@ -286,7 +304,7 @@ export class JSXNode implements HtmlEscaped {
         children = [raw(v.__html)]
       } else if (v instanceof Promise) {
         buffer[0] += ` ${key}="`
-        buffer.unshift('"', v)
+        buffer.unshift('"', resolveAttributePromise(v) as Promise<string>)
       } else if (typeof v === 'function') {
         if (!key.startsWith('on') && key !== 'ref') {
           throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
@@ -294,8 +312,16 @@ export class JSXNode implements HtmlEscaped {
         // maybe event handler for client components, just ignore in server components
       } else {
         buffer[0] += ` ${key}="`
-        escapeToBuffer(v.toString(), buffer)
-        buffer[0] += '"'
+        const s = (v as { toString(): string | Promise<string> }).toString()
+        if (s instanceof Promise) {
+          buffer.unshift(
+            '"',
+            s.then((resolved) => String(resolved))
+          )
+        } else {
+          escapeToBuffer(s, buffer)
+          buffer[0] += '"'
+        }
       }
     }
 

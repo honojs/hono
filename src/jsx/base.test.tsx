@@ -77,3 +77,34 @@ describe('createElement', () => {
     expect((<div>{object as never}</div>).toString()).toBe('<div></div>')
   })
 })
+
+describe('attribute value escaping', () => {
+  it('should escape a JSX node used as an attribute value', () => {
+    const element = <div title={(<img src='y' onerror='alert(1)' />) as never}>x</div>
+    expect(element.toString()).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape a JSX node resolved from a promise attribute', async () => {
+    const element = (
+      <div title={Promise.resolve(<img src='y' onerror='alert(1)' />) as never}>x</div>
+    )
+    expect(String(await element.toString())).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape an async component node used as an attribute value', async () => {
+    const Async = async () => <img src='y' onerror='alert(1)' />
+    const element = <div title={(<Async />) as never}>x</div>
+    expect(String(await element.toString())).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape a plain object resolved from a promise attribute', async () => {
+    const element = <div title={Promise.resolve({ toString: () => '<b>x</b>' }) as never}>x</div>
+    expect(String(await element.toString())).toBe('<div title="&lt;b&gt;x&lt;/b&gt;">x</div>')
+  })
+})
