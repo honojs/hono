@@ -68,6 +68,19 @@ describe('jsx-runtime', () => {
     }
   )
 
+  it('Should skip event handlers and ref callbacks in jsxAttr()', () => {
+    const handler = () => 'source'
+    expect(String(jsxAttr('onclick', handler as never))).toBe('')
+    expect(String(jsxAttr('onClick', handler as never))).toBe('')
+    expect(String(jsxAttr('ref', handler as never))).toBe('')
+  })
+
+  it.each(['title', 'data-x'])('Should reject function values for %s in jsxAttr()', (key) => {
+    expect(() => jsxAttr(key, (() => 'source') as never)).toThrow(
+      `Invalid prop '${key}' of type 'function'`
+    )
+  })
+
   it('Should escape a JSX node resolved from a promise attribute in jsxAttr()', async () => {
     expect(String(await jsxAttr('title', Promise.resolve(<img src='y' />) as never))).toBe(
       'title="&lt;img src=&quot;y&quot;/&gt;"'

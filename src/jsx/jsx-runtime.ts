@@ -48,6 +48,12 @@ export const jsxAttr = (
     return raw('')
   } else if (typeof v === 'boolean' && booleanAttributes.has(key)) {
     return v ? raw(`${key}=""`) : raw('')
+  } else if (typeof v === 'function') {
+    if (!key.startsWith('on') && key !== 'ref') {
+      throw new Error(`Invalid prop '${key}' of type 'function' supplied to a JSX element.`)
+    }
+    // maybe event handler for client components, just ignore in server components
+    return raw('')
   } else if (typeof v === 'number' || isEscapedAttribute(v)) {
     buffer[0] += `${v}"`
   } else if (v instanceof Promise) {

@@ -1,5 +1,5 @@
 /** @jsxImportSource ../../src/jsx */
-import { assertEquals } from '@std/assert'
+import { assertEquals, assertThrows } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
@@ -210,4 +210,13 @@ Deno.test('JSX: escape elements used as attribute values', async () => {
       assertEquals(String(await (await element).toString()), expected)
     }
   }
+})
+
+Deno.test('JSX: reject function values for non-event attributes', () => {
+  const handler = () => 'source'
+  assertThrows(
+    () => (<div data-value={handler}>outer</div>).toString(),
+    Error,
+    "Invalid prop 'data-value' of type 'function'"
+  )
 })
