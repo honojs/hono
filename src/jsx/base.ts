@@ -82,7 +82,7 @@ const emptyTags = [
   'track',
   'wbr',
 ]
-export const booleanAttributes = [
+export const booleanAttributes = new Set([
   'allowfullscreen',
   'async',
   'autofocus',
@@ -109,7 +109,7 @@ export const booleanAttributes = [
   'required',
   'reversed',
   'selected',
-]
+])
 
 type SuspendedContext = <T>(callback: () => T) => T
 
@@ -292,7 +292,7 @@ export class JSXNode implements HtmlEscaped {
         // Do nothing
       } else if (typeof v === 'number' || isEscapedAttribute(v)) {
         buffer[0] += ` ${key}="${v}"`
-      } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
+      } else if (typeof v === 'boolean' && booleanAttributes.has(key)) {
         if (v) {
           buffer[0] += ` ${key}=""`
         }
