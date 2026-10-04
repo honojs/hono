@@ -1440,8 +1440,11 @@ describe('Error handle', () => {
       return c.text('Custom Error Message', 500)
     })
 
-    it('Should throw Error if a non-Error object is thrown in a handler', async () => {
-      expect(() => app.request('/error-string')).toThrowError()
+    it('Should handle a non-Error value thrown in a handler', async () => {
+      const res = await app.request('/error-string')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
     })
 
     it('Custom Error Message', async () => {
@@ -1455,6 +1458,104 @@ describe('Error handle', () => {
       expect(await res.text()).toBe('Custom Error Message')
       expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
     })
+  })
+
+  it.each(['sync', 'async'])(
+    'Should pass a non-Error value thrown from a %s handler to onError as an Error cause',
+    async (mode) => {
+      const app = new Hono()
+      const handler = () => {
+        throw null
+      }
+      app.get('/', mode === 'async' ? async () => handler() : handler)
+      const onError = vi.fn(async (_error: Error, c: Context) =>
+        c.text('Custom Error Message', 500)
+      )
+      app.onError(onError)
+
+      const res = await app.request('/')
+
+      expect(onError).toHaveBeenCalledOnce()
+      const error = onError.mock.calls[0][0]
+      expect(error).toBeInstanceOf(Error)
+      expect(error.cause).toBe(null)
+      expect(error.message).toBe('')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+    }
+  )
+
+  it('Should return a default 500 response for a non-Error throw', async () => {
+    const app = new Hono()
+    app.get('/', () => {
+      throw { message: 'Unexpected error' }
+    })
+
+    const res = await app.request('/')
+
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Internal Server Error')
+  })
+
+  it('Should resume middleware after a non-Error throw', async () => {
+    const app = new Hono()
+    app.use(async (c, next) => {
+      await next()
+      c.header('x-after-next', 'executed')
+    })
+    app.get('/', () => {
+      throw { message: 'Unexpected error' }
+    })
+
+    const res = await app.request('/')
+
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Internal Server Error')
+    expect(res.headers.get('x-after-next')).toBe('executed')
+  })
+
+  it('Should use the sub-app onError for a non-Error throw', async () => {
+    const app = new Hono()
+    const sub = new Hono()
+    const value = { message: 'Sub-app error' }
+    const onError = vi.fn((_error: Error, c: Context) => c.text('Parent error', 500))
+    const subOnError = vi.fn((_error: Error, c: Context) => c.text('Sub-app error', 500))
+    app.onError(onError)
+    app.use(async (c, next) => {
+      await next()
+      c.header('x-after-next', 'executed')
+    })
+    sub.onError(subOnError)
+    sub.get('/', async () => {
+      throw value
+    })
+    app.route('/sub', sub)
+
+    const res = await app.request('/sub')
+
+    expect(onError).not.toHaveBeenCalled()
+    expect(subOnError).toHaveBeenCalledOnce()
+    const [error, context] = subOnError.mock.calls[0]
+    expect(error).toBeInstanceOf(Error)
+    expect(error.cause).toBe(value)
+    expect(context.error).toBe(error)
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Sub-app error')
+    expect(res.headers.get('x-after-next')).toBe('executed')
+  })
+
+  it('Should handle a non-Error throw from notFound', async () => {
+    const app = new Hono()
+    app.use(async () => {})
+    app.notFound(() => {
+      throw 'Not Found error'
+    })
+    app.onError((error, c) => c.text(error.message, 500))
+
+    const res = await app.request('/')
+
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Not Found error')
   })
 
   describe('Async custom handler', () => {
