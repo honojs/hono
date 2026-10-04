@@ -8,7 +8,7 @@ export { jsxDEV as jsxs } from './jsx-dev-runtime'
 export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
-import { stringBufferToString } from '../utils/html'
+import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import { attributeToBuffer } from './base'
 import { JSX_TEMPLATE } from './constants'
 import { isValidAttributeName } from './utils'
@@ -29,6 +29,11 @@ export const jsxAttr = (
 ): HtmlEscapedString | Promise<HtmlEscapedString> => {
   if (!isValidAttributeName(key)) {
     return raw('')
+  }
+  if (typeof v === 'string') {
+    const buffer: StringBuffer = [`${key}="`]
+    escapeToBuffer(v, buffer)
+    return raw(buffer[0] + '"')
   }
   const buffer: StringBuffer = ['']
   attributeToBuffer(buffer, '', key, v)
