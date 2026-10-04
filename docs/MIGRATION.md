@@ -34,6 +34,16 @@ import { serveStatic } from '@hono/bun'
 ### Removal of deprecated features
 
 - Hono - `app.fire()` is obsolete. Use `fire()` in `@hono/service-worker` instead.
+- Hono - `app.mount()` is obsolete. Use `mount()` in `hono/mount` instead.
+
+  ```ts
+  // From
+  app.mount('/itty-router', ittyRouter.handle)
+
+  // To
+  app.all('/itty-router/*', mount(ittyRouter.handle))
+  ```
+
 - HonoRequest - `req.matchedRoutes` and `req.routePath` are obsolete. Use `matchedRoutes()` and `routePath()` in `hono/route` instead.
 - Bearer Auth Middleware - `noAuthenticationHeaderMessage`, `invalidAuthenticationHeaderMessage`, and `invalidTokenMessage` are obsolete. Use `noAuthenticationHeader.message`, `invalidAuthenticationHeader.message`, and `invalidToken.message` instead.
 - Serve Static Middleware - the `pathResolve` option is removed. It was no longer used.
