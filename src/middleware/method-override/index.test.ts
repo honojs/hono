@@ -59,6 +59,64 @@ describe('Method Override Middleware', () => {
     })
 
     describe('application/x-www-form-urlencoded', () => {
+      it.each(['_method', 'custom-input-name'])(
+        'Should remove stale Content-Length when rewriting %s',
+        async (form) => {
+          const app = new Hono()
+          app.use('/posts', methodOverride({ app, form }))
+          app.delete('/posts', async (c) =>
+            c.json({
+              method: c.req.method,
+              body: await c.req.text(),
+              contentLength: c.req.header('content-length') ?? null,
+              contentType: c.req.header('content-type'),
+              customHeader: c.req.header('x-custom'),
+            })
+          )
+          const body = new URLSearchParams({ [form]: 'DELETE', message: 'Hello' }).toString()
+          const res = await app.request('/posts', {
+            method: 'POST',
+            body,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+              'Content-Length': String(new TextEncoder().encode(body).length),
+              'X-Custom': 'preserved',
+            },
+          })
+
+          expect(res.status).toBe(200)
+          expect(await res.json()).toEqual({
+            method: 'DELETE',
+            body: 'message=Hello',
+            contentLength: null,
+            contentType: 'application/x-www-form-urlencoded;charset=UTF-8',
+            customHeader: 'preserved',
+          })
+        }
+      )
+
+      it('Should preserve Content-Length when no method override is supplied', async () => {
+        const app = new Hono()
+        app.use('/posts', methodOverride({ app }))
+        app.post('/posts', async (c) =>
+          c.json({
+            body: await c.req.text(),
+            contentLength: c.req.header('content-length'),
+          })
+        )
+        const res = await app.request('/posts', {
+          method: 'POST',
+          body: 'message=Hello',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': '13',
+          },
+        })
+
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ body: 'message=Hello', contentLength: '13' })
+      })
+
       it('Should override POST to DELETE', async () => {
         const params = new URLSearchParams()
         params.append('message', 'Hello')
