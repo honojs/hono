@@ -9,7 +9,7 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { isEscapedAttribute, resolveAttributePromise } from './base'
+import { booleanAttributes, isEscapedAttribute, resolveAttributePromise } from './base'
 import { JSX_TEMPLATE } from './constants'
 import { isValidAttributeName, styleObjectForEach } from './utils'
 
@@ -46,6 +46,8 @@ export const jsxAttr = (
     buffer[0] += '"'
   } else if (v === null || v === undefined) {
     return raw('')
+  } else if (typeof v === 'boolean' && booleanAttributes.has(key)) {
+    return v ? raw(`${key}=""`) : raw('')
   } else if (typeof v === 'number' || isEscapedAttribute(v)) {
     buffer[0] += `${v}"`
   } else if (v instanceof Promise) {

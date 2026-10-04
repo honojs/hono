@@ -49,6 +49,13 @@ describe('jsx-runtime', () => {
     )
   })
 
+  it('Should handle boolean attributes in jsxAttr()', () => {
+    expect(String(jsxAttr('disabled', false as never))).toBe('')
+    expect(String(jsxAttr('disabled', true as never))).toBe('disabled=""')
+    // non-boolean attributes keep their value, matching JSXNode rendering
+    expect(String(jsxAttr('data-flag', false as never))).toBe('data-flag="false"')
+  })
+
   it('Should escape a JSX node resolved from a promise attribute in jsxAttr()', async () => {
     expect(String(await jsxAttr('title', Promise.resolve(<img src='y' />) as never))).toBe(
       'title="&lt;img src=&quot;y&quot;/&gt;"'
