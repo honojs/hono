@@ -8,7 +8,7 @@ const project = fileURLToPath(new URL('./fixtures/jsx-types/tsconfig.json', impo
 
 describe.each(['hono/jsx', 'hono/jsx/dom'])('published %s declarations', (jsxImportSource) => {
   it.each(['react-jsx', 'react-jsxdev'])('preserves JSX attribute checking with %s', (jsx) => {
-    // Resolve the package exports to dist/types, as a consumer would after a build.
+    // Resolve the package exports to dist, as a consumer would after a build.
     const result = spawnSync(
       process.execPath,
       [compiler, '--project', project, '--jsxImportSource', jsxImportSource, '--jsx', jsx],
