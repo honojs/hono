@@ -232,6 +232,72 @@ describe('compose with Context - next() below', () => {
   })
 })
 
+describe('compose with non-Error throws', () => {
+  const thrownValues = [
+    'Error message',
+    { message: 'Error message' },
+    null,
+    undefined,
+    0,
+    false,
+    Symbol('error'),
+  ]
+
+  it.each(thrownValues)('Should wrap %s in an Error and resume middleware', async (value) => {
+    const middleware = [
+      buildMiddlewareTuple(async (c: Context, next: Next) => {
+        c.res = c.text('Original response')
+        await next()
+        c.header('x-after-next', 'executed')
+      }),
+      buildMiddlewareTuple(() => {
+        throw value
+      }),
+    ]
+    const onError = vi.fn(async (_error: Error, c: Context) => c.text('onError', 500))
+
+    const composed = compose(middleware, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(onError).toHaveBeenCalledExactlyOnceWith(context.error, context)
+    expect(context.error).toBeInstanceOf(Error)
+    expect(context.error?.cause).toBe(value)
+    expect(context.error?.message).toBe(typeof value === 'string' ? value : '')
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
+    expect(context.res.headers.get('x-after-next')).toBe('executed')
+  })
+
+  it('Should rethrow a non-Error value unchanged without onError', async () => {
+    const value = { message: 'Error message' }
+    const middleware = [
+      buildMiddlewareTuple(() => {
+        throw value
+      }),
+    ]
+
+    await expect(compose(middleware)(new Context(new Request('http://localhost/')))).rejects.toBe(
+      value
+    )
+  })
+
+  it('Should preserve an existing Error instance', async () => {
+    const error = new ExpectedError('Custom error')
+    const middleware = [
+      buildMiddlewareTuple(() => {
+        throw error
+      }),
+    ]
+    const onError = vi.fn((_error: Error, c: Context) => c.text('onError', 500))
+
+    const composed = compose(middleware, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(context.error).toBe(error)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(error, context)
+  })
+})
+
 describe('compose with Context - 500 error', () => {
   const middleware: MiddlewareTuple[] = []
 

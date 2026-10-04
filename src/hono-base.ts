@@ -4,7 +4,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compose } from './compose'
+import { compose, toError } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
 import type { Router } from './router'
@@ -248,6 +248,8 @@ class Hono<
 
   /**
    * `.onError()` handles an error and returns a customized Response.
+   * Non-Error values thrown by handlers are wrapped in an Error with the original value as its cause.
+   * If the thrown value is a string, it is also used as the error message.
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
@@ -301,10 +303,9 @@ class Hono<
   }
 
   #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
-    if (err instanceof Error) {
-      return this.errorHandler(err, c)
-    }
-    throw err
+    const error = toError(err)
+    c.error = error
+    return this.errorHandler(error, c)
   }
 
   #dispatch(
@@ -347,7 +348,7 @@ class Hono<
               (resolved: Response | undefined) =>
                 resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
-            .catch((err: Error) => this.#handleError(err, c))
+            .catch((err: unknown) => this.#handleError(err, c))
         : (res ?? this.#notFoundHandler(c))
     }
 
