@@ -8,10 +8,10 @@ export { jsxDEV as jsxs } from './jsx-dev-runtime'
 export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer } from '../utils/html'
-import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { booleanAttributes, isEscapedAttribute, resolveAttributePromise } from './base'
+import { stringBufferToString } from '../utils/html'
+import { attributeToBuffer } from './base'
 import { JSX_TEMPLATE } from './constants'
-import { isValidAttributeName, styleObjectForEach } from './utils'
+import { isValidAttributeName } from './utils'
 
 const markJSXTemplate = (value: HtmlEscapedString): HtmlEscapedString => {
   ;(value as unknown as Record<symbol, boolean>)[JSX_TEMPLATE] = true
@@ -30,47 +30,8 @@ export const jsxAttr = (
   if (!isValidAttributeName(key)) {
     return raw('')
   }
-  const buffer: StringBuffer = [`${key}="`] as StringBuffer
-  if (key === 'style' && typeof v === 'object' && v !== null) {
-    // object to style strings
-    let styleStr = ''
-    styleObjectForEach(v as Record<string, string | number>, (property, value) => {
-      if (value != null) {
-        styleStr += `${styleStr ? ';' : ''}${property}:${value}`
-      }
-    })
-    escapeToBuffer(styleStr, buffer)
-    buffer[0] += '"'
-  } else if (typeof v === 'string') {
-    escapeToBuffer(v, buffer)
-    buffer[0] += '"'
-  } else if (v === null || v === undefined) {
-    return raw('')
-  } else if (typeof v === 'boolean' && booleanAttributes.has(key)) {
-    return v ? raw(`${key}=""`) : raw('')
-  } else if (typeof v === 'function') {
-    if (!key.startsWith('on') && key !== 'ref') {
-      throw new Error(`Invalid prop '${key}' of type 'function' supplied to a JSX element.`)
-    }
-    // maybe event handler for client components, just ignore in server components
-    return raw('')
-  } else if (typeof v === 'number' || isEscapedAttribute(v)) {
-    buffer[0] += `${v}"`
-  } else if (v instanceof Promise) {
-    buffer.unshift('"', resolveAttributePromise(v) as Promise<string>)
-  } else {
-    const s = (v as { toString(): string | Promise<string> }).toString()
-    if (s instanceof Promise) {
-      buffer.unshift(
-        '"',
-        s.then((resolved) => String(resolved))
-      )
-    } else {
-      escapeToBuffer(s, buffer)
-      buffer[0] += '"'
-    }
-  }
-
+  const buffer: StringBuffer = ['']
+  attributeToBuffer(buffer, '', key, v)
   return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer, undefined)
 }
 
