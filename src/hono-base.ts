@@ -403,7 +403,9 @@ class Hono<
   }
 
   #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
-    return this.errorHandler(toError(err), c)
+    const error = toError(err)
+    c.error = error
+    return this.errorHandler(error, c)
   }
 
   #dispatch(

@@ -1476,10 +1476,11 @@ describe('Error handle', () => {
       const res = await app.request('/')
 
       expect(onError).toHaveBeenCalledOnce()
-      const error = onError.mock.calls[0][0]
+      const [error, context] = onError.mock.calls[0]
       expect(error).toBeInstanceOf(Error)
       expect(error.cause).toBe(null)
       expect(error.message).toBe('')
+      expect(context.error).toBe(error)
       expect(res.status).toBe(500)
       expect(await res.text()).toBe('Custom Error Message')
     }
@@ -1556,6 +1557,24 @@ describe('Error handle', () => {
 
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Not Found error')
+  })
+
+  it('Should set c.error when notFound throws with no matched route', async () => {
+    const app = new Hono()
+    const error = new Error('This is Error')
+    app.notFound(() => {
+      throw error
+    })
+    let errorInContext: Error | undefined
+    app.onError((_err, c) => {
+      errorInContext = c.error
+      return c.text('Custom Error Message', 500)
+    })
+
+    const res = await app.request('/')
+
+    expect(res.status).toBe(500)
+    expect(errorInContext).toBe(error)
   })
 
   describe('Async custom handler', () => {
