@@ -4,6 +4,10 @@
 
 There are some breaking changes.
 
+### ESM only
+
+`hono` is now published as ESM only, and the CommonJS build is removed. On Node.js, version 22.12 or later is required. `require('hono')` still works there, because Node.js 22.12 can `require()` ES modules.
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
