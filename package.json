@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.13.12",
+  "version": "4.13.13",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -102,6 +102,11 @@
       "types": "./dist/types/helper/route/index.d.ts",
       "import": "./dist/helper/route/index.js",
       "require": "./dist/cjs/helper/route/index.js"
+    },
+    "./mount": {
+      "types": "./dist/types/middleware/mount/index.d.ts",
+      "import": "./dist/middleware/mount/index.js",
+      "require": "./dist/cjs/middleware/mount/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
@@ -411,6 +416,9 @@
       ],
       "route": [
         "./dist/types/helper/route"
+      ],
+      "mount": [
+        "./dist/types/middleware/mount"
       ],
       "cookie": [
         "./dist/types/helper/cookie"
