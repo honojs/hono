@@ -487,6 +487,21 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should match a multi-segment parameter followed by a parameter after falling back to TrieRouter', async () => {
+    const app = new Hono()
+    app.get('/repo/:path{.+}/:action', (c) => c.json(c.req.param()))
+    app.get('/:file{.+\\.png}/:size', (c) => c.json(c.req.param()))
+
+    let res = await app.request('http://localhost/repo/src/index.ts/blame')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ path: 'src/index.ts', action: 'blame' })
+
+    res = await app.request('http://localhost/logo.png/thumb.png')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ file: 'logo.png', size: 'thumb.png' })
+    expect(app.router.name).toBe('SmartRouter + TrieRouter')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')

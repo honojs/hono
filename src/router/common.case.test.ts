@@ -793,6 +793,60 @@ export const runTest = ({
       })
     })
 
+    describe('Capture multiple directories followed by a parameter', () => {
+      beforeEach(() => {
+        router.add('GET', '/repo/:path{.+}/:action', 'action')
+      })
+
+      it('GET /repo/src/index.ts/blame', () => {
+        const res = match('GET', '/repo/src/index.ts/blame')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('action')
+        expect(res[0].params['path']).toEqual('src/index.ts')
+        expect(res[0].params['action']).toEqual('blame')
+      })
+
+      it('GET /repo/README.md/raw', () => {
+        const res = match('GET', '/repo/README.md/raw')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('action')
+        expect(res[0].params['path']).toEqual('README.md')
+        expect(res[0].params['action']).toEqual('raw')
+      })
+
+      it('GET /repo/README.md', () => {
+        const res = match('GET', '/repo/README.md')
+        expect(res.length).toBe(0)
+      })
+    })
+
+    describe('Capture regex param matching slashes followed by a parameter', () => {
+      beforeEach(() => {
+        router.add('GET', '/:file{.+\\.png}/:size', 'image')
+      })
+
+      it('GET /logo.png/thumb.png', () => {
+        const res = match('GET', '/logo.png/thumb.png')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('image')
+        expect(res[0].params['file']).toEqual('logo.png')
+        expect(res[0].params['size']).toEqual('thumb.png')
+      })
+    })
+
+    describe('Capture multiple directories followed by a wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/:path{.+}/*', 'wildcard')
+      })
+
+      it('GET /a/b', () => {
+        const res = match('GET', '/a/b')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
+        expect(res[0].params['path']).toEqual('a/b')
+      })
+    })
+
     describe('Capture multiple directories and optional', () => {
       beforeEach(() => {
         router.add('GET', '/:prefix{.+}/contents/:id?', 'contents')
