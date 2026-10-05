@@ -1,0 +1,21 @@
+README.md
+  s_a34d594424e4c1::t_3e12ef2f78db12 66,68
+docs/CONTRIBUTING.md
+  s_a34d594424e4c1::t_67160965e3e5cc 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "edcb43fa43a45629f07d67197c82bfb13088e8b4",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
