@@ -26,9 +26,6 @@ type Body = {
 }
 type BodyCache = Partial<Body>
 
-const textDecoder = new TextDecoder()
-const textEncoder = new TextEncoder()
-
 type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
   [Key in OptionalRequestInitProperties]?: RequestInit[Key]
@@ -222,11 +219,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     const cache = this.bodyCache as { [K in keyof Body]?: Promise<Body[K]> }
     if (key === 'text') {
       return (cache.text ??= cache.arrayBuffer
-        ? cache.arrayBuffer.then((buffer) => textDecoder.decode(buffer))
+        ? cache.arrayBuffer.then((buffer) => new TextDecoder().decode(buffer))
         : raw.text()) as Promise<Body[K]>
     }
     const bytes = (cache.arrayBuffer ??= cache.text
-      ? cache.text.then((text) => textEncoder.encode(text).buffer as ArrayBuffer)
+      ? cache.text.then((text) => new TextEncoder().encode(text).buffer as ArrayBuffer)
       : raw.arrayBuffer())
     if (key === 'arrayBuffer') {
       return bytes as Promise<Body[K]>
