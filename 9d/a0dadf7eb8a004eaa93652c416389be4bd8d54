@@ -1,0 +1,19 @@
+src/request.ts
+  s_a34d594424e4c1::t_f440ff8355ea41 222,226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9da0dadf7eb8a004eaa93652c416389be4bd8d54",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
