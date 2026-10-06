@@ -335,6 +335,33 @@ describe('validatedHandler', () => {
     })
   })
 
+  describe('validatedHandler<Env, Path>()', () => {
+    type MyEnv = { Variables: { user: { name: string } } }
+
+    it('Should type the context with the given Env and path', async () => {
+      const app = new Hono<MyEnv>()
+      app.use(async (c, next) => {
+        c.set('user', { name: 'yusuke' })
+        await next()
+      })
+      app.get(
+        '/me/:id',
+        validatedHandler<MyEnv, '/me/:id'>()({
+          query: z.object({ q: z.string().optional() }),
+          response: z.object({ name: z.string(), id: z.string() }),
+          handle: (c) => {
+            expectTypeOf(c.get('user')).toEqualTypeOf<{ name: string }>()
+            expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+            expectTypeOf(c.req.valid('query')).toEqualTypeOf<{ q?: string | undefined }>()
+            return { name: c.get('user').name, id: c.req.param('id') }
+          },
+        })
+      )
+      const res = await app.request('/me/42?q=x')
+      expect(await res.json()).toEqual({ name: 'yusuke', id: '42' })
+    })
+  })
+
   describe('RPC types', () => {
     const app = new Hono().post(
       '/users/:id',

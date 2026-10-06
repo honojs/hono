@@ -1,17 +1,10 @@
 import type { Context } from '../context'
 import { HTTPException } from '../http-exception'
-import type {
-  Env,
-  FormValue,
-  Handler,
-  MiddlewareHandler,
-  TypedResponse,
-  ValidationTargets,
-} from '../types'
+import type { Env, FormValue, Handler, TypedResponse, ValidationTargets } from '../types'
 import type { ContentfulStatusCode } from '../utils/http-status'
 import type { JSONParsed } from '../utils/types'
 import type { InferInput } from './utils'
-import { validator } from './validator'
+import { getValidationTarget } from './validator'
 
 type StandardSchemaIssue = {
   readonly message: string
@@ -116,7 +109,7 @@ type RequestOptions<Param, Query, Header, Cookie, Form, Json> = {
   json?: Validation<ValidationTargets['json'], Json>
 }
 
-interface ValidatedHandler {
+interface ValidatedHandler<E extends Env, P extends string> {
   // Without `response`
   <
     Param = never,
@@ -125,10 +118,6 @@ interface ValidatedHandler {
     Cookie = never,
     Form = never,
     Json = never,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    E extends Env = any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    P extends string = any,
     T extends Targets = {
       param: Param
       query: Query
@@ -153,10 +142,6 @@ interface ValidatedHandler {
     Cookie = never,
     Form = never,
     Json = never,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    E extends Env = any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    P extends string = any,
     T extends Targets = {
       param: Param
       query: Query
@@ -189,26 +174,33 @@ const requestTargets: RequestTarget[] = ['param', 'query', 'header', 'cookie', '
 const isStandardSchema = (v: unknown): v is AnyStandardSchema =>
   (typeof v === 'object' || typeof v === 'function') && v !== null && '~standard' in v
 
-const toValidationFunction =
-  (v: Validation<unknown, unknown>, target: RequestTarget | 'response') =>
-  async (value: unknown, c: Context) => {
-    if (!isStandardSchema(v)) {
-      return v(value, c)
-    }
-    const result = await v['~standard'].validate(value)
-    if (result.issues) {
-      const status = target === 'response' ? 500 : 400
-      const body =
-        target === 'response'
-          ? { success: false, target }
-          : { success: false, target, error: toValidationIssues(result.issues) }
-      throw new HTTPException(status, {
-        res: c.json(body, status),
-        cause: { target, issues: result.issues },
-      })
-    }
-    return result.value
+const toValidationFunction = (
+  v: Validation<unknown, unknown>,
+  target: RequestTarget | 'response'
+): ((value: unknown, c: Context) => unknown) => {
+  if (!isStandardSchema(v)) {
+    return v
   }
+  const validate = v['~standard'].validate
+  const status = target === 'response' ? 500 : 400
+  const fail = (c: Context, issues: ReadonlyArray<StandardSchemaIssue>) => {
+    const body =
+      target === 'response'
+        ? { success: false, target }
+        : { success: false, target, error: toValidationIssues(issues) }
+    throw new HTTPException(status, {
+      res: c.json(body, status),
+      cause: { target, issues },
+    })
+  }
+  return (value, c) => {
+    const result = validate(value)
+    if (result instanceof Promise) {
+      return result.then((r) => (r.issues ? fail(c, r.issues) : r.value))
+    }
+    return result.issues ? fail(c, result.issues) : result.value
+  }
+}
 
 const toValidationIssues = (issues: ReadonlyArray<StandardSchemaIssue>): ValidationIssue[] =>
   issues.map(({ message, path }) =>
@@ -249,51 +241,67 @@ const toValidationIssues = (issues: ReadonlyArray<StandardSchemaIssue>): Validat
  * app.post('/users/:id', handler)
  * ```
  */
-export const validatedHandler: ValidatedHandler = ((
-  options: {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyValidatedHandler = ValidatedHandler<any, any>
+
+type ValidatedHandlerFactory = AnyValidatedHandler & {
+  // `validatedHandler<Env, Path>()` returns the typed version
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  <E extends Env, P extends string = any>(): ValidatedHandler<E, P>
+}
+
+export const validatedHandler: ValidatedHandlerFactory = ((
+  options?: {
     [K in RequestTarget]?: Validation<unknown, unknown>
   } & {
     response?: Validation<unknown, unknown>
     handle: (c: Context) => unknown
   }
-): Handler => {
+): Handler | ValidatedHandlerFactory => {
+  if (!options) {
+    return validatedHandler
+  }
   const validators = requestTargets
     .filter((target) => options[target])
-    .map(
-      (target) =>
-        validator(
-          target as never,
-          toValidationFunction(options[target]!, target)
-        ) as MiddlewareHandler
-    )
+    .map((target) => [target, toValidationFunction(options[target]!, target)] as const)
   const validateResponse = options.response && toValidationFunction(options.response, 'response')
 
   const handler = async (c: Context) => {
-    for (const validate of validators) {
-      let passed = false
-      const res = await validate(c, async () => {
-        passed = true
-      })
-      if (!passed) {
+    for (const [target, validate] of validators) {
+      let value = getValidationTarget(c, target)
+      if (value instanceof Promise) {
+        value = await value
+      }
+      let res = validate(value, c)
+      if (res instanceof Promise) {
+        res = await res
+      }
+      if (res instanceof Response) {
         return res
       }
+      c.req.addValidatedData(target, res as never)
     }
 
-    const result = await options.handle(c)
+    let result = options.handle(c)
+    if (result instanceof Promise) {
+      result = await result
+    }
     if (result instanceof Response) {
       return result
     }
-    if (!validateResponse) {
-      return c.json(result as never)
+    if (validateResponse) {
+      result = validateResponse(result, c)
+      if (result instanceof Promise) {
+        result = await result
+      }
+      if (result instanceof Response) {
+        return result
+      }
     }
-    const validated = await validateResponse(result, c)
-    if (validated instanceof Response) {
-      return validated
-    }
-    return c.json(validated as never)
+    return c.json(result as never)
   }
 
   // Readable from `app.routes`, e.g. by an OpenAPI generator
   const { handle: _, ...validations } = options
   return Object.assign(handler, { validations })
-}) as ValidatedHandler
+}) as ValidatedHandlerFactory
