@@ -255,7 +255,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
-  json<T = any>(): Promise<T> {
+  json<T = unknown>(): Promise<T> {
     return this.#cachedBody('text').then((text: string) => JSON.parse(text))
   }
 

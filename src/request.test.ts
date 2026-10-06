@@ -145,6 +145,16 @@ describe('Stricter types', () => {
   })
 })
 
+describe('json()', () => {
+  test('returns unknown by default', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', { method: 'POST', body: '{"name":"hono"}' })
+    )
+    expectTypeOf(await req.json()).toEqualTypeOf<unknown>()
+    expectTypeOf(await req.json<{ name: string }>()).toEqualTypeOf<{ name: string }>()
+  })
+})
+
 describe('req.addValidatedData() and req.data()', () => {
   const rawRequest = new Request('http://localhost')
 

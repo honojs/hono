@@ -24,6 +24,18 @@ const { name } = c.req.query() // string
 const { name } = c.req.query() // string | undefined
 ```
 
+### `c.req.json()` returns `unknown`
+
+`c.req.json()` returns `Promise<unknown>` instead of `Promise<any>`. Pass the type explicitly, or use `c.req.valid()` with a validator.
+
+```ts
+// From
+const body = await c.req.json() // any
+
+// To
+const body = await c.req.json<{ name: string }>()
+```
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
