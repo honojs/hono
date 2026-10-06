@@ -36,6 +36,10 @@ const body = await c.req.json() // any
 const body = await c.req.json<{ name: string }>()
 ```
 
+### `c.json()` throws for a value that is not JSON serializable
+
+`c.json(undefined)` used to return an empty body. It now throws a `TypeError`, like `Response.json()`. The same applies to a function or a symbol.
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
