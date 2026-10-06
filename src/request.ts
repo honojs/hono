@@ -214,25 +214,31 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return parseBody(this, options)
   }
 
-  #cachedBody = <K extends keyof Body>(key: K): Promise<Body[K]> => {
-    const raw = this.raw
-    const cache = this.bodyCache as { [K in keyof Body]?: Promise<Body[K]> }
+  #cachedBody = (key: keyof Body) => {
+    const { bodyCache, raw } = this
     if (key === 'text') {
-      return (cache.text ??= cache.arrayBuffer
-        ? cache.arrayBuffer.then((buffer) => new TextDecoder().decode(buffer))
-        : raw.text()) as Promise<Body[K]>
+      return (bodyCache.text ??= (
+        bodyCache.arrayBuffer
+          ? (bodyCache.arrayBuffer as unknown as Promise<ArrayBuffer>).then((buffer) =>
+              new TextDecoder().decode(buffer)
+            )
+          : raw.text()
+      ) as never)
     }
-    const bytes = (cache.arrayBuffer ??= cache.text
-      ? cache.text.then((text) => new TextEncoder().encode(text).buffer as ArrayBuffer)
-      : raw.arrayBuffer())
+    const bytes = (bodyCache.arrayBuffer ??= (
+      bodyCache.text
+        ? (bodyCache.text as unknown as Promise<string>).then(
+            (text) => new TextEncoder().encode(text).buffer as ArrayBuffer
+          )
+        : raw.arrayBuffer()
+    ) as never) as unknown as Promise<ArrayBuffer>
     if (key === 'arrayBuffer') {
-      return bytes as Promise<Body[K]>
+      return bytes
     }
-    return (cache[key] ??= bytes.then(
-      (buffer) =>
-        new Response(buffer, {
-          headers: { 'Content-Type': raw.headers.get('content-type') ?? '' },
-        })[key]() as Promise<Body[K]>
+    return (bodyCache[key] ??= bytes.then((buffer) =>
+      new Response(buffer, {
+        headers: { 'Content-Type': raw.headers.get('content-type') ?? '' },
+      })[key]()
     ) as never)
   }
 
