@@ -4,7 +4,7 @@ import { hc } from '../client'
 import type { InferResponseType } from '../client'
 import type { Context } from '../context'
 import { Hono } from '../hono'
-import { HTTPException } from '../http-exception'
+import type { HTTPException } from '../http-exception'
 import { validatedHandler } from './validated-handler'
 import type { StandardSchema } from './validated-handler'
 
