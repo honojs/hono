@@ -12,6 +12,18 @@ There are some breaking changes.
 
 A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
 
+### `c.req.query()` may return `undefined` values
+
+`c.req.query()` and `c.req.queries()` without a key now return `Record<string, string | undefined>` and `Record<string, string[] | undefined>`, since a key may be absent.
+
+```ts
+// From
+const { name } = c.req.query() // string
+
+// To
+const { name } = c.req.query() // string | undefined
+```
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
