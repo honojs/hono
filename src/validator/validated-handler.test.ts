@@ -276,6 +276,36 @@ describe('validatedHandler', () => {
       expect(res.headers.get('Location')).toBe('/')
     })
 
+    it('Should keep the headers set by c.header()', async () => {
+      const app = new Hono()
+      app.get(
+        '/',
+        validatedHandler({
+          response: z.object({ id: z.string() }),
+          handle: (c) => {
+            c.header('X-Custom', 'custom')
+            return { id: '1' }
+          },
+        })
+      )
+      app.get(
+        '/broken',
+        validatedHandler({
+          response: z.object({ id: z.string() }),
+          handle: (c) => {
+            c.header('X-Custom', 'custom')
+            return { id: 1 } as unknown as { id: string }
+          },
+        })
+      )
+      const res = await app.request('/')
+      expect(res.headers.get('X-Custom')).toBe('custom')
+      expect(await res.json()).toEqual({ id: '1' })
+      const broken = await app.request('/broken')
+      expect(broken.status).toBe(500)
+      expect(broken.headers.get('X-Custom')).toBe('custom')
+    })
+
     it('Should use the status set by c.status()', async () => {
       const app = new Hono()
       app.post(
