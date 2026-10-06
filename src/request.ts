@@ -440,11 +440,10 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     })
   }
 
-  const rebuiltFromText = !req.bodyCache.arrayBuffer
-  const body: BodyInit = await req.arrayBuffer()
+  const body = await req.arrayBuffer()
   const headers = req.header()
-  if (rebuiltFromText) {
-    // Re-encoded text may differ in length from the original bytes (e.g. a BOM)
+  if (Number(headers['content-length']) !== body.byteLength) {
+    // Re-encoded text may differ in length from the original bytes (e.g. a BOM or invalid UTF-8)
     delete headers['content-length']
   }
 
