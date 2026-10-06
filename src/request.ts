@@ -214,9 +214,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return parseBody(this, options)
   }
 
-  #cachedBody = (key: keyof Body) => {
+  #cachedBody = <K extends Exclude<keyof Body, 'json'>>(key: K): Promise<Body[K]> => {
     const { bodyCache, raw } = this
-    if (key === 'json' || key === 'text') {
+    if (key === 'text') {
       const text = (bodyCache.text ??= (
         bodyCache.arrayBuffer
           ? (bodyCache.arrayBuffer as unknown as Promise<ArrayBuffer>).then((buffer) =>
@@ -224,7 +224,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
             )
           : raw.text()
       ) as never) as unknown as Promise<string>
-      return key === 'text' ? text : (bodyCache.json ??= text.then((text) => JSON.parse(text)))
+      return text as Promise<Body[K]>
     }
     const bytes = (bodyCache.arrayBuffer ??= (
       bodyCache.text
@@ -234,14 +234,14 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         : raw.arrayBuffer()
     ) as never) as unknown as Promise<ArrayBuffer>
     if (key === 'arrayBuffer') {
-      return bytes
+      return bytes as Promise<Body[K]>
     }
     return (bodyCache[key] ??= bytes.then(
       (buffer) =>
         new Response(buffer, {
           headers: { 'Content-Type': raw.headers.get('content-type') ?? '' },
         })[key]() as never
-    ) as never)
+    ) as never) as unknown as Promise<Body[K]>
   }
 
   /**
@@ -257,7 +257,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   json<T = any>(): Promise<T> {
-    return this.#cachedBody('json')
+    return this.#cachedBody('text').then((text) => JSON.parse(text))
   }
 
   /**

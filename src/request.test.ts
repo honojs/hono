@@ -759,12 +759,24 @@ describe('Body cache built from text', () => {
     }
   })
 
-  test('json() returns the same object on repeated calls', async () => {
-    const req = new HonoRequest(
-      new Request('http://localhost', { method: 'POST', body: '{"hello":"world"}' })
-    )
-    expect(await req.json()).toBe(await req.json())
-  })
+  test.each(['json', 'arrayBuffer'] as const)(
+    'json() returns independent objects when the body is first read as %s',
+    async (firstRead) => {
+      const data = { user: { name: 'Alice' }, tags: ['original'] }
+      const body = JSON.stringify(data)
+      const req = createRequest(body)
+      await req[firstRead]()
+
+      const first = await req.json<typeof data>()
+      first.user.name = 'Bob'
+      first.tags.push('added')
+
+      const second = await req.json<typeof data>()
+      expect(second).toEqual(data)
+      expect(second).not.toBe(first)
+      expect(await req.text()).toBe(body)
+    }
+  )
 
   test('arrayBuffer() after text() returns the UTF-8 bytes', async () => {
     const req = new HonoRequest(
