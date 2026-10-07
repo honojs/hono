@@ -144,6 +144,29 @@ describe('RegExpRouter', () => {
         })
       })
     })
+
+    describe('Pattern that matches an empty string', () => {
+      it.each(['/api/:id{[0-9]?}', '/user/:id{[0-9]*}', '/:id{(?:a|)}', '/:id{a{0,3}}'])(
+        '%s',
+        (path) => {
+          const router = new RegExpRouter<string>()
+          expect(() => {
+            router.add('GET', path, 'ok')
+          }).toThrowError(UnsupportedPathError)
+        }
+      )
+
+      it('Should still accept a pattern that requires at least one character', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/api/:id{[0-9]+}', 'ok')
+
+        const [res, stash] = router.match('GET', '/api/5')
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toBe('ok')
+        expect((stash as ParamStash)[(res[0][1] as ParamIndexMap)['id']]).toBe('5')
+        expect(router.match('GET', '/api/')[0].length).toBe(0)
+      })
+    })
   })
 
   describe('Wildcard after label', () => {

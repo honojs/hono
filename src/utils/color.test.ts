@@ -1,14 +1,13 @@
 import * as esbuild from 'esbuild'
-import { getColorEnabled, getColorEnabledAsync } from './color'
+import { getColorEnabled } from './color'
 
-describe('getColorEnabled() / getColorEnabledAsync() - With colors enabled', () => {
-  it('should return true', async () => {
+describe('getColorEnabled() - With colors enabled', () => {
+  it('should return true', () => {
     expect(getColorEnabled()).toBe(true)
-    expect(await getColorEnabledAsync()).toBe(true)
   })
 })
 
-describe('getColorEnabled() / getColorEnabledAsync() - With NO_COLOR environment variable set', () => {
+describe('getColorEnabled() - With NO_COLOR environment variable set', () => {
   beforeAll(() => {
     vi.stubEnv('NO_COLOR', '1')
   })
@@ -17,9 +16,44 @@ describe('getColorEnabled() / getColorEnabledAsync() - With NO_COLOR environment
     vi.unstubAllEnvs()
   })
 
-  it('should return false', async () => {
+  it('should return false', () => {
     expect(getColorEnabled()).toBe(false)
-    expect(await getColorEnabledAsync()).toBe(false)
+    expect(getColorEnabled({})).toBe(false)
+  })
+})
+
+describe('getColorEnabled() - Environment bindings and runtime fallbacks', () => {
+  beforeEach(() => {
+    vi.stubEnv('NO_COLOR', undefined)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it.each(['1', '', false, undefined])(
+    'disables colors when NO_COLOR is present with value %s',
+    (value) => {
+      expect(getColorEnabled({ NO_COLOR: value })).toBe(false)
+    }
+  )
+
+  it('enables colors when bindings do not contain NO_COLOR', () => {
+    expect(getColorEnabled({ NAME: 'Hono' })).toBe(true)
+  })
+
+  it.each([true, false])('honors Deno.noColor = %s before process.env', (noColor) => {
+    vi.stubEnv('NO_COLOR', '1')
+    vi.stubGlobal('Deno', { noColor })
+    expect(getColorEnabled({})).toBe(!noColor)
+    expect(getColorEnabled({ NO_COLOR: '' })).toBe(false)
+  })
+
+  it.each([undefined, {}])('handles a runtime without process.env: %s', (process) => {
+    vi.stubGlobal('process', process)
+    expect(getColorEnabled()).toBe(true)
+    expect(getColorEnabled({ NO_COLOR: '' })).toBe(false)
   })
 })
 

@@ -77,7 +77,8 @@ export class Node {
         const name = pattern[1]
         let regexpStr = pattern[2] || LABEL_REG_EXP_STR
         if (name && pattern[2]) {
-          if (regexpStr === '.*') {
+          if (new RegExp(regexpStr).test('')) {
+            // an empty capture is indistinguishable from the handler marker `$()` at match time
             throw PATH_ERROR
           }
           regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)

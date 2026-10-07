@@ -144,7 +144,7 @@ export const validator = <
       case 'query':
         value = Object.fromEntries(
           Object.entries(c.req.queries()).map(([k, v]) => {
-            return v.length === 1 ? [k, v[0]] : [k, v]
+            return v?.length === 1 ? [k, v[0]] : [k, v]
           })
         )
         break

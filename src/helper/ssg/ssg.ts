@@ -180,18 +180,6 @@ export interface SSGPlugin {
 
 export interface ToSSGOptions {
   dir?: string
-  /**
-   * @deprecated Use plugins[].beforeRequestHook instead.
-   */
-  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
-  /**
-   * @deprecated Use plugins[].afterResponseHook instead.
-   */
-  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
-  /**
-   * @deprecated Use plugins[].afterGenerateHook instead.
-   */
-  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
   plugins?: SSGPlugin[]
@@ -374,27 +362,6 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   const beforeRequestHooks: BeforeRequestHook[] = []
   const afterResponseHooks: AfterResponseHook[] = []
   const afterGenerateHooks: AfterGenerateHook[] = []
-  if (options?.beforeRequestHook) {
-    beforeRequestHooks.push(
-      ...(Array.isArray(options.beforeRequestHook)
-        ? options.beforeRequestHook
-        : [options.beforeRequestHook])
-    )
-  }
-  if (options?.afterResponseHook) {
-    afterResponseHooks.push(
-      ...(Array.isArray(options.afterResponseHook)
-        ? options.afterResponseHook
-        : [options.afterResponseHook])
-    )
-  }
-  if (options?.afterGenerateHook) {
-    afterGenerateHooks.push(
-      ...(Array.isArray(options.afterGenerateHook)
-        ? options.afterGenerateHook
-        : [options.afterGenerateHook])
-    )
-  }
   for (const plugin of plugins) {
     if (plugin.beforeRequestHook) {
       beforeRequestHooks.push(

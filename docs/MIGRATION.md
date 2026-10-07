@@ -1,5 +1,115 @@
 # Migration Guide
 
+## v4.13.x to v5.0.0
+
+There are some breaking changes.
+
+### ESM only
+
+`hono` is now published as ESM only, and the CommonJS build is removed. On Node.js, version 22.12 or later is required. `require('hono')` still works there, because Node.js 22.12 can `require()` ES modules.
+
+### Non-Error throws go to `onError`
+
+A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
+
+### `getColorEnabledAsync()` is removed
+
+`getColorEnabledAsync()` from `hono/utils/color` is removed. Use `getColorEnabled()` and pass the bindings on Cloudflare Workers. The `logger()` middleware does this by itself, so it needs no change.
+
+```ts
+// From
+const enabled = await getColorEnabledAsync()
+
+// To
+const enabled = getColorEnabled(c.env)
+```
+
+### `c.req.query()` may return `undefined` values
+
+`c.req.query()` and `c.req.queries()` without a key now return `Record<string, string | undefined>` and `Record<string, string[] | undefined>`, since a key may be absent.
+
+```ts
+// From
+const { name } = c.req.query() // string
+
+// To
+const { name } = c.req.query() // string | undefined
+```
+
+### `c.req.json()` returns `unknown`
+
+`c.req.json()` returns `Promise<unknown>` instead of `Promise<any>`. Pass the type explicitly, or use `c.req.valid()` with a validator.
+
+```ts
+// From
+const body = await c.req.json() // any
+
+// To
+const body = await c.req.json<{ name: string }>()
+```
+
+### `c.json()` throws for a value that is not JSON serializable
+
+`c.json(undefined)` used to return an empty body. It now throws a `TypeError`, like `Response.json()`. The same applies to a function or a symbol.
+
+### Runtime adapters moved to `@hono/*` packages
+
+The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.
+
+| Before                    | After                      |
+| ------------------------- | -------------------------- |
+| `hono/aws-lambda`         | `@hono/aws-lambda`         |
+| `hono/bun`                | `@hono/bun`                |
+| `hono/cloudflare-workers` | `@hono/cloudflare-workers` |
+| `hono/deno`               | `@hono/deno`               |
+| `hono/lambda-edge`        | `@hono/lambda-edge`        |
+| `hono/netlify`            | `@hono/netlify`            |
+| `hono/service-worker`     | `@hono/service-worker`     |
+| `hono/vercel`             | `@hono/vercel`             |
+
+```ts
+// From
+import { serveStatic } from 'hono/bun'
+
+// To
+import { serveStatic } from '@hono/bun'
+```
+
+`hono/cloudflare-pages` is removed without a replacement. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
+
+`hono/adapter` (`env()`, `getRuntimeKey()`) stays in `hono`.
+
+### Removal of deprecated features
+
+- Hono - `app.fire()` is obsolete. Use `fire()` in `@hono/service-worker` instead.
+- Hono - `app.mount()` is obsolete. Use `mount()` in `hono/mount` instead.
+
+  ```ts
+  // From
+  app.mount('/itty-router', ittyRouter.handle)
+
+  // To
+  app.all('/itty-router/*', mount(ittyRouter.handle))
+  ```
+
+- HonoRequest - `req.matchedRoutes` and `req.routePath` are obsolete. Use `matchedRoutes()` and `routePath()` in `hono/route` instead.
+- Bearer Auth Middleware - `noAuthenticationHeaderMessage`, `invalidAuthenticationHeaderMessage`, and `invalidTokenMessage` are obsolete. Use `noAuthenticationHeader.message`, `invalidAuthenticationHeader.message`, and `invalidToken.message` instead.
+- Serve Static Middleware - the `pathResolve` option is removed. It was no longer used.
+- SSG Helper - `SSG_DISABLED_RESPONSE` is obsolete. Use `X_HONO_DISABLE_SSG_HEADER_KEY` instead.
+- SSG Helper - the `beforeRequestHook`, `afterResponseHook`, and `afterGenerateHook` options of `toSSG()` are obsolete. Pass them as a plugin via `plugins` instead. Note that `defaultPlugin()`, which skips non-200 responses, is applied only when `plugins` is omitted, so add it explicitly if you need it.
+
+  ```ts
+  // From
+  toSSG(app, fs, { beforeRequestHook })
+
+  // To
+  toSSG(app, fs, { plugins: [{ beforeRequestHook }, defaultPlugin()] })
+  ```
+
+- Utils - `timingSafeEqual()` in `hono/utils/buffer` only accepts strings. The `hashFunction` option of Basic Auth Middleware and Bearer Auth Middleware is typed as `(input: string) => string | null | Promise<string | null>` accordingly.
+- Utils - `getQueryStrings()` in `hono/utils/url` is obsolete. Use the `URL` API instead.
+- Utils - `UnOfficalStatusCode` in `hono/utils/http-status` is obsolete. Use `UnofficialStatusCode` instead.
+
 ## v4.3.11 to v4.4.0
 
 ### `deno.land/x` to JSR

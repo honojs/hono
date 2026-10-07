@@ -42,10 +42,6 @@ export const serveStatic = <E extends Env = Env>(
      * `join` option according to the runtime. Example `import { join } from 'node:path`. If not specified, it will fall back to the default join function.`
      */
     join?: (...paths: string[]) => string
-    /**
-     * @deprecated Currently, `pathResolve` is no longer used.
-     */
-    pathResolve?: (path: string) => string
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
 ): MiddlewareHandler => {

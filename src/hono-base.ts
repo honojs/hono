@@ -4,7 +4,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compose } from './compose'
+import { compose, toError } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
 import type { Router } from './router'
@@ -85,15 +85,6 @@ export type HonoOptions<E extends Env> = {
    */
   getPath?: GetPath<E>
 }
-
-type MountOptionHandler = (c: Context) => unknown
-type MountReplaceRequest = (originalRequest: Request) => Request
-type MountOptions =
-  | MountOptionHandler
-  | {
-      optionHandler?: MountOptionHandler
-      replaceRequest?: MountReplaceRequest | false
-    }
 
 class Hono<
   E extends Env = Env,
@@ -257,6 +248,8 @@ class Hono<
 
   /**
    * `.onError()` handles an error and returns a customized Response.
+   * Non-Error values thrown by handlers are wrapped in an Error with the original value as its cause.
+   * If the thrown value is a string, it is also used as the error message.
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
@@ -296,97 +289,6 @@ class Hono<
     return this
   }
 
-  /**
-   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
-   *
-   * @deprecated Use `mount()` from `hono/mount` instead. `.mount()` will be removed in v5.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#mount}
-   *
-   * @param {string} path - base Path
-   * @param {Function} applicationHandler - other Request Handler
-   * @param {MountOptions} [options] - options of `.mount()`
-   * @returns {Hono} mounted Hono instance
-   *
-   * @example
-   * ```ts
-   * import { Router as IttyRouter } from 'itty-router'
-   * import { Hono } from 'hono'
-   * // Create itty-router application
-   * const ittyRouter = IttyRouter()
-   * // GET /itty-router/hello
-   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
-   *
-   * const app = new Hono()
-   * app.mount('/itty-router', ittyRouter.handle)
-   * ```
-   *
-   * @example
-   * ```ts
-   * const app = new Hono()
-   * // Send the request to another application without modification.
-   * app.mount('/app', anotherApp, {
-   *   replaceRequest: (req) => req,
-   * })
-   * ```
-   */
-  mount(
-    path: string,
-    applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
-    options?: MountOptions
-  ): Hono<E, S, BasePath, CurrentPath> {
-    // handle options
-    let replaceRequest: MountReplaceRequest | undefined
-    let optionHandler: MountOptionHandler | undefined
-    if (options) {
-      if (typeof options === 'function') {
-        optionHandler = options
-      } else {
-        optionHandler = options.optionHandler
-        if (options.replaceRequest === false) {
-          replaceRequest = (request) => request
-        } else {
-          replaceRequest = options.replaceRequest
-        }
-      }
-    }
-
-    // prepare handlers for request
-    const getOptions: (c: Context) => unknown[] = optionHandler
-      ? (c) => {
-          const options = optionHandler!(c)
-          return Array.isArray(options) ? options : [options]
-        }
-      : (c) => {
-          let executionContext: ExecutionContext | undefined = undefined
-          try {
-            executionContext = c.executionCtx
-          } catch {} // Do nothing
-          return [c.env, executionContext]
-        }
-    replaceRequest ||= (() => {
-      const mergedPath = mergePath(this._basePath, path)
-      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
-      return (request) => {
-        const url = new URL(request.url)
-        url.pathname = this.getPath(request).slice(pathPrefixLength) || '/'
-        return new Request(url, request)
-      }
-    })()
-
-    const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
-
-      if (res) {
-        return res
-      }
-
-      await next()
-    }
-    this.#addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
-    return this
-  }
-
   #addRoute(method: string, path: string, handler: H, baseRoutePath?: string): void {
     path = mergePath(this._basePath, path)
     const r: RouterRoute = {
@@ -401,10 +303,9 @@ class Hono<
   }
 
   #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
-    if (err instanceof Error) {
-      return this.errorHandler(err, c)
-    }
-    throw err
+    const error = toError(err)
+    c.error = error
+    return this.errorHandler(error, c)
   }
 
   #dispatch(
@@ -447,7 +348,7 @@ class Hono<
               (resolved: Response | undefined) =>
                 resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
-            .catch((err: Error) => this.#handleError(err, c))
+            .catch((err: unknown) => this.#handleError(err, c))
         : (res ?? this.#notFoundHandler(c))
     }
 
@@ -518,31 +419,6 @@ class Hono<
       Env,
       executionCtx
     )
-  }
-
-  /**
-   * `.fire()` automatically adds a global fetch event listener.
-   * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
-   * @deprecated
-   * Use `fire` from `hono/service-worker` instead.
-   * ```ts
-   * import { Hono } from 'hono'
-   * import { fire } from 'hono/service-worker'
-   *
-   * const app = new Hono()
-   * // ...
-   * fire(app)
-   * ```
-   * @see https://hono.dev/docs/api/hono#fire
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
-   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
-   */
-  fire = (): void => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    addEventListener('fetch', (event: FetchEventLike): void => {
-      event.respondWith(this.#dispatch(event.request, event, undefined, event.request.method))
-    })
   }
 }
 

@@ -126,6 +126,28 @@ describe('Logger by Middleware', () => {
   })
 })
 
+describe('Logger by Middleware with environment bindings', () => {
+  it("uses each request's bindings without caching the color setting", async () => {
+    const log = vi.fn()
+    const app = new Hono()
+    app.use(logger(log))
+    app.get('*', (c) => c.text('Hello'))
+
+    await app.request('/plain', undefined, { NO_COLOR: '' })
+    await app.request('/color', undefined, {})
+    await app.request('/plain-again', undefined, { NO_COLOR: false })
+
+    expect(log.mock.calls.map(([message]) => message)).toEqual([
+      '<-- GET /plain',
+      expect.stringMatching(/^--> GET \/plain 200 \d+ms$/),
+      '<-- GET /color',
+      expect.stringContaining('--> GET /color \x1b[32m200\x1b[0m'),
+      '<-- GET /plain-again',
+      expect.stringMatching(/^--> GET \/plain-again 200 \d+ms$/),
+    ])
+  })
+})
+
 describe('Logger by Middleware in NO_COLOR', () => {
   let app: Hono
   let log: string
