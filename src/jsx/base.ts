@@ -12,10 +12,7 @@ import {
 import type { Context } from './context'
 import { domRenderers } from './intrinsic-element/common'
 import * as intrinsicElementTags from './intrinsic-element/components'
-import type {
-  JSX as HonoJSX,
-  IntrinsicElements as IntrinsicElementsDefined,
-} from './intrinsic-elements'
+import type { JSX as HonoJSX } from './intrinsic-elements'
 import {
   isValidAttributeName,
   isValidTagName,
@@ -27,8 +24,9 @@ import {
 export type Props = Record<string, any>
 type FunctionComponentResult =
   | HtmlEscapedString
+  | JSXNode
   | Child[]
-  | Promise<HtmlEscapedString | Child[]>
+  | Promise<HtmlEscapedString | JSXNode | Child[]>
   | null
 export type FC<P = Props> = {
   (props: P): FunctionComponentResult
@@ -44,7 +42,9 @@ export namespace JSX {
   export interface ElementChildrenAttribute {
     children: Child
   }
-  export interface IntrinsicElements extends IntrinsicElementsDefined {
+  // `HonoJSX.IntrinsicElements`, not the top-level alias: the bundled dts emit renames the namespace
+  // import correctly but drops an import alias that collides with this member name (TS2310).
+  export interface IntrinsicElements extends HonoJSX.IntrinsicElements {
     [tagName: string]: Props
   }
   export interface IntrinsicAttributes {

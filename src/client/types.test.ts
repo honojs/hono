@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
-import { Hono } from '..'
-import { upgradeWebSocket } from '../adapter/deno/websocket'
-import type { TypedURL } from './types'
 import { hc } from '.'
+import { Hono } from '..'
+import { defineWebSocketHelper } from '../helper/websocket'
+import type { TypedURL } from './types'
+
+const upgradeWebSocket = defineWebSocketHelper(() => undefined)
 
 describe('WebSockets', () => {
   const app = new Hono()

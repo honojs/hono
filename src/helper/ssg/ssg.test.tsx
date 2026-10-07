@@ -318,13 +318,13 @@ describe('toSSG function', () => {
       }
       return false
     }
-    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    const result = await toSSG(app, fsMock, { plugins: [{ beforeRequestHook }] })
     expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the request hook returns false', async () => {
     const beforeRequest: BeforeRequestHook = () => false
-    const result = await toSSG(app, fsMock, { beforeRequestHook: beforeRequest })
+    const result = await toSSG(app, fsMock, { plugins: [{ beforeRequestHook: beforeRequest }] })
     expect(result.success).toBe(true)
     expect(result.files).toStrictEqual([])
   })
@@ -336,13 +336,13 @@ describe('toSSG function', () => {
       }
       return false
     }
-    const result = await toSSG(app, fsMock, { afterResponseHook })
+    const result = await toSSG(app, fsMock, { plugins: [{ afterResponseHook }] })
     expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the response hook returns false', async () => {
     const afterResponse: AfterResponseHook = () => false
-    const result = await toSSG(app, fsMock, { afterResponseHook: afterResponse })
+    const result = await toSSG(app, fsMock, { plugins: [{ afterResponseHook: afterResponse }] })
     expect(result.success).toBe(true)
     expect(result.files).toStrictEqual([])
   })
@@ -360,7 +360,10 @@ describe('toSSG function', () => {
       }
     )
 
-    await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
+    await toSSG(app, fsMock, {
+      dir: './static',
+      plugins: [{ afterGenerateHook: afterGenerateHookMock }],
+    })
 
     expect(afterGenerateHookMock).toHaveBeenCalled()
     expect(afterGenerateHookMock).toHaveBeenCalledWith(
@@ -379,7 +382,7 @@ describe('toSSG function', () => {
       return req
     }
 
-    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    const result = await toSSG(app, fsMock, { plugins: [{ beforeRequestHook }] })
     expect(result.files).not.toContain(expect.stringContaining('/skip'))
     expect(result.success).toBe(true)
     expect(result.files.length).toBeGreaterThan(0)
@@ -394,7 +397,7 @@ describe('toSSG function', () => {
       return res
     }
 
-    const result = await toSSG(app, fsMock, { afterResponseHook })
+    const result = await toSSG(app, fsMock, { plugins: [{ afterResponseHook }] })
     expect(result.files).not.toContain(expect.stringContaining('/skip'))
     expect(result.success).toBe(true)
     expect(result.files.length).toBeGreaterThan(0)
@@ -406,7 +409,7 @@ describe('toSSG function', () => {
       console.log(`Generated ${result.files.length} files.`)
     }
 
-    const result = await toSSG(app, fsMock, { afterGenerateHook })
+    const result = await toSSG(app, fsMock, { plugins: [{ afterGenerateHook }] })
     expect(result.success).toBe(true)
     expect(result.files.length).toBeGreaterThan(0)
   })
@@ -423,10 +426,14 @@ describe('toSSG function', () => {
       c.html(<h1>{c.req.param('post')}</h1>)
     )
     await toSSG(app, fsMock, {
-      beforeRequestHook: (req) => {
-        req.signal.addEventListener = signalAddEventListener
-        return req
-      },
+      plugins: [
+        {
+          beforeRequestHook: (req) => {
+            req.signal.addEventListener = signalAddEventListener
+            return req
+          },
+        },
+      ],
     })
 
     expect(signalAddEventListener).not.toHaveBeenCalled()
@@ -891,7 +898,7 @@ describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeReques
 
     const result = await toSSG(app, fsMock, {
       dir: './static',
-      beforeRequestHook: allowedPathsHook,
+      plugins: [{ beforeRequestHook: allowedPathsHook }],
     })
 
     expect(result.files.some((file) => file.includes('allowed-path.html'))).toBe(true)
@@ -901,7 +908,10 @@ describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeReques
   it('should deny requests for specified paths with denyPathsBeforeRequestHook', async () => {
     const deniedPathsHook = denyPathsBeforeRequestHook(['/denied-path'])
 
-    const result = await toSSG(app, fsMock, { dir: './static', beforeRequestHook: deniedPathsHook })
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      plugins: [{ beforeRequestHook: deniedPathsHook }],
+    })
 
     expect(result.files.some((file) => file.includes('denied-path.html'))).toBe(false)
 
@@ -946,7 +956,7 @@ describe('Combined Response hooks - modify response content', () => {
 
     await toSSG(app, fsMock, {
       dir: './static',
-      afterResponseHook: combinedHook,
+      plugins: [{ afterResponseHook: combinedHook }],
     })
 
     // Assert that the response content is modified by both hooks
@@ -1001,7 +1011,7 @@ describe('Combined Generate hooks - AfterGenerateHook', () => {
     const consoleSpy = vi.spyOn(console, 'log')
     const result = await toSSG(app, fsMock, {
       dir: './static',
-      afterGenerateHook: combinedHook,
+      plugins: [{ afterGenerateHook: combinedHook }],
     })
 
     // Check that the log function was called correctly
@@ -1121,38 +1131,6 @@ describe('SSG Plugin System', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '[Prefix] <h1>About</h1>')
     expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/blog.html', expect.any(String))
     expect(result.files).toContain('sitemap.xml')
-  })
-
-  it('should correctly combine plugin hooks with option hooks', async () => {
-    const plugin: SSGPlugin = {
-      afterResponseHook: async (res) => {
-        const text = await res.text()
-        return new Response(`${text} [Plugin]`, res)
-      },
-    }
-
-    const afterResponseHook: AfterResponseHook = async (res) => {
-      const text = await res.text()
-      return new Response(`${text} [Option]`, res)
-    }
-
-    await toSSG(app, fsMock, {
-      plugins: [plugin],
-      afterResponseHook,
-    })
-
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      'static/index.html',
-      '<h1>Home</h1> [Option] [Plugin]'
-    )
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      'static/about.html',
-      '<h1>About</h1> [Option] [Plugin]'
-    )
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      'static/blog.html',
-      '<h1>Blog</h1> [Option] [Plugin]'
-    )
   })
 })
 

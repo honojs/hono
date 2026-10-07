@@ -37,6 +37,12 @@ describe('cloneElement', () => {
 })
 
 describe('createElement', () => {
+  it('should accept a component that returns a JSXNode', () => {
+    const Partial = ({ name }: { name: string }) => jsx('div', { 'x-partial': name }, name)
+
+    expect((<Partial name='foo' />).toString()).toBe('<div x-partial="foo">foo</div>')
+  })
+
   it('should preserve the SVG element shape', () => {
     const ref = { current: null }
     const element = jsx('svg', { ref }) as unknown as JSXNode

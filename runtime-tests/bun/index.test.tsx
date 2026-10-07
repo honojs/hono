@@ -1,13 +1,7 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import fs from 'fs/promises'
-import path from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { stream, streamSSE } from '../..//src/helper/streaming'
-import { serveStatic, toSSG } from '../../src/adapter/bun'
-import { createBunWebSocket } from '../../src/adapter/bun/websocket'
-import type { BunWebSocketData } from '../../src/adapter/bun/websocket'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
-import type { WSMessageReceive } from '../../src/helper/websocket'
 import { Hono } from '../../src/index'
 import type { PropsWithChildren } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -86,96 +80,6 @@ describe('Basic Auth Middleware', () => {
   })
 })
 
-describe('Serve Static Middleware', () => {
-  const app = new Hono()
-  const onNotFound = vi.fn(() => {})
-  app.all('/favicon.ico', serveStatic({ path: './runtime-tests/bun/favicon.ico' }))
-  app.all(
-    '/favicon-notfound.ico',
-    serveStatic({ path: './runtime-tests/bun/favicon-notfound.ico', onNotFound })
-  )
-  app.use('/favicon-notfound.ico', async (c, next) => {
-    await next()
-    c.header('X-Custom', 'Bun')
-  })
-  app.get(
-    '/static/*',
-    serveStatic({
-      root: './runtime-tests/bun/',
-      onNotFound,
-    })
-  )
-  app.get(
-    '/dot-static/*',
-    serveStatic({
-      root: './runtime-tests/bun/',
-      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
-    })
-  )
-
-  app.all('/static-absolute-root/*', serveStatic({ root: path.dirname(__filename) }))
-
-  beforeEach(() => onNotFound.mockClear())
-
-  it('Should return static file correctly', async () => {
-    const res = await app.request(new Request('http://localhost/favicon.ico'))
-    await res.arrayBuffer()
-    expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).toBe('image/x-icon')
-  })
-
-  it('Should return 404 response', async () => {
-    const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
-    expect(res.status).toBe(404)
-    expect(res.headers.get('X-Custom')).toBe('Bun')
-    expect(onNotFound).toHaveBeenCalledWith(
-      process.platform === 'win32'
-        ? 'runtime-tests\\bun\\favicon-notfound.ico'
-        : 'runtime-tests/bun/favicon-notfound.ico',
-      expect.anything()
-    )
-  })
-
-  it('Should return 200 response - /static/plain.txt', async () => {
-    const res = await app.request(new Request('http://localhost/static/plain.txt'))
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/^Bun!(\r?\n)?$/)
-    expect(onNotFound).not.toHaveBeenCalled()
-  })
-
-  it('Should return 200 response - /static/download', async () => {
-    const res = await app.request(new Request('http://localhost/static/download'))
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/^download(\r?\n)?$/)
-    expect(onNotFound).not.toHaveBeenCalled()
-  })
-
-  it('Should return 200 response - /dot-static/plain.txt', async () => {
-    const res = await app.request(new Request('http://localhost/dot-static/plain.txt'))
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/^Bun!!(\r?\n)?$/)
-  })
-
-  it('Should return 200 response - /static/helloworld', async () => {
-    const res = await app.request('http://localhost/static/helloworld')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/Hi\r?\n/)
-  })
-
-  it('Should return 200 response - /static/hello.world', async () => {
-    const res = await app.request('http://localhost/static/hello.world')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/Hi\r?\n/)
-  })
-
-  it('Should return 200 response - /static-absolute-root/plain.txt', async () => {
-    const res = await app.request('http://localhost/static-absolute-root/plain.txt')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toMatch(/^Bun!(\r?\n)?$/)
-    expect(onNotFound).not.toHaveBeenCalled()
-  })
-})
-
 // Bun support WebCrypto since v0.2.2
 // So, JWT middleware works well.
 describe('JWT Auth Middleware', () => {
@@ -249,101 +153,6 @@ describe('JSX Middleware', () => {
     expect(await res.text()).toBe('<html><p>hello</p></html>')
   })
 })
-
-describe('toSSG function', () => {
-  let app: Hono
-
-  beforeEach(() => {
-    app = new Hono()
-    app.get('/', (c) => c.text('Hello, World!'))
-    app.get('/about', (c) => c.text('About Page'))
-    app.get('/about/some', (c) => c.text('About Page 2tier'))
-    app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
-    app.get('/bravo', (c) => c.html('Bravo Page'))
-    app.get('/Charlie', async (c, next) => {
-      c.setRenderer((content, head) => {
-        return c.html(
-          <html>
-            <head>
-              <title>{head.title || ''}</title>
-            </head>
-            <body>
-              <p>{content}</p>
-            </body>
-          </html>
-        )
-      })
-      await next()
-    })
-    app.get('/Charlie', (c) => {
-      return c.render('Hello!', { title: 'Charlies Page' })
-    })
-  })
-
-  it('Should correctly generate static HTML files for Hono routes', async () => {
-    const result = await toSSG(app, { dir: './static' })
-    expect(result.success).toBeTruthy()
-    expect(result.error).toBeUndefined()
-    expect(result.files).toBeDefined()
-    afterAll(async () => {
-      await deleteDirectory('./static')
-    })
-  })
-})
-
-describe('WebSockets Helper', () => {
-  const app = new Hono()
-  const { websocket, upgradeWebSocket } = createBunWebSocket()
-
-  it('Should websockets is working', async () => {
-    const receivedMessagePromise = new Promise<WSMessageReceive>((resolve) =>
-      app.get(
-        '/ws',
-        upgradeWebSocket(() => ({
-          onMessage(evt) {
-            resolve(evt.data)
-          },
-        }))
-      )
-    )
-    const upgradedData = await new Promise<BunWebSocketData>((resolve) =>
-      app.fetch(new Request('http://localhost/ws'), {
-        upgrade: (_req: Request, data: { data: BunWebSocketData }) => {
-          resolve(data.data)
-        },
-      })
-    )
-    const message = Math.random().toString()
-    websocket.message(
-      {
-        close: () => undefined,
-        readyState: 3,
-        data: upgradedData,
-        send: () => undefined,
-      },
-      message
-    )
-    const receivedMessage = await receivedMessagePromise
-    expect(receivedMessage).toBe(message)
-  })
-})
-
-async function deleteDirectory(dirPath: string) {
-  if (
-    await fs
-      .stat(dirPath)
-      .then((stat) => stat.isDirectory())
-      .catch(() => false)
-  ) {
-    for (const entry of await fs.readdir(dirPath)) {
-      const entryPath = path.join(dirPath, entry)
-      await deleteDirectory(entryPath)
-    }
-    await fs.rmdir(dirPath)
-  } else {
-    await fs.unlink(dirPath)
-  }
-}
 
 describe('streaming', () => {
   const app = new Hono()

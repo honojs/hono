@@ -26,17 +26,17 @@ To enforce this, and regardless of whether AI was actually used, a maintainer ma
 
 ## Installing dependencies
 
-The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
+The `honojs/hono` project uses [pnpm](https://pnpm.io/) as its package manager, and [Bun](https://bun.sh/) to run the build and some of the tests. Developers should install both.
 
 After that, please install the dependency environment.
 
 ```bash
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 ```
 
 ## PRs
 
-Please ensure your PR passes tests with `bun run test`.
+Please ensure your PR passes tests with `pnpm run test`.
 
 ## Third-party middleware
 
@@ -56,5 +56,5 @@ If you want to do it, create an issue about your middleware.
 ## Local Development
 
 ```bash
-git clone git@github.com:honojs/hono.git && cd hono && bun install --frozen-lockfile
+git clone git@github.com:honojs/hono.git && cd hono && pnpm install --frozen-lockfile
 ```

@@ -61,6 +61,14 @@ describe('Context', () => {
     expect(await res.text()).toBe('not found')
   })
 
+  it('c.json() - not JSON serializable', () => {
+    expect(() => c.json(undefined)).toThrow(new TypeError('Value is not JSON serializable'))
+    expect(() => c.json(() => {})).toThrow(TypeError)
+    expect(() => c.json(Symbol('s'))).toThrow(TypeError)
+    const res = c.json({ a: undefined, b: null })
+    expect(res.status).toBe(200)
+  })
+
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
@@ -127,6 +135,16 @@ describe('Context', () => {
       const res = c.redirect(urlString)
       expect(res.headers.get('Location')).toBe(urlString)
     })
+  })
+
+  it('c.body() - Blob', async () => {
+    const res = c.body(new Blob(['Hi']))
+    expect(await res.text()).toBe('Hi')
+  })
+
+  it('c.body() - File', async () => {
+    const res = c.body(new File(['Hi'], 'greeting.txt'))
+    expect(await res.text()).toBe('Hi')
   })
 
   it('c.header()', async () => {

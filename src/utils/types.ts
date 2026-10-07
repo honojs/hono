@@ -74,9 +74,9 @@ export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
             ? T[keyof T] extends TError
               ? never
               : {
-                  [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
-                    ? never
-                    : K]: boolean extends IsInvalid<T[K]>
+                  [
+                    K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true ? never : K
+                  ]: boolean extends IsInvalid<T[K]>
                     ? JSONParsed<T[K], TError> | undefined
                     : JSONParsed<T[K], TError>
                 }

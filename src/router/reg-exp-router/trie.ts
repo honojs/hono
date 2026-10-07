@@ -22,7 +22,7 @@ export class Trie {
 
     const groups: [string, string][] = [] // [mark, original string]
     let markedPath = path
-    for (let i = 0; ; ) {
+    for (let i = 0; ;) {
       let replaced = false
       markedPath = markedPath.replace(/\{[^}]+\}/g, (m) => {
         const mark = `@\\${i}`

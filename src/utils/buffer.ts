@@ -39,9 +39,9 @@ const constantTimeEqualString = (a: string, b: string): boolean => {
   return out === 0
 }
 
-type StringHashFunction = (input: string) => string | null | Promise<string | null>
+export type StringHashFunction = (input: string) => string | null | Promise<string | null>
 
-const timingSafeEqualString = async (
+export const timingSafeEqual = async (
   a: string,
   b: string,
   hashFunction?: StringHashFunction
@@ -60,39 +60,6 @@ const timingSafeEqualString = async (
   const originalEqual = constantTimeEqualString(a, b)
 
   return hashEqual && originalEqual
-}
-
-type TimingSafeEqual = {
-  (a: string, b: string, hashFunction?: StringHashFunction): Promise<boolean>
-  /**
-   * @deprecated object and boolean signatures that take boolean as first and second arguments, and functions with signatures that take non-string arguments have been deprecated
-   */
-  (
-    a: string | object | boolean,
-    b: string | object | boolean,
-    hashFunction?: Function
-  ): Promise<boolean>
-}
-export const timingSafeEqual: TimingSafeEqual = async (
-  a,
-  b,
-  hashFunction?: Function
-): Promise<boolean> => {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return timingSafeEqualString(a, b, hashFunction as StringHashFunction)
-  }
-
-  if (!hashFunction) {
-    hashFunction = sha256
-  }
-
-  const [sa, sb] = await Promise.all([hashFunction(a), hashFunction(b)])
-
-  if (!sa || !sb || typeof sa !== 'string' || typeof sb !== 'string') {
-    return false
-  }
-
-  return timingSafeEqualString(sa, sb)
 }
 
 export const bufferToString = (buffer: ArrayBuffer): string => {

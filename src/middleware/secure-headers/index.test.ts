@@ -1,7 +1,7 @@
-import { Hono } from '../../hono'
-import { poweredBy } from '../powered-by'
 import { NONCE, secureHeaders } from '.'
 import type { ContentSecurityPolicyOptionHandler } from '.'
+import { Hono } from '../../hono'
+import { poweredBy } from '../powered-by'
 
 declare module '../..' {
   interface ContextVariableMap {

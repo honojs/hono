@@ -1,6 +1,5 @@
 import { Suite } from 'benchmark'
 import { parse } from 'node-html-parser'
-
 import { render as renderHono } from './hono'
 import { render as renderNano } from './nano'
 import { render as renderPreact } from './preact'

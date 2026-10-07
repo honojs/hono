@@ -1,5 +1,5 @@
-import { Context } from '../../context'
 import { stream } from '.'
+import { Context } from '../../context'
 
 describe('Basic Streaming Helper', () => {
   const req = new Request('http://localhost/')

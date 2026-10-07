@@ -1,13 +1,13 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+import type { Child, FC, PropsWithChildren } from './'
 import { jsx, Fragment, isUntrustedObject, renderChildren, renderUntrustedObject } from './base'
 import { DOM_RENDERER } from './constants'
 import { captureRenderContext, useContext } from './context'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
 import { StreamingContext } from './streaming'
-import type { Child, FC, PropsWithChildren } from './'
 
 let errorBoundaryCounter = 0
 

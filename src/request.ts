@@ -143,8 +143,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   query(key: string): string | undefined
-  query(): Record<string, string>
-  query(key?: string) {
+  query(): Record<string, string | undefined>
+  query(key?: string): string | undefined | Record<string, string | undefined> {
     return getQueryParam(this.url, key)
   }
 
@@ -162,8 +162,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   queries(key: string): string[] | undefined
-  queries(): Record<string, string[]>
-  queries(key?: string) {
+  queries(): Record<string, string[] | undefined>
+  queries(key?: string): string[] | undefined | Record<string, string[] | undefined> {
     return getQueryParams(this.url, key)
   }
 
@@ -255,7 +255,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
-  json<T = any>(): Promise<T> {
+  json<T = unknown>(): Promise<T> {
     return this.#cachedBody('text').then((text: string) => JSON.parse(text))
   }
 
@@ -359,7 +359,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `.url()` can get the request url strings.
+   * `.url` can get the request url strings.
    *
    * @see {@link https://hono.dev/docs/api/request#url}
    *
@@ -376,7 +376,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `.method()` can get the method name of the request.
+   * `.method` can get the method name of the request.
    *
    * @see {@link https://hono.dev/docs/api/request#method}
    *
@@ -393,57 +393,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   get [GET_MATCH_RESULT](): Result<[unknown, RouterRoute]> {
     return this.#matchResult
-  }
-
-  /**
-   * `.matchedRoutes()` can return a matched route in the handler
-   *
-   * @deprecated
-   *
-   * Use matchedRoutes helper defined in "hono/route" instead.
-   *
-   * @see {@link https://hono.dev/docs/api/request#matchedroutes}
-   *
-   * @example
-   * ```ts
-   * app.use('*', async function logger(c, next) {
-   *   await next()
-   *   c.req.matchedRoutes.forEach(({ handler, method, path }, i) => {
-   *     const name = handler.name || (handler.length < 2 ? '[handler]' : '[middleware]')
-   *     console.log(
-   *       method,
-   *       ' ',
-   *       path,
-   *       ' '.repeat(Math.max(10 - path.length, 0)),
-   *       name,
-   *       i === c.req.routeIndex ? '<- respond from here' : ''
-   *     )
-   *   })
-   * })
-   * ```
-   */
-  get matchedRoutes(): RouterRoute[] {
-    return this.#matchResult[0].map(([[, route]]) => route)
-  }
-
-  /**
-   * `routePath()` can retrieve the path registered within the handler
-   *
-   * @deprecated
-   *
-   * Use routePath helper defined in "hono/route" instead.
-   *
-   * @see {@link https://hono.dev/docs/api/request#routepath}
-   *
-   * @example
-   * ```ts
-   * app.get('/posts/:id', (c) => {
-   *   return c.json({ path: c.req.routePath })
-   * })
-   * ```
-   */
-  get routePath(): string {
-    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
   }
 }
 

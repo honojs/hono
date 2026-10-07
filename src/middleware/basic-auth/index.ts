@@ -8,6 +8,7 @@ import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { auth } from '../../utils/basic-auth'
 import { timingSafeEqual } from '../../utils/buffer'
+import type { StringHashFunction } from '../../utils/buffer'
 
 type MessageFunction = (c: Context) => string | object | Promise<string | object>
 
@@ -16,14 +17,14 @@ type BasicAuthOptions =
       username: string
       password: string
       realm?: string
-      hashFunction?: Function
+      hashFunction?: StringHashFunction
       invalidUserMessage?: string | object | MessageFunction
       onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
   | {
       verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
       realm?: string
-      hashFunction?: Function
+      hashFunction?: StringHashFunction
       invalidUserMessage?: string | object | MessageFunction
       onAuthSuccess?: (c: Context, username: string) => void | Promise<void>
     }
@@ -37,7 +38,7 @@ type BasicAuthOptions =
  * @param {string} options.username - The username for authentication.
  * @param {string} options.password - The password for authentication.
  * @param {string} [options.realm="Secure Area"] - The realm attribute for the WWW-Authenticate header.
- * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
+ * @param {StringHashFunction} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @param {Function} [options.onAuthSuccess] - Callback function called on successful authentication.

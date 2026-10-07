@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
 import { prettyJSON } from '.'
+import { Hono } from '../../hono'
 
 describe('JSON pretty by Middleware', () => {
   it('Should return pretty JSON output', async () => {

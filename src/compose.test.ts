@@ -16,7 +16,9 @@ describe('compose', () => {
 
   const a = async (c: Context, next: Next) => {
     c.set('log', 'log')
+    c.set('routeIndex-before-next', c.req.routeIndex)
     await next()
+    c.set('routeIndex-after-next', c.req.routeIndex)
   }
 
   const b = async (c: Context, next: Next) => {
@@ -47,6 +49,8 @@ describe('compose', () => {
     expect(context.get('log')).not.toBeNull()
     expect(context.get('log')).toBe('log message')
     expect(context.get('xxx')).toBe('yyy')
+    expect(context.get('routeIndex-before-next')).toBe(0)
+    expect(context.get('routeIndex-after-next')).toBe(0)
   })
   it('Response', async () => {
     const composed = compose(middleware)
@@ -232,6 +236,72 @@ describe('compose with Context - next() below', () => {
   })
 })
 
+describe('compose with non-Error throws', () => {
+  const thrownValues = [
+    'Error message',
+    { message: 'Error message' },
+    null,
+    undefined,
+    0,
+    false,
+    Symbol('error'),
+  ]
+
+  it.each(thrownValues)('Should wrap %s in an Error and resume middleware', async (value) => {
+    const middleware = [
+      buildMiddlewareTuple(async (c: Context, next: Next) => {
+        c.res = c.text('Original response')
+        await next()
+        c.header('x-after-next', 'executed')
+      }),
+      buildMiddlewareTuple(() => {
+        throw value
+      }),
+    ]
+    const onError = vi.fn(async (_error: Error, c: Context) => c.text('onError', 500))
+
+    const composed = compose(middleware, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(onError).toHaveBeenCalledExactlyOnceWith(context.error, context)
+    expect(context.error).toBeInstanceOf(Error)
+    expect(context.error?.cause).toBe(value)
+    expect(context.error?.message).toBe(typeof value === 'string' ? value : '')
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
+    expect(context.res.headers.get('x-after-next')).toBe('executed')
+  })
+
+  it('Should rethrow a non-Error value unchanged without onError', async () => {
+    const value = { message: 'Error message' }
+    const middleware = [
+      buildMiddlewareTuple(() => {
+        throw value
+      }),
+    ]
+
+    await expect(compose(middleware)(new Context(new Request('http://localhost/')))).rejects.toBe(
+      value
+    )
+  })
+
+  it('Should preserve an existing Error instance', async () => {
+    const error = new ExpectedError('Custom error')
+    const middleware = [
+      buildMiddlewareTuple(() => {
+        throw error
+      }),
+    ]
+    const onError = vi.fn((_error: Error, c: Context) => c.text('onError', 500))
+
+    const composed = compose(middleware, onError)
+    const context = await composed(new Context(new Request('http://localhost/')))
+
+    expect(context.error).toBe(error)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(error, context)
+  })
+})
+
 describe('compose with Context - 500 error', () => {
   const middleware: MiddlewareTuple[] = []
 
@@ -244,7 +314,9 @@ describe('compose with Context - 500 error', () => {
     }
 
     const mHandler = async (_c: Context, next: Next) => {
+      _c.set('routeIndex-before-next', _c.req.routeIndex)
       await next()
+      _c.set('routeIndex-after-next', _c.req.routeIndex)
     }
 
     middleware.push(buildMiddlewareTuple(mHandler))
@@ -259,6 +331,8 @@ describe('compose with Context - 500 error', () => {
     expect(context.res.status).toBe(500)
     expect(await context.res.text()).toBe('onError')
     expect(context.finalized).toBe(true)
+    expect(context.get('routeIndex-before-next')).toBe(0)
+    expect(context.get('routeIndex-after-next')).toBe(0)
   })
 
   it('Error on handler - async', async () => {

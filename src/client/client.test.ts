@@ -4,7 +4,7 @@
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
 import { expectTypeOf, vi } from 'vitest'
-import { upgradeWebSocket } from '../adapter/deno/websocket'
+import { defineWebSocketHelper } from '../helper/websocket'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'
@@ -27,6 +27,8 @@ class SafeBigInt {
     }
   }
 }
+
+const upgradeWebSocket = defineWebSocketHelper(() => undefined)
 
 describe('Basic - JSON', () => {
   const app = new Hono()
