@@ -12,6 +12,18 @@ There are some breaking changes.
 
 A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
 
+### `getColorEnabledAsync()` is removed
+
+`getColorEnabledAsync()` from `hono/utils/color` is removed. Use `getColorEnabled()` and pass the bindings on Cloudflare Workers. The `logger()` middleware does this by itself, so it needs no change.
+
+```ts
+// From
+const enabled = await getColorEnabledAsync()
+
+// To
+const enabled = getColorEnabled(c.env)
+```
+
 ### `c.req.query()` may return `undefined` values
 
 `c.req.query()` and `c.req.queries()` without a key now return `Record<string, string | undefined>` and `Record<string, string[] | undefined>`, since a key may be absent.
