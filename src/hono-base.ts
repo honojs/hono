@@ -391,6 +391,17 @@ class Hono<
   #notFound = (c: Context<E>): Response | Promise<Response> =>
     this.#dispatchInternal(METHOD_NAME_NOT_FOUND, c)
 
+  async #dispatchComposed(
+    c: Context<E>,
+    matchResult: ReturnType<Router<[H, RouterRoute]>['match']>
+  ): Promise<Response> {
+    try {
+      return getResponse(await compose(matchResult[0], this.#handleError, this.#notFound)(c))
+    } catch (err) {
+      return this.#handleError(err, c)
+    }
+  }
+
   #dispatch(
     request: Request,
     executionCtx: ExecutionContext | FetchEventLike | undefined,
@@ -435,15 +446,7 @@ class Hono<
         : (res ?? this.#notFound(c))
     }
 
-    const composed = compose(matchResult[0], this.#handleError, this.#notFound)
-
-    return (async () => {
-      try {
-        return getResponse(await composed(c))
-      } catch (err) {
-        return this.#handleError(err, c)
-      }
-    })()
+    return this.#dispatchComposed(c, matchResult)
   }
 
   /**
