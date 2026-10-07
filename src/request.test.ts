@@ -327,6 +327,20 @@ describe('Body methods with caching', () => {
     expect(async () => await req.blob()).not.toThrow()
   })
 
+  test('req.formData() returns an externally cached value without reading the body', async () => {
+    const data = new FormData()
+    data.append('foo', 'bar')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: data,
+      })
+    )
+    req.bodyCache.formData = await req.raw.formData()
+    expect((await req.formData()).get('foo')).toBe('bar')
+    expect(req.bodyCache.arrayBuffer).toBeUndefined()
+  })
+
   describe('formData() after another representation has been cached', () => {
     const urlencoded = 'application/x-www-form-urlencoded'
     const body = 'foo=bar&baz=qux'

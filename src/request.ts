@@ -216,6 +216,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   #cachedBody = <K extends Exclude<keyof Body, 'json'>>(key: K): Promise<Body[K]> => {
     const { bodyCache, raw } = this
+    const cached = bodyCache[key]
+    if (cached) {
+      return cached as unknown as Promise<Body[K]>
+    }
     // Read before consuming the body: Bun generates the multipart boundary lazily,
     // and a header read afterwards would not match the serialized bytes
     const contentType = raw.headers.get('content-type')
