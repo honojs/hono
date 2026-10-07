@@ -9,6 +9,7 @@ import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
 import type { Result, Router } from './router'
+import { LinearRouter } from './router/linear-router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
@@ -3229,6 +3230,7 @@ describe('Hono with `app.route`', () => {
   describe.each([
     ['RegExpRouter', RegExpRouter],
     ['TrieRouter', TrieRouter],
+    ['LinearRouter', LinearRouter],
   ] as const)('Fallback scope parameters with %s', (_name, Router) => {
     it('Should allow absent scope parameters for implicit not found', async () => {
       const app = new Hono({ router: new Router() })

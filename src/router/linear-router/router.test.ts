@@ -8,19 +8,7 @@ describe('LinearRouter', () => {
       {
         reason: 'UnsupportedPath',
         tests: [
-          'Multi match > `params` per a handler > GET /entry/123/show',
           'Capture regex pattern has trailing wildcard > GET /foo/bar/file.html',
-          'Capture regex param with trailing wildcard on empty remainder > GET /123',
-          'Capture regex param with trailing wildcard and sibling route > GET /regex-abc/123/ghi',
-          'Trailing wildcard after a label > GET /abc',
-          'Trailing wildcard after a label > GET /abc/sub',
-          'Trailing wildcard after a pattern label > GET /abc',
-          'Trailing wildcard after a pattern label > GET /reverse/abc in reverse registration order',
-          'Trailing wildcard after a pattern label > POST /all/abc with ALL middleware',
-          'Trailing wildcard after a pattern label > GET /posts/2024/comments with nested braces',
-          'Trailing wildcard after a pattern label > GET /files/foo/detail with regexp meta characters',
-          'Trailing wildcard after a pattern label > GET /user/123/profile with the default pattern',
-          'Trailing wildcard after a pattern label > GET /user/123/profile with the default pattern in reverse registration order',
           'Complex > Parameter with {.*} regexp',
           'Path segment equal to a pattern token > Named parameter with a trailing wildcard',
         ],
@@ -29,22 +17,82 @@ describe('LinearRouter', () => {
     newRouter: () => new LinearRouter(),
   })
 
-  describe('Multi match', () => {
-    describe('`params` per a handler', () => {
+  describe('Trailing wildcard after parameters', () => {
+    it.each([
+      ['/:tenant/*', '/acme', { tenant: 'acme' }],
+      ['/:tenant/*', '/acme/', { tenant: 'acme' }],
+      ['/:tenant/*', '/acme/items/123', { tenant: 'acme' }],
+      ['/:tenant/:id/*', '/acme/123/details', { tenant: 'acme', id: '123' }],
+      ['/:tenant/admin/*', '/acme/admin', { tenant: 'acme' }],
+      ['/:tenant/admin/*', '/acme/admin/users', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+}/*', '/acme/', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+}/*', '/acme/items', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+?}/*', '/acme', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+?}/*', '/acme/', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+?}/*', '/acme/items', { tenant: 'acme' }],
+      ['/:tenant{[a-z]+?}/:id/*', '/acme/123/detail', { tenant: 'acme', id: '123' }],
+      ['/:tenant{[a-z]+?}/:id/*', '/acme/123', { tenant: 'acme', id: '123' }],
+      ['/:tenant{[a-z]+?}/:id{[0-9]+?}/*', '/acme/123/detail', { tenant: 'acme', id: '123' }],
+      ['/:tenant{[a-z]+?}/items/*', '/acme/items/detail', { tenant: 'acme' }],
+      ['/:tenant{a|acme}/*', '/acme/items', { tenant: 'acme' }],
+      ['/:tenant{[a-z]{2,}?}/*', '/acme/items', { tenant: 'acme' }],
+      ['/:tenant{(.+?)\\1}/*', '/acmeacme/items', { tenant: 'acmeacme' }],
+      ['/:id{[0-9]+$}/*', '/123', { id: '123' }],
+      ['/:id{[0-9]+$}/*', '/123/', { id: '123' }],
+      ['/:id{[0-9]+$}/*', '/123/bar', { id: '123' }],
+      ['/:id{^[0-9]+$}/*', '/123/bar', { id: '123' }],
+      ['/:id{(?:[0-9]+$)}/*', '/123/bar', { id: '123' }],
+      ['/:id{[0-9]+$(?=)}/*', '/123/bar', { id: '123' }],
+      ['/:id{[0-9]+$}/:name/*', '/123/book/detail', { id: '123', name: 'book' }],
+      ['/:id{[0-9]+$}/:name/*', '/123/book/456', { id: '123', name: 'book' }],
+      ['/:id{(?:[0-9]+$|foo/bar)}/*', '/123/foo/bar', { id: '123' }],
+      ['/:id{[0-9]+\\$}/*', '/123$/bar', { id: '123$' }],
+      ['/:id{[0-9$]+}/*', '/123$/bar', { id: '123$' }],
+      ['/:id{([0-9]+)\\1$}/*', '/123123/bar', { id: '123123' }],
+      ['/:id{[0-9]+(?!/)}/*', '/123/bar', { id: '123' }],
+      ['/:id{foo/bar$}/*', '/foo/bar', { id: 'foo/bar' }],
+    ] as const)('Should match %s against %s', (route, path, params) => {
       const router = new LinearRouter<string>()
-
-      beforeEach(() => {
-        router.add('ALL', '*', 'middleware a')
-        router.add('GET', '/entry/:id/*', 'middleware b')
-        router.add('GET', '/entry/:id/:action', 'action')
-      })
-
-      it('GET /entry/123/show', () => {
-        expect(() => {
-          router.match('GET', '/entry/123/show')
-        }).toThrowError(UnsupportedPathError)
-      })
+      router.add('GET', route, 'handler')
+      expect(router.match('GET', path)[0]).toEqual([['handler', params]])
     })
+
+    it.each([
+      ['/:tenant/*', '/'],
+      ['/:tenant/*', '//items'],
+      ['/api/:tenant/*', '/api/'],
+      ['/api/:tenant/*', '/apix/acme'],
+      ['/:tenant/admin/*', '/acme/administrator'],
+      ['/:tenant{[a-z]+}/*', '/acme123/items'],
+      ['/:tenant{[a-z]+?}/*', '/acme123/items'],
+      ['/:tenant{[a-z]+?}/:id/*', '/acme123/123/detail'],
+      ['/:tenant{[a-z]+?}/:id/*', '/acme'],
+      ['/:tenant{[a-z]+?}/:id/*', '/acme//detail'],
+      ['/:tenant{[a-z]+?}/:id{[0-9]+?}/*', '/acme/123abc/detail'],
+      ['/:tenant{a|acme}/*', '/acme123/items'],
+      ['/posts/:year{[0-9]{4}}/*', '/posts/20245/comments'],
+      ['/:id{[0-9]+$}/*', '/abc'],
+      ['/:id{[0-9]+$}/*', '/123abc'],
+      ['/:id{[0-9]+$}/*', '/abc123'],
+      ['/:id{[0-9]+$}/*', '/123abc/bar'],
+      ['/:id{[0-9]+$}/*', '/abc/123'],
+      ['/:id{[0-9]+$}/*', '//123'],
+      ['/:id{[0-9]+$}/*', '/123abc/456'],
+      ['/:id{foo/bar$}/*', '/foo/bar/baz'],
+    ])('Should not match %s against %s', (route, path) => {
+      const router = new LinearRouter<string>()
+      router.add('GET', route, 'handler')
+      expect(router.match('GET', path)[0]).toEqual([])
+    })
+
+    it.each(['/:tenant/*/items', '/:tenant/*/*', '/:tenant*', '/:tenant{.*}', '/:tenant{.*}/*'])(
+      'Should reject unsupported wildcard combinations in %s',
+      (route) => {
+        const router = new LinearRouter<string>()
+        expect(() => router.add('GET', route, 'handler')).toThrowError(UnsupportedPathError)
+        expect(router.match('GET', '/acme/items')[0]).toEqual([])
+      }
+    )
   })
 
   describe('Skip part', () => {
