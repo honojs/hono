@@ -1,0 +1,31 @@
+docs/MIGRATION.md
+  s_a34d594424e4c1::t_b2423d6f4e6e89 15-26
+runtime-tests/workerd/index.test.ts
+  s_a34d594424e4c1::t_cfd5c60c694357 38-45,57,71-78
+runtime-tests/workerd/index.ts
+  s_a34d594424e4c1::t_da4c10a8c993d0 3-4,6,15-16,19-28
+src/middleware/logger/index.test.ts
+  s_a34d594424e4c1::t_26754334fd3884 129-150
+src/middleware/logger/index.ts
+  s_a34d594424e4c1::t_5334b0db758da3 7,28,71,77-79
+src/utils/color.test.ts
+  s_a34d594424e4c1::t_e3af259b5e90e9 2,4-5,10,19,21-56
+src/utils/color.ts
+  s_a34d594424e4c1::t_e4663f16d523f8 8-9,12,15-19,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "55f19fe9065471375c12d84d39c0eea4eea61e7d",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
