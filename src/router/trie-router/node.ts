@@ -105,7 +105,7 @@ export class Node<T> {
         const node = curNodes[j]
         const nextNode = node.#children[part]
 
-        if (nextNode) {
+        if (nextNode && !nextNode.#pattern) {
           nextNode.#params = node.#params
           if (isLast) {
             // '/hello/*' => match '/hello'
