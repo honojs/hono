@@ -368,8 +368,8 @@ export class Factory<E extends Env = Env, P extends string = string> {
 
   /**
    * @deprecated Use `defineHandler()` instead. It will be removed in the next major version.
-   * Pass the middleware with the `middleware` option:
-   * `defineHandler({ middleware: [auth] })((c) => ...)`.
+   * Pass the middleware before the handler:
+   * `defineHandler(auth, (c) => ...)`.
    */
   createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed

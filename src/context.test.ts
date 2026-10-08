@@ -61,6 +61,14 @@ describe('Context', () => {
     expect(await res.text()).toBe('not found')
   })
 
+  it('c.json() - not JSON serializable', () => {
+    expect(() => c.json(undefined)).toThrow(new TypeError('Value is not JSON serializable'))
+    expect(() => c.json(() => {})).toThrow(TypeError)
+    expect(() => c.json(Symbol('s'))).toThrow(TypeError)
+    const res = c.json({ a: undefined, b: null })
+    expect(res.status).toBe(200)
+  })
+
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
