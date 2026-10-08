@@ -1528,6 +1528,184 @@ describe('verifyWithJwks key handling', () => {
 
     expect(localKeys).toEqual(originalKeys)
   })
+
+  it('Should select key with use: "sig" when JWKS has both encryption and signature keys with same kid', async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+    const kid = 'dual-use-key-1'
+    const payload = { sub: 'user123' }
+
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const token = `${encodedHeader}.${encodedPayload}.${encodeBase64Url(signatureBuffer)}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+
+    const keys: HonoJsonWebKey[] = [
+      {
+        ...jwk,
+        kid,
+        use: 'enc',
+        alg: 'RS256',
+      },
+      {
+        ...jwk,
+        kid,
+        use: 'sig',
+        alg: 'RS256',
+      },
+    ]
+
+    const result = await verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })
+    expect(result).toEqual(payload)
+  })
+
+  it('Should select key with key_ops containing "verify" when same kid exists with "encrypt"', async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+    const kid = 'dual-ops-key-1'
+    const payload = { sub: 'user456' }
+
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const token = `${encodedHeader}.${encodedPayload}.${encodeBase64Url(signatureBuffer)}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+
+    const keys: HonoJsonWebKey[] = [
+      {
+        ...jwk,
+        kid,
+        key_ops: ['encrypt'],
+        alg: 'RS256',
+      },
+      {
+        ...jwk,
+        kid,
+        key_ops: ['verify'],
+        alg: 'RS256',
+      },
+    ]
+
+    const result = await verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })
+    expect(result).toEqual(payload)
+  })
+
+  it('Should reject with JwtTokenInvalid when matching key has use: "enc" only', async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+    const kid = 'enc-only-key'
+    const payload = { sub: 'user789' }
+
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const token = `${encodedHeader}.${encodedPayload}.${encodeBase64Url(signatureBuffer)}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+
+    const keys: HonoJsonWebKey[] = [
+      {
+        ...jwk,
+        kid,
+        use: 'enc',
+        alg: 'RS256',
+      },
+    ]
+
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtTokenInvalid
+    )
+  })
+
+  it('Should reject with JwtTokenInvalid when matching key has key_ops without "verify"', async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: 'SHA-256',
+      },
+      true,
+      ['sign', 'verify']
+    )
+    const kid = 'encrypt-ops-only-key'
+    const payload = { sub: 'user999' }
+
+    const header = { alg: 'RS256', typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+    const signatureBuffer = await signing(
+      keyPair.privateKey,
+      'RS256',
+      utf8Encoder.encode(signingInput)
+    )
+    const token = `${encodedHeader}.${encodedPayload}.${encodeBase64Url(signatureBuffer)}`
+
+    const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey)
+
+    const keys: HonoJsonWebKey[] = [
+      {
+        ...jwk,
+        kid,
+        key_ops: ['encrypt'],
+        alg: 'RS256',
+      },
+    ]
+
+    await expect(verifyWithJwks(token, { keys, allowedAlgorithms: ['RS256'] })).rejects.toThrow(
+      JwtTokenInvalid
+    )
+  })
 })
 
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
