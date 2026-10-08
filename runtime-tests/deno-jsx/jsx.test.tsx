@@ -1,5 +1,5 @@
 /** @jsxImportSource ../../src/jsx */
-import { assertEquals } from '@std/assert'
+import { assertEquals, assertThrows } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
@@ -186,4 +186,51 @@ Deno.test('JSX: number', async () => {
 Deno.test('JSX: style', async () => {
   const html = <div style={{ fontSize: '12px', color: null }}></div>
   assertEquals(html.toString(), '<div style="font-size:12px"></div>')
+})
+
+Deno.test('JSX: escape elements used as attribute values', async () => {
+  const input = 'x onmouseover=alert(1)//'
+  const node = <span data-label={input}>label</span>
+  const Async = async () => <span data-label={input}>label</span>
+  const values = [
+    node,
+    Promise.resolve(node),
+    <span data-label={Promise.resolve(input) as never}>label</span>,
+    <Async />,
+    (<Async />).toString(),
+  ]
+  const expected =
+    '<div title="&lt;span data-label=&quot;x onmouseover=alert(1)//&quot;&gt;label&lt;/span&gt;">outer</div>'
+
+  for (const value of values) {
+    // A spread makes the precompile transform use JSXNode for the outer element.
+    for (const element of [
+      <div title={value as never}>outer</div>,
+      <div {...{ title: value as never }}>outer</div>,
+    ]) {
+      assertEquals(String(await (await element).toString()), expected)
+    }
+  }
+})
+
+Deno.test('JSX: reject function values for non-event attributes', () => {
+  const handler = () => 'source'
+  assertThrows(
+    () => (<div data-value={handler}>outer</div>).toString(),
+    Error,
+    "Invalid prop 'data-value' of type 'function'"
+  )
+})
+
+Deno.test('JSX: function form actions', () => {
+  const action = () => {}
+  const html = (
+    <form action={action}>
+      <button formAction={action}>go</button>
+    </form>
+  )
+
+  // react-jsx : <form><button>
+  // precompile : <form ><button >
+  assertEquals(html.toString().replace(/ >/g, '>'), '<form><button>go</button></form>')
 })
