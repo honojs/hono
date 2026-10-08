@@ -41,6 +41,7 @@ type BasicAuthOptions =
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @param {Function} [options.onAuthSuccess] - Callback function called on successful authentication.
+ * @param {...{ username: string; password: string }} [users] - Additional user credentials.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
