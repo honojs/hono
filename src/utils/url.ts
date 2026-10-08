@@ -244,7 +244,8 @@ const _getQueryParam = (
   if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
     // optimized for unencoded key
 
-    let keyIndex = url.indexOf('?', 8)
+    const queryIndex = url.indexOf('?', 8)
+    let keyIndex = queryIndex
     if (keyIndex === -1) {
       return undefined
     }
@@ -253,11 +254,19 @@ const _getQueryParam = (
     }
     while (keyIndex !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex + key.length + 2
-        const endIndex = url.indexOf('&', valueIndex)
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+      if (trailingKeyCode === 61 || trailingKeyCode === 38 || isNaN(trailingKeyCode)) {
+        // An earlier encoded key may decode to the same name.
+        if (
+          keyIndex > queryIndex &&
+          /(?:^|&)[^=&]*[%+]/.test(url.slice(queryIndex + 1, keyIndex))
+        ) {
+          break
+        }
+        if (trailingKeyCode === 61) {
+          const valueIndex = keyIndex + key.length + 2
+          const endIndex = url.indexOf('&', valueIndex)
+          return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+        }
         return ''
       }
       keyIndex = url.indexOf(`&${key}`, keyIndex + 1)

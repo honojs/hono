@@ -26,6 +26,14 @@ describe('Query', () => {
     expect(q2).toBeUndefined()
   })
 
+  test('query() preserves the order of encoded and unencoded duplicate keys', () => {
+    const req = new HonoRequest(new Request('http://localhost?item%5B%5D=first&item[]=second'))
+
+    expect(req.query('item[]')).toBe('first')
+    expect(req.query()).toEqual({ 'item[]': 'first' })
+    expect(req.queries('item[]')).toEqual(['first', 'second'])
+  })
+
   test('decode special chars', () => {
     const rawRequest = new Request('http://localhost?mail=framework%40hono.dev&tag=%401&tag=%402')
     const req = new HonoRequest(rawRequest)
