@@ -1,0 +1,43 @@
+docs/MIGRATION.md
+  s_a34d594424e4c1::t_0907d1b4cf8699 15-54
+runtime-tests/workerd/index.test.ts
+  s_a34d594424e4c1::t_df4ff1244630b5 38-45,57,71-78
+runtime-tests/workerd/index.ts
+  s_a34d594424e4c1::t_aed3ca1be0d0c2 3-4,6,15-16,19-28
+src/context.test.ts
+  s_a34d594424e4c1::t_3db31744252e49 64-71
+src/context.ts
+  s_a34d594424e4c1::t_c311925e7f16b9 752-755,757
+src/helper/factory/index.ts
+  s_a34d594424e4c1::t_d31d07756b490c 371-372
+src/hono.test.ts
+  s_a34d594424e4c1::t_8e6c4dc77d5ce8 920
+src/middleware/logger/index.test.ts
+  s_a34d594424e4c1::t_aae264a9ca52c8 129-150
+src/middleware/logger/index.ts
+  s_a34d594424e4c1::t_9912d42d623018 7,28,71,77-79
+src/request.test.ts
+  s_a34d594424e4c1::t_ca7a6649b3c926 139-157
+src/request.ts
+  s_a34d594424e4c1::t_032e8abf774771 146-147,165-166,258
+src/utils/color.test.ts
+  s_a34d594424e4c1::t_6f5f56dbb01646 2,4-5,10,19,21-56
+src/utils/color.ts
+  s_a34d594424e4c1::t_421edfd4d24a0a 8-9,12,15-19,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2727b740c05ce2e8ac2909758d2e4f3e29793b5b",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
