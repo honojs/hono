@@ -10,7 +10,10 @@ export interface Context {
   varIndex: number
 }
 
-const regExpMetaChars = new Set('.\\+*[^]$()')
+const regExpMetaChars = new Set('.\\+*[^]$()?|')
+// '@' and '#' are escaped so that path text never forms the internal '@N' / '#N' markers
+const escapeKey = (k: string): string =>
+  k === '@' ? '\\x40' : k === '#' ? '\\x23' : regExpMetaChars.has(k) ? `\\${k}` : k
 
 /**
  * Sort order:
@@ -56,9 +59,10 @@ export class Node {
     paramMap: ParamAssocArray,
     context: Context,
     isStatic: boolean
-  ): void {
+  ): Node[] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let node: Node = this
+    const nodes: Node[] = [node]
     for (let i = 0, len = tokens.length; i < len; i++) {
       const token = tokens[i]
       const pattern =
@@ -71,6 +75,11 @@ export class Node {
           : token === '/*'
             ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
             : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
+
+      // pattern text and raw multi-char tokens are copied into the regexp as they are
+      if (token.length > 1 && /[@#]\d/.test(pattern ? pattern[2] : token)) {
+        throw PATH_ERROR
+      }
 
       let nextNode: Node
       if (pattern) {
@@ -128,12 +137,14 @@ export class Node {
       }
 
       node = nextNode
+      nodes.push(node)
     }
 
     if (node.#index !== undefined) {
       throw PATH_ERROR
     }
     node.#index = isStatic ? -1 : index
+    return nodes
   }
 
   buildRegExpStr(): string {
@@ -146,11 +157,8 @@ export class Node {
         // an empty childStr means a static-only branch, which is handled by staticMap
         return childStr === ''
           ? ''
-          : (typeof c.#varIndex === 'number'
-              ? `(${k})@${c.#varIndex}`
-              : regExpMetaChars.has(k)
-                ? `\\${k}`
-                : k) + childStr
+          : (typeof c.#varIndex === 'number' ? `(${escapeKey(k)})@${c.#varIndex}` : escapeKey(k)) +
+              childStr
       })
       .filter(Boolean)
 
