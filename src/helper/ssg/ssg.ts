@@ -306,12 +306,14 @@ export const fetchRoutesContent = function* <
  * `saveContentToFile` is an experimental feature.
  * The API might be changed.
  */
-const createdDirs: Set<string> = new Set()
 export const saveContentToFile = async (
   data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
   fsModule: FileSystemModule,
   outDir: string,
-  extensionMap?: Record<string, string>
+  extensionMap?: Record<string, string>,
+  // Directories already created by the current run. It must not outlive the run:
+  // the output may be removed between runs, and a stale entry would skip `mkdir`.
+  createdDirs: Set<string> = new Set()
 ): Promise<string | undefined> => {
   const awaitedData = await data
   if (!awaitedData) {
@@ -428,6 +430,7 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const combinedAfterResponseHook = combineAfterResponseHooks(
       afterResponseHooks.length > 0 ? afterResponseHooks : [(req) => req]
     )
+    const createdDirs: Set<string> = new Set()
     const getInfoGen = fetchRoutesContent(
       app,
       combinedBeforeRequestHook,
@@ -442,7 +445,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
           }
           for (const content of getContentGen) {
             savePromises.push(
-              saveContentToFile(content, fs, outputDir, options?.extensionMap).catch((e) => e)
+              saveContentToFile(content, fs, outputDir, options?.extensionMap, createdDirs).catch(
+                (e) => e
+              )
             )
           }
         })
