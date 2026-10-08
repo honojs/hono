@@ -487,6 +487,23 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should resolve duplicate parameter names consistently across routers', async () => {
+    const regexpApp = new Hono()
+    regexpApp.get('/:id/:id/x', (c) => c.text(c.req.param('id')))
+
+    const trieApp = new Hono()
+    trieApp.get('/:id/:id/x', (c) => c.text(c.req.param('id')))
+    trieApp.get('/a', (c) => c.text('a'))
+
+    const regexpResponse = await regexpApp.request('http://localhost/123/456/x')
+    const trieResponse = await trieApp.request('http://localhost/123/456/x')
+
+    expect(regexpApp.router.name).toBe('SmartRouter + RegExpRouter')
+    expect(trieApp.router.name).toBe('SmartRouter + TrieRouter')
+    expect(await regexpResponse.text()).toBe('123')
+    expect(await trieResponse.text()).toBe('123')
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')
