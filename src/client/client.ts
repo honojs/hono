@@ -2,7 +2,7 @@ import type { Hono } from '../hono'
 import type { FormValue, ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
-import type { BuildSearchParamsFn, Callback, Client, ClientRequestOptions } from './types'
+import type { BuildSearchParamsFn, Callback, Client, ClientRequestOptions, ClientX } from './types'
 import {
   buildSearchParams,
   deepMerge,
@@ -147,12 +147,8 @@ class ClientRequestImpl {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
-  baseUrl: Prefix,
-  options?: ClientRequestOptions
-) =>
-  createProxy(function proxyCallback(opts) {
+const createCallback = (baseUrl: string, options?: ClientRequestOptions): Callback =>
+  function proxyCallback(opts) {
     const buildSearchParamsOption = options?.buildSearchParams ?? buildSearchParams
     const parts = [...opts.path]
     const lastParts = parts.slice(-3).reverse()
@@ -246,4 +242,99 @@ export const hc = <T extends Hono<any, any, any>, Prefix extends string = string
       return req.fetch(opts.args[0], args)
     }
     return req
-  }, []) as UnionToIntersection<Client<T, Prefix>>
+  }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const hc = <T extends Hono<any, any, any>, Prefix extends string = string>(
+  baseUrl: Prefix,
+  options?: ClientRequestOptions
+) => createProxy(createCallback(baseUrl, options), []) as UnionToIntersection<Client<T, Prefix>>
+
+/** What `hc`'s own proxy would have collected: `:name` segments in `path`, their values in `param`. */
+type Chain = { path: string[]; param: Record<string, string> }
+
+/**
+ * A `hono/client` RPC client where a path param is bound by calling the segment, the JSON body is
+ * positional and everything else rides in one options object. Same wire behavior and same response
+ * types as {@link hc}.
+ *
+ * @example
+ * ```ts
+ * const api = hcx<typeof app>('http://localhost')
+ * await api.users.$get({ query: { page: '2' } })  // GET /users?page=2
+ * await api.users({ id: '1' }).$get()             // GET /users/1
+ * await api.users.$post({ name: 'Bolt' })         // POST /users, JSON body
+ * await api.upload.$post.form({ file })           // multipart
+ * api.users({ id: '1' }).$path()                  // '/users/1'
+ * ```
+ *
+ * Known quirks, shared with `hc` unless noted: a static segment named like a `$method` collides;
+ * `/` is on the root node and under `api.index`; `/users` and `/users/:id?` union on `api.users`;
+ * a validated `header` shares the options object with `headers`; `InferRequestType` on a read
+ * yields that options type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const hcx = <T extends Hono<any, any, any>, Prefix extends string = string>(
+  baseUrl: Prefix,
+  options?: ClientRequestOptions
+) => {
+  const callback = createCallback(baseUrl, options)
+  const send = (chain: Chain, method: string, args: unknown[], target: 'json' | 'form') => {
+    // `$get`, `$url`, `$path` and `$ws` take options first, every other method takes the body first.
+    const optionsFirst =
+      method === '$get' || method === '$url' || method === '$path' || method === '$ws'
+    const { query, header, cookie, ...rest } = ((optionsFirst ? args[0] : args[1]) ?? {}) as Record<
+      string,
+      unknown
+    >
+    const request = {
+      param: chain.param,
+      query,
+      header,
+      cookie,
+      [target]: optionsFirst ? undefined : args[0],
+    }
+    return callback({ path: [...chain.path, method], args: [request, rest] })
+  }
+  const leaf = (chain: Chain, method: string): unknown =>
+    new Proxy(() => {}, {
+      get: (target, key) =>
+        key === 'form'
+          ? (...args: unknown[]) => send(chain, method, args, 'form')
+          : Reflect.get(target, key),
+      apply: (_1, _2, args) => send(chain, method, args, 'json'),
+    })
+  const node = (chain: Chain): unknown =>
+    new Proxy(() => {}, {
+      get: (target, key) => {
+        if (typeof key !== 'string' || key === 'then') {
+          return undefined
+        }
+        if (key === 'toString' || key === 'valueOf') {
+          return Reflect.get(target, key)
+        }
+        if (key.startsWith(':')) {
+          throw new Error(
+            `hcx: \`${key}\` is a type-only key, bind the param by calling the segment instead: \`({ ${key.slice(1)}: value })\``
+          )
+        }
+        return key.startsWith('$')
+          ? leaf(chain, key)
+          : node({ path: [...chain.path, key], param: chain.param })
+      },
+      apply: (_1, _2, [params]) => {
+        const entries = params && typeof params === 'object' ? Object.entries(params) : []
+        if (entries.length !== 1) {
+          throw new Error(
+            "hcx: a segment call binds exactly one path param, e.g. `api.users({ id: '1' })`"
+          )
+        }
+        const [name, value] = entries[0]
+        return node({
+          path: [...chain.path, `:${name}`],
+          param: { ...chain.param, [name]: value as string },
+        })
+      },
+    })
+  return node({ path: [], param: {} }) as ClientX<T, Prefix>
+}
