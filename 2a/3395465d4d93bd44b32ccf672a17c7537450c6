@@ -1,0 +1,33 @@
+adapters/aws-lambda/package.json
+  s_a34d594424e4c1::t_3e9254e66a6b9f 29
+adapters/bun/package.json
+  s_a34d594424e4c1::t_a5e38a19c70c20 29
+adapters/cloudflare-workers/package.json
+  s_a34d594424e4c1::t_e5de5cdf9e299f 29
+adapters/deno/package.json
+  s_a34d594424e4c1::t_df89d057f4917a 30
+adapters/lambda-edge/package.json
+  s_a34d594424e4c1::t_8e6c876f986749 29
+adapters/netlify/package.json
+  s_a34d594424e4c1::t_4a74ac7f4ff81a 29
+adapters/service-worker/package.json
+  s_a34d594424e4c1::t_4d4c26abd0a599 29
+adapters/vercel/package.json
+  s_a34d594424e4c1::t_254d9a444f0e22 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2a3395465d4d93bd44b32ccf672a17c7537450c6",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
