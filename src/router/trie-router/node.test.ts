@@ -534,6 +534,33 @@ describe('Duplicate param name', () => {
     expect(res[0][1]['id']).toBe('123')
   })
 
+  it('self with trailing static', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:id/x', 'foo')
+    const [res] = node.search('get', '/123/456/x')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('foo')
+    expect(res[0][1]['id']).toBe('123')
+  })
+
+  it('self three times', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:id/:id', 'foo')
+    const [res] = node.search('get', '/1/2/3')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('foo')
+    expect(res[0][1]['id']).toBe('1')
+  })
+
+  it('self with regexp matcher', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:id{[0-9]+}', 'foo')
+    const [res] = node.search('get', '/abc/123')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('foo')
+    expect(res[0][1]['id']).toBe('abc')
+  })
+
   describe('parent', () => {
     const node = new Node()
     node.insert('get', '/:id/:action', 'foo')
