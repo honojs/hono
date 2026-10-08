@@ -1,6 +1,6 @@
 {
   "name": "@hono/aws-lambda",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AWS Lambda adapter for Hono",
   "type": "module",
   "types": "./dist/index.d.ts",

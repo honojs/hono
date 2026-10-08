@@ -1,6 +1,6 @@
 {
   "name": "@hono/bun",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bun adapter for Hono",
   "type": "module",
   "types": "./dist/index.d.ts",
