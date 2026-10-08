@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { expectTypeOf } from 'vitest'
+import { describe, it, expect, expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context, ExecutionContext } from './context'
 import { Hono } from './hono'
@@ -376,6 +376,29 @@ describe('Options', () => {
         res = await app.request('http://localhost/hello/')
         expect(res).not.toBeNull()
         expect(res.status).toBe(200)
+      })
+    })
+
+    describe('strict is false with custom `getPath` option', () => {
+      const app = new Hono({
+        strict: false,
+        getPath: (req) => '/custom' + getPath(req),
+      })
+
+      app.get('/custom/hello', (c) => {
+        return c.text('/custom/hello')
+      })
+
+      it('executes custom getPath and treats trailing slash as the same when strict is false', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('/custom/hello')
+
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('/custom/hello')
       })
     })
   })

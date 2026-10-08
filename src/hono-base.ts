@@ -172,7 +172,10 @@ class Hono<
 
     const { strict, ...optionsWithoutStrict } = options
     Object.assign(this, optionsWithoutStrict)
-    this.getPath = (strict ?? true) ? (options.getPath ?? getPath) : getPathNoStrict
+    const customGetPath = options.getPath
+    this.getPath = (strict ?? true)
+      ? (customGetPath ?? getPath)
+      : (request, options) => getPathNoStrict(request, { getPath: customGetPath, ...options })
   }
 
   #clone(): Hono<E, S, BasePath, CurrentPath> {
