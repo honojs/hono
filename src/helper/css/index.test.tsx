@@ -247,6 +247,18 @@ describe('CSS Helper', () => {
         `,
         '.css-123{padding:1rem;&:hover{padding:2rem}}',
       ],
+      [
+        'preserve descendant combinator before pseudo-class',
+        css`
+          & :first-child {
+            margin: 0;
+          }
+          &:hover :is(h1, h2) {
+            color: red;
+          }
+        `,
+        '.css-123{& :first-child{margin:0}&:hover :is(h1,h2){color:red}}',
+      ],
     ]
     data.forEach(([name, str, expected]) => {
       it(`Should be minified while preserving content accurately: ${name}`, async () => {
