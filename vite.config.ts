@@ -29,6 +29,33 @@ const removeDtsPrivateFieldsPlugin: TsdownPluginOption = {
   },
 }
 
+// JSDoc is kept in the .d.ts files, which editors read. Dropping it from the .js files makes the package smaller.
+const removeJsDocPlugin: TsdownPluginOption = {
+  name: 'hono:remove-jsdoc',
+  async renderChunk(code, id) {
+    if (!id.fileName.endsWith('.js')) {
+      return
+    }
+
+    const { comments } = await parse(id.fileName, code)
+    const ms = new RolldownMagicString(code, { filename: id.fileName })
+
+    for (const comment of comments) {
+      if (comment.type !== 'Block' || !comment.value.startsWith('*')) {
+        continue
+      }
+      // Also remove the whitespace up to the next token, so no blank line is left behind
+      let end = comment.end
+      while (end < code.length && /\s/.test(code[end])) {
+        end++
+      }
+      ms.remove(comment.start, end)
+    }
+
+    return ms.toString()
+  },
+}
+
 const validatePackageExportsPlugin: TsdownPluginOption = {
   name: 'hono:validate-package-exports',
   async buildStart() {
@@ -335,6 +362,11 @@ export default defineConfig({
     format: ['esm'],
     dts: true,
     outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
-    plugins: [validatePackageExportsPlugin, removeDtsPrivateFieldsPlugin, appendExportEmptyToDts],
+    plugins: [
+      validatePackageExportsPlugin,
+      removeJsDocPlugin,
+      removeDtsPrivateFieldsPlugin,
+      appendExportEmptyToDts,
+    ],
   },
 })
