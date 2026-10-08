@@ -92,6 +92,17 @@ type HandlerInput<T extends Targets> = { [K in ValidatedTarget<T>]: OutputOf<T[K
 
 type JSONResponseOf<T> = Response & TypedResponse<JSONParsed<T>, ContentfulStatusCode, 'json'>
 
+/** The Response that `toResponse()` converts a returned value to */
+type ConvertedResponse<R> = [unknown] extends [R]
+  ? Response
+  : R extends AnyResponse
+    ? R
+    : R extends null | undefined | void
+      ? Response & TypedResponse<null, 204, 'body'>
+      : R extends string | HtmlEscaped
+        ? Response
+        : JSONResponseOf<R>
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyMiddleware = MiddlewareHandler<any, any, any>
 
@@ -141,23 +152,27 @@ type Validator = {
 const toValidator = (target: RequestTarget, v: Validation<unknown, unknown>): Validator =>
   isStandardSchema(v) ? { target, schema: v['~standard'].validate } : { target, fn: v }
 
-type ValidatedHandler<E extends Env, P extends string, T extends Targets, ResponseOut> = Handler<
+type ValidatedHandler<E extends Env, P extends string, T extends Targets, ResponseOut, R> = Handler<
   E,
   P,
   ValidatedInput<T>,
-  Promise<[ResponseOut] extends [never] ? Response : JSONResponseOf<OutputOf<ResponseOut>>>
+  Promise<
+    [ResponseOut] extends [never]
+      ? ConvertedResponse<Awaited<R>>
+      : JSONResponseOf<OutputOf<ResponseOut>>
+  >
 >
 
 export interface DefineHandler<E extends Env, P extends string> {
   /**
    * Defines a handler, with middleware before it. The returned value is converted to a Response.
    */
-  <E2 extends Env = E, P2 extends string = P, M extends AnyMiddleware[] = []>(
+  <E2 extends Env = E, P2 extends string = P, M extends AnyMiddleware[] = [], R = unknown>(
     ...args: [
       ...middleware: M,
-      handler: (c: Context<IntersectNonAnyTypes<[E2, ...MiddlewareEnvs<M>]>, P2>) => unknown,
+      handler: (c: Context<IntersectNonAnyTypes<[E2, ...MiddlewareEnvs<M>]>, P2>) => R,
     ]
-  ): Handler<E2, P2, {}, Promise<Response>>
+  ): Handler<E2, P2, {}, Promise<ConvertedResponse<Awaited<R>>>>
   /**
    * Defines a handler with request and response validation, with middleware before it.
    */
@@ -190,15 +205,20 @@ export interface DefineHandler<E extends Env, P extends string> {
       ResponseIn,
       ResponseOut
     >
-  ): <E2 extends Env = E, P2 extends string = P, M extends AnyMiddleware[] = []>(
+  ): <
+    E2 extends Env = E,
+    P2 extends string = P,
+    M extends AnyMiddleware[] = [],
+    R extends ResponseIn | NonJSONResponse | Promise<ResponseIn | NonJSONResponse> = ResponseIn,
+  >(
     ...args: [
       ...middleware: M,
       handler: (
         c: Context<IntersectNonAnyTypes<[E2, ...MiddlewareEnvs<M>]>, P2, ValidatedInput<T>>,
         input: HandlerInput<T>
-      ) => ResponseIn | NonJSONResponse | Promise<ResponseIn | NonJSONResponse>,
+      ) => R,
     ]
-  ) => ValidatedHandler<E2, P2, T, ResponseOut>
+  ) => ValidatedHandler<E2, P2, T, ResponseOut, R>
 }
 
 const toResponse = (c: Context, result: unknown): Response | Promise<Response> => {
@@ -217,7 +237,8 @@ const toResponse = (c: Context, result: unknown): Response | Promise<Response> =
 /**
  * `defineHandler()` defines a handler. A value returned from the handler is converted to a
  * Response: an object is returned as JSON, a string or JSX as HTML, and `null` or `undefined`
- * as `204 No Content`. A `Response` is returned as is.
+ * as `204 No Content`. A `Response` is returned as is. The status is set with `c.status()`, and
+ * it is not in the types. Return `c.json()` to have the status in the types.
  *
  * With options, each request target (`param`, `query`, `json`, `form`, `header`, `cookie`)
  * is validated before the handler runs. The validated values are passed to the handler as

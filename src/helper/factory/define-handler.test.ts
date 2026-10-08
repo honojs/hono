@@ -425,11 +425,17 @@ describe('defineHandler', () => {
       expect(await res.json()).toEqual({ id: 'u1' })
     })
 
-    it('Should be a plain Response in the RPC types', () => {
+    it('Should infer the returned value in the RPC types', () => {
       const plain = new Hono().get('/', () => new Response('text'))
-      type Body = InferResponseType<ReturnType<typeof hc<typeof app>>['json']['$get']>
       type PlainBody = InferResponseType<ReturnType<typeof hc<typeof plain>>['index']['$get']>
-      expectTypeOf<Body>().toEqualTypeOf<PlainBody>()
+      const client = hc<typeof app>('http://localhost')
+      expectTypeOf<InferResponseType<typeof client.json.$get>>().toEqualTypeOf<{
+        ok: boolean
+      }>()
+      expectTypeOf<InferResponseType<typeof client.html.$get>>().toEqualTypeOf<PlainBody>()
+      expectTypeOf<InferResponseType<typeof client.jsx.$get>>().toEqualTypeOf<PlainBody>()
+      expectTypeOf<InferResponseType<typeof client.empty.$get>>().toEqualTypeOf<null>()
+      expectTypeOf<InferResponseType<typeof client.response.$get>>().toBeString()
     })
   })
 
@@ -629,15 +635,28 @@ describe('defineHandler', () => {
       }>()
     })
 
-    it('Should be a plain Response without a response schema', () => {
-      const app = new Hono().get(
-        '/',
-        defineHandler({})((c) => (Math.random() > 0.5 ? c.text('text', 202) : { ok: true }))
-      )
-      const plain = new Hono().get('/', () => new Response('text'))
-      type Body = InferResponseType<ReturnType<typeof hc<typeof app>>['index']['$get']>
-      type PlainBody = InferResponseType<ReturnType<typeof hc<typeof plain>>['index']['$get']>
-      expectTypeOf<Body>().toEqualTypeOf<PlainBody>()
+    it('Should infer the returned value without a response schema', () => {
+      const app = new Hono()
+        .get(
+          '/',
+          defineHandler({ query: z.object({ page: z.coerce.number() }) })((_, { query }) => ({
+            page: query.page,
+          }))
+        )
+        .get(
+          '/union',
+          defineHandler({})((c) => (Math.random() > 0.5 ? c.json({ ok: true }, 201) : { id: '1' }))
+        )
+        .get(
+          '/none',
+          defineHandler({})(() => null)
+        )
+      const client = hc<typeof app>('http://localhost')
+      expectTypeOf<InferResponseType<typeof client.index.$get>>().toEqualTypeOf<{ page: number }>()
+      expectTypeOf<InferResponseType<typeof client.union.$get>>().toEqualTypeOf<
+        { ok: true } | { id: string }
+      >()
+      expectTypeOf<InferResponseType<typeof client.none.$get>>().toEqualTypeOf<null>()
     })
 
     it('Should only accept the response input type or a non-JSON Response from the handler', () => {
