@@ -125,6 +125,9 @@ export class Node<T> {
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
           if (typeof pattern === 'string') {
+            if (pattern === '*' && !part && Object.keys(child.#children).length > 0) {
+              continue
+            }
             if (pattern === '*' || part.startsWith(pattern.slice(0, -1))) {
               this.#pushHandlerSets(handlerSets, child, method, node.#params)
               if (pattern === '*') {
