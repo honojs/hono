@@ -6,7 +6,7 @@ type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number
 
 const emptyParams = Object.create(null)
 
-const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
+const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|\/$|(\?)/g
 const splitByStarRe = /\*/
 export class LinearRouter<T> implements Router<T> {
   name: string = 'LinearRouter'
@@ -35,7 +35,7 @@ export class LinearRouter<T> implements Router<T> {
         const hasStar = routePath.indexOf('*') !== -1
         const hasLabel = routePath.indexOf(':') !== -1
         if (!hasStar && !hasLabel) {
-          if (routePath === path || routePath + '/' === path) {
+          if (routePath === path) {
             handlers.push([handler, emptyParams])
           }
         } else if (hasStar && !hasLabel) {
@@ -58,11 +58,7 @@ export class LinearRouter<T> implements Router<T> {
                 if (pos !== path.length && path.charCodeAt(pos) !== 47) {
                   continue ROUTES_LOOP
                 }
-              } else if (
-                !endsWithStar &&
-                pos !== path.length &&
-                !(pos === path.length - 1 && path.charCodeAt(pos) === 47)
-              ) {
+              } else if (!endsWithStar && pos !== path.length) {
                 continue ROUTES_LOOP
               }
             } else {
@@ -114,10 +110,11 @@ export class LinearRouter<T> implements Router<T> {
               } else {
                 let endValuePos = path.indexOf('/', pos + 1)
                 if (endValuePos === -1) {
-                  if (pos + 1 === path.length) {
-                    continue ROUTES_LOOP
-                  }
                   endValuePos = path.length
+                }
+                if (endValuePos === pos + 1) {
+                  // an empty segment, as in `/u/` or `/u//posts`
+                  continue ROUTES_LOOP
                 }
                 value = path.slice(pos + 1, endValuePos)
                 pos = endValuePos
@@ -132,13 +129,8 @@ export class LinearRouter<T> implements Router<T> {
               pos += part.length
             }
 
-            if (j === lastIndex) {
-              if (
-                pos !== path.length &&
-                !(pos === path.length - 1 && path.charCodeAt(pos) === 47)
-              ) {
-                continue ROUTES_LOOP
-              }
+            if (j === lastIndex && pos !== path.length) {
+              continue ROUTES_LOOP
             }
           }
 

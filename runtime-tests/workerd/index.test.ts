@@ -1,6 +1,5 @@
 import { unstable_dev } from 'wrangler'
 import type { Unstable_DevWorker } from 'wrangler'
-import { WebSocket } from 'ws'
 
 describe('workerd', () => {
   let worker: Unstable_DevWorker
@@ -36,43 +35,13 @@ describe('workerd', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('True')
   })
-})
 
-describe('workerd with WebSocket', () => {
-  // worker.fetch does not support WebSocket:
-  // https://github.com/cloudflare/workers-sdk/issues/4573#issuecomment-1850420973
-  it('Should handle the WebSocket connection correctly', async () => {
-    const worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
-      compatibilityDate: '2026-07-01',
-      experimental: { disableExperimentalWarning: true },
-    })
-    const ws = new WebSocket(`ws://${worker.address}:${worker.port}/ws`)
-
-    const openHandler = vi.fn()
-    const messageHandler = vi.fn()
-    const closeHandler = vi.fn()
-
-    const waitForOpen = new Promise((resolve) => {
-      ws.addEventListener('open', () => {
-        openHandler()
-        ws.send('Hello')
-      })
-      ws.addEventListener('close', async () => {
-        closeHandler()
-        resolve(undefined)
-      })
-      ws.addEventListener('message', async (event) => {
-        messageHandler(event.data)
-        ws.close()
-      })
-    })
-
-    await waitForOpen
-    await worker.stop()
-
-    expect(openHandler).toHaveBeenCalled()
-    expect(messageHandler).toHaveBeenCalledWith('Hello')
-    expect(closeHandler).toHaveBeenCalled()
+  it('Should log a colored status', async () => {
+    const res = await worker.fetch('/logger')
+    expect(await res.json()).toEqual([
+      '<-- GET /logger',
+      expect.stringContaining('--> GET /logger \x1b[32m200\x1b[0m'),
+    ])
   })
 })
 
@@ -85,6 +54,7 @@ describe('workerd with NO_COLOR', () => {
         NO_COLOR: true,
       },
       compatibilityDate: '2026-07-01',
+      compatibilityFlags: ['disallow_importable_env'],
       experimental: { disableExperimentalWarning: true },
     })
   })
@@ -97,5 +67,13 @@ describe('workerd with NO_COLOR', () => {
     const res = await worker.fetch('/color')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('False')
+  })
+
+  it('Should log an uncolored status from request bindings', async () => {
+    const res = await worker.fetch('/logger')
+    expect(await res.json()).toEqual([
+      '<-- GET /logger',
+      expect.stringMatching(/^--> GET \/logger 200 \d+ms$/),
+    ])
   })
 })

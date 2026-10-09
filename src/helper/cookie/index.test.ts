@@ -1,4 +1,3 @@
-import { Hono } from '../../hono'
 import {
   deleteCookie,
   getCookie,
@@ -8,6 +7,7 @@ import {
   generateCookie,
   generateSignedCookie,
 } from '.'
+import { Hono } from '../../hono'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -314,7 +314,7 @@ describe('Cookie Middleware', () => {
       await setSignedCookie(c, 'delicious_cookie', 'macha', 'secret choco chips', {
         prefix: 'host',
         domain: 'example.com', // this will be ignored
-        path: 'example.com', // thi will be ignored
+        path: 'example.com', // this will be ignored
         secure: false, // this will be ignored
       })
       return c.text('Set host prefix cookie')

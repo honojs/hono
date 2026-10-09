@@ -37,9 +37,6 @@ describe('buffer', () => {
     ).toBe(true)
     expect(await timingSafeEqual('a', 'a')).toBe(true)
     expect(await timingSafeEqual('', '')).toBe(true)
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    expect(await timingSafeEqual(undefined, undefined)).toBe(true)
   })
 
   it('negative', async () => {
@@ -51,9 +48,6 @@ describe('buffer', () => {
       await timingSafeEqual('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'a')
     ).toBe(false)
     expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    expect(await timingSafeEqual(false, undefined)).toBe(false)
 
     expect(
       await timingSafeEqual(
@@ -64,29 +58,6 @@ describe('buffer', () => {
         (input) => createHash('md5').update(input).digest('hex')
       )
     ).toBe(false)
-  })
-
-  it.skip('comparing variables except string are deprecated', async () => {
-    expect(await timingSafeEqual(true, true)).toBe(true)
-    expect(await timingSafeEqual(false, false)).toBe(true)
-    expect(
-      await timingSafeEqual(true, true, (d: boolean) =>
-        createHash('sha256').update(d.toString()).digest('hex')
-      )
-    )
-    expect(await timingSafeEqual(false, true)).toBe(false)
-    expect(
-      await timingSafeEqual(
-        () => {},
-        () => {}
-      )
-    ).toBe(false)
-    expect(await timingSafeEqual({}, {})).toBe(false)
-    expect(await timingSafeEqual({ a: 1 }, { a: 1 })).toBe(false)
-    expect(await timingSafeEqual({ a: 1 }, { a: 2 })).toBe(false)
-    expect(await timingSafeEqual([1, 2], [1, 2])).toBe(false)
-    expect(await timingSafeEqual([1, 2], [1, 2, 3])).toBe(false)
-    expect(await timingSafeEqual('a', 'b', () => undefined)).toBe(false)
   })
 })
 

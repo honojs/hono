@@ -1,5 +1,6 @@
 import { Hono } from '../..'
 import { parseAccept } from '../../utils/accept'
+import type { AcceptHeader } from '../../utils/headers'
 import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
 import { accepts, defaultMatch } from './accepts'
 
@@ -189,6 +190,88 @@ describe('accepts', () => {
     }
     const result = accepts(c, options)
     expect(result).toBe('application/xml')
+  })
+
+  test('should not match entries explicitly rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should skip q=0 entries and match the remaining ones', () => {
+    const c = {
+      req: {
+        header: () => 'text/html;q=0.5, application/json;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'application/octet-stream',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/octet-stream')
+  })
+
+  test('should not match a subtype wildcard the client rejected with q=0', () => {
+    const c = {
+      req: {
+        header: () => 'application/*;q=0',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  describe('case insensitivity', () => {
+    const pick = (header: AcceptHeader, value: string, supports: string[]) => {
+      const c = {
+        req: { header: () => value },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
+      return accepts(c, { header, supports, default: 'DEFAULT' })
+    }
+
+    // Media types are case-insensitive (RFC 9110 §8.3.1)
+    test.each(['text/html', 'TEXT/HTML', 'Text/Html', 'text/HTML'])(
+      'Accept: %s matches text/html',
+      (value) => {
+        expect(pick('Accept', value, ['text/html'])).toBe('text/html')
+      }
+    )
+
+    test('a case-different subtype wildcard still matches', () => {
+      expect(pick('Accept', 'TEXT/*', ['text/html'])).toBe('text/html')
+    })
+
+    // Language tags are case-insensitive (RFC 4647 §2.1)
+    test.each(['en-US', 'EN-US', 'en-us', 'En-Us'])(
+      'Accept-Language: %s matches en-US',
+      (value) => {
+        expect(pick('Accept-Language', value, ['en-US'])).toBe('en-US')
+      }
+    )
+
+    test('a case-different entry with q=0 is still not acceptable', () => {
+      expect(pick('Accept-Language', 'EN;q=0', ['en'])).toBe('DEFAULT')
+    })
   })
 })
 

@@ -136,53 +136,22 @@ describe('Param', () => {
   })
 })
 
-describe('matchedRoutes', () => {
-  test('req.routePath', () => {
-    const handlerA = () => {}
-    const handlerB = () => {}
-    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
-      [
-        [
-          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
-          { id: '123' },
-        ],
-        [
-          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
-          { id: '456', name: 'key' },
-        ],
-      ],
-    ])
-
-    expect(req.matchedRoutes).toEqual([
-      { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' },
-      { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' },
-    ])
+describe('Stricter types', () => {
+  test('query() and queries() may return undefined for an absent key', () => {
+    const req = new HonoRequest(new Request('http://localhost?q=hono'))
+    expectTypeOf(req.query()).toEqualTypeOf<Record<string, string | undefined>>()
+    expectTypeOf(req.queries()).toEqualTypeOf<Record<string, string[] | undefined>>()
+    expectTypeOf(req.query('q')).toEqualTypeOf<string | undefined>()
   })
 })
 
-describe('routePath', () => {
-  test('req.routePath', () => {
-    const handlerA = () => {}
-    const handlerB = () => {}
-    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
-      [
-        [
-          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
-          { id: '123' },
-        ],
-        [
-          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
-          { id: '456', name: 'key' },
-        ],
-      ],
-    ])
-
-    expect(req.routePath).toBe('/:id')
-
-    req.routeIndex = 1
-    expect(req.routePath).toBe('/:id/:name')
+describe('json()', () => {
+  test('returns unknown by default', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', { method: 'POST', body: '{"name":"hono"}' })
+    )
+    expectTypeOf(await req.json()).toEqualTypeOf<unknown>()
+    expectTypeOf(await req.json<{ name: string }>()).toEqualTypeOf<{ name: string }>()
   })
 })
 
@@ -377,6 +346,58 @@ describe('Body methods with caching', () => {
     expect(async () => await req.blob()).not.toThrow()
   })
 
+  describe('formData() after another representation has been cached', () => {
+    const urlencoded = 'application/x-www-form-urlencoded'
+    const body = 'foo=bar&baz=qux'
+
+    for (const first of ['text', 'arrayBuffer', 'bytes', 'blob'] as const) {
+      test(`req.formData() after req.${first}()`, async () => {
+        const req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            headers: { 'Content-Type': urlencoded },
+            body,
+          })
+        )
+        await req[first]()
+        const formData = await req.formData()
+        expect(formData.get('foo')).toBe('bar')
+        expect(formData.get('baz')).toBe('qux')
+      })
+    }
+
+    test('req.formData() after req.text() for multipart/form-data', async () => {
+      const boundary = '----hono-test-boundary'
+      const multipart =
+        `--${boundary}\r\n` +
+        'Content-Disposition: form-data; name="foo"\r\n\r\n' +
+        'bar\r\n' +
+        `--${boundary}--\r\n`
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+          body: multipart,
+        })
+      )
+      await req.text()
+      expect((await req.formData()).get('foo')).toBe('bar')
+    })
+
+    test('the cached representation is still returned unchanged', async () => {
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': urlencoded },
+          body,
+        })
+      )
+      expect(await req.text()).toBe(body)
+      expect(await req.text()).toBe(body)
+      expect(await req.arrayBuffer()).toEqual(new TextEncoder().encode(body).buffer)
+    })
+  })
+
   describe('req.parseBody()', async () => {
     it('should parse form data', async () => {
       const data = new FormData()
@@ -454,7 +475,7 @@ describe('Body methods with caching', () => {
         const req = createReq()
         await req.parseBody()
         // application/json is not a valid formData content-type, so this should throw
-        expect(req.formData()).rejects.toThrow()
+        await expect(req.formData()).rejects.toThrow()
       })
     })
 

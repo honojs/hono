@@ -23,11 +23,8 @@ describe('LinearRouter', () => {
           'Trailing wildcard after a pattern label > GET /user/123/profile with the default pattern in reverse registration order',
           'Trailing wildcard after a middle wildcard > GET /acme/x/y with a named parameter',
           'Complex > Parameter with {.*} regexp',
+          'Path segment equal to a pattern token > Named parameter with a trailing wildcard',
         ],
-      },
-      {
-        reason: 'LinearRouter allows trailing slashes',
-        tests: ['Trailing slash > GET /book/'],
       },
     ],
     newRouter: () => new LinearRouter(),
@@ -48,21 +45,6 @@ describe('LinearRouter', () => {
           router.match('GET', '/entry/123/show')
         }).toThrowError(UnsupportedPathError)
       })
-    })
-  })
-
-  describe('Trailing slash', () => {
-    const router = new LinearRouter<string>()
-
-    beforeEach(() => {
-      router.add('GET', '/book', 'GET /book')
-      router.add('GET', '/book/:id', 'GET /book/:id')
-    })
-
-    it('GET /book/', () => {
-      const [res] = router.match('GET', '/book/')
-      expect(res.length).toBe(1)
-      expect(res[0][0]).toBe('GET /book')
     })
   })
 

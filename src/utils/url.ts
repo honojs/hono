@@ -133,24 +133,6 @@ export const getPath = (request: Request): string => {
   return url.slice(start, i)
 }
 
-/**
- * @deprecated
- * Use the `URL` API instead.
- */
-export const getQueryStrings = (url: string): string => {
-  const queryIndex = url.indexOf('?', 8)
-  if (queryIndex === -1) {
-    return ''
-  }
-
-  const hashIndex = url.indexOf('#', 8)
-  return hashIndex === -1
-    ? url.slice(queryIndex)
-    : queryIndex < hashIndex
-      ? url.slice(queryIndex, hashIndex)
-      : ''
-}
-
 export const getPathNoStrict = (request: Request): string => {
   const result = getPath(request)
 

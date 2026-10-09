@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
+import { cache } from '.'
 import type { ExecutionContext } from '../../context'
 import { Hono } from '../../hono'
-import { cache } from '.'
 
 // Mock
 type StoreMap = Map<string | Request, Response>

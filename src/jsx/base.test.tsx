@@ -1,5 +1,6 @@
 /** @jsxImportSource ./ */
 
+import type { HtmlEscapedString } from '../utils/html'
 import type { Child, JSXNode } from './base'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cloneElement, jsx, Fragment } from './base'
@@ -36,6 +37,12 @@ describe('cloneElement', () => {
 })
 
 describe('createElement', () => {
+  it('should accept a component that returns a JSXNode', () => {
+    const Partial = ({ name }: { name: string }) => jsx('div', { 'x-partial': name }, name)
+
+    expect((<Partial name='foo' />).toString()).toBe('<div x-partial="foo">foo</div>')
+  })
+
   it('should preserve the SVG element shape', () => {
     const ref = { current: null }
     const element = jsx('svg', { ref }) as unknown as JSXNode
@@ -48,5 +55,25 @@ describe('createElement', () => {
     const child: Child = <span>inner</span>
     const element = jsx('div', null, child) as unknown as JSXNode
     expect(element.toString()).toBe('<div><span>inner</span></div>')
+  })
+
+  it('should escape a string returned by an asynchronous component', async () => {
+    const Async = async () => '<img src=x onerror=alert(1)>' as unknown as HtmlEscapedString
+
+    expect(
+      String(
+        await (
+          <div>
+            <Async />
+          </div>
+        ).toString()
+      )
+    ).toBe('<div>&lt;img src=x onerror=alert(1)&gt;</div>')
+  })
+
+  it('should omit an unsupported object child', () => {
+    const object = { toString: () => 'plain-text' }
+
+    expect((<div>{object as never}</div>).toString()).toBe('<div></div>')
   })
 })

@@ -1,8 +1,8 @@
+import type { HTTPExceptionFunction } from '.'
+import { timeout } from '.'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import type { HTTPExceptionFunction } from '.'
-import { timeout } from '.'
 
 describe('Timeout API', () => {
   const app = new Hono()

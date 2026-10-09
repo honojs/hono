@@ -1,10 +1,10 @@
 /** @jsxImportSource ../../jsx */
 import { expectTypeOf } from 'vitest'
+import { jsxRenderer, useRequestContext } from '.'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
 import type { FC } from '../../jsx'
 import { Suspense } from '../../jsx/streaming'
-import { jsxRenderer, useRequestContext } from '.'
 
 const RequestUrl: FC = () => {
   const c = useRequestContext()

@@ -44,6 +44,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
     }
 
     let lastError: unknown
+    let response: Response | undefined
     for (const handler of middleware) {
       try {
         const result = await handler(c, wrappedNext)
@@ -52,6 +53,8 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue
+        } else if (result && result !== true) {
+          response = result
         }
         lastError = undefined
         break
@@ -65,6 +68,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
     if (lastError) {
       throw lastError
     }
+    return response
   }
 }
 
@@ -123,7 +127,9 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  * If there are multiple targets to match any of them, they can be passed as an array.
  * If a string is passed, it will be treated as a path pattern to match.
  * If a Condition function is passed, it will be evaluated against the request context.
- * @param middleware - A composed middleware
+ * @param middleware - Middleware to run when the condition is not met.
+ * Multiple middleware can be passed, and they are applied in the order they are passed.
+ * @returns A composed middleware.
  *
  * @example
  * ```ts

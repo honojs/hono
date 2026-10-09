@@ -1,6 +1,9 @@
 import type { Context } from './context'
 import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
 
+export const toError = (err: unknown): Error =>
+  err instanceof Error ? err : new Error(typeof err === 'string' ? err : undefined, { cause: err })
+
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
  *
@@ -48,11 +51,15 @@ export const compose = <E extends Env = Env>(
 
       if (handler) {
         try {
-          res = await handler(context, () => dispatch(i + 1))
+          res = await handler(context, () => {
+            const routeIndex = context.req.routeIndex
+            return dispatch(i + 1).finally(() => (context.req.routeIndex = routeIndex))
+          })
         } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err
-            res = await onError(err, context)
+          if (onError) {
+            const error = toError(err)
+            context.error = error
+            res = await onError(error, context)
             isError = true
           } else {
             throw err
