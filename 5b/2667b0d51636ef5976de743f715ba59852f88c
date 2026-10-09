@@ -1,0 +1,37 @@
+docs/MIGRATION.md
+  s_a34d594424e4c1::t_a305f5094d12ac 55-68
+src/context.test.ts
+  s_a34d594424e4c1::t_195351165cf82b 1-2,43-52
+src/context.ts
+  s_a34d594424e4c1::t_33986619d3f449 29-64,89-92
+src/router/common.case.test.ts
+  s_a34d594424e4c1::t_842ded007f53a4 109-145,619-638
+src/router/linear-router/router.test.ts
+  s_a34d594424e4c1::t_04566fdf77d8df 12
+src/router/linear-router/router.ts
+  s_a34d594424e4c1::t_0e6f021d2cf48c 73-76
+src/router/pattern-router/router.ts
+  s_a34d594424e4c1::t_ad1bf31d2f3da4 33-35
+src/router/reg-exp-router/node.ts
+  s_a34d594424e4c1::t_5f630b14f27c7f 5,70-74,102-106,112-114
+src/router/reg-exp-router/router.test.ts
+  s_a34d594424e4c1::t_0f0888de7d7717 61-90
+src/router/trie-router/node.ts
+  s_a34d594424e4c1::t_23c47eda554da6 38,137-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5b2667b0d51636ef5976de743f715ba59852f88c",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
