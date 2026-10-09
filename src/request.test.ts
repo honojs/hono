@@ -671,9 +671,14 @@ describe('cloneRawRequest', () => {
       })
     )
     await req.raw.json()
-    req.bodyCache.json = Promise.resolve({ foo: 'bar' })
+    req.bodyCache.blob = Promise.resolve(new Blob(['{"foo":"bar"}']))
 
     await expect(cloneRawRequest(req)).rejects.toThrow(HTTPException)
+  })
+
+  test('bodyCache has no json slot', () => {
+    const req = new HonoRequest(new Request('http://localhost'))
+    expectTypeOf(req.bodyCache).not.toHaveProperty('json')
   })
 
   test('clones GET request without body', async () => {

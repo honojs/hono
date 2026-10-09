@@ -24,7 +24,7 @@ type Body = {
   blob: Blob
   formData: FormData
 }
-type BodyCache = Partial<Body>
+type BodyCache = Partial<Omit<Body, 'json'>>
 
 type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
