@@ -1,0 +1,75 @@
+.github/workflows/release.yml
+  s_a34d594424e4c1::t_0c4d21bd1f619e 41-49
+README.md
+  s_a34d594424e4c1::t_7dedc5a9c87752 66,68
+adapters/aws-lambda/package.json
+  s_a34d594424e4c1::t_f7b23723c2907d 3,29
+adapters/bun/package.json
+  s_a34d594424e4c1::t_8bc3f75b8baa1e 3,29
+adapters/cloudflare-workers/package.json
+  s_a34d594424e4c1::t_ebccedff3f8458 3,29
+adapters/deno/package.json
+  s_a34d594424e4c1::t_27f03f3bec594f 3,30
+adapters/lambda-edge/package.json
+  s_a34d594424e4c1::t_9aa9a95618290f 3,29
+adapters/netlify/package.json
+  s_a34d594424e4c1::t_b0064bd6e01d6e 3,29
+adapters/service-worker/package.json
+  s_a34d594424e4c1::t_c278c3a5775677 3,29
+adapters/vercel/package.json
+  s_a34d594424e4c1::t_9d98e3c7e35f08 3,29
+docs/CONTRIBUTING.md
+  s_a34d594424e4c1::t_bc2fd0990e2bb0 7,9,25,27,29,31,35-36
+docs/MIGRATION.md
+  s_a34d594424e4c1::t_f6bbd65ffeeb3b 15-54
+package.json
+  s_a34d594424e4c1::t_8af442a193ee6a 3
+runtime-tests/workerd/index.test.ts
+  s_a34d594424e4c1::t_a790e27f8b2e6b 38-45,57,71-78
+runtime-tests/workerd/index.ts
+  s_a34d594424e4c1::t_f319fcf139b125 3-4,6,15-16,19-28
+src/context.test.ts
+  s_a34d594424e4c1::t_e692b9ef7e8ce9 64-71
+src/context.ts
+  s_a34d594424e4c1::t_2b783854d22e8d 752-755,757
+src/helper/factory/define-handler.test.ts
+  s_a34d594424e4c1::t_a62f9c50a84fda 1-673
+src/helper/factory/define-handler.ts
+  s_a34d594424e4c1::t_2331633c6ae058 1-409
+src/helper/factory/index.ts
+  s_a34d594424e4c1::t_7c89ab1be6777e 17-21,358,362-373,385-398,406-410
+src/hono.test.ts
+  s_a34d594424e4c1::t_e95447160f49a9 920
+src/middleware/logger/index.test.ts
+  s_a34d594424e4c1::t_2855dd9974abd3 129-150
+src/middleware/logger/index.ts
+  s_a34d594424e4c1::t_0c586a50f9e0b1 7,28,71,77-79
+src/request.test.ts
+  s_a34d594424e4c1::t_d06b2f0f800fc1 139-157
+src/request.ts
+  s_a34d594424e4c1::t_d1c7049448c798 146-147,165-166,266-267
+src/utils/color.test.ts
+  s_a34d594424e4c1::t_6daf8b8bab0cb9 2,4-5,10,19,21-56
+src/utils/color.ts
+  s_a34d594424e4c1::t_2a0ce686f7c456 8-9,12,15-19,26
+src/validator/validator.ts
+  s_a34d594424e4c1::t_2a188cc8e6505f 46-119,164
+vite.config.ts
+  s_a34d594424e4c1::t_3a11d6e0606be3 32-58,109-357,365-370
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "805319c3331d34fbd01c628d1e81cb99a6ed6a43",
+  "prompts": {},
+  "sessions": {
+    "s_a34d594424e4c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
