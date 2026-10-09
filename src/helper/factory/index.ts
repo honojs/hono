@@ -14,6 +14,11 @@ import type {
   IntersectNonAnyTypes,
   MiddlewareHandler,
 } from '../../types'
+import { defineHandler } from './define-handler'
+import type { DefineHandler } from './define-handler'
+
+export { defineHandler }
+export type { StandardSchema, ValidationIssue, ValidationFailure } from './define-handler'
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -350,10 +355,22 @@ export class Factory<E extends Env = Env, P extends string = string> {
     return app
   }
 
-  createMiddleware = <I extends Input = {}, R extends HandlerResponse<any> | void = void>(
+  defineMiddleware = <I extends Input = {}, R extends HandlerResponse<any> | void = void>(
     middleware: MiddlewareHandler<E, P, I, R extends void ? Response : R>
   ): MiddlewareHandler<E, P, I, R extends void ? Response : R> => middleware
 
+  defineHandler: DefineHandler<E, P> = defineHandler
+
+  /**
+   * @deprecated Use `defineMiddleware()` instead. It will be removed in the next major version.
+   */
+  createMiddleware = this.defineMiddleware
+
+  /**
+   * @deprecated Use `defineHandler()` instead. It will be removed in the next major version.
+   * Pass the middleware before the handler:
+   * `defineHandler(auth, (c) => ...)`.
+   */
   createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed
     return handlers.filter((handler) => handler !== undefined)
@@ -365,7 +382,20 @@ export const createFactory = <E extends Env = Env, P extends string = string>(in
   defaultAppOptions?: HonoOptions<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 
-export const createMiddleware = <
+/**
+ * `defineMiddleware()` defines a middleware with the types.
+ *
+ * @see {@link https://hono.dev/docs/helpers/factory#definemiddleware}
+ *
+ * @example
+ * ```ts
+ * const auth = defineMiddleware<{ Variables: { user: User } }>(async (c, next) => {
+ *   c.set('user', await getUser(c))
+ *   await next()
+ * })
+ * ```
+ */
+export const defineMiddleware = <
   E extends Env = any,
   P extends string = string,
   I extends Input = {},
@@ -373,3 +403,8 @@ export const createMiddleware = <
 >(
   middleware: MiddlewareHandler<E, P, I, R extends void ? Response : R>
 ): MiddlewareHandler<E, P, I, R extends void ? Response : R> => middleware
+
+/**
+ * @deprecated Use `defineMiddleware()` instead. It will be removed in the next major version.
+ */
+export const createMiddleware = defineMiddleware

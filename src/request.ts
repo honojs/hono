@@ -143,8 +143,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   query(key: string): string | undefined
-  query(): Record<string, string>
-  query(key?: string) {
+  query(): Record<string, string | undefined>
+  query(key?: string): string | undefined | Record<string, string | undefined> {
     return getQueryParam(this.url, key)
   }
 
@@ -162,8 +162,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   queries(key: string): string[] | undefined
-  queries(): Record<string, string[]>
-  queries(key?: string) {
+  queries(): Record<string, string[] | undefined>
+  queries(key?: string): string[] | undefined | Record<string, string[] | undefined> {
     return getQueryParams(this.url, key)
   }
 
@@ -263,8 +263,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
-  json<T = any>(): Promise<T> {
-    return this.#cachedBody('text').then((text) => JSON.parse(text))
+  json<T = unknown>(): Promise<T> {
+    return this.#cachedBody('text').then((text: string) => JSON.parse(text))
   }
 
   /**

@@ -136,6 +136,25 @@ describe('Param', () => {
   })
 })
 
+describe('Stricter types', () => {
+  test('query() and queries() may return undefined for an absent key', () => {
+    const req = new HonoRequest(new Request('http://localhost?q=hono'))
+    expectTypeOf(req.query()).toEqualTypeOf<Record<string, string | undefined>>()
+    expectTypeOf(req.queries()).toEqualTypeOf<Record<string, string[] | undefined>>()
+    expectTypeOf(req.query('q')).toEqualTypeOf<string | undefined>()
+  })
+})
+
+describe('json()', () => {
+  test('returns unknown by default', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', { method: 'POST', body: '{"name":"hono"}' })
+    )
+    expectTypeOf(await req.json()).toEqualTypeOf<unknown>()
+    expectTypeOf(await req.json<{ name: string }>()).toEqualTypeOf<{ name: string }>()
+  })
+})
+
 describe('req.addValidatedData() and req.data()', () => {
   const rawRequest = new Request('http://localhost')
 

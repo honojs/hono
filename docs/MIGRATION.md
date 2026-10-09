@@ -12,6 +12,46 @@ There are some breaking changes.
 
 A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
 
+### `getColorEnabledAsync()` is removed
+
+`getColorEnabledAsync()` from `hono/utils/color` is removed. Use `getColorEnabled()` and pass the bindings on Cloudflare Workers. The `logger()` middleware does this by itself, so it needs no change.
+
+```ts
+// From
+const enabled = await getColorEnabledAsync()
+
+// To
+const enabled = getColorEnabled(c.env)
+```
+
+### `c.req.query()` may return `undefined` values
+
+`c.req.query()` and `c.req.queries()` without a key now return `Record<string, string | undefined>` and `Record<string, string[] | undefined>`, since a key may be absent.
+
+```ts
+// From
+const { name } = c.req.query() // string
+
+// To
+const { name } = c.req.query() // string | undefined
+```
+
+### `c.req.json()` returns `unknown`
+
+`c.req.json()` returns `Promise<unknown>` instead of `Promise<any>`. Pass the type explicitly, or use `c.req.valid()` with a validator.
+
+```ts
+// From
+const body = await c.req.json() // any
+
+// To
+const body = await c.req.json<{ name: string }>()
+```
+
+### `c.json()` throws for a value that is not JSON serializable
+
+`c.json(undefined)` used to return an empty body. It now throws a `TypeError`, like `Response.json()`. The same applies to a function or a symbol.
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.

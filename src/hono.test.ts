@@ -917,7 +917,7 @@ describe('param and query', () => {
 
     app.get('/multiple-values', (c) => {
       const { q, limit } = c.req.queries()
-      return c.text(`q is ${q[0]} and ${q[1]}, limit is ${limit[0]}`)
+      return c.text(`q is ${q?.[0]} and ${q?.[1]}, limit is ${limit?.[0]}`)
     })
 
     app.get('/add-header', (c) => {

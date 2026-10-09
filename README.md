@@ -63,9 +63,9 @@ The migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 Contributions Welcome! You can contribute in the following ways.
 
 - Create an Issue - Propose a new feature. Report a bug.
-- Pull Request - Fix a bug or typo. Refactor the code.
-- Create third-party middleware - See [Third-party middleware](docs/CONTRIBUTING.md#third-party-middleware).
+- Build middleware and libraries - Grow the Hono ecosystem.
 - Share - Share your thoughts on the Blog, X, and others.
+- Sponsor - Support the maintainers through GitHub Sponsors: [@yusukebe](https://github.com/sponsors/yusukebe) and [@usualoma](https://github.com/sponsors/usualoma).
 - Make your application - Please try to use Hono.
 
 For more details, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
