@@ -9,6 +9,7 @@ describe('LinearRouter', () => {
         reason: 'UnsupportedPath',
         tests: [
           'Capture regex pattern has trailing wildcard > GET /foo/bar/file.html',
+          'Trailing wildcard after a middle wildcard > GET /acme/x/y with a named parameter',
           'Complex > Parameter with {.*} regexp',
           'Path segment equal to a pattern token > Named parameter with a trailing wildcard',
         ],
