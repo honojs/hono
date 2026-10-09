@@ -42,7 +42,7 @@ describe('inspectRoutes()', () => {
 
     subApp.get('/', (c) => c.json(0))
     subApp.onError(async (_c, next) => next())
-    subApp.onNotFound(async (_c, next) => next())
+    subApp.notFound(async (_c, next) => next())
     subApp.onError((c) => c.json(0))
 
     const mainApp = new Hono()
@@ -158,7 +158,7 @@ describe('showRoutes()', () => {
     fallbackApp.onError(async function errorHandler(_c, next) {
       return next()
     })
-    fallbackApp.onNotFound(async function notFoundHandler(_c, next) {
+    fallbackApp.notFound(async function notFoundHandler(_c, next) {
       return next()
     })
 

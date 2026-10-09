@@ -15,6 +15,7 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
+  NotFoundHandler,
   ParamKeyToRecord,
   ParamKeys,
   RemoveQuestion,
@@ -48,7 +49,7 @@ describe('Env', () => {
   })
 })
 
-describe.each(['onError', 'onNotFound'] as const)('%s environment inference', (method) => {
+describe.each(['onError', 'notFound'] as const)('%s environment inference', (method) => {
   const first = createMiddleware<{ Variables: { one: string } }>(async (c, next) => {
     c.set('one', 'one')
     await next()
@@ -107,7 +108,7 @@ describe.each(['onError', 'onNotFound'] as const)('%s environment inference', (m
   })
 })
 
-describe.each(['onError', 'onNotFound'] as const)('%s parameter inference', (method) => {
+describe.each(['onError', 'notFound'] as const)('%s parameter inference', (method) => {
   it('Should not infer required parameters from the fallback scope', () => {
     new Hono()[method]('/:tenant/*', (c) => {
       expectTypeOf(c.req.param('tenant')).toEqualTypeOf<string | undefined>()
@@ -129,6 +130,16 @@ describe.each(['onError', 'onNotFound'] as const)('%s parameter inference', (met
         expectTypeOf(c.req.param('id')).toEqualTypeOf<string | undefined>()
         return c.text(c.req.param('id') ?? 'Unknown item')
       })
+  })
+})
+
+describe('notFound', () => {
+  it('Should accept a v4-style not-found handler', () => {
+    type E = { Bindings: { message: string } }
+    const handler: NotFoundHandler<E> = (c) => c.text(c.env.message, 404)
+    const app = new Hono<E>()
+
+    expectTypeOf(app.notFound(handler)).toEqualTypeOf<typeof app>()
   })
 })
 

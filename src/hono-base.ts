@@ -150,10 +150,12 @@ class Hono<
   onError: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
 
   /**
-   * `.onNotFound()` adds middleware that runs when a not-found response is requested.
+   * `.notFound()` adds middleware that runs when a not-found response is requested.
    * It uses the same path scoping and ordering as `.onError()`, including for `c.notFound()`.
-   * If every matching middleware calls `next()`, the request is passed to `.notFound()`.
+   * If every matching middleware calls `next()`, the built-in not-found handler returns the response.
    * Request parameters come from the original route, not this scope, and may be absent.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
    * @param {string} [path] - path to scope the not-found middleware
    * @param {...MiddlewareHandler[]} handlers - middleware to run when handling not found
@@ -161,13 +163,13 @@ class Hono<
    *
    * @example
    * ```ts
-   * app.onNotFound('/api/*', async (c, next) => {
+   * app.notFound('/api/*', async (c, next) => {
    *   c.header('x-not-found', 'true')
    *   await next()
    * })
    * ```
    */
-  onNotFound: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
+  notFound: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
 
   /*
     This class is like an abstract class and does not have a router.
@@ -227,7 +229,7 @@ class Hono<
 
     this.onError = (...handlers: (string | H)[]) =>
       this.#addRoutes(METHOD_NAME_ERROR, handlers) as any
-    this.onNotFound = (...handlers: (string | H)[]) =>
+    this.notFound = (...handlers: (string | H)[]) =>
       this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers) as any
 
     const { strict, ...optionsWithoutStrict } = options
@@ -240,12 +242,9 @@ class Hono<
       router: this.router,
       getPath: this.getPath,
     })
-    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
-
-  #notFoundHandler: NotFoundHandler = notFoundHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -301,26 +300,6 @@ class Hono<
     return subApp
   }
 
-  /**
-   * `.notFound()` allows you to customize a Not Found Response.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#not-found}
-   *
-   * @param {NotFoundHandler} handler - request handler for not-found
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * app.notFound((c) => {
-   *   return c.text('Custom 404 Message', 404)
-   * })
-   * ```
-   */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
-    this.#notFoundHandler = handler
-    return this
-  }
-
   #addRoute(method: string, path: string, handler: H, baseRoute?: RouterRoute): void {
     path = mergePath(this._basePath, path)
     const r: RouterRoute = {
@@ -346,7 +325,7 @@ class Hono<
       ([[, route]]) => route.method === method
     ) as (typeof matchResult)[0]
     const fallback: NotFoundHandler<E> =
-      method === METHOD_NAME_ERROR ? errorFallback : this.#notFoundHandler
+      method === METHOD_NAME_ERROR ? errorFallback : notFoundHandler
     if (!handlers.length) {
       return fallback(c)
     }

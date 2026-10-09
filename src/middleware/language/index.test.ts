@@ -7,7 +7,7 @@ describe('languageDetector', () => {
     const detector = languageDetector({ supportedLanguages: ['en', 'ja'] })
     const app = new Hono()
       .onError(detector, (c) => c.text(`${c.get('language')}: ${c.error!.message}`, 500))
-      .onNotFound(detector, (c) => c.text(`${c.get('language')}: Not Found`, 404))
+      .notFound(detector, (c) => c.text(`${c.get('language')}: Not Found`, 404))
       .get('/error', () => {
         throw new Error('failed')
       })

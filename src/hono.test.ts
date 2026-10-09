@@ -2623,17 +2623,17 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('404 Not Found by app')
     })
 
-    it('/sub/explicit-404 should be handled on app as an implicit 404', async () => {
+    it('/sub/explicit-404 should be handled by sub as an implicit 404', async () => {
       const res = await app.request('https://example.com/sub/explicit-404')
       expect(res.status).toBe(404)
       expect(res.headers.get('explicit')).toBe('1')
-      expect(await res.text()).toBe('404 Not Found by app')
+      expect(await res.text()).toBe('404 Not Found by sub')
     })
 
-    it('c.notFound() should use the first matching internal route', async () => {
+    it('c.notFound() should prefer the matching sub-app scope over the original route owner', async () => {
       const res = await app.request('https://example.com/sub/not-found-from-app')
       expect(res.status).toBe(404)
-      expect(await res.text()).toBe('404 Not Found by app')
+      expect(await res.text()).toBe('404 Not Found by sub')
     })
 
     it('/implicit-404 should be handled by app', async () => {
@@ -2643,11 +2643,11 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('404 Not Found by app')
     })
 
-    it('/sub/implicit-404 should be handled by app', async () => {
+    it('/sub/implicit-404 should be handled by sub', async () => {
       const res = await app.request('https://example.com/sub/implicit-404')
       expect(res.status).toBe(404)
       expect(res.headers.get('explicit')).toBe(null)
-      expect(await res.text()).toBe('404 Not Found by app')
+      expect(await res.text()).toBe('404 Not Found by sub')
     })
 
     it('Should preserve route metadata and resume upstream middleware for c.notFound()', async () => {
@@ -2663,7 +2663,7 @@ describe('Hono with `app.route`', () => {
         }
       })
       sub.get('/posts/:id', (c) => c.notFound())
-      sub.onNotFound(async (c) => c.text(`sub: ${c.req.param('id')}`, 404))
+      sub.notFound(async (c) => c.text(`sub: ${c.req.param('id')}`, 404))
       app.route('/sub', sub)
 
       const res = await app.request('/sub/posts/123')
@@ -2716,7 +2716,7 @@ describe('Hono with `app.route`', () => {
     })
   })
 
-  describe('onNotFound', () => {
+  describe('notFound middleware', () => {
     it.each(['/missing', '/explicit'])(
       'Should preserve explicit not-found response headers for %s',
       async (path) => {
@@ -2728,7 +2728,7 @@ describe('Hono with `app.route`', () => {
           await next()
         })
         app.get('/explicit', (c) => c.notFound())
-        app.onNotFound(async (c, next) => {
+        app.notFound(async (c, next) => {
           await next()
           c.header('x-not-found', 'handled')
         })
@@ -2752,7 +2752,7 @@ describe('Hono with `app.route`', () => {
     it('Should allow header edits after adopting an immutable not-found response', async () => {
       const app = new Hono()
       const redirect = Response.redirect('http://localhost/redirect')
-      app.onNotFound(() => redirect)
+      app.notFound(() => redirect)
       app.get('/', async (c) => {
         const res = await c.notFound()
         expect(c.finalized).toBe(false)
@@ -2773,7 +2773,7 @@ describe('Hono with `app.route`', () => {
       async (withMiddleware) => {
         const app = createApp(withMiddleware)
         const response = Response.error()
-        app.onNotFound(() => response)
+        app.notFound(() => response)
         app.get('/explicit', (c) => c.notFound())
 
         expect(await app.request('/missing')).toBe(response)
@@ -2785,7 +2785,7 @@ describe('Hono with `app.route`', () => {
       'Should preserve wrapper headers around c.notFound() with upstream middleware: %s',
       async (withMiddleware) => {
         const app = createApp(withMiddleware)
-        app.onNotFound((c) =>
+        app.notFound((c) =>
           c.text('Missing', 404, { 'Cache-Control': 'public', 'Set-Cookie': 'session=old' })
         )
         app.get('/', async (c) => {
@@ -2806,7 +2806,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should not retain a discarded not-found response in the context', async () => {
       const app = new Hono()
-      app.onNotFound((c) => c.text('Missing', 404, { 'x-not-found': 'discarded' }))
+      app.notFound((c) => c.text('Missing', 404, { 'x-not-found': 'discarded' }))
       app.get('/', async (c) => {
         await c.notFound()
         expect(c.finalized).toBe(false)
@@ -2823,7 +2823,7 @@ describe('Hono with `app.route`', () => {
       'Should allow wrapping c.notFound() with upstream middleware: %s',
       async (withMiddleware) => {
         const app = createApp(withMiddleware)
-        app.onNotFound(async (c, next) => {
+        app.notFound(async (c, next) => {
           await next()
           expect(c.finalized).toBe(true)
           c.header('x-not-found', 'handled')
@@ -2843,7 +2843,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should preserve an already finalized context after c.notFound()', async () => {
       const app = new Hono()
-      app.onNotFound(async (_c, next) => {
+      app.notFound(async (_c, next) => {
         await next()
       })
       app.get('/', async (c) => {
@@ -2861,7 +2861,7 @@ describe('Hono with `app.route`', () => {
     it('Should allow not-found middleware to edit an existing immutable response', async () => {
       const app = new Hono()
       const redirect = Response.redirect('http://localhost/redirect')
-      app.onNotFound(async (c, next) => {
+      app.notFound(async (c, next) => {
         c.header('location', undefined)
         c.header('x-not-found', 'handled')
         await next()
@@ -2883,7 +2883,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should preserve an unfinalized response after c.notFound()', async () => {
       const app = new Hono()
-      app.onNotFound((c) => {
+      app.notFound((c) => {
         c.header('x-not-found', 'temporary')
         return c.text('Missing', 404)
       })
@@ -2907,7 +2907,7 @@ describe('Hono with `app.route`', () => {
       app.use(async (_c, next) => {
         await next()
       })
-      app.onNotFound(async (c, next) => {
+      app.notFound(async (c, next) => {
         await next()
         c.header('x-not-found', 'discarded')
         throw 'Not-found failure'
@@ -2927,7 +2927,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should restore an existing response when not-found middleware rejects while handling an error', async () => {
       const app = new Hono()
-      app.onNotFound(async (c, next) => {
+      app.notFound(async (c, next) => {
         c.header('x-not-found', 'discarded')
         await next()
         throw 'Not-found failure'
@@ -2952,7 +2952,7 @@ describe('Hono with `app.route`', () => {
       'Should handle non-Error throws from not-found middleware with upstream middleware: %s',
       async (withMiddleware) => {
         const app = createApp(withMiddleware)
-        app.onNotFound(async (_c, next) => {
+        app.notFound(async (_c, next) => {
           await next()
           throw 'Not-found failure'
         })
@@ -2979,7 +2979,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should allow error middleware to wrap c.notFound()', async () => {
       const app = new Hono()
-      app.onNotFound(async (_c, next) => {
+      app.notFound(async (_c, next) => {
         await next()
       })
       app.onError(async (c) => {
@@ -3013,7 +3013,7 @@ describe('Hono with `app.route`', () => {
             return c.text('Intercepted', 503)
           }
         })
-        app.onNotFound(
+        app.notFound(
           async (c, next) => {
             await next()
             calls.push('not-found')
@@ -3048,7 +3048,7 @@ describe('Hono with `app.route`', () => {
         throw error
       })
       const onError = vi.fn((c: Context) => c.notFound())
-      app.onNotFound(notFound)
+      app.notFound(notFound)
       app.onError(onError)
 
       const res = await app.request('/missing')
@@ -3060,7 +3060,7 @@ describe('Hono with `app.route`', () => {
 
     it('Should compose middleware with synchronous handlers for implicit and explicit not found', async () => {
       const app = new Hono()
-      app.onNotFound(
+      app.notFound(
         '/items/*',
         async (c, next) => {
           await next()
@@ -3068,7 +3068,7 @@ describe('Hono with `app.route`', () => {
         },
         (c) => c.text('Items Not Found', 404)
       )
-      app.onNotFound((c) => c.text('Fallback Not Found', 404))
+      app.notFound((c) => c.text('Fallback Not Found', 404))
       app.get('/items/explicit', (c) => c.notFound())
 
       for (const path of ['/items/missing', '/items/explicit']) {
@@ -3084,8 +3084,8 @@ describe('Hono with `app.route`', () => {
       const app = new Hono()
       const sub = new Hono()
 
-      app.onNotFound(async (c) => c.text('App Not Found', 404))
-      sub.onNotFound(async (c) => c.text('Sub Not Found', 404))
+      app.notFound(async (c) => c.text('App Not Found', 404))
+      sub.notFound(async (c) => c.text('Sub Not Found', 404))
       app.route('/', sub)
 
       const res = await app.request('/missing')
@@ -3095,7 +3095,7 @@ describe('Hono with `app.route`', () => {
     it('Should scope not-found middleware by path', async () => {
       const app = new Hono()
 
-      app.onNotFound('/items/*', async (c) => c.text('Items Not Found', 404))
+      app.notFound('/items/*', async (c) => c.text('Items Not Found', 404))
       app.notFound((c) => c.text('App Not Found', 404))
 
       let res = await app.request('/items/missing')
@@ -3105,17 +3105,17 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('App Not Found')
     })
 
-    it('Should compose multiple registrations before the legacy not-found handler', async () => {
+    it('Should compose middleware and a final handler across multiple registrations', async () => {
       const app = new Hono()
       const calls: string[] = []
 
-      app.onNotFound(async (c, next) => {
+      app.notFound(async (c, next) => {
         calls.push(`before:${c.req.param('id')}`)
         await next()
         calls.push(`after:${c.req.param('id')}`)
         c.res.headers.set('x-not-found-middleware', 'true')
       })
-      app.onNotFound(async (_c, next) => {
+      app.notFound(async (_c, next) => {
         calls.push('second')
         await next()
       })
@@ -3136,7 +3136,7 @@ describe('Hono with `app.route`', () => {
     it('Should allow middleware to return a response', async () => {
       const app = new Hono()
 
-      app.onNotFound(async (c) => c.text('Middleware Not Found', 404))
+      app.notFound(async (c) => c.text('Middleware Not Found', 404))
       app.notFound((c) => c.text('Handler Not Found', 404))
 
       const res = await app.request('https://example.com/missing')
@@ -3147,14 +3147,14 @@ describe('Hono with `app.route`', () => {
     it('Should pass errors thrown by middleware to the error middleware', async () => {
       const app = new Hono()
 
-      app.onNotFound(async () => {
-        throw new Error('Error in onNotFound')
+      app.notFound(async () => {
+        throw new Error('Error in notFound')
       })
       app.onError(async (c) => c.text(c.error!.message, 500))
 
       const res = await app.request('/missing')
       expect(res.status).toBe(500)
-      expect(await res.text()).toBe('Error in onNotFound')
+      expect(await res.text()).toBe('Error in notFound')
     })
 
     it('Should compose path-matched fallback routes in registration order', async () => {
@@ -3162,8 +3162,8 @@ describe('Hono with `app.route`', () => {
       const api = app.basePath('/api')
       const tenant = app.basePath('/:tenant')
 
-      api.onNotFound(async (c) => c.text('API Not Found', 404))
-      tenant.onNotFound(async (c) => c.text('Tenant Not Found', 404))
+      api.notFound(async (c) => c.text('API Not Found', 404))
+      tenant.notFound(async (c) => c.text('Tenant Not Found', 404))
       app.notFound((c) => c.text('App Not Found', 404))
       api.get('/missing', (c) => c.notFound())
       tenant.get('/missing', (c) => c.notFound())
@@ -3186,8 +3186,8 @@ describe('Hono with `app.route`', () => {
 
       const rootFirst = new Hono()
       const rootFirstApi = rootFirst.basePath('/api')
-      rootFirst.onNotFound(async (c) => c.text('App Not Found', 404))
-      rootFirstApi.onNotFound(async (c) => c.text('API Not Found', 404))
+      rootFirst.notFound(async (c) => c.text('App Not Found', 404))
+      rootFirstApi.notFound(async (c) => c.text('API Not Found', 404))
       rootFirstApi.get('/missing', (c) => c.notFound())
 
       res = await rootFirst.request('https://example.com/api/missing')
@@ -3196,8 +3196,8 @@ describe('Hono with `app.route`', () => {
       const nested = new Hono()
       const parent = nested.basePath('/parent')
       const child = parent.basePath('/child')
-      parent.onNotFound(async (c) => c.text('Parent Not Found', 404))
-      nested.onNotFound(async (c) => c.text('Root Not Found', 404))
+      parent.notFound(async (c) => c.text('Parent Not Found', 404))
+      nested.notFound(async (c) => c.text('Root Not Found', 404))
       child.get('/missing', (c) => c.notFound())
 
       res = await nested.request('https://example.com/parent/child/missing')
@@ -3209,7 +3209,7 @@ describe('Hono with `app.route`', () => {
 
       app
         .get('/a', async (_c, next) => next())
-        .onNotFound(async (_c, next) => next())
+        .notFound(async (_c, next) => next())
         .onError(async (_c, next) => next())
         .get((c) => c.text('A'))
 
@@ -3217,13 +3217,13 @@ describe('Hono with `app.route`', () => {
       expect((await app.request('/b')).status).toBe(404)
     })
 
-    it('Should use the last legacy not-found handler', async () => {
+    it('Should stop at the first not-found handler that returns a response', async () => {
       const app = new Hono()
 
       app.notFound((c) => c.text('First', 404))
       app.notFound((c) => c.text('Second', 404))
 
-      expect(await (await app.request('/missing')).text()).toBe('Second')
+      expect(await (await app.request('/missing')).text()).toBe('First')
     })
   })
 
@@ -3234,7 +3234,7 @@ describe('Hono with `app.route`', () => {
   ] as const)('Fallback scope parameters with %s', (_name, Router) => {
     it('Should allow absent scope parameters for implicit not found', async () => {
       const app = new Hono({ router: new Router() })
-      app.onNotFound('/:tenant/*', (c) =>
+      app.notFound('/:tenant/*', (c) =>
         c.text(c.req.param('tenant')?.toUpperCase() ?? 'Unknown tenant', 404)
       )
 
@@ -3243,7 +3243,7 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('Unknown tenant')
     })
 
-    it.each(['onError', 'onNotFound'] as const)(
+    it.each(['onError', 'notFound'] as const)(
       'Should preserve original route parameters in %s',
       async (method) => {
         const app = new Hono({ router: new Router() })
@@ -3286,7 +3286,7 @@ describe('Hono with `app.route`', () => {
     }
     const app = new Hono({ router })
 
-    app.onNotFound(
+    app.notFound(
       async (_c, next) => {
         await next()
       },

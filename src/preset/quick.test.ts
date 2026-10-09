@@ -16,7 +16,7 @@ describe('hono/quick preset', () => {
     })
     sub.get('/explicit', (c) => c.notFound())
     sub.onError((c) => c.text(`Caught: ${c.req.param('tenant')}`, 500))
-    sub.onNotFound((c) => c.text('Tenant not found', 404))
+    sub.notFound((c) => c.text('Tenant not found', 404))
     app.route('/:tenant', sub)
 
     const ok = await app.request('/acme/ok')
@@ -54,7 +54,7 @@ describe('hono/quick preset', () => {
     })
     app.get('/abc/explicit', (c) => c.notFound())
     app.onError('/:id{.*}/*', (c) => c.text(`Caught: ${c.error!.message}`, 500))
-    app.onNotFound('/:id{.*}/*', (c) => c.text('Not found', 404))
+    app.notFound('/:id{.*}/*', (c) => c.text('Not found', 404))
 
     expect(await (await app.request('/ok')).text()).toBe('OK')
     expect(getRouterName(app)).toBe('SmartRouter + TrieRouter')
@@ -86,7 +86,7 @@ describe('hono/quick preset', () => {
     })
     app.get('/123/explicit', (c) => c.notFound())
     sub.onError((c) => c.text(`Caught: ${c.error!.message}`, 500))
-    sub.onNotFound((c) => c.text('Scoped not found', 404))
+    sub.notFound((c) => c.text('Scoped not found', 404))
     app.route('/:id{[0-9]+$}', sub)
 
     const error = await app.request('/123/error')
