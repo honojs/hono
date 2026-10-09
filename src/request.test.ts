@@ -671,7 +671,7 @@ describe('cloneRawRequest', () => {
       })
     )
     await req.raw.json()
-    req.bodyCache.blob = Promise.resolve(new Blob(['{"foo":"bar"}']))
+    req.bodyCache.blob = new Blob(['{"foo":"bar"}'])
 
     await expect(cloneRawRequest(req)).rejects.toThrow(HTTPException)
   })
