@@ -214,9 +214,16 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return parseBody(this, options)
   }
 
-  #cachedBody = (key: keyof Body) => {
+  #cachedBody = <K extends Exclude<keyof Body, 'json'>>(key: K): Promise<Body[K]> => {
     const { bodyCache, raw } = this
-    if (key === 'json' || key === 'text') {
+    const cached = bodyCache[key]
+    if (cached) {
+      return cached as unknown as Promise<Body[K]>
+    }
+    // Read before consuming the body: Bun generates the multipart boundary lazily,
+    // and a header read afterwards would not match the serialized bytes
+    const contentType = raw.headers.get('content-type')
+    if (key === 'text') {
       const text = (bodyCache.text ??= (
         bodyCache.arrayBuffer
           ? (bodyCache.arrayBuffer as unknown as Promise<ArrayBuffer>).then((buffer) =>
@@ -224,7 +231,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
             )
           : raw.text()
       ) as never) as unknown as Promise<string>
-      return key === 'text' ? text : (bodyCache.json ??= text.then((text) => JSON.parse(text)))
+      return text as Promise<Body[K]>
     }
     const bytes = (bodyCache.arrayBuffer ??= (
       bodyCache.text
@@ -234,14 +241,14 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         : raw.arrayBuffer()
     ) as never) as unknown as Promise<ArrayBuffer>
     if (key === 'arrayBuffer') {
-      return bytes
+      return bytes as Promise<Body[K]>
     }
     return (bodyCache[key] ??= bytes.then(
       (buffer) =>
         new Response(buffer, {
-          headers: { 'Content-Type': raw.headers.get('content-type') ?? '' },
+          headers: contentType ? { 'Content-Type': contentType } : undefined,
         })[key]() as never
-    ) as never)
+    ) as never) as unknown as Promise<Body[K]>
   }
 
   /**
@@ -257,7 +264,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   json<T = any>(): Promise<T> {
-    return this.#cachedBody('json')
+    return this.#cachedBody('text').then((text) => JSON.parse(text))
   }
 
   /**
@@ -440,11 +447,10 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     })
   }
 
-  const rebuiltFromText = !req.bodyCache.arrayBuffer
-  const body: BodyInit = await req.arrayBuffer()
+  const body = await req.arrayBuffer()
   const headers = req.header()
-  if (rebuiltFromText) {
-    // Re-encoded text may differ in length from the original bytes (e.g. a BOM)
+  if (Number(headers['content-length']) !== body.byteLength) {
+    // Re-encoded text may differ in length from the original bytes (e.g. a BOM or invalid UTF-8)
     delete headers['content-length']
   }
 

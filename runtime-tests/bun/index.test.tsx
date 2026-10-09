@@ -266,3 +266,17 @@ describe('Buffers', () => {
     expect(await res.text()).toBe('hello')
   })
 })
+
+describe('formData()', () => {
+  const app = new Hono().post('/', async (c) => {
+    return c.text(String((await c.req.formData()).get('name')))
+  })
+
+  it('Should parse a FormData body passed to app.request()', async () => {
+    const body = new FormData()
+    body.append('name', 'Bun')
+    const res = await app.request('/', { method: 'POST', body })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Bun')
+  })
+})
