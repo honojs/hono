@@ -56,12 +56,12 @@ const body = await c.req.json<{ name: string }>()
 
 A `*` at the end of a segment is a wildcard in every router, and it may match nothing. A `*` in the middle of a segment, such as `/x*y`, is not a wildcard. A segment that is only `*` matches one non-empty segment.
 
-| Route | Path | v5 |
-| --- | --- | --- |
-| `/x*/y` | `/x/y` | Match |
-| `/x*/y` | `/xz/y` | Match |
-| `/x*/y` | `/x/z/y` | No match |
-| `/x*y` | `/xay` | No match |
+| Route          | Path          | v5       |
+| -------------- | ------------- | -------- |
+| `/x*/y`        | `/x/y`        | Match    |
+| `/x*/y`        | `/xz/y`       | Match    |
+| `/x*/y`        | `/x/z/y`      | No match |
+| `/x*y`         | `/xay`        | No match |
 | `/wild/*/card` | `/wild//card` | No match |
 
 TrieRouter and PatternRouter did not match `/x*/y` to `/xz/y` before. In RegExpRouter, `/x*/y` and `/x/*` can not be registered together and throw `UnsupportedPathError`, so SmartRouter falls back to TrieRouter.
