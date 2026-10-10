@@ -38,7 +38,15 @@ jobs:
       - run: npm install -g npm@11.17.0
       - run: pnpm run build
       - name: Publish to npm
-        run: npm stage publish --provenance --access public
+        run: |
+          # A release candidate (e.g. v5.0.0-rc.0) goes to the `next` dist-tag.
+          # Any other prerelease is not published.
+          case "$GITHUB_REF_NAME" in
+            v*-rc.*) tag=next ;;
+            v*-*) echo "Unexpected prerelease tag: $GITHUB_REF_NAME" >&2; exit 1 ;;
+            *) tag=latest ;;
+          esac
+          npm stage publish --provenance --access public --tag "$tag"
 
   jsr:
     name: publish-to-jsr

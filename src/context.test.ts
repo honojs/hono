@@ -1,3 +1,5 @@
+import { expectTypeOf } from 'vitest'
+import type { CloudflareAccessContext, CloudflareAccessIdentity, ExecutionContext } from './context'
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
 
@@ -36,6 +38,16 @@ const makeResponseHeaderImmutable = (res: Response) => {
   })
   return res
 }
+
+describe('ExecutionContext', () => {
+  it('types Cloudflare Access authentication information', () => {
+    expectTypeOf<ExecutionContext['access']>().toEqualTypeOf<CloudflareAccessContext | undefined>()
+    expectTypeOf<Awaited<ReturnType<CloudflareAccessContext['getIdentity']>>>().toEqualTypeOf<
+      CloudflareAccessIdentity | undefined
+    >()
+    expectTypeOf<CloudflareAccessIdentity['email']>().toEqualTypeOf<string | undefined>()
+  })
+})
 
 describe('Context', () => {
   const req = new Request('http://localhost/')
