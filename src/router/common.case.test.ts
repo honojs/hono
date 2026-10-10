@@ -11,6 +11,8 @@ const getSuiteHierarchy = (suite?: RunnerTestSuite) => {
   return res
 }
 
+const lineTerminators = ['\n', '\r', '\u2028', '\u2029']
+
 export const runTest = ({
   skip = [],
   newRouter,
@@ -237,6 +239,11 @@ export const runTest = ({
         expect(res.length).toBe(0)
       })
 
+      it.each(lineTerminators)('Regexp dot does not match %j', (char) => {
+        router.add('GET', '/:id{.+}', 'pattern')
+        expect(match('GET', `/a${char}b`)).toEqual([])
+      })
+
       it('Parameter with {.*} regexp', () => {
         router.add('GET', '/files/:name{.*}', 'file')
         let res = match('GET', '/files')
@@ -454,6 +461,10 @@ export const runTest = ({
         expect(res[2].handler).toEqual('/x')
         expect(res[3].handler).toEqual('/x/*')
       })
+
+      it.each(lineTerminators)('Matches a line terminator %j', (char) => {
+        expect(match('GET', `/a${char}b`).map(({ handler }) => handler)).toEqual(['/*', '*'])
+      })
     })
 
     describe('Suffix wildcard', () => {
@@ -515,6 +526,10 @@ export const runTest = ({
       it('GET /pathfoo', async () => {
         const res = match('GET', '/pathfoo')
         expect(res.length).toBe(0)
+      })
+
+      it.each(lineTerminators)('Matches a line terminator %j', (char) => {
+        expect(match('GET', `/path/a${char}b`)).toEqual([{ handler: 'path', params: {} }])
       })
     })
 
@@ -955,6 +970,16 @@ export const runTest = ({
         expect(res[0].params).toEqual({})
         expect(res[1].handler).toEqual('get () name')
         expect(res[1].params['name']).toEqual('hono')
+      })
+
+      it.each(lineTerminators)('line terminator %j', (char) => {
+        router.add('ALL', `/a${char}b/*`, 'middleware')
+        router.add('GET', `/a${char}b/:name`, 'get name')
+        expect(match('GET', `/a${char}b/hono`)).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'get name', params: { name: 'hono' } },
+        ])
+        expect(match('GET', '/ab/hono')).toEqual([])
       })
     })
 
