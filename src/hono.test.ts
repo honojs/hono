@@ -419,6 +419,35 @@ describe('Destruct functions in context', () => {
   })
 })
 
+describe('Wildcard parameter', () => {
+  describe.each(['SmartRouter', 'RegExpRouter', 'TrieRouter'])('%s', (name) => {
+    const app =
+      name === 'RegExpRouter'
+        ? new Hono({ router: new RegExpRouter() })
+        : name === 'TrieRouter'
+          ? new Hono({ router: new TrieRouter() })
+          : new Hono()
+    app.get('/files/*', (c) => c.json(c.req.param()))
+    app.get('/users/:id/*', (c) => c.json({ id: c.req.param('id'), rest: c.req.param('*') }))
+    const sub = new Hono()
+    sub.get('/*', (c) => c.json({ rest: c.req.param('*') }))
+    app.route('/sub', sub)
+
+    it('Should capture the rest of the path', async () => {
+      expect(await (await app.request('/files/a/b.txt')).json()).toEqual({ '*': 'a/b.txt' })
+      expect(await (await app.request('/files')).json()).toEqual({ '*': '' })
+      expect(await (await app.request('/users/123/posts/456')).json()).toEqual({
+        id: '123',
+        rest: 'posts/456',
+      })
+    })
+
+    it('Should capture after the base path of a sub app', async () => {
+      expect(await (await app.request('/sub/x/y')).json()).toEqual({ rest: 'x/y' })
+    })
+  })
+})
+
 describe('Routing', () => {
   it('Return it self', async () => {
     const app = new Hono()
