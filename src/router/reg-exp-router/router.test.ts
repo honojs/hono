@@ -1,6 +1,7 @@
 import type { ParamIndexMap, ParamStash } from '../../router'
 import { UnsupportedPathError } from '../../router'
 import { runTest } from '../common.case.test'
+import { ONLY_WILDCARD_REG_EXP_STR, TAIL_WILDCARD_REG_EXP_STR } from './node'
 import { RegExpRouter } from './router'
 
 describe('RegExpRouter', () => {
@@ -176,15 +177,21 @@ describe('RegExpRouter', () => {
     })
 
     describe('Pattern that matches an empty string', () => {
-      it.each(['/api/:id{[0-9]?}', '/user/:id{[0-9]*}', '/:id{(?:a|)}', '/:id{a{0,3}}'])(
-        '%s',
-        (path) => {
-          const router = new RegExpRouter<string>()
-          expect(() => {
-            router.add('GET', path, 'ok')
-          }).toThrowError(UnsupportedPathError)
-        }
-      )
+      it.each([
+        '/api/:id{[0-9]?}',
+        '/user/:id{[0-9]*}',
+        '/:id{(?:a|)}',
+        '/:id{a{0,3}}',
+        `/:id{${ONLY_WILDCARD_REG_EXP_STR}}`,
+        `/:id{(?:${ONLY_WILDCARD_REG_EXP_STR})}`,
+        `/:id{${TAIL_WILDCARD_REG_EXP_STR}}`,
+        `/:id{(?:${TAIL_WILDCARD_REG_EXP_STR})}`,
+      ])('%s', (path) => {
+        const router = new RegExpRouter<string>()
+        expect(() => {
+          router.add('GET', path, 'ok')
+        }).toThrowError(UnsupportedPathError)
+      })
 
       it('Should still accept a pattern that requires at least one character', () => {
         const router = new RegExpRouter<string>()
@@ -197,6 +204,20 @@ describe('RegExpRouter', () => {
         expect(router.match('GET', '/api/')[0].length).toBe(0)
       })
     })
+  })
+
+  it.each([
+    ['[^]+', 'a\nb'],
+    ['(?:/[^]+)', '/a\nb'],
+  ])('Should extract parameters when the pattern is %s', (pattern, value) => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', `/:value{${pattern}}/foo/:id`, 'handler')
+
+    const [res, stash] = router.match('GET', `/${value}/foo/end`)
+    const params = res[0][1] as ParamIndexMap
+    expect(res[0][0]).toBe('handler')
+    expect((stash as ParamStash)[params.value]).toBe(value)
+    expect((stash as ParamStash)[params.id]).toBe('end')
   })
 
   describe('Wildcard after label', () => {
