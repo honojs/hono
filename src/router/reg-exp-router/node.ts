@@ -2,8 +2,8 @@ import { createNullObject } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
 // Match line terminators without changing the flags of user-defined parameter patterns.
-export const ONLY_WILDCARD_REG_EXP_STR = '[\\s\\S]*'
-export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[\\s\\S]*)'
+export const ONLY_WILDCARD_REG_EXP_STR = '[^]*'
+export const TAIL_WILDCARD_REG_EXP_STR = '(?:/[^]*)?'
 export const PATH_ERROR = Symbol()
 
 export type ParamAssocArray = [string, number][]
@@ -90,20 +90,20 @@ export class Node {
             // a single-char pattern like :x{.} is ambiguous with a literal character
             throw PATH_ERROR
           }
+          // Wrap every custom pattern to keep it distinct from other patterns and wildcards,
+          // whose expressions do not end with ')'. Non-capturing groups preserve capture indexes.
+          if (regexpStr.length > 1 && regexpStr !== LABEL_REG_EXP_STR) {
+            regexpStr = `(?:${regexpStr})`
+          }
         }
 
-        // Namespace custom patterns without rewriting them or merging them with wildcards.
-        const key =
-          name && regexpStr.length > 1 && regexpStr !== LABEL_REG_EXP_STR
-            ? `:${regexpStr}`
-            : regexpStr
-        nextNode = node.#children[key]
+        nextNode = node.#children[regexpStr]
         if (!nextNode) {
-          if (key !== ONLY_WILDCARD_REG_EXP_STR && key !== TAIL_WILDCARD_REG_EXP_STR) {
+          if (regexpStr !== ONLY_WILDCARD_REG_EXP_STR && regexpStr !== TAIL_WILDCARD_REG_EXP_STR) {
             for (const k in node.#children) {
               if (
                 // a single-char pattern coexists with single-char literals as a literal does
-                (key.length > 1 || k.length > 1) &&
+                (regexpStr.length > 1 || k.length > 1) &&
                 k !== ONLY_WILDCARD_REG_EXP_STR &&
                 k !== TAIL_WILDCARD_REG_EXP_STR
               ) {
@@ -111,7 +111,7 @@ export class Node {
               }
             }
           }
-          nextNode = node.#children[key] = new Node()
+          nextNode = node.#children[regexpStr] = new Node()
         }
         if (name !== '') {
           nextNode.#varIndex ??= context.varIndex++
@@ -153,7 +153,7 @@ export class Node {
         return childStr === ''
           ? ''
           : (typeof c.#varIndex === 'number'
-              ? `(${k.length > 1 && k[0] === ':' ? k.slice(1) : k})@${c.#varIndex}`
+              ? `(${k})@${c.#varIndex}`
               : regExpMetaChars.has(k)
                 ? `\\${k}`
                 : k) + childStr

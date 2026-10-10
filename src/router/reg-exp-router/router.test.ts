@@ -158,6 +158,20 @@ describe('RegExpRouter', () => {
     })
   })
 
+  it.each([
+    [ONLY_WILDCARD_REG_EXP_STR, 'a\nb'],
+    [TAIL_WILDCARD_REG_EXP_STR, '/a\nb'],
+  ])('Should extract parameters when the pattern is %s', (pattern, value) => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', `/:value{${pattern}}/foo/:id`, 'handler')
+
+    const [res, stash] = router.match('GET', `/${value}/foo/end`)
+    const params = res[0][1] as ParamIndexMap
+    expect(res[0][0]).toBe('handler')
+    expect((stash as ParamStash)[params.value]).toBe(value)
+    expect((stash as ParamStash)[params.id]).toBe('end')
+  })
+
   describe('Wildcard after label', () => {
     it('Should be able to add a tail wildcard after a label', () => {
       const router = new RegExpRouter<string>()
