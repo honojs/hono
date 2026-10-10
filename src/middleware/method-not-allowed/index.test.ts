@@ -92,7 +92,7 @@ describe('Method Not Allowed Middleware', () => {
 
   it('preserves a 404 returned by the error handler', async () => {
     const app = new Hono()
-    app.onError((_error, c) => c.text('Handled error', 404))
+    app.onError((c) => c.text('Handled error', 404))
     app.use(methodNotAllowed({ app }))
     app.use('/resource', () => {
       throw new Error('boom')
@@ -195,6 +195,19 @@ describe('Method Not Allowed Middleware', () => {
 
     expect(res.status).toBe(404)
     expect(res.headers.has('Allow')).toBe(false)
+  })
+
+  it('ignores internal routes when collecting allowed methods', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/resource', (c) => c.text('GET'))
+    app.notFound(async (_c, next) => next())
+    app.onError(async (_c, next) => next())
+
+    const res = await app.request('/resource', { method: 'POST' })
+
+    expect(res.status).toBe(405)
+    expect(res.headers.get('Allow')).toBe('GET, HEAD')
   })
 
   it('does not invoke the error handler for a 405 response', async () => {

@@ -1,3 +1,4 @@
+import { GET_RESPONSE } from './context/constants'
 import { HonoRequest } from './request'
 import type { Result } from './router'
 import type {
@@ -471,6 +472,11 @@ export class Context<
     }
     this.#res = _res
     this.finalized = true
+  }
+
+  /** @internal Returns the existing response without creating one. */
+  get [GET_RESPONSE](): Response | undefined {
+    return this.#res
   }
 
   /**

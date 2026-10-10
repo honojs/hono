@@ -13,6 +13,14 @@ export class LinearRouter<T> implements Router<T> {
   #routes: [string, string, T][] = []
 
   add(method: string, path: string, handler: T) {
+    const starIndex = path.indexOf('*')
+    if (
+      starIndex !== -1 &&
+      path.includes(':') &&
+      (!path.endsWith('/*') || starIndex !== path.length - 1)
+    ) {
+      throw new UnsupportedPathError()
+    }
     for (
       let i = 0, paths = checkOptionalParameter(path) || [path], len = paths.length;
       i < len;
@@ -73,9 +81,11 @@ export class LinearRouter<T> implements Router<T> {
             }
           }
           handlers.push([handler, emptyParams])
-        } else if (hasLabel && !hasStar) {
+        } else {
           const params: Record<string, string> = Object.create(null)
-          const parts = routePath.match(splitPathRe) as string[]
+          const parts = (hasStar ? routePath.slice(0, -2) : routePath).match(
+            splitPathRe
+          ) as string[]
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -97,10 +107,23 @@ export class LinearRouter<T> implements Router<T> {
                 // :label{pattern}
                 const openBracePos = name.indexOf('{')
                 const next = parts[j + 1]
-                const lookahead = next && next[1] !== ':' && next[1] !== '*' ? `(?=${next})` : ''
-                const pattern = name.slice(openBracePos + 1, -1) + lookahead
+                const lookahead =
+                  next && next[1] !== ':' && next[1] !== '*'
+                    ? `(?=${next})`
+                    : hasStar
+                      ? '(?=/|$)'
+                      : ''
+                const pattern = `(?:${name.slice(openBracePos + 1, -1)})${lookahead}`
                 const restPath = path.slice(pos + 1)
-                const match = new RegExp(pattern, 'd').exec(restPath) as RegExpMatchArrayWithIndices
+                const regexp = new RegExp(pattern, 'd')
+                let match = regexp.exec(restPath) as RegExpMatchArrayWithIndices
+                if (hasStar && match?.index !== 0) {
+                  // Allow end assertions to match the current segment before the wildcard.
+                  const slashPos = restPath.indexOf('/')
+                  if (slashPos !== -1) {
+                    match = regexp.exec(restPath.slice(0, slashPos)) as RegExpMatchArrayWithIndices
+                  }
+                }
                 if (!match || match.indices[0][0] !== 0 || match.indices[0][1] === 0) {
                   continue ROUTES_LOOP
                 }
@@ -129,14 +152,16 @@ export class LinearRouter<T> implements Router<T> {
               pos += part.length
             }
 
-            if (j === lastIndex && pos !== path.length) {
+            if (
+              j === lastIndex &&
+              pos !== path.length &&
+              !(hasStar && path.charCodeAt(pos) === 47)
+            ) {
               continue ROUTES_LOOP
             }
           }
 
           handlers.push([handler, params])
-        } else if (hasLabel && hasStar) {
-          throw new UnsupportedPathError()
         }
       }
     }

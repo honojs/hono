@@ -15,6 +15,7 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
+  NotFoundHandler,
   ParamKeyToRecord,
   ParamKeys,
   RemoveQuestion,
@@ -45,6 +46,100 @@ describe('Env', () => {
       expectTypeOf(FLAG).toEqualTypeOf<boolean>()
       return c.text('foo')
     })
+  })
+})
+
+describe.each(['onError', 'notFound'] as const)('%s environment inference', (method) => {
+  const first = createMiddleware<{ Variables: { one: string } }>(async (c, next) => {
+    c.set('one', 'one')
+    await next()
+  })
+  const second = createMiddleware<{ Variables: { two: number } }>(async (c, next) => {
+    c.set('two', 2)
+    await next()
+  })
+
+  it('Should infer each middleware environment and preserve the application type', () => {
+    const app = new Hono<{ Bindings: { flag: boolean }; Variables: { existing: boolean } }>()
+      .basePath('/api')
+      .get('/original', (c) => c.text('OK'))
+    const result = app[method](
+      first,
+      async (c, next) => {
+        expectTypeOf(c.var.one).toEqualTypeOf<string>()
+        expectTypeOf(c.var.existing).toEqualTypeOf<boolean>()
+        expectTypeOf(c.env.flag).toEqualTypeOf<boolean>()
+        await next()
+      },
+      second,
+      poweredBy(),
+      (c) => {
+        expectTypeOf(c.var.one).toEqualTypeOf<string>()
+        expectTypeOf(c.var.two).toEqualTypeOf<number>()
+        expectTypeOf(c.var.existing).toEqualTypeOf<boolean>()
+        expectTypeOf(c.env.flag).toEqualTypeOf<boolean>()
+        return c.text(c.var.one + c.var.two)
+      }
+    )
+
+    expectTypeOf<ExtractSchema<typeof result>>().toEqualTypeOf<ExtractSchema<typeof app>>()
+    result.get((c) => {
+      expectTypeOf(c.var.one).toEqualTypeOf<string>()
+      expectTypeOf(c.var.two).toEqualTypeOf<number>()
+      expectTypeOf(c.req).toMatchTypeOf<Context<Env, '/api/original'>['req']>()
+      return c.text('OK')
+    })
+  })
+
+  it('Should infer different environments with an explicit scope', () => {
+    new Hono().basePath('/api')[method]('/scope/*', first, second, (c) => {
+      expectTypeOf(c.var.one).toEqualTypeOf<string>()
+      expectTypeOf(c.var.two).toEqualTypeOf<number>()
+      return c.text(c.var.one + c.var.two)
+    })
+  })
+
+  it('Should infer the environment of the tenth handler', () => {
+    new Hono()[method](first, second, first, second, first, second, first, second, first, (c) => {
+      expectTypeOf(c.var.one).toEqualTypeOf<string>()
+      expectTypeOf(c.var.two).toEqualTypeOf<number>()
+      return c.text(c.var.one + c.var.two)
+    })
+  })
+})
+
+describe.each(['onError', 'notFound'] as const)('%s parameter inference', (method) => {
+  it('Should not infer required parameters from the fallback scope', () => {
+    new Hono()[method]('/:tenant/*', (c) => {
+      expectTypeOf(c.req.param('tenant')).toEqualTypeOf<string | undefined>()
+      return c.text(c.req.param('tenant')?.toUpperCase() ?? 'Unknown tenant')
+    })
+  })
+
+  it('Should not infer required parameters from the base path', () => {
+    new Hono().basePath('/:tenant')[method]((c) => {
+      expectTypeOf(c.req.param('tenant')).toEqualTypeOf<string | undefined>()
+      return c.text(c.req.param('tenant') ?? 'Unknown tenant')
+    })
+  })
+
+  it('Should not infer required parameters from the current route', () => {
+    new Hono()
+      .get('/items/:id', (c) => c.text(c.req.param('id')))
+      [method]((c) => {
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string | undefined>()
+        return c.text(c.req.param('id') ?? 'Unknown item')
+      })
+  })
+})
+
+describe('notFound', () => {
+  it('Should accept a v4-style not-found handler', () => {
+    type E = { Bindings: { message: string } }
+    const handler: NotFoundHandler<E> = (c) => c.text(c.env.message, 404)
+    const app = new Hono<E>()
+
+    expectTypeOf(app.notFound(handler)).toEqualTypeOf<typeof app>()
   })
 })
 

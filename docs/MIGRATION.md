@@ -8,9 +8,49 @@ There are some breaking changes.
 
 `hono` is now published as ESM only, and the CommonJS build is removed. On Node.js, version 22.12 or later is required. `require('hono')` still works there, because Node.js 22.12 can `require()` ES modules.
 
+### `onError()` and `notFound()` register routable middleware
+
+`onError()` now accepts middleware with the `(c, next)` signature instead of `(err, c)`. Read the error from `c.error`:
+
+```ts
+// From
+app.onError((err, c) => {
+  console.error(err)
+  return c.text('Custom Error', 500)
+})
+
+// To
+app.onError((c) => {
+  console.error(c.error)
+  return c.text('Custom Error', 500)
+})
+```
+
+`notFound((c) => c.text('Not Found', 404))` keeps the same single-handler syntax. Both APIs also accept an optional path and multiple middleware:
+
+```ts
+app.notFound(
+  '/api/*',
+  async (c, next) => {
+    c.header('x-not-found', 'api')
+    await next()
+  },
+  (c) => c.text('API resource not found', 404)
+)
+```
+
+The following routing rules apply to both APIs:
+
+- Registrations compose rather than replacing the previous handler. Return a response to stop the chain, or call `next()` to delegate.
+- Paths are independent of the request's HTTP method and relative to `basePath()`. Omitting the path registers `*` within the current base path.
+- `route()` imports sub-app handlers, including `notFound()` handlers. More deeply nested sub-apps take priority; at the same depth, handlers run in registration order, not path specificity order.
+- Scopes match the request path, regardless of which app registered the original route. Request parameters still come from the original route, not the fallback scope.
+
+`notFound()` middleware runs for both unmatched requests and explicit `c.notFound()` calls. If the chain reaches its end without a finalized response, the built-in error or not-found handler is used. Errors thrown by `onError()` middleware are handled by the built-in error handler rather than escaping from `app.fetch()`.
+
 ### Non-Error throws go to `onError`
 
-A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
+A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `c.error.cause`, and a thrown string is also used as `c.error.message`. It no longer propagates out of `app.fetch()`.
 
 ### `getColorEnabledAsync()` is removed
 
