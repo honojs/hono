@@ -346,6 +346,20 @@ describe('Body methods with caching', () => {
     expect(async () => await req.blob()).not.toThrow()
   })
 
+  test('req.formData() returns an externally cached value without reading the body', async () => {
+    const data = new FormData()
+    data.append('foo', 'bar')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: data,
+      })
+    )
+    req.bodyCache.formData = await req.raw.formData()
+    expect((await req.formData()).get('foo')).toBe('bar')
+    expect(req.bodyCache.arrayBuffer).toBeUndefined()
+  })
+
   describe('formData() after another representation has been cached', () => {
     const urlencoded = 'application/x-www-form-urlencoded'
     const body = 'foo=bar&baz=qux'
@@ -614,7 +628,7 @@ describe('cloneRawRequest', () => {
     expect(formData.get('file')).toBeInstanceOf(File)
   })
 
-  test('drops stale content length when cloning consumed multipart request', async () => {
+  test('keeps the original bytes and headers when cloning consumed multipart request', async () => {
     const boundary = 'boundary'
     const body = [
       `--${boundary}`,
@@ -638,11 +652,15 @@ describe('cloneRawRequest', () => {
 
     const clonedReq = await cloneRawRequest(req)
 
-    expect(clonedReq.headers.has('Content-Length')).toBe(false)
+    expect(clonedReq.headers.get('Content-Type')).toBe(`multipart/form-data; boundary=${boundary}`)
+    expect(clonedReq.headers.get('Content-Length')).toBe(
+      new TextEncoder().encode(body).byteLength.toString()
+    )
+    expect(await clonedReq.clone().text()).toBe(body)
     expect((await clonedReq.formData()).get('foo')).toBe('bar')
   })
 
-  test('clones request when external code populated bodyCache.json', async () => {
+  test('throws when external code populated bodyCache without the bytes', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
         method: 'POST',
@@ -653,11 +671,14 @@ describe('cloneRawRequest', () => {
       })
     )
     await req.raw.json()
-    req.bodyCache.json = Promise.resolve({ foo: 'bar' })
+    req.bodyCache.blob = new Blob(['{"foo":"bar"}'])
 
-    const clonedReq = await cloneRawRequest(req)
+    await expect(cloneRawRequest(req)).rejects.toThrow(HTTPException)
+  })
 
-    expect(await clonedReq.json()).toEqual({ foo: 'bar' })
+  test('bodyCache has no json slot', () => {
+    const req = new HonoRequest(new Request('http://localhost'))
+    expectTypeOf(req.bodyCache).not.toHaveProperty('json')
   })
 
   test('clones GET request without body', async () => {
@@ -716,5 +737,90 @@ describe('cloneRawRequest', () => {
     expect((error as HTTPException).message).toContain(
       'Cannot clone request: body was already consumed and not cached'
     )
+  })
+})
+
+describe('Body cache built from text', () => {
+  const encoder = new TextEncoder()
+  const createRequest = (body: string | Uint8Array<ArrayBuffer>) =>
+    new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body,
+        headers: {
+          'content-type': 'application/json',
+          'content-length': String(
+            typeof body === 'string' ? encoder.encode(body).byteLength : body.byteLength
+          ),
+        },
+      })
+    )
+  // 0xff is not valid UTF-8, so text() decodes it as U+FFFD and re-encoding changes the length
+  const invalidUtf8Json = new Uint8Array([
+    ...encoder.encode('{"hello":"'),
+    0xff,
+    ...encoder.encode('"}'),
+  ])
+
+  test('cloneRawRequest() after json() drops a stale Content-Length on every clone', async () => {
+    const req = createRequest(invalidUtf8Json)
+    expect(await req.json()).toEqual({ hello: '\uFFFD' })
+
+    for (let i = 0; i < 2; i++) {
+      const cloned = await cloneRawRequest(req)
+      expect(cloned.headers.get('content-length')).toBeNull()
+      expect(await cloned.json()).toEqual({ hello: '\uFFFD' })
+    }
+  })
+
+  test('cloneRawRequest() after json() and arrayBuffer() drops a stale Content-Length', async () => {
+    const req = createRequest(invalidUtf8Json)
+    await req.json()
+    await req.arrayBuffer()
+
+    const cloned = await cloneRawRequest(req)
+    expect(cloned.headers.get('content-length')).toBeNull()
+    expect(await cloned.json()).toEqual({ hello: '\uFFFD' })
+  })
+
+  test('cloneRawRequest() after json() keeps a matching Content-Length on every clone', async () => {
+    const body = '{"hello":"こんにちは"}'
+    const req = createRequest(body)
+    await req.json()
+
+    for (let i = 0; i < 2; i++) {
+      const cloned = await cloneRawRequest(req)
+      expect(cloned.headers.get('content-length')).toBe(
+        String(new TextEncoder().encode(body).byteLength)
+      )
+      expect(await cloned.text()).toBe(body)
+    }
+  })
+
+  test.each(['json', 'arrayBuffer'] as const)(
+    'json() returns independent objects when the body is first read as %s',
+    async (firstRead) => {
+      const data = { user: { name: 'Alice' }, tags: ['original'] }
+      const body = JSON.stringify(data)
+      const req = createRequest(body)
+      await req[firstRead]()
+
+      const first = await req.json<typeof data>()
+      first.user.name = 'Bob'
+      first.tags.push('added')
+
+      const second = await req.json<typeof data>()
+      expect(second).toEqual(data)
+      expect(second).not.toBe(first)
+      expect(await req.text()).toBe(body)
+    }
+  )
+
+  test('arrayBuffer() after text() returns the UTF-8 bytes', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', { method: 'POST', body: 'こんにちは' })
+    )
+    expect(await req.text()).toBe('こんにちは')
+    expect(new TextDecoder().decode(await req.arrayBuffer())).toBe('こんにちは')
   })
 })
