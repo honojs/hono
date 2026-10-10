@@ -41,7 +41,7 @@ export class Trie {
      *  - /* wildcard
      *  - character
      */
-    const tokens = markedPath.match(/(?::[^\/]+)|(?:\/\*$)|./g) || []
+    const tokens = markedPath.match(/(?::[^\/]+)|(?:\/\*$)|./gs) || []
     for (let i = groups.length - 1; i >= 0; i--) {
       const [mark] = groups[i]
       for (let j = tokens.length - 1; j >= 0; j--) {

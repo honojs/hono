@@ -971,6 +971,16 @@ export const runTest = ({
         expect(res[1].handler).toEqual('get () name')
         expect(res[1].params['name']).toEqual('hono')
       })
+
+      it.each(lineTerminators)('line terminator %j', (char) => {
+        router.add('ALL', `/a${char}b/*`, 'middleware')
+        router.add('GET', `/a${char}b/:name`, 'get name')
+        expect(match('GET', `/a${char}b/hono`)).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'get name', params: { name: 'hono' } },
+        ])
+        expect(match('GET', '/ab/hono')).toEqual([])
+      })
     })
 
     describe('REST API', () => {
