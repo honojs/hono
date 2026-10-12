@@ -24,7 +24,7 @@ export class Trie {
     let markedPath = path
     for (let i = 0; ;) {
       let replaced = false
-      markedPath = markedPath.replace(/\{[^}]+\}/g, (m) => {
+      markedPath = markedPath.replace(/\{(?:\{[\d,]+\}|[^}])+\}/g, (m) => {
         const mark = `@\\${i}`
         groups[i] = [mark, m]
         i++

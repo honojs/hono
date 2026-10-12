@@ -831,6 +831,15 @@ export const runTest = ({
         expect(res[0].handler).toEqual('any file')
         expect(res[0].params['filename']).toEqual('chunk/nest/123.js')
       })
+
+      it('GET /x/aa/b/x with a quantifier before a slash', () => {
+        router.add('GET', '/x/:prefix{a{2}/b}/x', 'quantifier')
+
+        expect(match('GET', '/x/aa/b/x')).toEqual([
+          { handler: 'quantifier', params: { prefix: 'aa/b' } },
+        ])
+        expect(match('GET', '/x/a/b/x')).toEqual([])
+      })
     })
 
     describe('Capture simple multiple directories', () => {
