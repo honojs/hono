@@ -57,7 +57,7 @@ export class Node {
     index: number,
     paramMap: ParamAssocArray,
     context: Context,
-    isStatic: boolean
+    keys: string[]
   ): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let node: Node = this
@@ -98,6 +98,7 @@ export class Node {
           }
         }
 
+        keys.push(regexpStr)
         nextNode = node.#children[regexpStr]
         if (!nextNode) {
           if (
@@ -125,6 +126,7 @@ export class Node {
           paramMap.push([name, nextNode.#varIndex])
         }
       } else {
+        keys.push(token)
         nextNode = node.#children[token]
         if (!nextNode) {
           for (const k in node.#children) {
@@ -146,7 +148,7 @@ export class Node {
     if (node.#index !== undefined) {
       throw PATH_ERROR
     }
-    node.#index = isStatic ? -1 : index
+    node.#index = index
   }
 
   buildRegExpStr(): string {

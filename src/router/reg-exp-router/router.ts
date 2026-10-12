@@ -155,7 +155,7 @@ export class RegExpRouter<T> implements Router<T> {
       for (const path in r) {
         const handlers = r[path]
         const pathData = trie.paths[path]
-        if (!pathData) {
+        if (pathData[0] === -1) {
           staticMap[path] = [handlers.map(([h]) => [h, createNullObject()]), emptyParam]
           continue
         }

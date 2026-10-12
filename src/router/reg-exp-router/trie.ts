@@ -8,13 +8,15 @@ export class Trie {
   #context: Context = { varIndex: 0 }
   #root: Node = new Node()
   #index: number = 0
-  // dynamic path -> [handler index, param assoc]; static paths are not registered
-  paths: Record<string, [number, ParamAssocArray]> = createNullObject()
+  // path -> [handler index (-1 for a static path), param assoc, node keys along the branch]
+  paths: Record<string, [number, ParamAssocArray, string[]]> = createNullObject()
 
   insert(path: string, isStatic: boolean): void {
+    const keys: string[] = []
     if (isStatic) {
       // a static path has no pattern; every character is a literal token
-      this.#root.insert(path.split(''), 0, [], this.#context, true)
+      this.#root.insert(path.split(''), -1, [], this.#context, keys)
+      this.paths[path] = [-1, [], keys]
       return
     }
 
@@ -52,8 +54,8 @@ export class Trie {
       }
     }
 
-    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, false)
-    this.paths[path] = [this.#index++, paramAssoc]
+    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, keys)
+    this.paths[path] = [this.#index++, paramAssoc, keys]
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
