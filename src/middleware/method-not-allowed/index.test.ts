@@ -289,4 +289,49 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
     expect(await res.text()).toBe('Missing')
   })
+
+  it('respects ignorePaths option for wildcard catch-all routes', async () => {
+    const app = new Hono()
+    app.use(
+      methodNotAllowed({
+        app,
+        ignorePaths: ['/*', '*'],
+      })
+    )
+    app.get('/api/users', (c) => c.text('users'))
+    app.post('/api/users', (c) => c.text('created'))
+    app.get('/*', (c) => c.text('static fallback'))
+
+    // Explicit registered route returns 405 with proper Allow header on unsupported method
+    const res1 = await app.request('/api/users', { method: 'DELETE' })
+    expect(res1.status).toBe(405)
+    expect(res1.headers.get('Allow')).toBe('GET, HEAD, POST')
+
+    // Non-existent route with POST returns 404 (not corrupted by wildcard GET /*)
+    const res2 = await app.request('/non-existent-file.png', { method: 'POST' })
+    expect(res2.status).toBe(404)
+    expect(res2.headers.has('Allow')).toBe(false)
+  })
+
+  it('supports RegExp in ignorePaths option', async () => {
+    const app = new Hono()
+    app.use(
+      methodNotAllowed({
+        app,
+        ignorePaths: [/^\/static/],
+      })
+    )
+    app.get('/api/data', (c) => c.text('data'))
+    app.get('/static/*', (c) => c.text('static'))
+
+    // Registered API route still returns 405 on PUT
+    const res1 = await app.request('/api/data', { method: 'PUT' })
+    expect(res1.status).toBe(405)
+    expect(res1.headers.get('Allow')).toBe('GET, HEAD')
+
+    // Ignored static path pattern returns 404 on POST instead of 405
+    const res2 = await app.request('/static/missing.jpg', { method: 'POST' })
+    expect(res2.status).toBe(404)
+    expect(res2.headers.has('Allow')).toBe(false)
+  })
 })
