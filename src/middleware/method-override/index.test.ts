@@ -123,6 +123,37 @@ describe('Method Override Middleware', () => {
         expect(res.status).toBe(404)
       })
     })
+
+    describe('lowercase method name', () => {
+      const app = new Hono()
+      app.use('/posts/*', methodOverride({ app }))
+      app.patch('/posts', (c) => c.text(c.req.method))
+
+      it('Should override POST to PATCH - multipart/form-data', async () => {
+        const form = new FormData()
+        form.append('_method', 'patch')
+        const res = await app.request('/posts', {
+          body: form,
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('PATCH')
+      })
+
+      it('Should override POST to PATCH - application/x-www-form-urlencoded', async () => {
+        const params = new URLSearchParams()
+        params.append('_method', 'patch')
+        const res = await app.request('/posts', {
+          body: params,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('PATCH')
+      })
+    })
   })
 
   describe('Header', () => {
@@ -161,6 +192,20 @@ describe('Method Override Middleware', () => {
         method: 'GET',
         headerValue: 'DELETE', // It does not modify the headers.
       })
+    })
+
+    it('Should override POST to PATCH with a lowercase method name', async () => {
+      const app = new Hono()
+      app.use('/posts/*', methodOverride({ app, header: 'X-METHOD-OVERRIDE' }))
+      app.patch('/posts', (c) => c.text(c.req.method))
+      const res = await app.request('/posts', {
+        method: 'POST',
+        headers: {
+          'X-METHOD-OVERRIDE': 'patch',
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('PATCH')
     })
   })
 
@@ -216,6 +261,17 @@ describe('Method Override Middleware', () => {
         method: 'GET',
         queryValue: 'delete', // It does not modify the queries.
       })
+    })
+
+    it('Should override POST to PATCH with a lowercase method name', async () => {
+      const app = new Hono()
+      app.use('/posts/*', methodOverride({ app, query: '_method' }))
+      app.patch('/posts', (c) => c.text(c.req.method))
+      const res = await app.request('/posts?_method=patch', {
+        method: 'POST',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('PATCH')
     })
   })
 })
