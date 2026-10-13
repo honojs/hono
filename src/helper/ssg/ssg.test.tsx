@@ -284,6 +284,26 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('/tmp/out/index.html', expect.any(String))
   })
 
+  it('Should create the output directories again on a later run', async () => {
+    const app = new Hono()
+    app.get('/about/team', (c) => c.html('Hello, World!'))
+    const createFsMock = (): FileSystemModule => ({
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    })
+
+    const firstFsMock = createFsMock()
+    await toSSG(app, firstFsMock, { dir: './static-rerun' })
+    expect(firstFsMock.mkdir).toHaveBeenCalledWith('static-rerun/about', { recursive: true })
+
+    // The directory may have been removed between runs, e.g. by a clean step,
+    // so a later run must not assume that an earlier run's directories still exist.
+    const secondFsMock = createFsMock()
+    const result = await toSSG(app, secondFsMock, { dir: './static-rerun' })
+    expect(result.success).toBe(true)
+    expect(secondFsMock.mkdir).toHaveBeenCalledWith('static-rerun/about', { recursive: true })
+  })
+
   it('Should correctly generate files with the expected paths', async () => {
     app.get('/data', (c) =>
       c.text(JSON.stringify({ title: 'hono' }), 200, {
