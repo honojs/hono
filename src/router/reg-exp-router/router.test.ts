@@ -262,4 +262,64 @@ describe('RegExpRouter', () => {
       }
     })
   })
+
+  describe('Wildcard routes matching paths containing line terminators', () => {
+    it('Should match paths containing \\n, \\r, \\u2028, \\u2029', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/api/*', 'api')
+      router.add('GET', '/*', 'wildcard')
+
+      // \n (U+000A), \r (U+000D), LINE SEPARATOR (U+2028), PARAGRAPH SEPARATOR (U+2029)
+      const paths = [
+        '/a\nb',
+        '/a\rb',
+        `/a${String.fromCharCode(0x2028)}b`,
+        `/a${String.fromCharCode(0x2029)}b`,
+      ]
+      for (const path of paths) {
+        const [res] = router.match('GET', path)
+        expect(res.length).toBe(1)
+        expect(res[0][0]).toBe('wildcard')
+      }
+
+      const [resApi] = router.match('GET', '/api/a\nb')
+      expect(resApi.length).toBe(2)
+      expect(resApi[0][0]).toBe('api')
+      expect(resApi[1][0]).toBe('wildcard')
+    })
+  })
+
+  describe('Custom regexp parameter routes should not match line terminators', () => {
+    it('Should not match line terminators for /test/:param{.+}', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/test/:param{.+}', 'custom')
+
+      const paths = [
+        '/test/a\nb',
+        '/test/a\rb',
+        `/test/a${String.fromCharCode(0x2028)}b`,
+        `/test/a${String.fromCharCode(0x2029)}b`,
+      ]
+      for (const path of paths) {
+        const [res] = router.match('GET', path)
+        expect(res.length).toBe(0)
+      }
+    })
+
+    it('Should not match line terminators for /test/:param{.{2}}', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/test/:param{.{2}}', 'custom')
+
+      const paths = [
+        '/test/a\n',
+        '/test/a\r',
+        `/test/a${String.fromCharCode(0x2028)}`,
+        `/test/a${String.fromCharCode(0x2029)}`,
+      ]
+      for (const path of paths) {
+        const [res] = router.match('GET', path)
+        expect(res.length).toBe(0)
+      }
+    })
+  })
 })

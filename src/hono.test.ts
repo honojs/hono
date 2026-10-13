@@ -487,6 +487,41 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should match a wildcard route when path contains encoded line terminators', async () => {
+    const app = new Hono()
+    app.get('/api/*', (c) => c.text('api'))
+    app.get('/*', (c) => c.text('wildcard'))
+
+    const paths = ['/a%0Ab', '/a%0Db', '/a%E2%80%A8b', '/a%E2%80%A9b']
+    for (const p of paths) {
+      const res = await app.request(`http://localhost${p}`)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('wildcard')
+    }
+
+    const resApi = await app.request('http://localhost/api/a%0Ab')
+    expect(resApi.status).toBe(200)
+    expect(await resApi.text()).toBe('api')
+  })
+
+  it('Should not match custom regexp routes when path contains encoded line terminators', async () => {
+    const app = new Hono()
+    app.get('/custom/:param{.+}', (c) => c.text(`custom:${c.req.param('param')}`))
+    app.get('/exact2/:param{.{2}}', (c) => c.text(`exact2:${c.req.param('param')}`))
+
+    const paths = ['/custom/a%0Ab', '/custom/a%0Db', '/custom/a%E2%80%A8b', '/custom/a%E2%80%A9b']
+    for (const p of paths) {
+      const res = await app.request(`http://localhost${p}`)
+      expect(res.status).toBe(404)
+    }
+
+    const exact2Paths = ['/exact2/a%0A', '/exact2/a%0D', '/exact2/a%E2%80%A8', '/exact2/a%E2%80%A9']
+    for (const p of exact2Paths) {
+      const res = await app.request(`http://localhost${p}`)
+      expect(res.status).toBe(404)
+    }
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')
