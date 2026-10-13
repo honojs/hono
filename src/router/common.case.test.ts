@@ -1114,5 +1114,23 @@ export const runTest = ({
         expect(res[0].handler).toBe('all')
       })
     })
+
+    describe('Literal wildcard path segment', () => {
+      beforeEach(() => {
+        router.add('GET', '/a/*', 'wildcard')
+      })
+
+      it('GET /a/*', () => {
+        const res = match('GET', '/a/*')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('wildcard')
+      })
+
+      it('GET /a/*/tail', () => {
+        const res = match('GET', '/a/*/tail')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('wildcard')
+      })
+    })
   })
 }

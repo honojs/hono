@@ -866,4 +866,46 @@ describe('Pattern spanning multiple parts', () => {
       }
     })
   })
+
+  describe('Literal wildcard path segment', () => {
+    const node = new Node()
+    node.insert('get', '/a/*', 'wildcard')
+
+    it('should match only once when path ends with literal *', () => {
+      const [res] = node.search('get', '/a/*')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('wildcard')
+    })
+
+    it('should match wildcard before non-final segment', () => {
+      const [res] = node.search('get', '/a/*/tail')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('wildcard')
+    })
+  })
+
+  describe('Literal param name matching', () => {
+    it('should preserve parameter bindings when request segment matches param key name', () => {
+      const node = new Node()
+      node.insert('get', '/:id', 'param')
+      const [res1] = node.search('get', '/:id')
+      expect(res1.length).toBe(1)
+      expect(res1[0][0]).toEqual('param')
+      expect(res1[0][1]).toEqual({ id: ':id' })
+    })
+
+    it('should match param wildcard when segment is param key', () => {
+      const node = new Node()
+      node.insert('get', '/:name/*', 'wildcard-param')
+      const [res2] = node.search('get', '/:name/tail')
+      expect(res2.length).toBe(1)
+      expect(res2[0][0]).toEqual('wildcard-param')
+      expect(res2[0][1]).toEqual({ name: ':name' })
+
+      const [res3] = node.search('get', '/:name')
+      expect(res3.length).toBe(1)
+      expect(res3[0][0]).toEqual('wildcard-param')
+      expect(res3[0][1]).toEqual({ name: ':name' })
+    })
+  })
 })
