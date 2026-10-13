@@ -59,6 +59,10 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {
