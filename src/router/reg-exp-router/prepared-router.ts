@@ -117,6 +117,7 @@ export const buildInitParams: (params: {
       list.forEach(([p, map]) => {
         if (p === path) {
           if (relocateMap[path]) {
+            // an optional parameter registers one path per expansion, with different maps
             relocateMap[path][0][1] = {
               ...relocateMap[path][0][1],
               ...map,
@@ -124,7 +125,7 @@ export const buildInitParams: (params: {
           } else {
             relocateMap[path] = [[[], map]]
           }
-          if (relocateMap[path][0][0].findIndex((j) => j === i) === -1) {
+          if (!relocateMap[path][0][0].includes(i)) {
             relocateMap[path][0][0].push(i)
           }
         }
@@ -135,7 +136,7 @@ export const buildInitParams: (params: {
         if (p === path) {
           relocateMap[path] ||= [[[]]]
           const value = path2 === path ? '' : path2
-          if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
+          if (!relocateMap[path][0][0].includes(value)) {
             relocateMap[path][0][0].push(value)
           }
         }
@@ -156,9 +157,9 @@ export const buildInitParams: (params: {
 export const serializeInitParams: (
   params: ConstructorParameters<typeof PreparedRegExpRouter>
 ) => string = ([matchers, relocateMap]) => {
-  // Embed the regular expression as a result of `toString()` so that it can be evaluated as JavaScript.
+  // Embed regular expressions and undefined captures as JavaScript, which JSON cannot express.
   const matchersStr = JSON.stringify(matchers, (_, value) =>
-    value instanceof RegExp ? `##${value.toString()}##` : value
+    value instanceof RegExp || value === undefined ? `##${value}##` : value
   ).replace(/"##(.+?)##"/g, (_, str) => str.replace(/\\\\/g, '\\'))
   const relocateMapStr = JSON.stringify(relocateMap)
   return `[${matchersStr},${relocateMapStr}]`
