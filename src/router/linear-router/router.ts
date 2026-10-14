@@ -7,7 +7,7 @@ type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number
 const emptyParams = Object.create(null)
 
 const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|\/$|(\?)/g
-const splitByStarRe = /\*/
+const splitByStarRe = /\*(?=\/|$)/
 export class LinearRouter<T> implements Router<T> {
   name: string = 'LinearRouter'
   #routes: [string, string, T][] = []
@@ -49,9 +49,14 @@ export class LinearRouter<T> implements Router<T> {
         } else if (hasStar && !hasLabel) {
           const endsWithStar = routePath.charCodeAt(routePath.length - 1) === 42
           const endsWithSlashStar = routePath.endsWith('/*')
-          const parts = (
-            endsWithStar ? routePath.slice(0, endsWithSlashStar ? -2 : -1) : routePath
-          ).split(splitByStarRe)
+          // Split before removing the tail wildcard so a preceding literal `*` stays literal.
+          const parts = routePath.split(splitByStarRe)
+          if (endsWithStar) {
+            parts.pop()
+            if (endsWithSlashStar) {
+              parts[parts.length - 1] = parts[parts.length - 1].slice(0, -1)
+            }
+          }
 
           const lastIndex = parts.length - 1
           for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
@@ -73,11 +78,11 @@ export class LinearRouter<T> implements Router<T> {
               // A standalone `*` segment consumes at least one character; one with a
               // prefix may consume none.
               const standalone = part.charCodeAt(part.length - 1) === 47
-              const index = path.indexOf('/', standalone ? pos + 1 : pos)
-              if (index === -1) {
+              if (standalone && (pos === path.length || path.charCodeAt(pos) === 47)) {
                 continue ROUTES_LOOP
               }
-              pos = index
+              const index = path.indexOf('/', pos)
+              pos = index === -1 ? path.length : index
             }
           }
           handlers.push([handler, emptyParams])

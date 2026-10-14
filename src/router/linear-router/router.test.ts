@@ -18,6 +18,17 @@ describe('LinearRouter', () => {
     newRouter: () => new LinearRouter(),
   })
 
+  describe('Literal asterisks', () => {
+    it.each([
+      ['/x*y', '/x*y'],
+      ['/x*y/*', '/x*y'],
+    ])('Should match %s against %s', (route, path) => {
+      const router = new LinearRouter<string>()
+      router.add('GET', route, 'handler')
+      expect(router.match('GET', path)[0]).toEqual([['handler', {}]])
+    })
+  })
+
   describe('Trailing wildcard after parameters', () => {
     it.each([
       ['/:tenant/*', '/acme', { tenant: 'acme' }],

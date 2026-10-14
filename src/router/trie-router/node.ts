@@ -103,24 +103,17 @@ export class Node<T> {
         const node = curNodes[j]
         const nextNode = node.#children[part]
 
-        // A pattern node is also stored in `#children` under its key, so a part that is
-        // literally that key arrives here as well as in the pattern loop below. Each job below
-        // leaves pattern nodes to that loop, and the set it leaves differs per job.
-        if (nextNode) {
+        // Pattern nodes are also stored in `#children`; leave them to the pattern loop
+        // below even when the request segment is literally their key.
+        if (nextNode && nextNode.#pattern === undefined) {
           nextNode.#params = node.#params
           if (isLast) {
-            // '/hello/*' => match '/hello'. The loop makes this push itself when an array
-            // pattern matches, and never for a string one.
-            if (nextNode.#children['*'] && !Array.isArray(nextNode.#pattern)) {
+            // '/hello/*' => match '/hello'.
+            if (nextNode.#children['*']) {
               this.#pushHandlerSets(handlerSets, nextNode.#children['*'], method, node.#params)
             }
-            // The loop matches any pattern node whose pattern accepts the part.
-            if (nextNode.#pattern === undefined) {
-              this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
-            }
-          } else if (nextNode.#pattern !== '*' && !Array.isArray(nextNode.#pattern)) {
-            // The loop descends through `*` and parameters itself, but not through a
-            // prefixed wildcard.
+            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params)
+          } else {
             tempNodes.push(nextNode)
           }
         }
@@ -137,6 +130,10 @@ export class Node<T> {
               // A standalone `*` consumes at least one character before another segment
               // can follow it; one with a prefix may consume none.
               if (pattern !== '*' || part !== '') {
+                // '/x*/*' => match '/x', '/a/*/*' => match '/a/b'
+                if (isLast && child.#children['*']) {
+                  this.#pushHandlerSets(handlerSets, child.#children['*'], method, node.#params)
+                }
                 child.#params = params
                 tempNodes.push(child)
               }

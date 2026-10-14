@@ -131,6 +131,18 @@ export const runTest = ({
         ['/assets*', '/assets', true],
         ['/assets*', '/assets123', true],
         ['/assets*', '/assets/foo', true],
+        ['/x*/*', '/x', true],
+        ['/x*/*', '/xz', true],
+        ['/x*/*', '/xz/y', true],
+        ['/x*/*', '/x/y/z', true],
+        ['/foo/*/*', '/foo', false],
+        ['/foo/*/*', '/foo/', false],
+        ['/foo/*/*', '/foo//', false],
+        ['/foo/*/*', '/foo//bar', false],
+        ['/foo/*/*', '/foo//bar/baz', false],
+        ['/foo/*/*', '/foo/x', true],
+        ['/foo/*/*', '/foo/x/', true],
+        ['/foo/*/*', '/foo/x/y/z', true],
       ]
 
       for (const [route, path, shouldMatch] of cases) {
@@ -176,6 +188,23 @@ export const runTest = ({
         const res = match('GET', '/a/foo*')
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('prefixed')
+      })
+
+      it.each(['/x*/y', '/x*/y/z', '/x*/y*'])(
+        'Prefixed wildcard in a parent segment: %s',
+        (path) => {
+          router.add('GET', '/x*/y*/*', 'handler')
+          expect(match('GET', path)).toEqual([{ handler: 'handler', params: {} }])
+        }
+      )
+
+      it('Should preserve repeated handlers on overlapping wildcard routes', () => {
+        router.add('GET', '/x*/*', 'handler')
+        router.add('GET', '/x*/y*/*', 'handler')
+        expect(match('GET', '/x*/y')).toEqual([
+          { handler: 'handler', params: {} },
+          { handler: 'handler', params: {} },
+        ])
       })
 
       it('Named parameter with a trailing wildcard', async () => {
