@@ -3,7 +3,7 @@ import { createNullObject } from '../utils'
 export const LABEL_REG_EXP_STR = '[^/]+'
 // Match line terminators without changing the flags of user-defined parameter patterns.
 export const ONLY_WILDCARD_REG_EXP_STR = '[^]*'
-const PREFIXED_WILDCARD_REG_EXP_STR = '[^/]*'
+export const PREFIXED_WILDCARD_REG_EXP_STR = '[^/]*'
 export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[^]*)'
 export const PATH_ERROR = Symbol()
 

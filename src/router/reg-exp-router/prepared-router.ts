@@ -1,7 +1,7 @@
 import type { ParamIndexMap, Result, Router } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { HandlerData, Matcher, MatcherMap, StaticMap } from './matcher'
-import { match, emptyParam } from './matcher'
+import { match } from './matcher'
 import { RegExpRouter } from './router'
 
 type RelocateMap = Record<string, ([(number | string)[], ParamIndexMap] | [(number | string)[]])[]>
@@ -49,7 +49,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
       const all = this.#matchers[METHOD_NAME_ALL] as Matcher<T>
       const staticMap = {} as StaticMap<T>
       for (const key in all[2]) {
-        staticMap[key] = [all[2][key][0].slice(), emptyParam] as Result<T>
+        staticMap[key] = [all[2][key][0].slice(), all[2][key][1]] as Result<T>
       }
       this.#matchers[method] = [
         all[0],

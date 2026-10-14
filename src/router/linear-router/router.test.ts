@@ -12,6 +12,8 @@ describe('LinearRouter', () => {
           'Trailing wildcard after a middle wildcard > GET /acme/x/y with a named parameter',
           'Complex > Parameter with {.*} regexp',
           'Path segment equal to a pattern token > Named parameter with a trailing wildcard',
+          'Wildcard route /v1/*/:id/* with a parameter route',
+          'Wildcard route /v1/:first/*/:last/* with a parameter route',
         ],
       },
     ],
