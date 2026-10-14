@@ -1299,6 +1299,50 @@ export const runTest = ({
       })
     })
 
+    describe('Wildcard routes that end at the same segment', () => {
+      it.each([
+        { method: 'GET', reverse: false },
+        { method: 'GET', reverse: true },
+        { method: 'ALL', reverse: false },
+        { method: 'ALL', reverse: true },
+      ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+        const routes: [string, string, string][] = [
+          [method, '/x/a*', 'prefix'],
+          ['GET', '/x/a/*', 'tail'],
+        ]
+        const prefix = { handler: 'prefix', params: {} }
+        const expected = [prefix, { handler: 'tail', params: {} }]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', '/x/a')).toEqual(expected)
+        expect(match('GET', '/x/a/q')).toEqual(expected)
+        expect(match('GET', '/x/ab')).toEqual([prefix])
+        expect(match('POST', '/x/a/q')).toEqual(method === 'ALL' ? [prefix] : [])
+      })
+
+      it('Should apply both wildcards to a nested route', () => {
+        router.add('GET', '/x/a*', 'prefix')
+        router.add('GET', '/x/a/*', 'tail')
+        router.add('GET', '/x/a/:id', 'route')
+        const prefix = { handler: 'prefix', params: {} }
+        const tail = { handler: 'tail', params: {} }
+        expect(match('GET', '/x/a/q')).toEqual([
+          prefix,
+          tail,
+          { handler: 'route', params: { id: 'q' } },
+        ])
+        expect(match('GET', '/x/a/q/r')).toEqual([prefix, tail])
+        expect(match('GET', '/x/a')).toEqual([prefix, tail])
+        expect(match('GET', '/x/ab')).toEqual([prefix])
+      })
+    })
+
     describe('Middleware paths that do not nest', () => {
       it('Should both apply to a route they both match', () => {
         router.add('GET', '/:a/b/*', 'short')

@@ -29,9 +29,9 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard: the only wildcard precedes the tail wildcard
+  // wildcard: the tail wildcard precedes the only wildcard, which matches a superset of it
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
-    return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
+    return b === ONLY_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
     return -1
   }

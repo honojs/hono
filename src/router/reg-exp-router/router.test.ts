@@ -231,20 +231,6 @@ describe('RegExpRouter', () => {
       expect(res[0][0]).toBe('label')
       expect(res[1][0]).toBe('wildcard')
     })
-
-    it('Should prioritize the only wildcard over the tail wildcard regardless of the order', () => {
-      for (const paths of [
-        ['/a*', '/a/*'],
-        ['/a/*', '/a*'],
-      ]) {
-        const router = new RegExpRouter<string>()
-        for (const path of paths) {
-          router.add('GET', path, path)
-        }
-        const [res] = router.match('GET', '/a')
-        expect(res[0][0]).toBe('/a*')
-      }
-    })
   })
 
   describe('Single character regexp pattern', () => {
