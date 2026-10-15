@@ -710,6 +710,15 @@ export const runTest = ({
       })
     })
 
+    describe('Optional parameter after a wildcard', () => {
+      it.each(['/files/*/:name?', '/x*/:id?'])('rejects %s', (path) => {
+        expect(() => {
+          router.add('GET', path, 'handler')
+          router.match('GET', '/files/a/b')
+        }).toThrow()
+      })
+    })
+
     describe('Optional parameters at the root', () => {
       it.each(['/:id?', '/:id?/:action?'])('matches %s with omitted parameters', (path) => {
         router.add('GET', path, 'optional')

@@ -64,6 +64,10 @@ const enabled = await getColorEnabledAsync()
 const enabled = getColorEnabled(c.env)
 ```
 
+### `checkOptionalParameter()` is removed from `hono/utils/url`
+
+`checkOptionalParameter()` is an internal helper of the routers and is no longer exported from `hono/utils/url`.
+
 ### `c.req.query()` may return `undefined` values
 
 `c.req.query()` and `c.req.queries()` without a key now return `Record<string, string | undefined>` and `Record<string, string[] | undefined>`, since a key may be absent.
@@ -105,6 +109,8 @@ A `*` at the end of a segment is a wildcard in every router, and it may match no
 | `/wild/*/card` | `/wild//card` | No match |
 
 TrieRouter and PatternRouter did not match `/x*/y` to `/xz/y` before. In RegExpRouter, `/x*/y` and `/x/*` can not be registered together and throw `UnsupportedPathError`, so SmartRouter falls back to TrieRouter.
+
+An optional parameter right after a wildcard, such as `/files/*/:name?`, is no longer supported. It used to be registered as `/files/*` and `/files/*/:name`, and the first route matched any depth.
 
 ### Runtime adapters moved to `@hono/*` packages
 

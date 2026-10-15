@@ -1,5 +1,4 @@
 import {
-  checkOptionalParameter,
   getPath,
   getPathNoStrict,
   getPattern,
@@ -214,31 +213,6 @@ describe('url', () => {
     })
     it('Should be `/`', () => {
       expect(mergePath('/', '/')).toBe('/')
-    })
-  })
-
-  describe('checkOptionalParameter', () => {
-    it('checkOptionalParameter', () => {
-      expect(checkOptionalParameter('/api/animals/:type?')).toEqual([
-        '/api/animals',
-        '/api/animals/:type',
-      ])
-      expect(checkOptionalParameter('/api/animals/type?')).toBeNull()
-      expect(checkOptionalParameter('/api/animals/:type')).toBeNull()
-      expect(checkOptionalParameter('/api/animals')).toBeNull()
-      expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
-      expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
-      expect(checkOptionalParameter('/:optional?')).toEqual(['/', '/:optional'])
-      expect(checkOptionalParameter('/v1/leaderboard/:version?/:platform?')).toEqual([
-        '/v1/leaderboard',
-        '/v1/leaderboard/:version',
-        '/v1/leaderboard/:version/:platform',
-      ])
-      expect(checkOptionalParameter('/api/:version/animal/:type?')).toEqual([
-        '/api/:version/animal',
-        '/api/:version/animal/:type',
-      ])
-      expect(checkOptionalParameter('/api/:id{[0-9]?}?')).toEqual(['/api', '/api/:id{[0-9]?}'])
     })
   })
 
