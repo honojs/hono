@@ -27,9 +27,17 @@ const getPathPrefixLength = (c: Context, pathPrefix: string): number => {
 
   const path = c.req.path
   const matchResult = c.req[GET_MATCH_RESULT]
+  const paramNames = new Set<string>()
   let length = 0
   for (const part of splitRoutingPath(pathPrefix)) {
     const pattern = getPattern(part)
+    if (pattern && pattern !== '*') {
+      const name = pattern[1]
+      if (paramNames.has(name)) {
+        throw new Error(`mount(): Duplicate path parameter "${name}" in "${routePath(c)}".`)
+      }
+      paramNames.add(name)
+    }
     if (pattern && pattern !== '*' && pattern[2] !== true) {
       const value =
         matchResult.length === 2
@@ -70,6 +78,7 @@ const defaultGetOptions = (c: Context): unknown[] => {
  * @param {Function} applicationHandler - other Request Handler
  * @param {MountOptions} [options] - options of `mount()`
  * @returns {MiddlewareHandler} handler to register with `app.all()`
+ * @throws {Error} If automatic request rewriting encounters duplicate path parameter names.
  *
  * @example
  * ```ts

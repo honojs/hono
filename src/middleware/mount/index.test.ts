@@ -149,6 +149,7 @@ describe('mount()', () => {
       ['/api/:version/*', '/api/v1//hello', '//hello'],
       ['/user/:id{[^/]+}/*', '/user/123/hello', '/hello'],
       ['/api/:id{[0-9]{2}}/*', '/api/12/hello', '/hello'],
+      ['/api/:first{[a-z]+}/:second{[0-9]+}/*', '/api/a/1234/hello', '/hello'],
       ['/x/:prefix{.+}/x/*', '/x/a/b/x/c/d', '/c/d'],
       ['/x/:prefix{.+}/x/*', '/x/a%2Fb/c/x/d%2Fe', '/d%2Fe'],
       ['/api/:id{[^/]+}/*', '/api/ad%2Fmin/x%252Fy', '/x%252Fy'],
@@ -213,6 +214,59 @@ describe('mount()', () => {
 
       expect(res.status).toBe(200)
       expect(await res.text()).toBe(expected)
+    })
+  })
+
+  describe('With duplicate parameter names', () => {
+    it.each([
+      '/api/:id/:id/*',
+      '/api/:id{[a-z]+}/:id{[0-9]+}/*',
+      '/api/:id/:id{[0-9]+}/*',
+      '/api/:id{[a-z]+}/:id/*',
+    ])('Should reject automatic request rewriting for %s', async (route) => {
+      const anotherApp = vi.fn(() => new Response('AnotherApp'))
+      const app = new Hono()
+      app.onError((c) => c.text(c.error!.message, 500))
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request('/api/a/1234/hello')
+
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe(`mount(): Duplicate path parameter "id" in "${route}".`)
+      expect(anotherApp).not.toHaveBeenCalled()
+    })
+
+    it('Should detect duplicate names introduced by merging route prefixes', async () => {
+      const anotherApp = vi.fn(() => new Response('AnotherApp'))
+      const subApp = new Hono()
+      subApp.all('/:id{[0-9]+}/*', mount(anotherApp))
+      const app = new Hono()
+      app.onError((c) => c.text(c.error!.message, 500))
+      app.route('/api/:id{[a-z]+}', subApp)
+
+      const res = await app.request('/api/a/1234')
+
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe(
+        'mount(): Duplicate path parameter "id" in "/api/:id{[a-z]+}/:id{[0-9]+}/*".'
+      )
+      expect(anotherApp).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      { name: 'custom replaceRequest', replaceRequest: (req: Request) => req },
+      { name: 'replaceRequest: false', replaceRequest: false as const },
+    ])('Should allow duplicate names with $name', async ({ replaceRequest }) => {
+      const app = new Hono()
+      app.all(
+        '/api/:id{[a-z]+}/:id{[0-9]+}/*',
+        mount((req) => new Response(getPath(req)), { replaceRequest })
+      )
+
+      const res = await app.request('/api/a/1234/hello')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/api/a/1234/hello')
     })
   })
 
