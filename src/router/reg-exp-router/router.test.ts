@@ -262,4 +262,48 @@ describe('RegExpRouter', () => {
       }
     })
   })
+
+  // `getPath()` decodes the path with `decodeURI()`, which decodes `%0A`, `%0D`, `%E2%80%A8` and
+  // `%E2%80%A9` into real line terminators. A `.` does not match them, so the wildcard uses
+  // `[^]*` instead. See honojs/hono#5345.
+  describe('Wildcard and line terminators', () => {
+    const lineTerminators = ['\n', '\r', ' ', ' ']
+
+    it.each([
+      ['/*', ['/a', '/a/b']],
+      ['*', ['/a', '/a/b']],
+      ['/foo/*', ['/foo/a', '/foo/a/b']],
+      ['/a*', ['/aa', '/aa/b']],
+    ])('Should match with the wildcard "%s"', (path, prefixes) => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', path, 'wildcard')
+      for (const char of lineTerminators) {
+        for (const prefix of prefixes) {
+          expect(router.match('GET', `${prefix}${char}x`)[0].length).toBe(1)
+        }
+      }
+    })
+
+    // A tail wildcard still requires a `/` separator
+    it('Should not match a path without the separator', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/foo/*', 'wildcard')
+      for (const char of lineTerminators) {
+        expect(router.match('GET', `/foo${char}`)[0].length).toBe(0)
+      }
+      expect(router.match('GET', '/foofoo')[0].length).toBe(0)
+    })
+
+    // The wildcard is widened on purpose, but a `.` written by the user in a `:label{...}`
+    // pattern keeps its normal RegExp semantics. Otherwise `/{.+}` would match paths that
+    // TrieRouter, LinearRouter and PatternRouter do not match.
+    it('Should not change a user-written pattern', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/:id{.+}', 'pattern')
+      for (const char of lineTerminators) {
+        expect(router.match('GET', `/a${char}b`)[0].length).toBe(0)
+      }
+      expect(router.match('GET', '/ab')[0].length).toBe(1)
+    })
+  })
 })
