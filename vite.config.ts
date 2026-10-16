@@ -2,7 +2,7 @@ import { RolldownMagicString } from 'rolldown'
 import { parse, Visitor } from 'rolldown/utils'
 import { defineConfig } from 'vite-plus'
 import type { TsdownPluginOption } from 'vite-plus/pack'
-import { appendExportEmptyToDts } from './build/dts-plugins'
+import { appendExportEmptyToDts, keepBarrelImportsInDts } from './build/dts-plugins'
 
 const removeDtsPrivateFieldsPlugin: TsdownPluginOption = {
   name: 'hono:remove-dts-private-fields',
@@ -366,6 +366,7 @@ export default defineConfig({
       validatePackageExportsPlugin,
       removeJsDocPlugin,
       removeDtsPrivateFieldsPlugin,
+      keepBarrelImportsInDts,
       appendExportEmptyToDts,
     ],
   },
