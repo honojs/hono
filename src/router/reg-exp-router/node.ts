@@ -3,7 +3,7 @@ import { createNullObject } from '../utils'
 export const LABEL_REG_EXP_STR = '[^/]+'
 // Match line terminators without changing the flags of user-defined parameter patterns.
 export const ONLY_WILDCARD_REG_EXP_STR = '[^]*'
-const PREFIXED_WILDCARD_REG_EXP_STR = '[^/]*'
+export const PREFIXED_WILDCARD_REG_EXP_STR = '[^/]*'
 export const TAIL_WILDCARD_REG_EXP_STR = '(?:|/[^]*)'
 export const PATH_ERROR = Symbol()
 
@@ -29,9 +29,9 @@ function compareKey(a: string, b: string): number {
     return 1
   }
 
-  // wildcard: the only wildcard precedes the tail wildcard
+  // wildcard: the tail wildcard precedes the only wildcard, which matches a superset of it
   if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
-    return b === TAIL_WILDCARD_REG_EXP_STR ? -1 : 1
+    return b === ONLY_WILDCARD_REG_EXP_STR ? -1 : 1
   } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
     return -1
   }
@@ -57,7 +57,7 @@ export class Node {
     index: number,
     paramMap: ParamAssocArray,
     context: Context,
-    isStatic: boolean
+    keys: string[]
   ): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let node: Node = this
@@ -98,6 +98,7 @@ export class Node {
           }
         }
 
+        keys.push(regexpStr)
         nextNode = node.#children[regexpStr]
         if (!nextNode) {
           if (
@@ -125,6 +126,7 @@ export class Node {
           paramMap.push([name, nextNode.#varIndex])
         }
       } else {
+        keys.push(token)
         nextNode = node.#children[token]
         if (!nextNode) {
           for (const k in node.#children) {
@@ -146,7 +148,7 @@ export class Node {
     if (node.#index !== undefined) {
       throw PATH_ERROR
     }
-    node.#index = isStatic ? -1 : index
+    node.#index = index
   }
 
   buildRegExpStr(): string {
