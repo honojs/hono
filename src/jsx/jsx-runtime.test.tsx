@@ -50,6 +50,11 @@ describe('jsx-runtime', () => {
     )
   })
 
+  it('Should render nothing for a ref in jsxAttr()', () => {
+    expect(String(jsxAttr('ref', { current: null } as never))).toBe('')
+    expect(String(jsxAttr('ref', (() => {}) as never))).toBe('')
+  })
+
   it('Should render nothing for a null style object in jsxAttr()', () => {
     expect(String(jsxAttr('style', null as never))).toBe('')
   })
