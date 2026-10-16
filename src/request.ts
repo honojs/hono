@@ -102,7 +102,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex]?.[1][key]
-    const param = this.#getParamValue(paramKey)
+    const param =
+      key === '*' && paramKey === undefined
+        ? this.#getWildcardValue()
+        : this.#getParamValue(paramKey)
     return param && tryDecodeURIComponent(param)
   }
 
@@ -117,7 +120,30 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       }
     }
 
+    const wildcard = this.#getWildcardValue()
+    if (wildcard !== undefined) {
+      decoded['*'] = tryDecodeURIComponent(wildcard)
+    }
+
     return decoded
+  }
+
+  // The part of the path matched by `*` in the route, e.g. `b/c` for `/a/*` and `/a/b/c`
+  #getWildcardValue(): string | undefined {
+    const routePath = this.#matchResult[0][this.routeIndex]?.[0][1].path
+    if (!routePath) {
+      return
+    }
+    if (routePath === '*' || routePath === '/*') {
+      return this.path.slice(this.path.charCodeAt(0) === 47 ? 1 : 0)
+    }
+    const routeParts = routePath.split('/')
+    const index = routeParts.indexOf('*')
+    if (index === -1) {
+      return
+    }
+    const pathParts = this.path.split('/')
+    return index === routeParts.length - 1 ? pathParts.slice(index).join('/') : pathParts[index]
   }
 
   #getParamValue(paramKey: any): string | undefined {

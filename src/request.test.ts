@@ -155,6 +155,53 @@ describe('json()', () => {
   })
 })
 
+describe('Wildcard parameter', () => {
+  const request = (routePath: string, path: string) =>
+    new HonoRequest<'/'>(new Request(`http://localhost${path}`), path, [
+      [[[undefined, { basePath: '/', handler: () => {}, method: 'GET', path: routePath }], {}]],
+    ])
+
+  test.each([
+    ['/a/*', '/a/b', 'b'],
+    ['/a/*', '/a/b/c', 'b/c'],
+    ['/a/*', '/a/', ''],
+    ['/a/*', '/a', ''],
+    ['/*', '/a/b', 'a/b'],
+    ['*', '/a/b', 'a/b'],
+    ['/a/*/b', '/a/x/b', 'x'],
+    ['/a/*', '/a/%E3%81%82', 'あ'],
+  ])('%s with %s captures %s', (routePath, path, expected) => {
+    const req = request(routePath, path)
+    expect(req.param('*')).toBe(expected)
+    expect(req.param()).toEqual({ '*': expected })
+  })
+
+  test('Should not capture for a route without a wildcard segment', () => {
+    expect(request('/a*', '/abc').param('*')).toBeUndefined()
+    expect(request('/a*', '/abc').param()).toEqual({})
+    expect(request('/a', '/a').param('*')).toBeUndefined()
+  })
+
+  test('Should work with named parameters', () => {
+    const req = new HonoRequest<'/users/:id/*'>(
+      new Request('http://localhost/users/123/posts/456'),
+      '/users/123/posts/456',
+      [
+        [
+          [
+            [undefined, { basePath: '/', handler: () => {}, method: 'GET', path: '/users/:id/*' }],
+            { id: '123' },
+          ],
+        ],
+      ]
+    )
+    expect(req.param('*')).toBe('posts/456')
+    expect(req.param()).toEqual({ id: '123', '*': 'posts/456' })
+    expectTypeOf(req.param('*')).toEqualTypeOf<string>()
+    expectTypeOf(req.param()).toEqualTypeOf<{ id: string; '*': string }>()
+  })
+})
+
 describe('req.addValidatedData() and req.data()', () => {
   const rawRequest = new Request('http://localhost')
 
