@@ -161,12 +161,16 @@ export const setMetric: SetMetric = (
   if (typeof valueDescription === 'number') {
     const dur = valueDescription.toFixed(precision || 1)
 
-    const metric = description ? `${name};dur=${dur};desc="${description}"` : `${name};dur=${dur}`
+    const metric = description
+      ? `${name};dur=${dur};desc="${description.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+      : `${name};dur=${dur}`
 
     metrics.headers.push(metric)
   } else {
     // Value-less metric
-    const metric = valueDescription ? `${name};desc="${valueDescription}"` : `${name}`
+    const metric = valueDescription
+      ? `${name};desc="${valueDescription.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+      : `${name}`
 
     metrics.headers.push(metric)
   }
