@@ -478,7 +478,7 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
     childrenToClone = children
   } else {
     const c = (element as JSXNode).props.children
-    childrenToClone = Array.isArray(c) ? c : [c]
+    childrenToClone = c !== undefined ? (Array.isArray(c) ? c : [c]) : []
   }
   return jsx(
     (element as JSXNode).tag,

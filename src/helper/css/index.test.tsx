@@ -248,6 +248,15 @@ describe('CSS Helper', () => {
         '.css-123{padding:1rem;&:hover{padding:2rem}}',
       ],
       [
+        'preserve unquoted url',
+        css`
+          background-image: url(https://example.com/a.png);
+          mask-image: url(${'//cdn.example.com/b.svg'});
+          color: red;
+        `,
+        '.css-123{background-image:url(https://example.com/a.png);mask-image:url(//cdn.example.com/b.svg);color:red}',
+      ],
+      [
         'preserve descendant combinator before pseudo-class',
         css`
           & :first-child {
