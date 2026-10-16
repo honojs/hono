@@ -77,3 +77,59 @@ describe('createElement', () => {
     expect((<div>{object as never}</div>).toString()).toBe('<div></div>')
   })
 })
+
+describe('attribute value escaping', () => {
+  it('should escape a JSX node used as an attribute value', () => {
+    const element = <div title={(<img src='y' onerror='alert(1)' />) as never}>x</div>
+    expect(element.toString()).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape a JSX node resolved from a promise attribute', async () => {
+    const element = (
+      <div title={Promise.resolve(<img src='y' onerror='alert(1)' />) as never}>x</div>
+    )
+    expect(String(await element.toString())).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape an async component node used as an attribute value', async () => {
+    const Async = async () => <img src='y' onerror='alert(1)' />
+    const element = <div title={(<Async />) as never}>x</div>
+    expect(String(await element.toString())).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+  })
+
+  it('should escape an async render result used as an attribute value', async () => {
+    const Async = async () => <img src='y' onerror='alert(1)' />
+    const rendered = await (<Async />).toString()
+    expect((<div title={rendered}>x</div>).toString()).toBe(
+      '<div title="&lt;img src=&quot;y&quot; onerror=&quot;alert(1)&quot;/&gt;">x</div>'
+    )
+    expect((<div>{rendered}</div>).toString()).toBe('<div><img src="y" onerror="alert(1)"/></div>')
+  })
+
+  it('should escape a plain object resolved from a promise attribute', async () => {
+    const element = <div title={Promise.resolve({ toString: () => '<b>x</b>' }) as never}>x</div>
+    expect(String(await element.toString())).toBe('<div title="&lt;b&gt;x&lt;/b&gt;">x</div>')
+  })
+})
+
+describe('declarative Shadow DOM boolean attributes', () => {
+  it.each(['shadowrootclonable', 'shadowrootdelegatesfocus', 'shadowrootserializable'])(
+    'should render %s only when true',
+    (key) => {
+      expect((<template {...{ [key]: true }} />).toString()).toBe(`<template ${key}=""></template>`)
+      expect((<template {...{ [key]: false }} />).toString()).toBe('<template></template>')
+    }
+  )
+})
+
+describe('style attributes', () => {
+  it.each([null, undefined])('should omit a %s style attribute', (style) => {
+    expect((<div style={style as never} />).toString()).toBe('<div></div>')
+  })
+})
