@@ -2,7 +2,7 @@ import { RolldownMagicString } from 'rolldown'
 import { parse, Visitor } from 'rolldown/utils'
 import { defineConfig } from 'vite-plus'
 import type { TsdownPluginOption } from 'vite-plus/pack'
-import { appendExportEmptyToDts } from './build/dts-plugins'
+import { appendExportEmptyToDts, keepBarrelImportsInDts } from './build/dts-plugins'
 
 const entry = ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/*.test.tsx']
 const common = {
@@ -358,7 +358,7 @@ export default defineConfig({
       format: ['esm'],
       outDir: 'dist/types',
       dts: { emitDtsOnly: true },
-      plugins: [removeDtsPrivateFieldsPlugin, appendExportEmptyToDts],
+      plugins: [removeDtsPrivateFieldsPlugin, keepBarrelImportsInDts, appendExportEmptyToDts],
       outExtensions: () => ({ dts: '.d.ts' }),
     },
   ],
