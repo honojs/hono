@@ -25,6 +25,15 @@ describe('LinearRouter', () => {
         ],
       },
       {
+        reason: 'LinearRouter does not split a multi-segment parameter before a following segment',
+        tests: [
+          'Capture multiple directories followed by a parameter > GET /repo/src/index.ts/blame',
+          'Capture multiple directories followed by a parameter > GET /repo/README.md/raw',
+          'Capture regex param matching slashes followed by a parameter > GET /logo.png/thumb.png',
+          'Capture multiple directories followed by a wildcard > GET /a/b',
+        ],
+      },
+      {
         reason: 'LinearRouter allows trailing slashes',
         tests: ['Trailing slash > GET /book/'],
       },

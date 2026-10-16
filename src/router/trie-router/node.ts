@@ -23,7 +23,9 @@ export class Node<T> {
   #children: Record<string, Node<T>> = createNullObject()
   #patterns: Node<T>[] = []
   #pattern?: Pattern | string
+  #endAnchored = false
   #params: Record<string, string> = emptyParams
+  #hasSplitMatch = false
 
   insert(method: string, path: string, handler: T): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -44,6 +46,8 @@ export class Node<T> {
       const child = (curNode.#children[key] ||= new Node())
       if (pattern && !child.#pattern) {
         child.#pattern = pattern
+        // e.g. `/:path{.+}/:action` - the regex ends with `$` because the next part is dynamic
+        child.#endAnchored = isParam && pattern[2] !== true && pattern[2].source.endsWith('$')
         curNode.#patterns.push(child)
       }
       curNode = child
@@ -72,6 +76,10 @@ export class Node<T> {
       const m = node.#methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       if (handlerSet) {
+        // the same handler can be found more than once after splitting, keep the first one
+        if (this.#hasSplitMatch && handlerSets.some((h) => h.handler === handlerSet.handler)) {
+          continue
+        }
         handlerSet.params = createNullObject()
         handlerSets.push(handlerSet)
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
@@ -83,9 +91,21 @@ export class Node<T> {
     }
   }
 
+  #withParams(params: Record<string, string>): Node<T> {
+    const node = new Node<T>()
+    node.#methods = this.#methods
+    node.#children = this.#children
+    node.#patterns = this.#patterns
+    node.#pattern = this.#pattern
+    node.#endAnchored = this.#endAnchored
+    node.#params = params
+    return node
+  }
+
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
     this.#params = emptyParams
+    this.#hasSplitMatch = false
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -152,6 +172,7 @@ export class Node<T> {
               }
             }
             const restPathString = path.slice(partOffsets[i])
+            const endAnchored = child.#endAnchored
 
             const m = matcher.exec(restPathString)
             if (m) {
@@ -169,14 +190,33 @@ export class Node<T> {
                 )
               }
 
+              if (!endAnchored) {
+                for (const _ in child.#children) {
+                  child.#params = params
+                  const componentCount = m[0].match(/\//g)?.length ?? 0
+                  const targetCurNodes = (curNodesQueue[componentCount] ||= [])
+                  targetCurNodes.push(child)
+                  break
+                }
+
+                continue
+              }
+            }
+
+            // `/:path{.+}/:action` => the regex would eat the whole path,
+            // so try every split point and leave the rest for the next segments
+            if (endAnchored) {
               for (const _ in child.#children) {
-                child.#params = params
-                const componentCount = m[0].match(/\//g)?.length ?? 0
-                const targetCurNodes = (curNodesQueue[componentCount] ||= [])
-                targetCurNodes.push(child)
+                for (let k = i; k < len - 1; k++) {
+                  const value = path.slice(partOffsets[i], partOffsets[k + 1] - 1)
+                  if (matcher.test(value)) {
+                    const splitParams = { ...params, [name]: value }
+                    ;(curNodesQueue[k - i] ||= []).push(child.#withParams(splitParams))
+                    this.#hasSplitMatch = true
+                  }
+                }
                 break
               }
-
               continue
             }
           }
