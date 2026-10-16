@@ -155,7 +155,9 @@ export class Node<T> {
 
             const m = matcher.exec(restPathString)
             if (m) {
-              params[name] = m[0]
+              if (!Object.hasOwn(params, name)) {
+                params[name] = m[0]
+              }
               this.#pushHandlerSets(handlerSets, child, method, node.#params, params)
 
               // '/:id{[0-9]+}/*' => match '/123'
@@ -182,7 +184,9 @@ export class Node<T> {
           }
 
           if (matcher === true || matcher.test(part)) {
-            params[name] = part
+            if (!Object.hasOwn(params, name)) {
+              params[name] = part
+            }
             if (isLast) {
               this.#pushHandlerSets(handlerSets, child, method, params, node.#params)
               if (child.#children['*']) {

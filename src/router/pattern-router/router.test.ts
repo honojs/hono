@@ -7,7 +7,11 @@ describe('Pattern', () => {
     skip: [
       {
         reason: 'UnsupportedPath',
-        tests: ['Duplicate param name > self'],
+        tests: [
+          'Duplicate param name > self',
+          'Duplicate param name > self with trailing static',
+          'Duplicate param name > self three times',
+        ],
       },
       {
         reason: 'PatternRouter allows trailing slashes',
