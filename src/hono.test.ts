@@ -362,6 +362,7 @@ describe('Options', () => {
     describe('strict is false with `getPath` option', () => {
       const app = new Hono({
         strict: false,
+        // @ts-expect-error `getPath` is not used when `strict` is false
         getPath: getPath,
       })
 
