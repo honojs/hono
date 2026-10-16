@@ -185,7 +185,7 @@ export const styleObjectForEach = (
     let value: string
     if (typeof v === 'number') {
       value = !key.match(
-        /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
+        /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?!.*gap)(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
       )
         ? `${v}px`
         : `${v}`

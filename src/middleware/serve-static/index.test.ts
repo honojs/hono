@@ -45,6 +45,58 @@ describe('Serve Static Middleware', () => {
     getContent.mockClear()
   })
 
+  it.each(['GET', 'HEAD'])(
+    'Should serve files for %s requests registered with use()',
+    async (method) => {
+      const app = new Hono().use('/static/*', serveStatic)
+
+      const res = await app.request('/static/hello.html', { method })
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+      expect(await res.text()).toBe(method === 'HEAD' ? '' : 'Hello in static/hello.html')
+      expect(getContent).toBeCalledTimes(1)
+    }
+  )
+
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'PROPFIND'])(
+    'Should pass %s requests to the next handler without accessing files',
+    async (method) => {
+      const isDir = vi.fn(() => false)
+      const rewriteRequestPath = vi.fn((path: string) => path)
+      const onFound = vi.fn()
+      const onNotFound = vi.fn()
+      const app = new Hono().use(
+        '/static/*',
+        baseServeStatic({ getContent, isDir, rewriteRequestPath, onFound, onNotFound })
+      )
+      app.on(method, '/static/hello.html', (c) => c.text('Handled downstream', 202))
+
+      const res = await app.request('/static/hello.html', { method })
+
+      expect(res.status).toBe(202)
+      expect(await res.text()).toBe('Handled downstream')
+      expect(rewriteRequestPath).not.toBeCalled()
+      expect(isDir).not.toBeCalled()
+      expect(getContent).not.toBeCalled()
+      expect(onFound).not.toBeCalled()
+      expect(onNotFound).not.toBeCalled()
+    }
+  )
+
+  it.each(['/static/hello.html', '/static/not-found.txt'])(
+    'Should return 404 for an unhandled POST request regardless of file existence - %s',
+    async (path) => {
+      const app = new Hono().use('/static/*', serveStatic)
+
+      const res = await app.request(path, { method: 'POST' })
+
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found')
+      expect(getContent).not.toBeCalled()
+    }
+  )
+
   it('Should return 200 response - /static/hello.html', async () => {
     const res = await app.request('/static/hello.html')
     expect(res.status).toBe(200)
@@ -68,11 +120,54 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('Hello in static/hello.world/index.html')
   })
 
-  it('Should decode URI strings - /static/%E7%82%8E.txt', async () => {
-    const res = await app.request('/static/%E7%82%8E.txt')
+  it.each([
+    ['/static/%E7%82%8E.txt', 'static/炎.txt'],
+    ['/static/hello%20world.txt', 'static/hello world.txt'],
+  ])('Should decode URI strings - %s', async (url, path) => {
+    const res = await app.request(url)
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
-    expect(await res.text()).toBe('Hello in static/炎.txt')
+    expect(await res.text()).toBe(`Hello in ${path}`)
+  })
+
+  it.each(['/static/100%25.txt', '/static/100%25/hello.txt', '/static/%2Fadmin/secret.txt'])(
+    'Should skip paths containing percent signs by default - %s',
+    async (path) => {
+      const onNotFound = vi.fn()
+      const app = new Hono().use('*', baseServeStatic({ getContent, onNotFound }))
+
+      const res = await app.request(path)
+
+      expect(res.status).toBe(404)
+      expect(getContent).not.toBeCalled()
+      expect(onNotFound).toHaveBeenCalledWith(path, expect.anything())
+    }
+  )
+
+  it.each([
+    ['/static/100%25.txt', 'static/100%.txt'],
+    ['/static/100%25/hello.txt', 'static/100%/hello.txt'],
+    ['/static/%2Fadmin/secret.txt', 'static/%2Fadmin/secret.txt'],
+  ])('Should allow percent signs when opted in - %s', async (url, path) => {
+    const app = new Hono().use('*', baseServeStatic({ getContent, allowPercentInPath: true }))
+
+    const res = await app.request(url)
+
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(`Hello in ${path}`)
+  })
+
+  it('Should not bypass authentication through a second decode', async () => {
+    const app = new Hono()
+    app.get('/static/admin/*', (c) => c.text('Unauthorized', 401))
+    app.use('/static/*', baseServeStatic({ getContent }))
+
+    const protectedRes = await app.request('/static/admin/secret.txt')
+    expect(protectedRes.status).toBe(401)
+
+    const res = await app.request('/static/%%36%31dmin/secret.txt')
+    expect(res.status).toBe(404)
+    expect(getContent).not.toBeCalled()
   })
 
   it('Should return 404 response - /static/not-found.txt', async () => {
@@ -327,7 +422,7 @@ describe('Serve Static Middleware', () => {
 
       const res2 = await app.request('/admin%2Fsecret.txt')
       expect(res2.headers.get('X-Authorized')).toBeNull()
-      expect(await res2.text()).toBe('Hello in admin%2Fsecret.txt')
+      expect(res2.status).toBe(404)
 
       const res3 = await app.request('//admin/secret.txt')
       expect(res3.status).toBe(404)

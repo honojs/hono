@@ -49,6 +49,7 @@ type Env = {
  *
  * export default handle(app)
  * ```
+ * @deprecated `hono/netlify` will be removed in v5. Install `@hono/netlify` and import from there instead.
  */
 export const getConnInfo: GetConnInfo = (c: Context<Env>) => ({
   remote: {

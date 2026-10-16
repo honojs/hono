@@ -3,6 +3,9 @@ import type { ServeStaticOptions as BaseServeStaticOptions } from '../../middlew
 import type { Env, MiddlewareHandler } from '../../types'
 import { getContentFromKVAsset } from './utils'
 
+/**
+ * @deprecated `hono/cloudflare-workers` will be removed in v5. Install `@hono/cloudflare-workers` and import from there instead.
+ */
 export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> & {
   // namespace is KVNamespace
   namespace?: unknown

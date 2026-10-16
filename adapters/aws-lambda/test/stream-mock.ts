@@ -1,0 +1,41 @@
+import { Writable } from 'node:stream'
+import { vi } from 'vitest'
+import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from '../src/handler'
+import type { LambdaContext } from '../src/types'
+
+type StreamifyResponseHandler = (
+  handlerFunc: (
+    event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+    responseStream: Writable,
+    context: LambdaContext
+  ) => Promise<void>
+) => (event: APIGatewayProxyEvent, context: LambdaContext) => Promise<NodeJS.WritableStream>
+
+const mockStreamifyResponse: StreamifyResponseHandler = (handlerFunc) => {
+  return async (event, context) => {
+    const chunks: unknown[] = []
+    const mockWritableStream = new Writable({
+      write(chunk, _encoding, callback) {
+        chunks.push(chunk)
+        callback()
+      },
+    })
+    // @ts-expect-error chunks property for testing
+    mockWritableStream.chunks = chunks
+    await handlerFunc(event, mockWritableStream, context)
+    mockWritableStream.end()
+    return mockWritableStream
+  }
+}
+
+const awslambda = {
+  streamifyResponse: mockStreamifyResponse,
+  HttpResponseStream: {
+    from: (stream: Writable, httpResponseMetadata: unknown): Writable => {
+      stream.write(Buffer.from(JSON.stringify(httpResponseMetadata)))
+      return stream
+    },
+  },
+}
+
+vi.stubGlobal('awslambda', awslambda)

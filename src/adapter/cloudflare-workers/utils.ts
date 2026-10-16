@@ -2,12 +2,18 @@
 declare const __STATIC_CONTENT: unknown
 declare const __STATIC_CONTENT_MANIFEST: string
 
+/**
+ * @deprecated `hono/cloudflare-workers` will be removed in v5. Install `@hono/cloudflare-workers` and import from there instead.
+ */
 export type KVAssetOptions = {
   manifest?: object | string
   // namespace is KVNamespace
   namespace?: unknown
 }
 
+/**
+ * @deprecated `hono/cloudflare-workers` will be removed in v5. Install `@hono/cloudflare-workers` and import from there instead.
+ */
 export const getContentFromKVAsset = async (
   path: string,
   options?: KVAssetOptions

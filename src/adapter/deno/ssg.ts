@@ -5,6 +5,7 @@ import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg/i
  * @experimental
  * `denoFileSystemModule` is an experimental feature.
  * The API might be changed.
+ * @deprecated `hono/deno` will be removed in v5. Install `@hono/deno` and import from there instead.
  */
 export const denoFileSystemModule: FileSystemModule = {
   writeFile: async (path, data) => {
@@ -21,6 +22,7 @@ export const denoFileSystemModule: FileSystemModule = {
  * @experimental
  * `toSSG` is an experimental feature.
  * The API might be changed.
+ * @deprecated `hono/deno` will be removed in v5. Install `@hono/deno` and import from there instead.
  */
 export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
   return baseToSSG(app, denoFileSystemModule, options)

@@ -4,6 +4,7 @@ import { getBunServer } from './server'
 
 /**
  * @internal
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export interface BunServerWebSocket<T> {
   send(data: string | ArrayBuffer | Uint8Array, compress?: boolean): void
@@ -12,6 +13,9 @@ export interface BunServerWebSocket<T> {
   readyState: 0 | 1 | 2 | 3
 }
 
+/**
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
+ */
 export interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
@@ -21,6 +25,9 @@ interface CreateWebSocket<T> {
   upgradeWebSocket: UpgradeWebSocket<T>
   websocket: BunWebSocketHandler<BunWebSocketData>
 }
+/**
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
+ */
 export interface BunWebSocketData {
   events: WSEvents
   url: URL
@@ -29,6 +36,7 @@ export interface BunWebSocketData {
 
 /**
  * @internal
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
 export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
   return new WSContext({
@@ -45,6 +53,9 @@ export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSCon
   })
 }
 
+/**
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
+ */
 export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
   const server = getBunServer<{
     upgrade<T>(
@@ -73,6 +84,9 @@ export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c,
   return // failed
 })
 
+/**
+ * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
+ */
 export const websocket: BunWebSocketHandler<BunWebSocketData> = {
   open(ws) {
     const websocketListeners = ws.data.events

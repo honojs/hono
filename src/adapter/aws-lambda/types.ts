@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface CognitoIdentity {
   cognitoIdentityId: string
   cognitoIdentityPoolId: string
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ClientContext {
   client: ClientContextClient
 
@@ -12,6 +18,9 @@ export interface ClientContext {
   env: ClientContextEnv
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ClientContextClient {
   installationId: string
   appTitle: string
@@ -20,6 +29,9 @@ export interface ClientContextClient {
   appPackageName: string
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ClientContextEnv {
   platformVersion: string
   platform: string
@@ -31,6 +43,7 @@ export interface ClientContextEnv {
 /**
  * {@link Handler} context parameter.
  * See {@link https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-context.html AWS documentation}.
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
  */
 export interface LambdaContext {
   callbackWaitsForEmptyEventLoop: boolean
@@ -49,6 +62,9 @@ export interface LambdaContext {
 
 type Callback<TResult = any> = (error?: Error | string | null, result?: TResult) => void
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export type Handler<TEvent = any, TResult = any> = (
   event: TEvent,
   context: LambdaContext,
@@ -82,6 +98,9 @@ interface Identity {
   clientCert?: ClientCert
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ApiGatewayRequestContext {
   accountId: string
   apiId: string
@@ -125,6 +144,9 @@ interface Authorizer {
   lambda?: Record<string, unknown> | null
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ApiGatewayRequestContextV2 {
   accountId: string
   apiId: string
@@ -146,12 +168,18 @@ export interface ApiGatewayRequestContextV2 {
   timeEpoch: number
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface ALBRequestContext {
   elb: {
     targetGroupArn: string
   }
 }
 
+/**
+ * @deprecated `hono/aws-lambda` will be removed in v5. Install `@hono/aws-lambda` and import from there instead.
+ */
 export interface LatticeRequestContextV2 {
   serviceNetworkArn: string
   serviceArn: string

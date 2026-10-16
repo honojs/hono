@@ -10,9 +10,12 @@ indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
 
-[*.{md,yaml,yml}]
+[*.{yaml,yml}]
 indent_style = space
 indent_size = 2
+trim_trailing_whitespace = false
+
+[*.md]
 trim_trailing_whitespace = false
 
 [*.{lockb,pxm}]

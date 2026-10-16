@@ -8,12 +8,16 @@ import type { Env, Schema } from '../../types'
 import type { FetchEvent } from './types'
 
 type Handler = (evt: FetchEvent) => void
+/**
+ * @deprecated `hono/service-worker` will be removed in v5. Install `@hono/service-worker` and import from there instead.
+ */
 export type HandleOptions = {
   fetch?: typeof fetch
 }
 
 /**
  * Adapter for Service Worker
+ * @deprecated `hono/service-worker` will be removed in v5. Install `@hono/service-worker` and import from there instead.
  */
 export const handle = <E extends Env, S extends Schema, BasePath extends string>(
   app: Hono<E, S, BasePath>,

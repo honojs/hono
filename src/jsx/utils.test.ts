@@ -205,6 +205,9 @@ describe('styleObjectForEach', () => {
       ${'right'}
       ${'top'}
       ${'width'}
+      ${'gridGap'}
+      ${'gridRowGap'}
+      ${'gridColumnGap'}
     `('$property', ({ property }) => {
       const fn = vi.fn()
       styleObjectForEach({ [property]: 1 }, fn)

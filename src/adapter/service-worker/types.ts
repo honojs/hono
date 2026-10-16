@@ -3,6 +3,9 @@ interface ExtendableEvent extends Event {
   waitUntil(f: Promise<any>): void
 }
 
+/**
+ * @deprecated `hono/service-worker` will be removed in v5. Install `@hono/service-worker` and import from there instead.
+ */
 export interface FetchEvent extends ExtendableEvent {
   readonly clientId: string
   readonly handled: Promise<void>

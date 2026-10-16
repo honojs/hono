@@ -18,6 +18,7 @@ import type { GetConnInfo } from '../../helper/conninfo'
  *
  * export const onRequest = handle(app)
  * ```
+ * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export const getConnInfo: GetConnInfo = (c) => ({
   remote: {

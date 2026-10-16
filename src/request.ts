@@ -359,7 +359,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `.url()` can get the request url strings.
+   * `.url` can get the request url strings.
    *
    * @see {@link https://hono.dev/docs/api/request#url}
    *
@@ -376,7 +376,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `.method()` can get the method name of the request.
+   * `.method` can get the method name of the request.
    *
    * @see {@link https://hono.dev/docs/api/request#method}
    *
@@ -396,7 +396,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `.matchedRoutes()` can return a matched route in the handler
+   * `.matchedRoutes` can return a matched route in the handler
    *
    * @deprecated
    *
@@ -427,7 +427,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   /**
-   * `routePath()` can retrieve the path registered within the handler
+   * `.routePath` can retrieve the path registered within the handler
    *
    * @deprecated
    *
