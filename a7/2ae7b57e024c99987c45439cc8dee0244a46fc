@@ -1,7 +1,7 @@
 src/jsx/components.ts
-  s_4d1db9202be13a::t_9eac27e47a104d 129
+  s_a34d594424e4c1::t_b9375aafad06f4 129
 src/jsx/streaming.ts
-  s_4d1db9202be13a::t_c0ae60ea4ce95c 112
+  s_a34d594424e4c1::t_2ec02c275c7c1f 112
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -9,11 +9,11 @@ src/jsx/streaming.ts
   "base_commit_sha": "a72ae7b57e024c99987c45439cc8dee0244a46fc",
   "prompts": {},
   "sessions": {
-    "s_4d1db9202be13a": {
+    "s_a34d594424e4c1": {
       "agent_id": {
         "tool": "claude",
-        "id": "eedeb66c-5ed3-4328-ab6d-965ea11f5a26",
-        "model": "unknown"
+        "id": "40b51bf0-7dd6-4b41-93e4-88614937ab4a",
+        "model": "claude-fable-5-1"
       },
       "human_author": "Yusuke Wada <yusuke@kamawada.com>"
     }
