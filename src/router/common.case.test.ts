@@ -368,6 +368,15 @@ export const runTest = ({
         expect(res[2].handler).toEqual('/x')
         expect(res[3].handler).toEqual('/x/*')
       })
+
+      it('Paths containing line terminators', async () => {
+        for (const char of ['\n', '\r', '\u2028', '\u2029']) {
+          const res = match('GET', `/a${char}b`)
+          expect(res.length).toBe(2)
+          expect(res[0].handler).toEqual('/*')
+          expect(res[1].handler).toEqual('*')
+        }
+      })
     })
 
     describe('Suffix wildcard', () => {
@@ -429,6 +438,14 @@ export const runTest = ({
       it('GET /pathfoo', async () => {
         const res = match('GET', '/pathfoo')
         expect(res.length).toBe(0)
+      })
+
+      it('GET /path/containing/line/terminator', async () => {
+        for (const char of ['\n', '\r', '\u2028', '\u2029']) {
+          const res = match('GET', `/path/a${char}b`)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('path')
+        }
       })
     })
 

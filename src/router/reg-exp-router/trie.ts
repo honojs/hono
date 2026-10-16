@@ -56,6 +56,12 @@ export class Trie {
     this.paths[path] = [this.#index++, paramAssoc]
   }
 
+  /**
+   * Builds the combined regular expression for all registered routes in this trie.
+   * Uses the `s` (dotAll) flag to ensure wildcard patterns match decoded line terminators.
+   *
+   * @returns A tuple of [compiledRegExp, indexReplacementMap, paramReplacementMap].
+   */
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
     let regexp = this.#root.buildRegExpStr()
     if (regexp === '') {
@@ -79,6 +85,6 @@ export class Trie {
       return ''
     })
 
-    return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap]
+    return [new RegExp(`^${regexp}`, 's'), indexReplacementMap, paramReplacementMap]
   }
 }

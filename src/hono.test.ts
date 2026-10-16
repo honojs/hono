@@ -487,6 +487,22 @@ describe('Routing', () => {
     expect(app.router.name).toBe('SmartRouter + TrieRouter')
   })
 
+  it('Should match wildcard route and middleware with encoded line terminators', async () => {
+    const app = new Hono()
+    app.use('/*', async (c, next) => {
+      c.header('x-middleware', 'hit')
+      await next()
+    })
+    app.get('/*', (c) => c.text('matched'))
+
+    for (const encoded of ['%0A', '%0D', '%E2%80%A8', '%E2%80%A9']) {
+      const res = await app.request(`http://localhost/a${encoded}b`)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('matched')
+      expect(res.headers.get('x-middleware')).toBe('hit')
+    }
+  })
+
   it('Nested route - subApp with basePath', async () => {
     const app = new Hono()
     const book = new Hono().basePath('/book')
