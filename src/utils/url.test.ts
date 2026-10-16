@@ -48,6 +48,16 @@ describe('url', () => {
     expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
   })
 
+  it.each([
+    ['/x/:prefix{a{2}/b}/x', ['x', ':prefix{a{2}/b}', 'x']],
+    [
+      '/:first{[a-z]{1,3}/b}/:second{[0-9]{2,}/c}',
+      [':first{[a-z]{1,3}/b}', ':second{[0-9]{2,}/c}'],
+    ],
+  ])('Should preserve regex quantifiers and slashes when splitting %s', (path, expected) => {
+    expect(splitRoutingPath(path)).toStrictEqual(expected)
+  })
+
   describe('getPattern', () => {
     it('no pattern', () => {
       const res = getPattern('id')
