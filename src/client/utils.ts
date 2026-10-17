@@ -94,24 +94,61 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function parseResponse<T extends ClientResponse<any>>(
   fetchRes: T | Promise<T>
-): Promise<
-  FilterClientResponseByStatusCode<
-    T,
-    Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode> // Filter out the error responses
-  > extends never
-    ? // Filtered responses does not include any contentful responses, exit with undefined
-      undefined
-    : // Filtered responses includes contentful responses, proceed to infer the type
-      FilterClientResponseByStatusCode<
-          T,
-          Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode>
-        > extends ClientResponse<infer RT, infer _, infer RF>
+): Promise<ParseResponseData<T, SuccessResponseStatusCode>> {
+  return fetchRP(fetchRes)
+}
+
+type SuccessResponseStatusCode = Exclude<
+  ContentfulStatusCode,
+  ClientErrorStatusCode | ServerErrorStatusCode
+>
+type ErrorResponseStatusCode = ClientErrorStatusCode | ServerErrorStatusCode
+
+type ParseResponseData<T extends ClientResponse<any>, U extends number> =
+  FilterClientResponseByStatusCode<T, U> extends never
+    ? undefined
+    : FilterClientResponseByStatusCode<T, U> extends ClientResponse<infer RT, infer _, infer RF>
       ? RF extends 'json'
         ? RT
         : RT extends string
           ? RT
           : string
       : undefined
-> {
-  return fetchRP(fetchRes)
+
+type ParseResponseWithErrorResult<T extends ClientResponse<any>> =
+  | {
+      result: ParseResponseData<T, SuccessResponseStatusCode>
+      error: undefined
+    }
+  | (FilterClientResponseByStatusCode<T, ErrorResponseStatusCode> extends never
+      ? never
+      : {
+          result: undefined
+          error: DetailedError<ParseResponseData<T, ErrorResponseStatusCode>>
+        })
+
+/**
+ * Shortcut to get a consumable response from `hc`'s fetch calls (Response), with types inference.
+ *
+ * Returns either the parsed successful result or a structured error with the parsed error response
+ * data. Fetch errors and response body parsing errors are still thrown.
+ *
+ * @example const { result, error } = await parseResponseWithError(client.posts.$get())
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function parseResponseWithError<T extends ClientResponse<any>>(
+  fetchRes: T | Promise<T>
+): Promise<ParseResponseWithErrorResult<T>> {
+  try {
+    const result = await parseResponse(fetchRes)
+    return { result, error: undefined } as ParseResponseWithErrorResult<T>
+  } catch (error) {
+    if (error instanceof DetailedError) {
+      return {
+        result: undefined,
+        error: error as ParseResponseWithErrorResult<T> extends { error: infer E } ? E : never,
+      } as ParseResponseWithErrorResult<T>
+    }
+    throw error
+  }
 }
