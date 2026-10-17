@@ -24,7 +24,7 @@ type Body = {
   blob: Blob
   formData: FormData
 }
-type BodyCache = Partial<Body>
+type BodyCache = Partial<Omit<Body, 'json'>>
 
 type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
@@ -214,33 +214,41 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return parseBody(this, options)
   }
 
-  #cachedBody = (key: keyof Body) => {
+  #cachedBody = <K extends Exclude<keyof Body, 'json'>>(key: K): Promise<Body[K]> => {
     const { bodyCache, raw } = this
-    const cachedBody = bodyCache[key]
-
-    if (cachedBody) {
-      return cachedBody
+    const cached = bodyCache[key]
+    if (cached) {
+      return cached as unknown as Promise<Body[K]>
     }
-
-    for (const anyCachedKey in bodyCache) {
-      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
-        if (anyCachedKey === 'json') {
-          body = JSON.stringify(body)
-        }
-        // Rebuilding the body through a bare `Response` loses the request's media
-        // type, so a representation that needs it (e.g. `formData()`) can no longer
-        // be produced even though the bytes are still available. Carry the original
-        // `Content-Type` over, except for `FormData`, where `Response` must generate
-        // a fresh multipart boundary of its own.
-        const contentType =
-          anyCachedKey === 'formData' ? undefined : raw.headers.get('content-type')
-        return new Response(body, {
+    // Read before consuming the body: Bun generates the multipart boundary lazily,
+    // and a header read afterwards would not match the serialized bytes
+    const contentType = raw.headers.get('content-type')
+    if (key === 'text') {
+      const text = (bodyCache.text ??= (
+        bodyCache.arrayBuffer
+          ? (bodyCache.arrayBuffer as unknown as Promise<ArrayBuffer>).then((buffer) =>
+              new TextDecoder().decode(buffer)
+            )
+          : raw.text()
+      ) as never) as unknown as Promise<string>
+      return text as Promise<Body[K]>
+    }
+    const bytes = (bodyCache.arrayBuffer ??= (
+      bodyCache.text
+        ? (bodyCache.text as unknown as Promise<string>).then(
+            (text) => new TextEncoder().encode(text).buffer as ArrayBuffer
+          )
+        : raw.arrayBuffer()
+    ) as never) as unknown as Promise<ArrayBuffer>
+    if (key === 'arrayBuffer') {
+      return bytes as Promise<Body[K]>
+    }
+    return (bodyCache[key] ??= bytes.then(
+      (buffer) =>
+        new Response(buffer, {
           headers: contentType ? { 'Content-Type': contentType } : undefined,
-        })[key]()
-      })
-    }
-
-    return (bodyCache[key] = raw[key]())
+        })[key]() as never
+    ) as never) as unknown as Promise<Body[K]>
   }
 
   /**
@@ -432,21 +440,17 @@ export const cloneRawRequest = async (req: HonoRequest): Promise<Request> => {
     return req.raw.clone()
   }
 
-  const cacheKey = (Object.keys(req.bodyCache) as Array<keyof Body>)[0]
-  if (!cacheKey) {
+  if (!req.bodyCache.arrayBuffer && !req.bodyCache.text) {
     throw new HTTPException(500, {
       message:
         'Cannot clone request: body was already consumed and not cached. Please use HonoRequest methods (e.g., req.json(), req.text()) instead of consuming req.raw directly.',
     })
   }
 
-  let body: BodyInit = await req[cacheKey]()
+  const body = await req.arrayBuffer()
   const headers = req.header()
-  if (cacheKey === 'json') {
-    body = JSON.stringify(body)
-    delete headers['content-length']
-  } else if (body instanceof FormData) {
-    delete headers['content-type']
+  if (Number(headers['content-length']) !== body.byteLength) {
+    // Re-encoded text may differ in length from the original bytes (e.g. a BOM or invalid UTF-8)
     delete headers['content-length']
   }
 

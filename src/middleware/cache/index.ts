@@ -100,12 +100,6 @@ const createQueryDigest = async (
     return undefined
   }
 
-  if (c.req.raw.bodyUsed && Object.keys(c.req.bodyCache)[0] === 'formData') {
-    // FormData cannot be reserialized with a stable multipart boundary after
-    // the original request body has been consumed.
-    return undefined
-  }
-
   try {
     // RFC 10008 Section 2.7 requires QUERY cache keys to incorporate the
     // request content and its related representation metadata.
