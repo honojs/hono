@@ -40,6 +40,33 @@ describe('Basic', () => {
   })
 })
 
+describe('Query parameters', () => {
+  it.each([
+    ['%6eame=first&name=second', 'first', ['first', 'second']],
+    ['%6eame=first&name', 'first', ['first', '']],
+    ['name&%6eame=second', '', ['', 'second']],
+    ['other=value&name', '', ['']],
+    ['name0=other&name=first', 'first', ['first']],
+  ])('preserves the first decoded value for %s', async (query, expected, values) => {
+    const app = new Hono()
+    app.get('/', (c) =>
+      c.json({
+        value: c.req.query('name'),
+        all: c.req.query(),
+        values: c.req.queries('name'),
+      })
+    )
+
+    const res = await app.request(`/?${query}`)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({
+      value: expected,
+      all: { name: expected },
+      values,
+    })
+  })
+})
+
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
     const c = new Context(new Request('http://localhost/'))

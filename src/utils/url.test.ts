@@ -261,6 +261,22 @@ describe('url', () => {
   })
 
   describe('getQueryParam', () => {
+    it.each([
+      ['item%5B%5D=first&item[]=second', 'item[]', 'first'],
+      ['item[]=first&item%5B%5D=second', 'item[]', 'first'],
+      ['%6eame=first&name=second', 'name', 'first'],
+      ['name=first&%6eame=second', 'name', 'first'],
+      ['name0=other&%6eame=first&name=second', 'name', 'first'],
+      ['%6eame=&name=second', 'name', ''],
+      ['%6eame&name=second', 'name', ''],
+      ['name+with+spaces=first&name with spaces=second', 'name with spaces', 'first'],
+    ])('returns the first decoded match for %s', (query, key, expected) => {
+      const url = `http://example.com/?${query}`
+      expect(getQueryParam(url, key)).toBe(expected)
+      expect(getQueryParam(url)).toHaveProperty([key], expected)
+      expect(getQueryParams(url, key)).toEqual([expected, 'second'])
+    })
+
     it('Parse URL query strings', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
       expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey')
