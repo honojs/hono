@@ -81,7 +81,7 @@ describe('CSS Helper', () => {
         <>
           <Style>{css`
             /* multi
-               line */
+              line */
             html {
               color: red;
             }
