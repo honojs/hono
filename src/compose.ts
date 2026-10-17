@@ -50,9 +50,13 @@ export const compose = <E extends Env = Env>(
         try {
           res = await handler(context, () => dispatch(i + 1))
         } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err
-            res = await onError(err, context)
+          if (onError) {
+            const error =
+              err instanceof Error
+                ? err
+                : new Error(typeof err === 'string' ? err : undefined, { cause: err })
+            context.error = error
+            res = await onError(error, context)
             isError = true
           } else {
             throw err
