@@ -15,6 +15,11 @@ import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './uti
 import type { BaseMime } from './utils/mime'
 import type { InvalidJSONValue, IsAny, JSONParsed, JSONValue } from './utils/types'
 
+const copyHeaders = Symbol.for('hono.response.copyHeaders')
+type ResponseWithHeaderCopy = typeof Response & {
+  [copyHeaders]?: (response: Response) => Response | undefined
+}
+
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
   | Record<ResponseHeader, string | string[]>
@@ -518,7 +523,10 @@ export class Context<
    */
   header: SetHeaders = (name, value, options): void => {
     if (this.finalized) {
-      this.#res = createResponseInstance((this.#res as Response).body, this.#res)
+      // Adapters may preserve a buffered body while copying response metadata.
+      this.#res =
+        (Response as ResponseWithHeaderCopy)[copyHeaders]?.(this.#res as Response) ??
+        createResponseInstance((this.#res as Response).body, this.#res)
     }
     const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
     if (value === undefined) {
