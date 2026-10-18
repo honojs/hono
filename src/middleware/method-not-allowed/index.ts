@@ -79,7 +79,12 @@ export const methodNotAllowed = <E extends Env = Env>(
       for (const route of options.app.routes) {
         // Hono does not distinguish middleware registered with `app.use()` from handlers
         // registered with `app.all()`, so `ALL` routes cannot contribute to the Allow header.
-        if (route.method === METHOD_NAME_ALL || route.method === 'HEAD') {
+        // Trailing wildcard routes match arbitrary paths and should not convert unhandled paths to 405.
+        if (
+          route.method === METHOD_NAME_ALL ||
+          route.method === 'HEAD' ||
+          route.path.endsWith('*')
+        ) {
           continue
         }
 
