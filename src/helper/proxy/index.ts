@@ -47,16 +47,7 @@ interface ProxyFetch {
   (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
 }
 
-const buildRequestInitFromRequest = (
-  request: Request | undefined,
-  strictConnectionProcessing: boolean
-): RequestInit & { duplex?: 'half' } => {
-  if (!request) {
-    return {}
-  }
-
-  const headers = new Headers(request.headers)
-
+const processRequestHeaders = (headers: Headers, strictConnectionProcessing: boolean): void => {
   if (strictConnectionProcessing) {
     // https://datatracker.ietf.org/doc/html/rfc9110#section-7.6.1
     // Parse Connection header and remove listed headers (MUST per RFC 9110)
@@ -80,6 +71,18 @@ const buildRequestInitFromRequest = (
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
   })
+}
+
+const buildRequestInitFromRequest = (
+  request: Request | undefined,
+  strictConnectionProcessing: boolean
+): RequestInit & { duplex?: 'half' } => {
+  if (!request) {
+    return {}
+  }
+
+  const headers = new Headers(request.headers)
+  processRequestHeaders(headers, strictConnectionProcessing)
 
   return {
     method: request.method,
@@ -169,6 +172,9 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
     ...buildRequestInitFromRequest(raw, strictConnectionProcessing),
     ...preprocessRequestInit(requestInit as RequestInit),
   })
+  if (!raw && input instanceof Request && requestInit.headers === undefined) {
+    processRequestHeaders(req.headers, strictConnectionProcessing)
+  }
   req.headers.delete('accept-encoding')
 
   const res = await (customFetch || fetch)(req)
