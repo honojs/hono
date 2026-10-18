@@ -2,7 +2,7 @@
 import { vi } from 'vitest'
 import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
-import type { HonoJsonWebKey } from './jws'
+import type { HonoJsonWebKey, SignatureKey } from './jws'
 import { signing } from './jws'
 import * as JWT from './jwt'
 import { verifyWithJwks } from './jwt'
@@ -1784,5 +1784,31 @@ describe('PEM parsing', async () => {
     const verified = await JWT.verify(token, privateKey, 'EdDSA')
 
     expect(verified).toEqual(payload)
+  })
+})
+
+describe('SignatureKey and HonoJsonWebKey typing', () => {
+  it('accepts valid JWK with kid and standard fields', async () => {
+    const payload = { sub: '123' }
+    const validJwk: HonoJsonWebKey = {
+      kty: 'oct',
+      k: 'c2VjcmV0LWtleS12YWx1ZQ',
+      kid: 'key-1',
+    }
+    const token = await JWT.sign(payload, validJwk, 'HS256')
+    expect(await JWT.verify(token, validJwk, 'HS256')).toEqual(payload)
+  })
+
+  it('rejects invalid key types at compile time', () => {
+    // @ts-expect-error unawaited Promise<CryptoKey> is not a SignatureKey
+    const unawaitedPromise: SignatureKey = Promise.resolve({} as CryptoKey)
+    // @ts-expect-error number is not a SignatureKey
+    const numberKey: SignatureKey = 12345
+    // @ts-expect-error arbitrary object is not a SignatureKey
+    const arbitraryObj: SignatureKey = { invalid: true, foo: 'bar' }
+
+    expect(unawaitedPromise).toBeDefined()
+    expect(numberKey).toBe(12345)
+    expect(arbitraryObj).toBeDefined()
   })
 })
