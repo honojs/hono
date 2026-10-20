@@ -61,4 +61,10 @@ describe('mime', () => {
     expect(getExtension('image/svg+xml')).toBe('svg')
     expect(getExtension('application/xml')).toBe('xml')
   })
+
+  it('getExtension matches MIME types case-insensitively', () => {
+    expect(getExtension('APPLICATION/JSON')).toBe('json')
+    expect(getExtension('Text/HTML; Charset=UTF-8')).toBe('htm')
+    expect(getExtension('IMAGE/PNG')).toBe('png')
+  })
 })
