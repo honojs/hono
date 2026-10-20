@@ -26,15 +26,15 @@ describe('InferInput', () => {
     }>()
   })
 
-  it('should convert string to string | string[] for query', () => {
+  it('should convert string to string[] for query', () => {
     expectTypeOf<InferInput<{ page: string }, 'query'>>().toEqualTypeOf<{
-      page: string | string[]
+      page: string[]
     }>()
   })
 
-  it('should convert number to string | string[] for query', () => {
+  it('should convert number to string[] for query', () => {
     expectTypeOf<InferInput<{ page: number }, 'query'>>().toEqualTypeOf<{
-      page: string | string[]
+      page: string[]
     }>()
   })
 
@@ -50,9 +50,9 @@ describe('InferInput', () => {
     }>()
   })
 
-  it('should convert unknown to string | string[] for query (coerce support)', () => {
+  it('should convert unknown to string[] for query (coerce support)', () => {
     expectTypeOf<InferInput<{ page: unknown }, 'query'>>().toEqualTypeOf<{
-      page: string | string[]
+      page: string[]
     }>()
   })
 
