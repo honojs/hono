@@ -253,6 +253,19 @@ export type InferResponseType<T, U extends StatusCode = StatusCode> = InferRespo
   U
 >
 
+/**
+ * Infer response details from a Hono client method as a discriminated union.
+ * Includes the response body, status code, format, and whether the status is successful.
+ *
+ * @example
+ * ```ts
+ * type Response = InferResponseTypeWithDetail<typeof client.index.$get>
+ * ```
+ */
+export type InferResponseTypeWithDetail<T> = InferResponseTypeWithDetailFromEndpoint<
+  InferEndpointType<T>
+>
+
 type InferResponseTypeFromEndpoint<T extends Endpoint, U extends StatusCode> = T extends {
   output: infer O
   status: infer S
@@ -260,6 +273,19 @@ type InferResponseTypeFromEndpoint<T extends Endpoint, U extends StatusCode> = T
   ? S extends U
     ? O
     : never
+  : never
+
+type InferResponseTypeWithDetailFromEndpoint<T extends Endpoint> = T extends {
+  output: infer O
+  outputFormat: infer F
+  status: infer S
+}
+  ? {
+      body: O
+      statusCode: S
+      format: F
+      ok: S extends SuccessStatusCode ? true : false
+    }
   : never
 
 export type InferRequestType<T> = T extends (
