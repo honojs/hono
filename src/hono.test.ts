@@ -362,6 +362,7 @@ describe('Options', () => {
     describe('strict is false with `getPath` option', () => {
       const app = new Hono({
         strict: false,
+        // @ts-expect-error `getPath` is not used when `strict` is false
         getPath: getPath,
       })
 
@@ -2214,6 +2215,24 @@ describe('Multiple handler', () => {
         const res = await app.request('/123/456')
         expect(res.status).toBe(200)
         expect(await res.text()).toBe('id is 123')
+      })
+    })
+
+    describe('self with trailing static is stable across SmartRouter fallback', () => {
+      it('Should return the first id whether or not an unrelated route is registered', async () => {
+        const a = new Hono()
+        a.get('/:id/:id/x', (c) => c.text(c.req.param('id')))
+        const resA = await a.request('/123/456/x')
+        expect(resA.status).toBe(200)
+        expect(await resA.text()).toBe('123')
+
+        const b = new Hono()
+        b.get('/:id/:id/x', (c) => c.text(c.req.param('id')))
+        b.get('/a', (c) => c.text('a'))
+        const resB = await b.request('/123/456/x')
+        expect(resB.status).toBe(200)
+        expect(await resB.text()).toBe('123')
+        expect(b.router.name).toBe('SmartRouter + TrieRouter')
       })
     })
 

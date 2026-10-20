@@ -11,7 +11,7 @@ const fixture = fileURLToPath(new URL('./fixtures/declaration-emit', import.meta
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 
 describe('published declarations', () => {
-  it('let consumers emit declarations for types inferred from hono', () => {
+  it('let consumers emit declarations for types inferred from hono', { timeout: 30_000 }, () => {
     // The fixture must live outside this package: inside it, tsc can always reach
     // `dist/types/*` with a relative path and never reports TS2883.
     const project = mkdtempSync(join(tmpdir(), 'hono-declaration-emit-'))

@@ -45,14 +45,6 @@ type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings']
 
 export type HonoOptions<E extends Env> = {
   /**
-   * `strict` option specifies whether to distinguish whether the last path is a directory or not.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#strict-mode}
-   *
-   * @default true
-   */
-  strict?: boolean
-  /**
    * `router` option specifies which router to use.
    *
    * @see {@link https://hono.dev/docs/api/hono#router-option}
@@ -63,28 +55,51 @@ export type HonoOptions<E extends Env> = {
    * ```
    */
   router?: Router<[H, RouterRoute]>
-  /**
-   * `getPath` can handle the host header value.
-   *
-   * @see {@link https://hono.dev/docs/api/routing#routing-with-host-header-value}
-   *
-   * @example
-   * ```ts
-   * const app = new Hono({
-   *  getPath: (req) =>
-   *   '/' + req.headers.get('host') + req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1'),
-   * })
-   *
-   * app.get('/www1.example.com/hello', () => c.text('hello www1'))
-   *
-   * // A following request will match the route:
-   * // new Request('http://www1.example.com/hello', {
-   * //  headers: { host: 'www1.example.com' },
-   * // })
-   * ```
-   */
-  getPath?: GetPath<E>
-}
+} & (
+  | {
+      /**
+       * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#strict-mode}
+       *
+       * @default true
+       */
+      strict?: true
+      /**
+       * `getPath` can handle the host header value.
+       *
+       * @see {@link https://hono.dev/docs/api/routing#routing-with-host-header-value}
+       *
+       * @example
+       * ```ts
+       * const app = new Hono({
+       *  getPath: (req) =>
+       *   '/' + req.headers.get('host') + req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1'),
+       * })
+       *
+       * app.get('/www1.example.com/hello', () => c.text('hello www1'))
+       *
+       * // A following request will match the route:
+       * // new Request('http://www1.example.com/hello', {
+       * //  headers: { host: 'www1.example.com' },
+       * // })
+       * ```
+       */
+      getPath?: GetPath<E>
+    }
+  | {
+      /**
+       * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+       * When `strict` is `false`, `getPath` is not used.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#strict-mode}
+       *
+       * @default true
+       */
+      strict: false
+      getPath?: never
+    }
+)
 
 type MountOptionHandler = (c: Context) => unknown
 type MountReplaceRequest = (originalRequest: Request) => Request
@@ -298,6 +313,8 @@ class Hono<
 
   /**
    * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
+   *
+   * @deprecated Use `mount()` from `hono/mount` instead. `.mount()` will be removed in v5.
    *
    * @see {@link https://hono.dev/docs/api/hono#mount}
    *
