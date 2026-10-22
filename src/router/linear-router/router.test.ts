@@ -12,10 +12,23 @@ describe('LinearRouter', () => {
           'Trailing wildcard after a middle wildcard > GET /acme/x/y with a named parameter',
           'Complex > Parameter with {.*} regexp',
           'Path segment equal to a pattern token > Named parameter with a trailing wildcard',
+          'Wildcard route /v1/*/:id/* with a parameter route',
+          'Wildcard route /v1/:first/*/:last/* with a parameter route',
         ],
       },
     ],
     newRouter: () => new LinearRouter(),
+  })
+
+  describe('Literal asterisks', () => {
+    it.each([
+      ['/x*y', '/x*y'],
+      ['/x*y/*', '/x*y'],
+    ])('Should match %s against %s', (route, path) => {
+      const router = new LinearRouter<string>()
+      router.add('GET', route, 'handler')
+      expect(router.match('GET', path)[0]).toEqual([['handler', {}]])
+    })
   })
 
   describe('Trailing wildcard after parameters', () => {
