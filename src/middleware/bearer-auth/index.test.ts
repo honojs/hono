@@ -218,6 +218,24 @@ describe('Bearer Auth by Middleware', () => {
     })
 
     app.use(
+      '/auth-custom-invalid-token-message-function-response/*',
+      bearerAuth({
+        token,
+        invalidToken: {
+          message: () =>
+            new Response('Forbidden', {
+              status: 403,
+              headers: { 'WWW-Authenticate': 'Custom' },
+            }),
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-function-response/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
       '/auth-custom-invalid-authentication-header-wwwAuthenticateHeader-string/*',
       bearerAuth({
         token: tokens,
@@ -946,6 +964,17 @@ describe('Bearer Auth by Middleware', () => {
     expect(res.headers.get('WWW-Authenticate')).toMatch(/Bearer/)
     expect(handlerExecuted).toBeFalsy()
     expect(await res.json()).toEqual({ type: 'about:blank', title: 'Unauthorized', status: 401 })
+  })
+
+  it('Should not authorize - custom invalid token message as function Response keeps its status and WWW-Authenticate', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-function-response')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(403)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Custom')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Forbidden')
   })
 
   it('Should not authorize - custom invalid token message as function object', async () => {

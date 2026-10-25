@@ -146,7 +146,7 @@ export const bearerAuth = <E extends Env = Env>(
       if (!resHeaders.has('WWW-Authenticate')) {
         resHeaders.set('WWW-Authenticate', headers['WWW-Authenticate'])
       }
-      throw new HTTPException(status, {
+      throw new HTTPException(responseMessage.status as ContentfulStatusCode, {
         res: new Response(responseMessage.body, {
           status: responseMessage.status,
           headers: resHeaders,
