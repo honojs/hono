@@ -148,7 +148,7 @@ export const bearerAuth = <E extends Env = Env>(
       }
       throw new HTTPException(status, {
         res: new Response(responseMessage.body, {
-          status: responseMessage.status || status,
+          status: responseMessage.status,
           headers: resHeaders,
         }),
       })

@@ -202,10 +202,13 @@ describe('Bearer Auth by Middleware', () => {
         token,
         noAuthenticationHeader: {
           message: () =>
-            new Response(JSON.stringify({ type: 'about:blank', title: 'Unauthorized', status: 401 }), {
-              status: 401,
-              headers: { 'Content-Type': 'application/problem+json' },
-            }),
+            new Response(
+              JSON.stringify({ type: 'about:blank', title: 'Unauthorized', status: 401 }),
+              {
+                status: 401,
+                headers: { 'Content-Type': 'application/problem+json' },
+              }
+            ),
         },
       })
     )
