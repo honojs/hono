@@ -1,0 +1,39 @@
+src/router/common.case.test.ts
+  s_f134022a816c97::t_3edbcb0f7f4f06 14-15,156-160,221-250,424-427,490-493,904-913
+src/router/reg-exp-router/router.test.ts
+  s_eebc5901743536::t_25f5cac973fa2c 4,112-122,161-174,187,196-201
+src/router/reg-exp-router/trie.ts
+  s_eebc5901743536::t_7254f736291b89 44
+src/router/reg-exp-router/node.ts
+  s_eebc5901743536::t_c983ba10d4099b 4-6,31,33,73,93-97
+src/router/linear-router/router.test.ts
+  s_eebc5901743536::t_dd4034f1d3c3e7 12-13
+src/router/reg-exp-router/prepared-router.test.ts
+  s_eebc5901743536::t_1f59005befbd2d 125,139
+src/router/reg-exp-router/router.ts
+  s_f134022a816c97::t_18afb802744879 11,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c003e90680b0b0efec4f8e9b7860814fc58a5d33",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    },
+    "s_f134022a816c97": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0238a0c2-31ea-4cd9-a345-18ea2c1d4b46",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
