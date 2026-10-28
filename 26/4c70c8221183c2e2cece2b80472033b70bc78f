@@ -1,0 +1,31 @@
+src/middleware/basic-auth/index.test.ts
+  s_eebc5901743536::t_371a36177edbcc 435-447
+src/middleware/basic-auth/index.ts
+  s_eebc5901743536::t_248ef89e929450 135
+src/middleware/bearer-auth/index.test.ts
+  s_eebc5901743536::t_b5ca50e1e4c519 1074-1086
+src/middleware/bearer-auth/index.ts
+  s_eebc5901743536::t_ea842e46a868ff 118
+src/middleware/jwk/jwk.ts
+  s_eebc5901743536::t_f30c8a4d6b0e31 186-187
+src/middleware/jwt/index.test.ts
+  s_eebc5901743536::t_54471688834c7f 801-813
+src/middleware/jwt/jwt.ts
+  s_eebc5901743536::t_968651ca10ecce 175-176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "264c70c8221183c2e2cece2b80472033b70bc78f",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
