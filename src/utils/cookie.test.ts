@@ -167,7 +167,7 @@ describe('Parse cookie', () => {
   it('Should parse signed cookies', async () => {
     const secret = 'secret ingredient'
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+      'yummy_cookie=choco.rxuqtaC8JFpJOIY%2BHIV8i7y%2BMzhhPvZD13pQIpT%2FwdY%3D; tasty_cookie = strawberry.p%2BLxmxQqukCu%2BFF6DNyHdQRjhItZZ8dSoySacftL8oU%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBe('strawberry')
@@ -178,7 +178,7 @@ describe('Parse cookie', () => {
       172, 142, 204, 63, 210, 136, 58, 143, 25, 18, 159, 16, 161, 34, 94,
     ])
     const cookieString =
-      'yummy_cookie=choco.8Km4IwZETZdwiOfrT7KgYjKXwiO98XIkms0tOtRa2TA%3D; tasty_cookie = strawberry.TbV33P%2Bi1K0JTxMzNYq7FV9fB4s2VlQcBCBFDxTrUSg%3D'
+      'yummy_cookie=choco.j1VG7Ti4jWcKUI66NGEy5G3GRiZ5sBOEqN%2FJthWuEkk%3D; tasty_cookie = strawberry.FcmPFIO9ETBQRSmlZGYwoa%2FiuYuvTwIzWkDVu9iPyUc%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBe('strawberry')
@@ -186,7 +186,8 @@ describe('Parse cookie', () => {
 
   it('Should parse signed cookies containing the signature separator', async () => {
     const secret = 'secret ingredient'
-    const cookieString = 'yummy_cookie=choco.chip.2%2FJA0c68Y3zm0DvSvHyR6IRysDWmHW0LfoaC0AkyOpw%3D'
+    const cookieString =
+      'yummy_cookie=choco.chip.KdzXeZKp8nM99Y5j0rKJzzF%2Bt5hR6R37e6Vdb%2FGosoU%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco.chip')
   })
@@ -195,7 +196,7 @@ describe('Parse cookie', () => {
     const secret = 'secret ingredient'
     // tasty_cookie has invalid signature
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+      'yummy_cookie=choco.rxuqtaC8JFpJOIY%2BHIV8i7y%2BMzhhPvZD13pQIpT%2FwdY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBe(false)
@@ -213,7 +214,7 @@ describe('Parse cookie', () => {
     // yummy_cookie has corrupt signature (i.e. invalid base64 encoding)
     // best_cookie has a shape that matches the signature format but isn't actually a signature
     const cookieString =
-      'yummy_cookie=choco.?dFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; best_cookie=sugar.valueShapedLikeASignatureButIsNotASignature%3D'
+      'yummy_cookie=choco.?dFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.p%2BLxmxQqukCu%2BFF6DNyHdQRjhItZZ8dSoySacftL8oU%3D; best_cookie=sugar.valueShapedLikeASignatureButIsNotASignature%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe(false)
     expect(cookie['tasty_cookie']).toBe('strawberry')
@@ -223,7 +224,7 @@ describe('Parse cookie', () => {
   it('Should parse one signed cookie specified by name', async () => {
     const secret = 'secret ingredient'
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+      'yummy_cookie=choco.rxuqtaC8JFpJOIY%2BHIV8i7y%2BMzhhPvZD13pQIpT%2FwdY%3D; tasty_cookie = strawberry.p%2BLxmxQqukCu%2BFF6DNyHdQRjhItZZ8dSoySacftL8oU%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe('strawberry')
@@ -233,7 +234,7 @@ describe('Parse cookie', () => {
     const secret = 'secret ingredient'
     // tasty_cookie has invalid signature
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+      'yummy_cookie=choco.rxuqtaC8JFpJOIY%2BHIV8i7y%2BMzhhPvZD13pQIpT%2FwdY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe(false)
@@ -243,7 +244,7 @@ describe('Parse cookie', () => {
     const secret = 'secret ingredient'
     // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
     const cookieString =
-      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; great_cookie=rating3.5'
+      'yummy_cookie=choco; tasty_cookie = strawberry.p%2BLxmxQqukCu%2BFF6DNyHdQRjhItZZ8dSoySacftL8oU%3D; great_cookie=rating3.5'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe('strawberry')
@@ -253,7 +254,7 @@ describe('Parse cookie', () => {
   it('Should ignore NBSP-prefixed signed cookie names when parsing one cookie by name', async () => {
     const secret = 'secret ingredient'
     const cookieString =
-      '\u00a0dummy-cookie=evil.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; dummy-cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D'
+      '\u00a0dummy-cookie=evil.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; dummy-cookie=choco.VdNqULL1Fc7g2zCzbFIejkjYdp71D%2B3gVWs%2FpI5bC0s%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret, 'dummy-cookie')
     expect(cookie['dummy-cookie']).toBe('choco')
   })
@@ -261,16 +262,24 @@ describe('Parse cookie', () => {
   it('Should return the first signed cookie when there are duplicate names', async () => {
     const secret = 'secret ingredient'
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; yummy_cookie=strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+      'yummy_cookie=choco.rxuqtaC8JFpJOIY%2BHIV8i7y%2BMzhhPvZD13pQIpT%2FwdY%3D; yummy_cookie=strawberry.o8d%2BvV740Ys4dVL%2F5HwMj3sd11IEl%2BOLdbJ5oRVVBMA%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
   })
 
   it('Should parse signed cookies whose names collide with Object.prototype properties', async () => {
     const secret = 'secret ingredient'
-    const cookieString = 'toString=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D'
+    const cookieString = 'toString=choco.bHPwML03RFbV9WXlGrKSSt855B2ea5SqErU3nuP5wO4%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['toString']).toBe('choco')
+  })
+
+  it('Should return "false" for a value signed under a different cookie name', async () => {
+    const secret = 'secret ingredient'
+    const signed = await serializeSigned('theme', 'admin', secret)
+    const cookieString = signed.split(';')[0].replace(/^theme=/, 'session=')
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['session']).toBe(false)
   })
 })
 
@@ -317,7 +326,7 @@ describe('Set cookie', () => {
     const secret = 'secret chocolate chips'
     const serialized = await serializeSigned('delicious_cookie', 'macha', secret)
     expect(serialized).toBe(
-      'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D'
+      'delicious_cookie=macha.UwFhuSeRHyXL%2BKBtsjMkUHxmBuWOQurr4QV0RbaJIEI%3D'
     )
   })
 
@@ -335,7 +344,7 @@ describe('Set cookie', () => {
       partitioned: true,
     })
     expect(serialized).toBe(
-      'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
+      'great_cookie=banana.xMTXC7bj3guMqrifoBjgdmY7P7PD1NHAdkAgrQ1tHo4%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
     )
   })
 
