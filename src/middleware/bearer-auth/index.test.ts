@@ -1071,6 +1071,19 @@ describe('Bearer Auth types', () => {
   })
 })
 
+describe('Bearer Auth realm', () => {
+  it('Should escape double quotes and backslashes in the realm', async () => {
+    const app = new Hono()
+    app.use('/auth/*', bearerAuth({ token: 'secret', realm: 'my "api"\\' }))
+    app.get('/auth/*', (c) => c.text('ok'))
+
+    const res = await app.request('http://localhost/auth/page')
+
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Bearer realm="my \\"api\\"\\\\"')
+  })
+})
+
 describe('Bearer Auth options validation', () => {
   it('Should throw an error mentioning both "token" and "verifyToken" when neither is provided', () => {
     expect(() => {

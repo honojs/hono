@@ -432,3 +432,16 @@ describe('Basic Auth with onAuthSuccess', () => {
     expect(await res.text()).toBe('yes')
   })
 })
+
+describe('Basic Auth realm', () => {
+  it('Should escape double quotes and backslashes in the realm', async () => {
+    const app = new Hono()
+    app.use('/auth/*', basicAuth({ username: 'user', password: 'pass', realm: 'my "api"\\' }))
+    app.get('/auth/*', (c) => c.text('ok'))
+
+    const res = await app.request('http://localhost/auth/page')
+
+    expect(res.status).toBe(401)
+    expect(res.headers.get('WWW-Authenticate')).toBe('Basic realm="my \\"api\\"\\\\"')
+  })
+})
