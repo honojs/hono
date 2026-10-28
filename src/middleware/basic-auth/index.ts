@@ -132,7 +132,7 @@ export const basicAuth = (
     // Invalid user.
     const status = 401
     const headers = {
-      'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
+      'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/[\\"]/g, '\\$&') + '"',
     }
     const responseMessage =
       typeof options.invalidUserMessage === 'function'

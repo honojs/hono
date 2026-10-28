@@ -172,8 +172,8 @@ function unauthorizedResponse(opts: {
   // `realm` and `error_description` end up inside a quoted-string, so any `"`
   // they contain has to be escaped or the header is cut short. Same handling as
   // the bearer-auth middleware.
-  const realm = (opts.realm ?? opts.ctx.req.url).replace(/"/g, '\\"')
-  const errDescription = opts.errDescription.replace(/"/g, '\\"')
+  const realm = (opts.realm ?? opts.ctx.req.url).replace(/[\\"]/g, '\\$&')
+  const errDescription = opts.errDescription.replace(/[\\"]/g, '\\$&')
 
   return new Response('Unauthorized', {
     status: 401,
