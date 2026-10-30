@@ -298,6 +298,48 @@ describe('compose with Context - 500 error', () => {
     expect(stack).toEqual([0, 1, 2])
   })
 })
+
+describe('compose with Context - Handling throwing a non-Error object', () => {
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+
+  it('String', async () => {
+    const nonErrorString = 'Something went wrong'
+    const handler = () => {
+      throw nonErrorString
+    }
+    const middleware = [buildMiddlewareTuple(handler)]
+    const onError = async (error: Error, c: Context) => {
+      return c.json({ message: error.message, cause: error.message }, 500)
+    }
+
+    const composed = compose(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.json()).toEqual({ message: nonErrorString, cause: nonErrorString })
+    expect(context.finalized).toBe(true)
+  })
+
+  it('Object (not string)', async () => {
+    const nonErrorObject = { body: 'Something went wrong' }
+    const handler = () => {
+      throw nonErrorObject
+    }
+    const middleware = [buildMiddlewareTuple(handler)]
+    const onError = async (error: Error, c: Context) => {
+      return c.json({ cause: error.cause }, 500)
+    }
+
+    const composed = compose(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.json()).toEqual({ cause: nonErrorObject })
+    expect(context.finalized).toBe(true)
+  })
+})
+
 describe('compose with Context - not finalized', () => {
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
