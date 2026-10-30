@@ -141,7 +141,9 @@ export const ErrorBoundary: FC<
         return fallbackCallbacks?.length ? raw('', fallbackCallbacks) : ''
       }
       return raw(
-        `<template data-hono-target="E:${index}">${fallbackResString}</template><script>
+        `<template data-hono-target="E:${index}">${fallbackResString}</template><script${
+          nonce ? ` nonce="${nonce}"` : ''
+        }>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -228,7 +230,7 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
                         content +
                           (resolvedCount !== callbacks.length
                             ? ''
-                            : `<script>
+                            : `<script${nonce ? ` nonce="${nonce}"` : ''}>
 ((d,c,n) => {
 d=d.getElementById('E:${index}')
 if(!d)return
