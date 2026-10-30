@@ -246,7 +246,12 @@ export const verifyWithJwks = async (
     throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
-  const matchingKey = verifyKeys.find((key) => key.kid === header.kid)
+  const matchingKey = verifyKeys.find(
+    (key) =>
+      key.kid === header.kid &&
+      (key.use === undefined || key.use === 'sig') &&
+      (key.key_ops === undefined || (Array.isArray(key.key_ops) && key.key_ops.includes('verify')))
+  )
   if (!matchingKey) {
     throw new JwtTokenInvalid(token)
   }
