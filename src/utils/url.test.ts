@@ -112,6 +112,18 @@ describe('url', () => {
       expect(path).toBe('/hello/hey/')
     })
 
+    it.each([
+      ['/hello%20world', '/hello world'],
+      ['/a%2541', '/a%2541'], // `%25` is kept encoded
+      ['/%E3%81%82', '/あ'],
+      ['/%E3%81', '/%E3%81'], // undecodable, kept as is
+      ['/%E3%81%25', '/%E3%81%25'], // undecodable next to `%25`, kept as is
+      ['/%E3%81/%2541', '/%E3%81/%2541'],
+      ['/%252525', '/%252525'],
+    ])('getPath - percent encoding %s', (pathname, expected) => {
+      expect(getPath(new Request(`https://example.com${pathname}`))).toBe(expected)
+    })
+
     it('getPath - http+unix', () => {
       const path = getPath(new Request('http+unix://%2Ftmp%2Fsocket%2Esock/hello/'))
       expect(path).toBe('/hello/')

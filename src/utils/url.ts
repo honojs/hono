@@ -103,6 +103,10 @@ export const tryDecode = (str: string, decoder: Decoder): string => {
  */
 export const tryDecodeURI = (str: string): string => tryDecode(str, decodeURI)
 
+// `%25` stays encoded so that a later decode of a param does not turn `%2541` into `A`
+const decodeURIKeepingPercent = (str: string): string =>
+  decodeURI(str.includes('%25') ? str.replace(/%25/g, '%2525') : str)
+
 export const getPath = (request: Request): string => {
   const url = request.url
   const start = url.indexOf('/', url.indexOf(':') + 4)
@@ -124,7 +128,7 @@ export const getPath = (request: Request): string => {
             ? queryIndex
             : Math.min(queryIndex, hashIndex)
       const path = url.slice(start, end)
-      return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
+      return tryDecode(path, decodeURIKeepingPercent)
     } else if (charCode === 63 || charCode === 35) {
       // '?' or '#'
       break
