@@ -6,6 +6,7 @@
 import type { MiddlewareHandler } from '../../types'
 import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
+import { addAcceptEncodingToVary } from '../vary'
 
 export { COMPRESSIBLE_CONTENT_TYPE_REGEX }
 
@@ -42,8 +43,6 @@ const selectEncoding = (
   }
   return best?.encoding
 }
-
-const varyAcceptEncodingRegExp = /(?:^|,)\s*accept-encoding\s*(?:,|$)/i
 
 /**
  * Compress Middleware for Hono.
@@ -110,9 +109,10 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     // Accept-Encoding "or lack thereof" as a determining factor. Without this, a shared
     // cache could reuse the identity response for a client that does accept gzip.
     // https://www.rfc-editor.org/rfc/rfc9110#field.vary
-    const current = ctx.res.headers.get('Vary')
-    if (current !== '*' && !(current && varyAcceptEncodingRegExp.test(current))) {
-      ctx.header('Vary', current ? `${current}, Accept-Encoding` : 'Accept-Encoding')
+    const currentVary = ctx.res.headers.get('Vary')
+    const nextVary = addAcceptEncodingToVary(currentVary)
+    if (nextVary !== currentVary) {
+      ctx.header('Vary', nextVary)
     }
 
     const accepted = ctx.req.header('Accept-Encoding')
