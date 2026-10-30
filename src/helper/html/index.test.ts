@@ -45,6 +45,19 @@ describe('Tagged Template Literals', () => {
       expect(res).toBeInstanceOf(Promise)
       expect((await res).toString()).toBe('<p>I\'m John "Johnny" Smith.</p>')
     })
+
+    it.each([
+      [null, '<p></p>'],
+      [undefined, '<p></p>'],
+      [false, '<p></p>'],
+      [true, '<p></p>'],
+      [0, '<p>0</p>'],
+      [1, '<p>1</p>'],
+    ])('Should render Promise<%s> like the same sync value', async (value, expected) => {
+      const res = html`<p>${Promise.resolve(value)}</p>`
+      expect(res).toBeInstanceOf(Promise)
+      expect((await res).toString()).toBe(expected)
+    })
   })
 
   describe('HtmlEscapedString', () => {
