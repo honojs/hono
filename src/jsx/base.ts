@@ -26,7 +26,7 @@ type FunctionComponentResult =
   | HtmlEscapedString
   | JSXNode
   | Child[]
-  | Promise<HtmlEscapedString | JSXNode | Child[]>
+  | Promise<HtmlEscapedString | JSXNode | Child[] | null>
   | null
 export type FC<P = Props> = {
   (props: P): FunctionComponentResult

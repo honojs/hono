@@ -64,7 +64,15 @@ export const stringBufferToString = async (
       break
     }
 
-    let r = resolvedBuffer[i]
+    let r: unknown = resolvedBuffer[i]
+    // a promise may resolve to what a component or html`` value can be, not only a string
+    if (r == null || typeof r === 'boolean') {
+      continue
+    }
+    if (typeof r === 'number') {
+      str += r
+      continue
+    }
     if (typeof r === 'object') {
       callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
@@ -79,7 +87,7 @@ export const stringBufferToString = async (
       str += r
     } else {
       const buf = [str]
-      escapeToBuffer(r, buf)
+      escapeToBuffer(r as string, buf)
       str = buf[0]
     }
   }
