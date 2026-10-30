@@ -73,6 +73,11 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string =
 
 /**
  * Match the accept header with the given options.
+ *
+ * @param {Context} c - The context of the request.
+ * @param {acceptsOptions} options - The options for matching the accept header.
+ * @returns {string} The matched supported value or the default value.
+ *
  * @example
  * ```ts
  * app.get('/users', (c) => {

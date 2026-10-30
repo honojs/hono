@@ -19,10 +19,10 @@ export type RequestIdOptions = {
 /**
  * Request ID Middleware for Hono.
  *
- * @param {object} options - Options for Request ID middleware.
+ * @param {RequestIdOptions} [options] - Options for Request ID middleware.
  * @param {number} [options.limitLength=255] - The maximum length of request id.
- * @param {string} [options.headerName=X-Request-Id] - The header name used in request id.
- * @param {generator} [options.generator=() => crypto.randomUUID()] - The request id generation function.
+ * @param {string} [options.headerName='X-Request-Id'] - The header name used in request id.
+ * @param {(c: Context) => string} [options.generator=() => crypto.randomUUID()] - The request id generation function.
  *
  * @returns {MiddlewareHandler} The middleware handler function.
  *
