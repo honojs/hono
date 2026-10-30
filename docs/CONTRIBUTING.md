@@ -28,8 +28,6 @@ To enforce this, and regardless of whether AI was actually used, a maintainer ma
 
 Pull requests are limited to maintainers. If you find a bug or want a change, please create an issue instead. A clear issue with a minimal reproduction helps us more than a pull request.
 
-If you have already fixed it in your fork, you can link the branch in the issue. A maintainer may open a pull request from it, and your commits keep your name.
-
 ## Local Development
 
 The `honojs/hono` project uses [pnpm](https://pnpm.io/) as its package manager, and [Bun](https://bun.sh/) to run the build and some of the tests. Developers should install both.
