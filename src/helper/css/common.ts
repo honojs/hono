@@ -165,11 +165,7 @@ export const buildStyleString = (
         continue
       }
       if (typeof value === 'string') {
-        if (/([\\"'\/])/.test(value)) {
-          styleString += value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
-        } else {
-          styleString += value
-        }
+        styleString += value.replace(/[\\"']/g, '\\$&')
       } else if (typeof value === 'number') {
         styleString += value
       } else if ((value as CssEscapedString)[CSS_ESCAPED]) {
@@ -199,7 +195,8 @@ export const buildStyleString = (
     }
   }
 
-  return [label, minify(styleString), selectors, externalClassNames]
+  // Minification can join `<` and `/` across template parts or removed comments.
+  return [label, minify(styleString).replace(/<\//g, '<\\/'), selectors, externalClassNames]
 }
 
 export const cssCommon = (
