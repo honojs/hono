@@ -6,6 +6,7 @@
 import type { Context, ExecutionContext } from '../../context'
 import { routePath } from '../../helper/route'
 import type { MiddlewareHandler } from '../../types'
+import { createMountedRequest } from '../../utils/mount'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ApplicationHandler = (request: Request, ...args: any) => Response | Promise<Response>
@@ -19,11 +20,9 @@ type MountOptions =
     }
 
 const defaultReplaceRequest = (c: Context): Request => {
+  const path = routePath(c)
   // e.g. `/another-app/*` (basePath is already merged) -> `/another-app`
-  const pathPrefix = routePath(c).replace(/\/\*$/, '')
-  const url = new URL(c.req.raw.url)
-  url.pathname = c.req.path.slice(pathPrefix.length) || '/'
-  return new Request(url, c.req.raw)
+  return createMountedRequest(c, path.replace(/\/?\*$/, ''), path)
 }
 
 const defaultGetOptions = (c: Context): unknown[] => {
@@ -42,6 +41,7 @@ const defaultGetOptions = (c: Context): unknown[] => {
  * @param {Function} applicationHandler - other Request Handler
  * @param {MountOptions} [options] - options of `mount()`
  * @returns {MiddlewareHandler} handler to register with `app.all()`
+ * @throws {Error} If the route ends with a wildcard inside a segment (e.g. `/assets*`), or automatic request rewriting encounters duplicate path parameter names.
  *
  * @example
  * ```ts

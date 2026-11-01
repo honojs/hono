@@ -138,6 +138,152 @@ describe('mount()', () => {
     })
   })
 
+  describe('With dynamic prefixes', () => {
+    const anotherApp = (req: Request) => new Response(getPath(req))
+
+    it.each([
+      ['/api/:version/*', '/api/v1/hello', '/hello'],
+      ['/api/:version/*', '/api/long-version/hello', '/hello'],
+      ['/api/:version/*', '/api/v1', '/'],
+      ['/api/:version/*', '/api/v1/', '/'],
+      ['/api/:version/*', '/api/v1//hello', '//hello'],
+      ['/user/:id{[^/]+}/*', '/user/123/hello', '/hello'],
+      ['/api/:id{[0-9]{2}}/*', '/api/12/hello', '/hello'],
+      ['/api/:first{[a-z]+}/:second{[0-9]+}/*', '/api/a/1234/hello', '/hello'],
+      ['/x/:prefix{.+}/x/*', '/x/a/b/x/c/d', '/c/d'],
+      ['/x/:prefix{.+}/x/*', '/x/a%2Fb/c/x/d%2Fe', '/d%2Fe'],
+      ['/api/:id{[^/]+}/*', '/api/ad%2Fmin/x%252Fy', '/x%252Fy'],
+      ['/api/:id{[^/]+}/*', '/api/foo%252Fbar/hello', '/hello'],
+      ['/api/:id{[^/]+}/*', '/api/%C3%A9/admin%2Fsecret', '/admin%2Fsecret'],
+    ])('Should strip %s from %s', async (route, path, expected) => {
+      const app = new Hono()
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request(path)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(expected)
+    })
+
+    it('Should use the current route captures with a merged basePath', async () => {
+      const app = new Hono()
+      app.use('*', async (_c, next) => {
+        await next()
+      })
+      const subApp = new Hono().basePath('/:tenant')
+      subApp.all('/app/:id{[^/]+}/*', mount(anotherApp))
+      app.route('/api', subApp)
+
+      const res = await app.request('/api/acme/app/ad%2Fmin/hello')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/hello')
+    })
+
+    it.each([
+      ['/a/*/b/*', '/a/one/b/two/three', '/two/three'],
+      ['/a/*/b/*', '/a/one/b', '/'],
+      ['/foo/*/*', '/foo/x/y/z', '/y/z'],
+      ['/x*/y/*', '/xabc/y/hello', '/hello'],
+      ['/x*/y/*', '/x%25/y/foo%252Fbar', '/foo%252Fbar'],
+    ])('Should strip %s up to the final wildcard from %s', async (route, path, expected) => {
+      const app = new Hono()
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request(path)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(expected)
+    })
+
+    it.each([
+      ['/x*/:id/*', '/xabc/123/hello', '/hello'],
+      ['/a/*/b/:prefix{.+}/c/*', '/a/one/b/two/three/c/four/five', '/four/five'],
+    ])('Should resolve wildcards and parameters in %s for %s', async (route, path, expected) => {
+      const app = new Hono()
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request(path)
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(expected)
+    })
+  })
+
+  describe('With a wildcard inside the last segment', () => {
+    it.each([
+      ['/assets*', '/assets/hello'],
+      ['/assets*', '/assets-v2/hello'],
+      ['/assets*', '/assets../admin/secret'],
+      ['/x*/y*', '/xyz/yellow/hello'],
+      ['/api/:tenant/assets*', '/api/acme/assets-v2/hello'],
+    ])('Should reject automatic request rewriting for %s at %s', async (route, path) => {
+      const anotherApp = vi.fn(() => new Response('AnotherApp'))
+      const app = new Hono()
+      app.onError((err, c) => c.text(err.message, 500))
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request(path)
+
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe(`mount(): Wildcard must follow "/" in "${route}".`)
+      expect(anotherApp).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('With duplicate parameter names', () => {
+    it.each([
+      '/api/:id/:id/*',
+      '/api/:id{[a-z]+}/:id{[0-9]+}/*',
+      '/api/:id/:id{[0-9]+}/*',
+      '/api/:id{[a-z]+}/:id/*',
+    ])('Should reject automatic request rewriting for %s', async (route) => {
+      const anotherApp = vi.fn(() => new Response('AnotherApp'))
+      const app = new Hono()
+      app.onError((err, c) => c.text(err.message, 500))
+      app.all(route, mount(anotherApp))
+
+      const res = await app.request('/api/a/1234/hello')
+
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe(`mount(): Duplicate path parameter "id" in "${route}".`)
+      expect(anotherApp).not.toHaveBeenCalled()
+    })
+
+    it('Should detect duplicate names introduced by merging route prefixes', async () => {
+      const anotherApp = vi.fn(() => new Response('AnotherApp'))
+      const subApp = new Hono()
+      subApp.all('/:id{[0-9]+}/*', mount(anotherApp))
+      const app = new Hono()
+      app.onError((err, c) => c.text(err.message, 500))
+      app.route('/api/:id{[a-z]+}', subApp)
+
+      const res = await app.request('/api/a/1234')
+
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe(
+        'mount(): Duplicate path parameter "id" in "/api/:id{[a-z]+}/:id{[0-9]+}/*".'
+      )
+      expect(anotherApp).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      { name: 'custom replaceRequest', replaceRequest: (req: Request) => req },
+      { name: 'replaceRequest: false', replaceRequest: false as const },
+    ])('Should allow duplicate names with $name', async ({ replaceRequest }) => {
+      const app = new Hono()
+      app.all(
+        '/api/:id{[a-z]+}/:id{[0-9]+}/*',
+        mount((req) => new Response(getPath(req)), { replaceRequest })
+      )
+
+      const res = await app.request('/api/a/1234/hello')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/api/a/1234/hello')
+    })
+  })
+
   describe('With encoded paths', () => {
     const anotherApp = (req: Request) => new Response(getPath(req))
 
@@ -169,6 +315,45 @@ describe('mount()', () => {
 
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('/foo%252Fbar')
+    })
+
+    const rawPathApp = (req: Request) => new Response(new URL(req.url).pathname)
+
+    it('Should not turn an encoded backslash into a path separator', async () => {
+      const app = new Hono()
+      app.all('/api/admin/*', (c) => c.text('Unauthorized', 401))
+      app.all('/api/*', mount(rawPathApp))
+
+      let res = await app.request('/api/admin%5Csecret')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/admin%5Csecret')
+
+      res = await app.request('/api/foo/..%5Cadmin/secret')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/foo/..%5Cadmin/secret')
+    })
+
+    it('Should not resolve a double-encoded dot segment', async () => {
+      const app = new Hono()
+      app.all('/api/*', mount(rawPathApp))
+
+      const res = await app.request('/api/%252e%252e/admin')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/%252e%252e/admin')
+    })
+
+    it('Should strip the prefix with `strict: false`', async () => {
+      const app = new Hono({ strict: false })
+      app.all('/api/*', mount(anotherApp))
+
+      let res = await app.request('/api/hello/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/hello')
+
+      res = await app.request('/api/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/')
     })
   })
 
@@ -226,7 +411,7 @@ describe('mount()', () => {
     })
   })
 
-  describe('Mount on `/`', () => {
+  describe.each(['*', '/*'])('Mount on `%s`', (route) => {
     const anotherApp = (req: Request, _params: unknown) => {
       const path = getPath(req)
       if (path === '/') {
@@ -244,7 +429,7 @@ describe('mount()', () => {
     }
 
     const app = new Hono()
-    app.all('/*', mount(anotherApp))
+    app.all(route, mount(anotherApp))
 
     it('Should return responses from AnotherApp - mount on `/`', async () => {
       let res = await app.request('/')

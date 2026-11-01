@@ -9,6 +9,7 @@ import {
   mergePath,
   splitPath,
   splitRoutingPath,
+  stripPathPrefix,
 } from './url'
 
 describe('url', () => {
@@ -201,6 +202,43 @@ describe('url', () => {
     it('getPathNoStrict - return `/` even if strict is false', () => {
       const path = getPathNoStrict(new Request('https://example.com/'))
       expect(path).toBe('/')
+    })
+  })
+
+  describe('stripPathPrefix', () => {
+    it('Should strip a static prefix', () => {
+      expect(stripPathPrefix('/api/hello', '/api/hello', 4)).toBe('/hello')
+      expect(stripPathPrefix('/api/hello/world/', '/api/hello/world/', 4)).toBe('/hello/world/')
+      expect(stripPathPrefix('/api', '/api', 4)).toBe('/')
+      expect(stripPathPrefix('/api/', '/api/', 4)).toBe('/')
+      expect(stripPathPrefix('/hello', '/hello', 0)).toBe('/hello')
+      expect(stripPathPrefix('/', '/', 0)).toBe('/')
+    })
+
+    it('Should strip a prefix that was decoded for matching', () => {
+      expect(stripPathPrefix('/api/%C3%A9/hello', '/api/é/hello', 6)).toBe('/hello')
+      expect(stripPathPrefix('/api/v1/admin%2Fsecret', '/api/v1/admin%2Fsecret', 7)).toBe(
+        '/admin%2Fsecret'
+      )
+    })
+
+    it('Should keep encoded characters that the URL parser would normalize', () => {
+      expect(stripPathPrefix('/api/admin%5Csecret', '/api/admin\\secret', 4)).toBe(
+        '/admin%5Csecret'
+      )
+      expect(stripPathPrefix('/api/%252e%252e/admin', '/api/%2e%2e/admin', 4)).toBe(
+        '/%252e%252e/admin'
+      )
+    })
+
+    it('Should strip a prefix that ends inside a segment by whole segments', () => {
+      expect(stripPathPrefix('/assets-v2/hello', '/assets-v2/hello', 7)).toBe('/hello')
+      expect(stripPathPrefix('/assets-v2', '/assets-v2', 7)).toBe('/')
+    })
+
+    it('Should handle the trailing slash removed by getPathNoStrict', () => {
+      expect(stripPathPrefix('/api/hello/', '/api/hello', 4)).toBe('/hello')
+      expect(stripPathPrefix('/api/', '/api', 4)).toBe('/')
     })
   })
 

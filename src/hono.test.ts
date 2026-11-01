@@ -2752,6 +2752,23 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('AnotherApp')
     })
 
+    it.each([
+      ['/api/', '/api/', '/'],
+      ['/api/', '/api/hello', '/hello'],
+      ['/api/', '/api/public/admin/secret', '/public/admin/secret'],
+      ['/api/', '/api//hello', '//hello'],
+      ['/api/:tenant/', '/api/acme', '/'],
+      ['/api/:tenant/', '/api/acme/hello', '/hello'],
+      ['/api/é/', '/api/%C3%A9/hello', '/hello'],
+    ])('Should strip the trailing slash prefix %s from %s', async (prefix, path, expected) => {
+      const app = new Hono()
+      app.mount(prefix, (req) => new Response(new URL(req.url).pathname))
+
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(expected)
+    })
+
     it('Should return responses from AnotherApp - with `basePath()`', async () => {
       const res = await api.request('/api/another-app')
       expect(res.status).toBe(200)
@@ -2790,6 +2807,62 @@ describe('app.mount()', () => {
 
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('/foo%252Fbar')
+    })
+
+    const rawPathApp = (req: Request) => new Response(new URL(req.url).pathname)
+
+    it('Should not turn an encoded backslash into a path separator', async () => {
+      const app = new Hono()
+      app.all('/api/admin/*', (c) => c.text('Unauthorized', 401))
+      app.mount('/api', rawPathApp)
+
+      let res = await app.request('/api/admin%5Csecret')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/admin%5Csecret')
+
+      res = await app.request('/api/foo/..%5Cadmin/secret')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/foo/..%5Cadmin/secret')
+    })
+
+    it('Should not resolve a double-encoded dot segment', async () => {
+      const app = new Hono()
+      app.mount('/api', rawPathApp)
+
+      const res = await app.request('/api/%252e%252e/admin')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/%252e%252e/admin')
+    })
+
+    it('Should strip a parameterized prefix by its matched value', async () => {
+      const app = new Hono()
+      app.all('/:tenant/admin/*', (c) => c.text('Unauthorized', 401))
+      app.mount('/:tenant', anotherApp)
+
+      let res = await app.request('/acme/public/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/public/hello')
+
+      res = await app.request('/a/admin/secret')
+      expect(res.status).toBe(401)
+
+      res = await app.request('/a/public/admin/secret')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/public/admin/secret')
+    })
+
+    it('Should strip the prefix with `strict: false`', async () => {
+      const app = new Hono({ strict: false })
+      app.mount('/api', anotherApp)
+
+      let res = await app.request('/api/hello/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/hello')
+
+      res = await app.request('/api/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/')
     })
   })
 

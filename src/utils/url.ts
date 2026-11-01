@@ -158,6 +158,30 @@ export const getPathNoStrict = (request: Request): string => {
   return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
 }
 
+// Cut the rest of the path from the raw pathname, not from the decoded one, so that decoded
+// characters are never parsed as URL syntax again (`%5C` -> `\\` -> `/`, `%2E%2E` -> `..`).
+export const stripPathPrefix = (
+  rawPath: string,
+  decodedPath: string,
+  prefixLength: number
+): string => {
+  if (rawPath.at(-1) === '/' && decodedPath.at(-1) !== '/') {
+    rawPath = rawPath.slice(0, -1) // `strict: false` dropped it from the decoded path
+  }
+  let index = 0
+  for (
+    let i = decodedPath.indexOf('/');
+    i !== -1 && i < prefixLength;
+    i = decodedPath.indexOf('/', i + 1)
+  ) {
+    index = rawPath.indexOf('/', index + 1)
+    if (index === -1) {
+      return '/'
+    }
+  }
+  return rawPath.slice(index) || '/'
+}
+
 /**
  * Merge paths.
  * @param {string[]} ...paths - The paths to merge.

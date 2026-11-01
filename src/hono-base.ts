@@ -26,6 +26,7 @@ import type {
   Schema,
 } from './types'
 import { COMPOSED_HANDLER } from './utils/constants'
+import { createMountedRequest } from './utils/mount'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 const notFoundHandler: NotFoundHandler = (c) => {
@@ -379,18 +380,13 @@ class Hono<
           } catch {} // Do nothing
           return [c.env, executionContext]
         }
-    replaceRequest ||= (() => {
-      const mergedPath = mergePath(this._basePath, path)
-      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
-      return (request) => {
-        const url = new URL(request.url)
-        url.pathname = this.getPath(request).slice(pathPrefixLength) || '/'
-        return new Request(url, request)
-      }
-    })()
+    const mergedPath = mergePath(this._basePath, path)
+    const defaultReplaceRequest = (c: Context): Request =>
+      createMountedRequest(c, mergedPath.replace(/\/$/, ''), mergePath(mergedPath, '*'))
 
     const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
+      const request = replaceRequest ? replaceRequest(c.req.raw) : defaultReplaceRequest(c)
+      const res = await applicationHandler(request, ...getOptions(c))
 
       if (res) {
         return res
