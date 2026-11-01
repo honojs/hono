@@ -4,7 +4,7 @@
  */
 
 export { hc } from './client'
-export { parseResponse, DetailedError } from './utils'
+export { parseResponse, parseResponseWithError, DetailedError } from './utils'
 export type {
   InferResponseType,
   InferRequestType,
