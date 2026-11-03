@@ -1,0 +1,21 @@
+src/middleware/body-limit/index.test.ts
+  s_eebc5901743536::t_69535e27751046 84-101
+src/middleware/body-limit/index.ts
+  s_eebc5901743536::t_c276032e57aea1 81,83,90,95-100,103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5867f9cea1e6746c7e1fe722add647b187d48d83",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
