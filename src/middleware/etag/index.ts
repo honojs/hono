@@ -117,6 +117,8 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     const matched = ifNoneMatch === '*' || etagMatches(etag, ifNoneMatch)
 
     if (matched) {
+      // Release the body that will never be sent; a clone above may have left a teed branch open
+      await res.body?.cancel()
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
