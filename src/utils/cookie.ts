@@ -177,12 +177,12 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   let cookie = `${name}=${value}`
 
-  if (name.startsWith('__Secure-') && !opt.secure) {
+  if (/^__secure-/i.test(name) && !opt.secure) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
   }
 
-  if (name.startsWith('__Host-')) {
+  if (/^__host-/i.test(name)) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.2
     if (!opt.secure) {
       throw new Error('__Host- Cookie must have Secure attributes')

@@ -494,6 +494,15 @@ describe('Context header', () => {
     expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('Should be able to set headers after the response body is consumed', async () => {
+    c.res = new Response('bar')
+    expect(await c.res.text()).toBe('bar')
+    c.header('X-Custom', 'Message')
+    c.res = c.text('alternative')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+    expect(await c.res.text()).toBe('alternative')
+  })
+
   it('Should handle headers with array values correctly', async () => {
     c.header('X-Array', 'value1')
     const res = c.json({ test: 'data' }, 200, {

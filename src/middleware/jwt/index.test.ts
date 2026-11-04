@@ -798,5 +798,18 @@ describe('JWT', () => {
         'Bearer realm="my \\"quoted\\" api",error="invalid_request",error_description="no authorization included in request"'
       )
     })
+
+    it('Should escape backslashes in the realm', async () => {
+      const app = new Hono()
+      app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256', realm: 'my\\api\\' }))
+      app.get('/auth/*', (c) => c.text('ok'))
+
+      const res = await app.request('http://localhost/auth/page')
+
+      expect(res.status).toBe(401)
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Bearer realm="my\\\\api\\\\",error="invalid_request",error_description="no authorization included in request"'
+      )
+    })
   })
 })

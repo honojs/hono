@@ -402,13 +402,14 @@ describe('Etag Middleware', () => {
     app.use(
       '/etag/*',
       etag({
-        retainedHeaders: ['x-message-retain', ...RETAINED_304_HEADERS],
+        retainedHeaders: ['x-message-retain', 'X-Message-Retain-Upper', ...RETAINED_304_HEADERS],
       })
     )
     app.get('/etag', (c) => {
       return c.text('Hono is hot', 200, {
         'cache-control': cacheControl,
         'x-message-retain': message,
+        'X-Message-Retain-Upper': message,
         'x-message': message,
       })
     })
@@ -422,6 +423,7 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
+    expect(res.headers.get('X-Message-Retain-Upper')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
   })
 
@@ -468,6 +470,29 @@ describe('Etag Middleware', () => {
       expect(res.status).toBe(200)
       expect(res.headers.get('ETag')).toBeNull()
     })
+  })
+
+  it('Should cancel the discarded body on 304', async () => {
+    let cancelled = false
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/stream', (c) => {
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(new TextEncoder().encode('chunk'))
+        },
+        cancel() {
+          cancelled = true
+        },
+      })
+      return c.body(stream, 200, { ETag: '"stream-v1"' })
+    })
+
+    const res = await app.request('http://localhost/etag/stream', {
+      headers: { 'If-None-Match': '"stream-v1"' },
+    })
+    expect(res.status).toBe(304)
+    expect(cancelled).toBe(true)
   })
 
   it('Should remove all non-retained headers on 304 without skipping any', async () => {

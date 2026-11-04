@@ -47,7 +47,9 @@ export function isTokenHeader(obj: unknown): obj is TokenHeader {
     return (
       'alg' in objWithAlg &&
       Object.values(AlgorithmTypes).includes(objWithAlg.alg as AlgorithmTypes) &&
-      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT')
+      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT') &&
+      // no extension is implemented, so any `crit` must be rejected (RFC 7515 4.1.11)
+      !('crit' in objWithAlg)
     )
   }
   return false
@@ -174,6 +176,10 @@ export const verify = async (
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
+  // the decoder ignores whitespace, so check the alphabet first to keep one signature per token string
+  if (!/^[A-Za-z0-9_-]*={0,2}$/.test(tokenParts[2])) {
+    throw new JwtTokenInvalid(token)
+  }
   let signature: Uint8Array<ArrayBuffer>
   try {
     signature = decodeBase64Url(tokenParts[2])

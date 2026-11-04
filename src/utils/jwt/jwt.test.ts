@@ -11,6 +11,7 @@ import {
   JwtAlgorithmNotAllowed,
   JwtAlgorithmNotImplemented,
   JwtAlgorithmRequired,
+  JwtHeaderInvalid,
   JwtPayloadRequiresAud,
   JwtSymmetricAlgorithmNotAllowed,
   JwtTokenAudience,
@@ -97,6 +98,31 @@ describe('JWT', () => {
     const err = await JWT.verify(tok, 'a-secret', AlgorithmTypes.HS256).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(JwtTokenInvalid)
     expect(err).toHaveProperty('message', `invalid JWT token: ${tok}`)
+  })
+
+  it('JwtTokenInvalid for a signature containing whitespace', async () => {
+    const secret = 'a-secret'
+    const tok = await JWT.sign({ message: 'hello world' }, secret)
+    expect(await JWT.verify(tok, secret, AlgorithmTypes.HS256)).toEqual({ message: 'hello world' })
+    for (const malformed of [
+      `${tok}\n`,
+      `${tok} `,
+      `${tok}\t`,
+      `${tok.slice(0, -1)} ${tok.slice(-1)}`,
+    ]) {
+      const err = await JWT.verify(malformed, secret, AlgorithmTypes.HS256).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(JwtTokenInvalid)
+    }
+  })
+
+  it('JwtHeaderInvalid for a header with crit', async () => {
+    const secret = 'a-secret'
+    const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+    const signingInput = `${encode('{"alg":"HS256","typ":"JWT","crit":["exp"],"exp":1}')}.${encode('{"message":"hello"}')}`
+    const signature = await signing(secret, AlgorithmTypes.HS256, utf8Encoder.encode(signingInput))
+    const tok = `${signingInput}.${encodeBase64Url(signature).replace(/=/g, '')}`
+    const err = await JWT.verify(tok, secret, AlgorithmTypes.HS256).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(JwtHeaderInvalid)
   })
 
   it('JwtTokenSignatureMismatched for an empty signature', async () => {

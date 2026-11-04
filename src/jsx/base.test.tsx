@@ -34,9 +34,33 @@ describe('cloneElement', () => {
     const element = <Hr />
     expect(element.toString()).toBe('<hr/>')
   })
+
+  it('should preserve self-closing empty tag when cloned', () => {
+    const element = <img src='foo.png' />
+    const clonedElement = cloneElement(element, { alt: 'bar' })
+    expect(element.toString()).toBe('<img src="foo.png"/>')
+    expect(clonedElement.toString()).toBe('<img src="foo.png" alt="bar"/>')
+  })
+
+  it('should clone an element with array children', () => {
+    const element = (
+      <div>
+        <span>1</span>
+        <span>2</span>
+      </div>
+    )
+    const clonedElement = cloneElement(element, { className: 'cloned' })
+    expect(clonedElement.toString()).toBe('<div class="cloned"><span>1</span><span>2</span></div>')
+  })
 })
 
 describe('createElement', () => {
+  it('should accept a component that returns a JSXNode', () => {
+    const Partial = ({ name }: { name: string }) => jsx('div', { 'x-partial': name }, name)
+
+    expect((<Partial name='foo' />).toString()).toBe('<div x-partial="foo">foo</div>')
+  })
+
   it('should preserve the SVG element shape', () => {
     const ref = { current: null }
     const element = jsx('svg', { ref }) as unknown as JSXNode

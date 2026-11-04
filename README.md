@@ -17,7 +17,6 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/main)
 [![codecov](https://codecov.io/github/honojs/hono/graph/badge.svg)](https://codecov.io/github/honojs/hono)
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/honojs/hono)
 
 Hono - _**means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework built on Web Standards. It works on any JavaScript runtime: Cloudflare Workers, Fastly Compute, Deno, Bun, Vercel, AWS Lambda, Lambda@Edge, and Node.js.
 
@@ -63,9 +62,9 @@ The migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 Contributions Welcome! You can contribute in the following ways.
 
 - Create an Issue - Propose a new feature. Report a bug.
-- Pull Request - Fix a bug or typo. Refactor the code.
-- Create third-party middleware - See [Third-party middleware](docs/CONTRIBUTING.md#third-party-middleware).
+- Build middleware and libraries - Grow the Hono ecosystem.
 - Share - Share your thoughts on the Blog, X, and others.
+- Sponsor - Support the maintainers through GitHub Sponsors: [@yusukebe](https://github.com/sponsors/yusukebe) and [@usualoma](https://github.com/sponsors/usualoma).
 - Make your application - Please try to use Hono.
 
 For more details, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
