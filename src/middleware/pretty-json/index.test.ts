@@ -211,7 +211,6 @@ describe('JSON pretty by Middleware', () => {
 
     const res = await app.request('http://localhost/x')
     expect(await res.json()).toEqual({ message: 'Hono!' })
-    // `clone()` left a teed branch on the original; it must be released, not left readable
     expect((await original!.body!.getReader().read()).done).toBe(true)
   })
 
