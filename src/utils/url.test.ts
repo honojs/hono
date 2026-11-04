@@ -315,6 +315,17 @@ describe('url', () => {
       expect(getQueryParams(url, key)).toEqual([expected, 'second'])
     })
 
+    it.each([
+      ['a&b=3', 'a&b', undefined],
+      ['a=b=3', 'a=b', undefined],
+      ['a%26b=3', 'a&b', '3'],
+      ['a%3Db=3', 'a=b', '3'],
+    ])('does not match a key across separators for %s', (query, key, expected) => {
+      const url = `http://example.com/?${query}`
+      expect(getQueryParam(url, key)).toBe(expected)
+      expect(getQueryParams(url, key)).toEqual(expected === undefined ? undefined : [expected])
+    })
+
     it('Parse URL query strings', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
       expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey')
