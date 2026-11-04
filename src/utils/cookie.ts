@@ -28,11 +28,12 @@ export type CookieOptions = {
 } & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
 
-export type CookieConstraint<Name> = Name extends `__Secure-${string}`
-  ? CookieOptions & SecureCookieConstraint
-  : Name extends `__Host-${string}`
-    ? CookieOptions & HostCookieConstraint
-    : CookieOptions
+export type CookieConstraint<Name> =
+  Lowercase<Name & string> extends `__secure-${string}`
+    ? CookieOptions & SecureCookieConstraint
+    : Lowercase<Name & string> extends `__host-${string}`
+      ? CookieOptions & HostCookieConstraint
+      : CookieOptions
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
 
