@@ -702,6 +702,26 @@ describe('saveContentToFile function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/rss.xml', yamlContent)
   })
 
+  it('should determine the extension case-insensitively', async () => {
+    const htmlData = { routePath: '/html', content: 'Hello', mimeType: 'TEXT/HTML' }
+    const jsonData = { routePath: '/json', content: '{}', mimeType: 'APPLICATION/JSON' }
+    const xmlData = { routePath: '/xml', content: '<a/>', mimeType: 'APPLICATION/XML' }
+    const fooData = { routePath: '/foo', content: 'foo', mimeType: 'TEXT/X-FOO' }
+    const barData = { routePath: '/bar', content: 'bar', mimeType: 'TEXT/X-BAR' }
+
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static')
+    await saveContentToFile(Promise.resolve(jsonData), fsMock, './static')
+    await saveContentToFile(Promise.resolve(xmlData), fsMock, './static')
+    await saveContentToFile(Promise.resolve(fooData), fsMock, './static', { 'text/x-foo': 'foo' })
+    await saveContentToFile(Promise.resolve(barData), fsMock, './static', { 'TEXT/X-BAR': 'bar' })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', 'Hello')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/json.json', '{}')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/xml.xml', '<a/>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/foo.foo', 'foo')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bar.bar', 'bar')
+  })
+
   it('should reject writing files outside outDir via path traversal', async () => {
     await expect(
       saveContentToFile(
