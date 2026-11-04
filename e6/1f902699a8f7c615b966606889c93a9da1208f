@@ -1,0 +1,201 @@
+README.md
+  s_eebc5901743536::t_0cb0dd2fd77cb0 65,67
+adapters/aws-lambda/package.json
+  s_eebc5901743536::t_a468fca49088a7 3,29
+adapters/aws-lambda/vite.config.ts
+  s_eebc5901743536::t_60eac2f3fa78ee 2,11
+adapters/bun/package.json
+  s_eebc5901743536::t_a9d0b6d4051fcc 3,29
+adapters/bun/vite.config.ts
+  s_eebc5901743536::t_94d91c3b3184c9 2,11
+adapters/cloudflare-workers/package.json
+  s_eebc5901743536::t_90b8af3e0db371 3,29
+adapters/cloudflare-workers/vite.config.ts
+  s_eebc5901743536::t_165a284ec1ca9d 2,11
+adapters/deno/package.json
+  s_eebc5901743536::t_b5dfb0be34f831 3,30
+adapters/deno/vite.config.ts
+  s_eebc5901743536::t_6898efb18958b7 2,11
+adapters/lambda-edge/package.json
+  s_eebc5901743536::t_2d15c0840e185d 3,29
+adapters/lambda-edge/vite.config.ts
+  s_eebc5901743536::t_302243e9d2310f 2,11
+adapters/netlify/package.json
+  s_eebc5901743536::t_907eada70cfb3e 3,29
+adapters/netlify/vite.config.ts
+  s_eebc5901743536::t_8e7ae31c4b0731 2,11
+adapters/service-worker/package.json
+  s_eebc5901743536::t_66538ac4be8d72 3,29
+adapters/service-worker/vite.config.ts
+  s_eebc5901743536::t_06f07f21c3fc33 2,11
+adapters/vercel/package.json
+  s_eebc5901743536::t_ddba69030b5350 3,29
+adapters/vercel/vite.config.ts
+  s_eebc5901743536::t_07dc3403b65916 2,11
+build/declaration-emit.test.ts
+  s_eebc5901743536::t_34049d923b4944 1-38
+build/dts-plugins.ts
+  s_eebc5901743536::t_2f53de22ffb0db 1-170
+build/fixtures/declaration-emit/index.ts
+  s_eebc5901743536::t_54fff2c97fb266 1-15
+build/fixtures/declaration-emit/tsconfig.json
+  s_eebc5901743536::t_57bf6b25c53312 2-11,13
+build/fixtures/jsx-types/index.tsx
+  s_eebc5901743536::t_ef12fb72a9bc9f 1-26
+build/fixtures/jsx-types/tsconfig.json
+  s_eebc5901743536::t_4721209072c2dc 1-14
+build/jsx-types.test.ts
+  s_eebc5901743536::t_3accee038df044 1-20
+docs/CONTRIBUTING.md
+  s_eebc5901743536::t_511641ec25cc0b 7,9,25,27,29,33-34
+jsr.json
+  s_eebc5901743536::t_ed0461b82156a0 22
+package.json
+  s_eebc5901743536::t_e8a95786873754 3,106-110,465-467,704
+pnpm-lock.yaml
+  s_eebc5901743536::t_1134887091884b 221-222,2843-2844,2900-2901,2906-2907,2912-2913,2919-2920,2926-2927,2933-2934,2940-2941,2946-2947,5235-5236,7166,7170,7190,7193,7247,7255,7296,7306-7313,7319,7322,7325,7328,7331,7334,7337,7340,8909,8932,8943,8965,9748,9752-9754,9759-9760,9762-9763,9765-9772,9825,9828,9839,9843,9868
+src/client/fetch-result-please.ts
+  s_eebc5901743536::t_63a8e6c9078286 88
+src/client/utils.test.ts
+  s_eebc5901743536::t_1fca1bd5598fc6 217-219,257-262,304-305,333-336,366,371
+src/context.test.ts
+  s_eebc5901743536::t_7e5664a892068a 497-505
+src/context.ts
+  s_eebc5901743536::t_f95cc7d3e361cb 520-521
+src/helper/css/common.case.test.tsx
+  s_eebc5901743536::t_be74739fb6f938 129-220
+src/helper/css/common.ts
+  s_eebc5901743536::t_9c4dc36e536c04 83-84,88,100-103,109,168,198-199
+src/helper/css/index.test.tsx
+  s_eebc5901743536::t_36755415981dd7 75-97,273-293
+src/helper/css/index.ts
+  s_eebc5901743536::t_be46ece8f1cee1 86
+src/helper/factory/index.ts
+  s_eebc5901743536::t_979865e8cfe3cb 343,345
+src/helper/route/index.test.ts
+  s_eebc5901743536::t_7a085e74df2f40 240-258
+src/helper/route/index.ts
+  s_eebc5901743536::t_4d32d2dda051a2 128-131
+src/helper/ssg/ssg.test.tsx
+  s_eebc5901743536::t_689ebddef60130 705-724
+src/helper/ssg/ssg.ts
+  s_eebc5901743536::t_38b999346cca78 107-110
+src/helper/testing/index.ts
+  s_eebc5901743536::t_7bcfffcfd85d98 7-8
+src/hono-base.ts
+  s_eebc5901743536::t_cf5091be68e291 29,59-103,318-319,383-385,388-389
+src/hono.test.ts
+  s_eebc5901743536::t_20a9b0785df73f 365,2221-2238,2755-2771,2811-2866
+src/jsx/base.test.tsx
+  s_eebc5901743536::t_756e08998700a1 37-54,58-63
+src/jsx/base.ts
+  s_eebc5901743536::t_e9557f56226ca8 15,27,29,45-47,481
+src/jsx/utils.test.ts
+  s_eebc5901743536::t_a9c1aea1ee0bd7 208-210
+src/jsx/utils.ts
+  s_eebc5901743536::t_c1276be781e69e 188
+src/middleware/basic-auth/index.test.ts
+  s_eebc5901743536::t_bf5e0adf9edec8 435-447
+src/middleware/basic-auth/index.ts
+  s_eebc5901743536::t_7fbc16d819a026 135
+src/middleware/bearer-auth/index.test.ts
+  s_eebc5901743536::t_70fa0ed9d026be 199-237,956-979,1074-1086
+src/middleware/bearer-auth/index.ts
+  s_eebc5901743536::t_a75a043b8b45b5 16-17,118,144-155
+src/middleware/combine/index.test.ts
+  s_eebc5901743536::t_abf401f8bde346 136-152
+src/middleware/combine/index.ts
+  s_eebc5901743536::t_a979fb96572db5 47,56-57,71
+src/middleware/csrf/index.test.ts
+  s_eebc5901743536::t_6f0b0bae703b81 231-276
+src/middleware/csrf/index.ts
+  s_eebc5901743536::t_101951ebea3a53 29-30,141
+src/middleware/etag/index.test.ts
+  s_eebc5901743536::t_450843af63b7b7 405,412,426,475-497
+src/middleware/etag/index.ts
+  s_eebc5901743536::t_d0ff6e849ad14c 81-83,120,129
+src/middleware/jwk/jwk.ts
+  s_eebc5901743536::t_f90d175cc8f9a1 186-187
+src/middleware/jwt/index.test.ts
+  s_eebc5901743536::t_5b45022c43345d 801-813
+src/middleware/jwt/jwt.ts
+  s_eebc5901743536::t_4a7ceb98b8e245 175-176
+src/middleware/mount/index.test.ts
+  s_eebc5901743536::t_6c714406eb73f6 1-519
+src/middleware/mount/index.ts
+  s_eebc5901743536::t_09e3f8b1aff7b7 1-109
+src/middleware/pretty-json/index.test.ts
+  s_eebc5901743536::t_bb3bdeec25953c 201-216
+src/middleware/pretty-json/index.ts
+  s_eebc5901743536::t_8b5d0270229252 63
+src/middleware/serve-static/index.test.ts
+  s_eebc5901743536::t_1ed2ab1adee52a 48-99,123-127,130-170,276-294,444
+src/middleware/serve-static/index.ts
+  s_eebc5901743536::t_39aef516786ba2 8,18-19,63-66,73-75,108-110
+src/middleware/timing/timing.ts
+  s_eebc5901743536::t_d80e80d7e0e5ce 165
+src/request.test.ts
+  s_eebc5901743536::t_c29aea5e3daddb 29-36
+src/request.ts
+  s_eebc5901743536::t_35a5ba0e3c89da 362,379,399,430
+src/router/common.case.test.ts
+  s_eebc5901743536::t_60198fca15ffc6 32,308-323,961-1249
+src/router/linear-router/router.test.ts
+  s_eebc5901743536::t_12d7672e568108 12-21
+src/router/pattern-router/router.test.ts
+  s_eebc5901743536::t_42e1ef6d928f44 10-14
+src/router/reg-exp-router/node.ts
+  s_eebc5901743536::t_36341a018b235c 4-6,31,33,59,73,81-82,96,118,140
+src/router/reg-exp-router/prepared-router.test.ts
+  s_eebc5901743536::t_52b3f46a5dc581 125,139
+src/router/reg-exp-router/prepared-router.ts
+  s_eebc5901743536::t_14dcfcc20393a9 4,52,120,128,139,160,162
+src/router/reg-exp-router/router.ts
+  s_eebc5901743536::t_26c417e3d2da42 11,16-18,21-27,30-32,37-38,42,55-56,60-65,72,76,79,89,94,100,106-125,127-135
+src/router/reg-exp-router/trie.ts
+  s_eebc5901743536::t_40fcd943e72f25 11-12,15,18-19,29,46,57-58
+src/router/trie-router/node.test.ts
+  s_eebc5901743536::t_cb63c1167eb1eb 537-563
+src/router/trie-router/node.ts
+  s_eebc5901743536::t_26cec817860467 158-160,187-189
+src/utils/cookie.test.ts
+  s_eebc5901743536::t_18dc0bd3efecca 356-370
+src/utils/cookie.ts
+  s_eebc5901743536::t_052e9938d32e9d 180,185
+src/utils/jwt/jwt.test.ts
+  s_eebc5901743536::t_8fec132ce99241 14,103-127
+src/utils/jwt/jwt.ts
+  s_eebc5901743536::t_a1bbdb8ce6e0f1 50-52,179-182
+src/utils/mime.test.ts
+  s_eebc5901743536::t_82e24ab47954ad 64-69
+src/utils/mime.ts
+  s_eebc5901743536::t_6a2fae96a6e624 19
+src/utils/mount.ts
+  s_eebc5901743536::t_e3cf2962974fc9 1-54
+src/utils/url.test.ts
+  s_eebc5901743536::t_d47034d7fba2cd 12,208-244,302-328
+src/utils/url.ts
+  s_eebc5901743536::t_c92d0a36e1bf7e 161-184,268,271-272,281-293
+src/validator/validator.test.ts
+  s_eebc5901743536::t_6913b8d8ef517c 386-409
+src/validator/validator.ts
+  s_eebc5901743536::t_1c0c63e9ffc662 25
+vite.config.ts
+  s_eebc5901743536::t_1a211df5e9127a 5,90-338,361
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e61f902699a8f7c615b966606889c93a9da1208f",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
