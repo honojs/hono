@@ -131,6 +131,9 @@ interface SetMetric {
   (c: Context, name: string, description?: string): void
 }
 
+// desc is a quoted-string, so `"` and `\` inside it must be escaped
+const quote = (s: string) => `"${s.replace(/[\\"]/g, '\\$&')}"`
+
 /**
  * Set a metric for the timing middleware.
  *
@@ -161,12 +164,14 @@ export const setMetric: SetMetric = (
   if (typeof valueDescription === 'number') {
     const dur = valueDescription.toFixed(precision ?? 1)
 
-    const metric = description ? `${name};dur=${dur};desc="${description}"` : `${name};dur=${dur}`
+    const metric = description
+      ? `${name};dur=${dur};desc=${quote(description)}`
+      : `${name};dur=${dur}`
 
     metrics.headers.push(metric)
   } else {
     // Value-less metric
-    const metric = valueDescription ? `${name};desc="${valueDescription}"` : `${name}`
+    const metric = valueDescription ? `${name};desc=${quote(valueDescription)}` : `${name}`
 
     metrics.headers.push(metric)
   }
