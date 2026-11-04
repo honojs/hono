@@ -439,7 +439,7 @@ if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script><script>
+</script><script nonce="test-nonce">
 ((d,c,n) => {
 d=d.getElementById('E:${errorBoundaryCounter}')
 if(!d)return
@@ -453,6 +453,48 @@ d.remove()
 
       expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
         '<div>Hello</div>'
+      )
+    })
+
+    it('error with StreamingContext', async () => {
+      const stream = renderToReadableStream(
+        <StreamingContext value={{ scriptNonce: 'test-nonce' }}>
+          <ErrorBoundary fallback={<Fallback />}>
+            <Suspense fallback={<p>Loading...</p>}>
+              <Component error={true} />
+            </Suspense>
+          </ErrorBoundary>
+        </StreamingContext>
+      )
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        `<template id="E:${errorBoundaryCounter}"></template><!--E:${errorBoundaryCounter}-->`,
+        `<template data-hono-target="E:${errorBoundaryCounter}"><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script nonce="test-nonce">
+((d,c) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('E:${errorBoundaryCounter}')
+if(!d)return
+d.parentElement.insertBefore(c.content,d.nextSibling)
+})(document)
+</script>`,
+        `<template data-hono-target="E:${errorBoundaryCounter}"><div>Out Of Service</div></template><script nonce="test-nonce">
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('E:${errorBoundaryCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Out Of Service</div>'
       )
     })
 
