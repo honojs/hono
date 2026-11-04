@@ -350,6 +350,9 @@ describe('Server-Timing API', () => {
       const res = await app.request('/')
       expect(res.status).toBe(200)
       expect(res.headers.get('Server-Timing')).toContain('desc="Total \\"App\\" Time"')
+    })
+  })
+
   describe('Should handle precision', () => {
     it('Should honor an explicit precision of 0 (whole milliseconds)', async () => {
       const precisionApp = new Hono()
