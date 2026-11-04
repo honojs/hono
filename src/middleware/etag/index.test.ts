@@ -472,6 +472,29 @@ describe('Etag Middleware', () => {
     })
   })
 
+  it('Should cancel the discarded body on 304', async () => {
+    let cancelled = false
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/stream', (c) => {
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(new TextEncoder().encode('chunk'))
+        },
+        cancel() {
+          cancelled = true
+        },
+      })
+      return c.body(stream, 200, { ETag: '"stream-v1"' })
+    })
+
+    const res = await app.request('http://localhost/etag/stream', {
+      headers: { 'If-None-Match': '"stream-v1"' },
+    })
+    expect(res.status).toBe(304)
+    expect(cancelled).toBe(true)
+  })
+
   it('Should remove all non-retained headers on 304 without skipping any', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
