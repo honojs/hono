@@ -177,7 +177,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   let cookie = `${name}=${value}`
 
-  // Prefixes are matched case-insensitively (rfc6265bis section 5.4)
   if (/^__secure-/i.test(name) && !opt.secure) {
     // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-22#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
