@@ -30,23 +30,9 @@ export const RETAINED_304_HEADERS = [
 const stripWeak = (tag: string) => tag.replace(/^W\//, '')
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
-  if (ifNoneMatch === null) {
-    return false
-  }
+  // An entity-tag never holds `"`, so the quoted parts are the tags whatever separates them
   const expected = stripWeak(etag)
-  let start = 0
-  let quoted = false
-  for (let i = 0; i <= ifNoneMatch.length; i++) {
-    if (ifNoneMatch[i] === '"') {
-      quoted = !quoted
-    } else if (i === ifNoneMatch.length || (ifNoneMatch[i] === ',' && !quoted)) {
-      if (stripWeak(ifNoneMatch.slice(start, i).trim()) === expected) {
-        return true
-      }
-      start = i + 1
-    }
-  }
-  return false
+  return ifNoneMatch?.match(/"[^"]*"/g)?.some((tag) => tag === expected) ?? false
 }
 
 function initializeGenerator(
