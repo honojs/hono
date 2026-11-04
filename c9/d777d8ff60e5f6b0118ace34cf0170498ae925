@@ -1,0 +1,21 @@
+src/client/fetch-result-please.ts
+  s_eebc5901743536::t_1cbb2ff9f88f7b 88
+src/client/utils.test.ts
+  s_eebc5901743536::t_e244823d3b692f 217-219,257-262,333-336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c9d777d8ff60e5f6b0118ace34cf0170498ae925",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
