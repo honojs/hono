@@ -353,6 +353,21 @@ describe('Set cookie', () => {
     expect(serialized).toBe('great_cookie=banana')
   })
 
+  it('Should check the __Secure- and __Host- prefixes case-insensitively', () => {
+    expect(() => serialize('__secure-sid', 'v')).toThrowError(
+      '__Secure- Cookie must have Secure attributes'
+    )
+    expect(() => serialize('__host-sid', 'v')).toThrowError(
+      '__Host- Cookie must have Secure attributes'
+    )
+    expect(() =>
+      serialize('__HOST-sid', 'v', { secure: true, path: '/', domain: 'a.b' })
+    ).toThrowError('__Host- Cookie must not have Domain attributes')
+    expect(serialize('__host-sid', 'v', { secure: true, path: '/' })).toBe(
+      '__host-sid=v; Path=/; Secure'
+    )
+  })
+
   it('Should throw Error cookie with maxAge grater than 400days', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
