@@ -9,6 +9,7 @@ import {
   mergePath,
   splitPath,
   splitRoutingPath,
+  stripPathPrefix,
 } from './url'
 
 describe('url', () => {
@@ -204,6 +205,43 @@ describe('url', () => {
     })
   })
 
+  describe('stripPathPrefix', () => {
+    it('Should strip a static prefix', () => {
+      expect(stripPathPrefix('/api/hello', '/api/hello', 4)).toBe('/hello')
+      expect(stripPathPrefix('/api/hello/world/', '/api/hello/world/', 4)).toBe('/hello/world/')
+      expect(stripPathPrefix('/api', '/api', 4)).toBe('/')
+      expect(stripPathPrefix('/api/', '/api/', 4)).toBe('/')
+      expect(stripPathPrefix('/hello', '/hello', 0)).toBe('/hello')
+      expect(stripPathPrefix('/', '/', 0)).toBe('/')
+    })
+
+    it('Should strip a prefix that was decoded for matching', () => {
+      expect(stripPathPrefix('/api/%C3%A9/hello', '/api/é/hello', 6)).toBe('/hello')
+      expect(stripPathPrefix('/api/v1/admin%2Fsecret', '/api/v1/admin%2Fsecret', 7)).toBe(
+        '/admin%2Fsecret'
+      )
+    })
+
+    it('Should keep encoded characters that the URL parser would normalize', () => {
+      expect(stripPathPrefix('/api/admin%5Csecret', '/api/admin\\secret', 4)).toBe(
+        '/admin%5Csecret'
+      )
+      expect(stripPathPrefix('/api/%252e%252e/admin', '/api/%2e%2e/admin', 4)).toBe(
+        '/%252e%252e/admin'
+      )
+    })
+
+    it('Should strip a prefix that ends inside a segment by whole segments', () => {
+      expect(stripPathPrefix('/assets-v2/hello', '/assets-v2/hello', 7)).toBe('/hello')
+      expect(stripPathPrefix('/assets-v2', '/assets-v2', 7)).toBe('/')
+    })
+
+    it('Should handle the trailing slash removed by getPathNoStrict', () => {
+      expect(stripPathPrefix('/api/hello/', '/api/hello', 4)).toBe('/hello')
+      expect(stripPathPrefix('/api/', '/api', 4)).toBe('/')
+    })
+  })
+
   describe('mergePath', () => {
     it('mergePath', () => {
       expect(mergePath('/book', '/')).toBe('/book')
@@ -261,6 +299,33 @@ describe('url', () => {
   })
 
   describe('getQueryParam', () => {
+    it.each([
+      ['item%5B%5D=first&item[]=second', 'item[]', 'first'],
+      ['item[]=first&item%5B%5D=second', 'item[]', 'first'],
+      ['%6eame=first&name=second', 'name', 'first'],
+      ['name=first&%6eame=second', 'name', 'first'],
+      ['name0=other&%6eame=first&name=second', 'name', 'first'],
+      ['%6eame=&name=second', 'name', ''],
+      ['%6eame&name=second', 'name', ''],
+      ['name+with+spaces=first&name with spaces=second', 'name with spaces', 'first'],
+    ])('returns the first decoded match for %s', (query, key, expected) => {
+      const url = `http://example.com/?${query}`
+      expect(getQueryParam(url, key)).toBe(expected)
+      expect(getQueryParam(url)).toHaveProperty([key], expected)
+      expect(getQueryParams(url, key)).toEqual([expected, 'second'])
+    })
+
+    it.each([
+      ['a&b=3', 'a&b', undefined],
+      ['a=b=3', 'a=b', undefined],
+      ['a%26b=3', 'a&b', '3'],
+      ['a%3Db=3', 'a=b', '3'],
+    ])('does not match a key across separators for %s', (query, key, expected) => {
+      const url = `http://example.com/?${query}`
+      expect(getQueryParam(url, key)).toBe(expected)
+      expect(getQueryParams(url, key)).toEqual(expected === undefined ? undefined : [expected])
+    })
+
     it('Parse URL query strings', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
       expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey')

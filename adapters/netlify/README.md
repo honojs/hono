@@ -6,6 +6,12 @@ Netlify adapter for [Hono](https://hono.dev).
 npm i @hono/netlify
 ```
 
+Netlify Edge Functions run on Deno, so the package is also on JSR:
+
+```ts
+import { handle } from 'jsr:@hono/netlify'
+```
+
 ## Migrating from `hono/netlify`
 
 The exports are the same. Change the import path:

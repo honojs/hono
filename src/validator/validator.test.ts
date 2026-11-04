@@ -383,6 +383,30 @@ describe('Malformed FormData request', () => {
   )
   app.onError(onErrorHandler)
 
+  it('Should validate multipart/form-data with extra parameters', async () => {
+    const formData = new FormData()
+    formData.append('foo', 'bar')
+    const source = new Request('http://localhost/post', { method: 'POST', body: formData })
+    const boundary = source.headers.get('Content-Type')!.replace(/^multipart\/form-data;\s*/, '')
+    for (const contentType of [
+      `multipart/form-data; ${boundary}; charset=utf-8`,
+      `multipart/form-data; charset=utf-8; ${boundary}`,
+      `multipart/form-data;  ${boundary}`,
+    ]) {
+      const res = await app.request('/post', {
+        method: 'POST',
+        body: await source.clone().arrayBuffer(),
+        headers: {
+          'content-type': contentType,
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        foo: 'bar',
+      })
+    }
+  })
+
   it('Should return 400 response, for malformed content type header', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',

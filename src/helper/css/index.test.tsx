@@ -72,6 +72,29 @@ describe('CSS Helper', () => {
     })
   })
 
+  describe('Style with content', () => {
+    it('Should append styles when the content has a newline', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            /* multi
+              line */
+            html {
+              color: red;
+            }
+          `}</Style>
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">/* multi\nline */\nhtml{color:red}.css-1740067317{font-size:1rem}</style><h1 class="css-1740067317">Hello!</h1>'
+      )
+    })
+  })
+
   describe('cx()', () => {
     it('Should render CSS with cx()', async () => {
       const btn = css`
@@ -246,6 +269,27 @@ describe('CSS Helper', () => {
           }
         `,
         '.css-123{padding:1rem;&:hover{padding:2rem}}',
+      ],
+      [
+        'preserve unquoted url',
+        css`
+          background-image: url(https://example.com/a.png);
+          mask-image: url(${'//cdn.example.com/b.svg'});
+          color: red;
+        `,
+        '.css-123{background-image:url(https://example.com/a.png);mask-image:url(//cdn.example.com/b.svg);color:red}',
+      ],
+      [
+        'preserve descendant combinator before pseudo-class',
+        css`
+          & :first-child {
+            margin: 0;
+          }
+          &:hover :is(h1, h2) {
+            color: red;
+          }
+        `,
+        '.css-123{& :first-child{margin:0}&:hover :is(h1,h2){color:red}}',
       ],
     ]
     data.forEach(([name, str, expected]) => {

@@ -5,6 +5,7 @@
 
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
+import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getMimeType } from '../../utils/mime'
 import { tryDecodeURI } from '../../utils/url'
@@ -14,6 +15,8 @@ export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
   precompressed?: boolean
+  /** Allow percent signs in the routed request path. Defaults to false. */
+  allowPercentInPath?: boolean
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
   onFound?: (path: string, c: Context<E>) => void | Promise<void>
@@ -57,12 +60,19 @@ export const serveStatic = <E extends Env = Env>(
       return next()
     }
 
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     let filename: string
 
     if (options.path) {
       filename = options.path
     } else {
       try {
+        if (!options.allowPercentInPath && c.req.path.includes('%')) {
+          throw new Error()
+        }
         filename = tryDecodeURI(c.req.path)
         if (/(?:^|[\/\\])\.{1,2}(?:$|[\/\\])|[\/\\]{2,}|\\/.test(filename)) {
           throw new Error()
@@ -95,10 +105,9 @@ export const serveStatic = <E extends Env = Env>(
 
       if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
         const acceptEncodingSet = new Set(
-          c.req
-            .header('Accept-Encoding')
-            ?.split(',')
-            .map((encoding) => encoding.trim())
+          parseAccept(c.req.header('Accept-Encoding') ?? '')
+            .filter((encoding) => encoding.q > 0)
+            .map((encoding) => encoding.type)
         )
 
         for (const encoding of ENCODINGS_ORDERED_KEYS) {

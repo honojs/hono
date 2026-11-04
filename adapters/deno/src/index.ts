@@ -3,7 +3,7 @@
  * Deno Adapter for Hono.
  */
 
-export { serveStatic } from './serve-static'
-export { toSSG, denoFileSystemModule } from './ssg'
-export { upgradeWebSocket } from './websocket'
-export { getConnInfo } from './conninfo'
+export { serveStatic } from './serve-static.ts'
+export { toSSG, denoFileSystemModule } from './ssg.ts'
+export { upgradeWebSocket } from './websocket.ts'
+export { getConnInfo } from './conninfo.ts'

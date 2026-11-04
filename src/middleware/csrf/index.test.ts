@@ -228,6 +228,52 @@ describe('CSRF by Middleware', () => {
     })
   })
 
+  describe('hyperlink auditing', () => {
+    const app = new Hono()
+    const handler = vi.fn((c: Context) => c.text('OK'))
+
+    app.use('*', csrf())
+    app.post('/ping', handler)
+
+    beforeEach(() => {
+      handler.mockClear()
+    })
+
+    it.each(['text/ping', 'Text/Ping', 'text/ping; charset=utf-8'])(
+      'should be 403 for "%s" cross origin',
+      async (contentType) => {
+        const res = await app.request('http://localhost:3000/ping', {
+          method: 'POST',
+          headers: {
+            'content-type': contentType,
+            origin: 'http://localhost:3001',
+            'sec-fetch-site': 'same-site',
+          },
+          body: 'PING',
+        })
+
+        expect(res.status).toBe(403)
+        expect(handler).not.toHaveBeenCalled()
+      }
+    )
+
+    it('should be 200 for "text/ping" same origin', async () => {
+      const res = await app.request('http://localhost:3000/ping', {
+        method: 'POST',
+        headers: {
+          'content-type': 'text/ping',
+          origin: 'http://localhost:3000',
+          'sec-fetch-site': 'same-origin',
+        },
+        body: 'PING',
+      })
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('OK')
+      expect(handler).toHaveBeenCalledOnce()
+    })
+  })
+
   describe('with origin option', () => {
     describe('string', () => {
       const app = new Hono()

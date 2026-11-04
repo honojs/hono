@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.13.9",
+  "version": "4.13.16",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -18,8 +18,6 @@
     "test:fastly": "vp test --run --project fastly",
     "test:node": "vp test --run --project node",
     "test:workerd": "vp test --run --project workerd",
-    "test:lambda": "vp test --run --project lambda",
-    "test:lambda-edge": "vp test --run --project lambda-edge",
     "test:all": "pnpm run test && pnpm run test:deno && pnpm run test:bun",
     "check": "vp check",
     "check:fix": "vp check --fix",
@@ -104,6 +102,11 @@
       "types": "./dist/types/helper/route/index.d.ts",
       "import": "./dist/helper/route/index.js",
       "require": "./dist/cjs/helper/route/index.js"
+    },
+    "./mount": {
+      "types": "./dist/types/middleware/mount/index.d.ts",
+      "import": "./dist/middleware/mount/index.js",
+      "require": "./dist/cjs/middleware/mount/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
@@ -459,6 +462,9 @@
       "route": [
         "./dist/types/helper/route"
       ],
+      "mount": [
+        "./dist/types/middleware/mount"
+      ],
       "cookie": [
         "./dist/types/helper/cookie"
       ],
@@ -695,7 +701,7 @@
     "rolldown": "^1.2.10",
     "typescript": "^6.0.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vite-plus": "1.0.0-rc.1",
+    "vite-plus": "1.0.0",
     "vitest": "5.0.1",
     "wrangler": "4.107.0",
     "ws": "^8.21.0",

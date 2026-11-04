@@ -214,6 +214,9 @@ describe('parseResponse', async () => {
   const _app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/json-ows', (c) =>
+      c.json({ message: 'hi' }, 200, { 'Content-Type': 'application/json ; charset=utf-8' })
+    )
     .get('/might-error-json', (c) => {
       if (Math.random() > 0.5) {
         return c.json({ error: 'error' }, 500)
@@ -250,6 +253,12 @@ describe('parseResponse', async () => {
     }),
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/json-ows', () => {
+      return HttpResponse.json(
+        { message: 'hi' },
+        { headers: { 'content-type': 'application/json ; charset=utf-8' } }
+      )
     }),
     http.get('http://localhost/might-error-json', () => {
       if (Math.random() > 0.5) {
@@ -292,7 +301,8 @@ describe('parseResponse', async () => {
           'content-type': 'x/custom-type',
         },
       })
-    })
+    }),
+    http.get('http://localhost/noRoute', () => HttpResponse.error())
   )
 
   beforeAll(() => server.listen())
@@ -319,6 +329,10 @@ describe('parseResponse', async () => {
       const result = await parseResponse(client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should auto parse the json response - whitespace before a parameter', async () => {
+      const result = await parseResponse(client['json-ows'].$get())
+      expect(result).toEqual({ message: 'hi' })
     }),
     it('should auto parse the json response - sync fetch', async () => {
       const result = await parseResponse(await client.json.$get())
@@ -349,12 +363,12 @@ describe('parseResponse', async () => {
         '[DetailedError: 500 Internal Server Error]'
       )
 
-      // Not defined route
+      // Not defined route: MSW simulates a network error, so fetch itself rejects
       // Note: the error in this test case is thrown at the `fetch` call (.$get()), not during the `parseResponse` call, so I think `parseResponse` should not try to catch and wrap it into a structured error, which could be inconsistent, if the user awaited the fetch.
       await expect(
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
-      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: Failed to fetch]')
     }),
     it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
       type ResultType = Awaited<

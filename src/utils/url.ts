@@ -158,6 +158,30 @@ export const getPathNoStrict = (request: Request): string => {
   return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
 }
 
+// Cut the rest of the path from the raw pathname, not from the decoded one, so that decoded
+// characters are never parsed as URL syntax again (`%5C` -> `\\` -> `/`, `%2E%2E` -> `..`).
+export const stripPathPrefix = (
+  rawPath: string,
+  decodedPath: string,
+  prefixLength: number
+): string => {
+  if (rawPath.at(-1) === '/' && decodedPath.at(-1) !== '/') {
+    rawPath = rawPath.slice(0, -1) // `strict: false` dropped it from the decoded path
+  }
+  let index = 0
+  for (
+    let i = decodedPath.indexOf('/');
+    i !== -1 && i < prefixLength;
+    i = decodedPath.indexOf('/', i + 1)
+  ) {
+    index = rawPath.indexOf('/', index + 1)
+    if (index === -1) {
+      return '/'
+    }
+  }
+  return rawPath.slice(index) || '/'
+}
+
 /**
  * Merge paths.
  * @param {string[]} ...paths - The paths to merge.
@@ -241,10 +265,11 @@ const _getQueryParam = (
 
   let encoded
 
-  if (!multiple && key && key.indexOf('%') === -1 && key.indexOf('+') === -1) {
+  if (!multiple && key && !/[%+&=]/.test(key)) {
     // optimized for unencoded key
 
-    let keyIndex = url.indexOf('?', 8)
+    const queryIndex = url.indexOf('?', 8)
+    let keyIndex = queryIndex
     if (keyIndex === -1) {
       return undefined
     }
@@ -253,11 +278,19 @@ const _getQueryParam = (
     }
     while (keyIndex !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex + key.length + 2
-        const endIndex = url.indexOf('&', valueIndex)
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+      if (trailingKeyCode === 61 || trailingKeyCode === 38 || isNaN(trailingKeyCode)) {
+        // An earlier encoded key may decode to the same name.
+        if (
+          keyIndex > queryIndex &&
+          /(?:^|&)[^=&]*[%+]/.test(url.slice(queryIndex + 1, keyIndex))
+        ) {
+          break
+        }
+        if (trailingKeyCode === 61) {
+          const valueIndex = keyIndex + key.length + 2
+          const endIndex = url.indexOf('&', valueIndex)
+          return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+        }
         return ''
       }
       keyIndex = url.indexOf(`&${key}`, keyIndex + 1)

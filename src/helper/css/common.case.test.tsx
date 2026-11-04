@@ -126,6 +126,98 @@ export const renderTest = (
       )
     })
 
+    it('Should escape </style> split between the template and a value', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '<${'/style>'}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
+    it('Should escape </style> split between a value and the template', async () => {
+      const headerClass = css`
+        content: '${'<'}/style>';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toContain("content:'<\\/style>'")
+    })
+
+    it('Should escape </style> formed after CSS comments are removed', async () => {
+      const headerClass = css`
+        --x: </**/${'/style><img src=x onerror=alert(1)>'};
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      const output = await toString(template)
+      expect(output).toContain('<\\/style><img src=x onerror=alert(1)>')
+      expect(output).not.toContain('</style><img')
+    })
+
+    it('Should escape </style> split between the template and a nested css', async () => {
+      const inner = css`
+        ${'/style>'}
+      `
+      const headerClass = css`
+        content: '<${inner}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toContain("content:'<\\/style>")
+    })
+
+    it('Should escape </style> split between two values', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${'<'}${'/style>'}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
+    it('Should escape </style> split between array values', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${['<', '/style>']}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
     it('Should not escape URL', async () => {
       const headerClass = css`
         background-color: blue;

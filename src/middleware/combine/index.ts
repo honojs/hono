@@ -44,6 +44,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
     }
 
     let lastError: unknown
+    let response: Response | undefined
     for (const handler of middleware) {
       try {
         const result = await handler(c, wrappedNext)
@@ -52,6 +53,8 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue
+        } else if (result && result !== true) {
+          response = result
         }
         lastError = undefined
         break
@@ -65,6 +68,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
     if (lastError) {
       throw lastError
     }
+    return response
   }
 }
 

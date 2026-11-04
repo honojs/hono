@@ -1,10 +1,7 @@
 import { Writable } from 'node:stream'
 import { vi } from 'vitest'
-import type {
-  APIGatewayProxyEvent,
-  APIGatewayProxyEventV2,
-} from '../../src/adapter/aws-lambda/handler'
-import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
+import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from '../src/handler'
+import type { LambdaContext } from '../src/types'
 
 type StreamifyResponseHandler = (
   handlerFunc: (

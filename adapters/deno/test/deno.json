@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "deno.ns",
+      "dom",
+      "dom.iterable"
+    ]
+  },
+  "unstable": [
+    "sloppy-imports"
+  ],
+  "imports": {
+    "hono": "../../../src/index.ts",
+    "hono/types": "../../../src/types.ts",
+    "hono/conninfo": "../../../src/helper/conninfo/index.ts",
+    "hono/serve-static": "../../../src/middleware/serve-static/index.ts",
+    "hono/ssg": "../../../src/helper/ssg/index.ts",
+    "hono/ws": "../../../src/helper/websocket/index.ts"
+  },
+  "lock": false
+}

@@ -1,5 +1,5 @@
 import { Context, Hono } from 'hono'
-import { upgradeWebSocket } from './websocket'
+import { upgradeWebSocket } from './websocket.ts'
 
 globalThis.Deno = {} as typeof Deno
 

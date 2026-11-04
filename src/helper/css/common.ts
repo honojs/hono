@@ -80,10 +80,12 @@ const cssStringReStr: string = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
 
   "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
+
+  'url\\(\\s*[^)"\'\\s]*\\s*\\)', // unquoted url, which may contain "//"
 ].join('|')
 const minifyCssRe: RegExp = new RegExp(
   [
-    '(' + cssStringReStr + ')', // $1: quoted string
+    '(' + cssStringReStr + ')', // $1: quoted string or unquoted url
 
     '(?:' +
       [
@@ -95,14 +97,16 @@ const minifyCssRe: RegExp = new RegExp(
       ')',
 
     '\\s*;\\s*(}|$)\\s*', // $2: trailing semicolon
-    '\\s*([{};:,])\\s*', // $3: whitespace around { } : , ;
-    '(\\s)\\s+', // $4: 2+ spaces
+    '\\s*([{};,])\\s*', // $3: whitespace around { } , ;
+    // $4: whitespace after : (the whitespace before it is a descendant combinator in a selector)
+    '(:)\\s*',
+    '(\\s)\\s+', // $5: 2+ spaces
   ].join('|'),
   'g'
 )
 
 export const minify = (css: string): string => {
-  return css.replace(minifyCssRe, (_, $1, $2, $3, $4) => $1 || $2 || $3 || $4 || '')
+  return css.replace(minifyCssRe, (_, $1, $2, $3, $4, $5) => $1 || $2 || $3 || $4 || $5 || '')
 }
 
 type CssVariableBasicType =
@@ -161,11 +165,7 @@ export const buildStyleString = (
         continue
       }
       if (typeof value === 'string') {
-        if (/([\\"'\/])/.test(value)) {
-          styleString += value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
-        } else {
-          styleString += value
-        }
+        styleString += value.replace(/[\\"']/g, '\\$&')
       } else if (typeof value === 'number') {
         styleString += value
       } else if ((value as CssEscapedString)[CSS_ESCAPED]) {
@@ -195,7 +195,8 @@ export const buildStyleString = (
     }
   }
 
-  return [label, minify(styleString), selectors, externalClassNames]
+  // Minification can join `<` and `/` across template parts or removed comments.
+  return [label, minify(styleString).replace(/<\//g, '<\\/'), selectors, externalClassNames]
 }
 
 export const cssCommon = (

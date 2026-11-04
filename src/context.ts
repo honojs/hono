@@ -517,7 +517,8 @@ export class Context<
    * ```
    */
   header: SetHeaders = (name, value, options): void => {
-    if (this.finalized) {
+    // a consumed body can't be passed to a new Response
+    if (this.finalized && !(this.#res as Response).bodyUsed) {
       this.#res = createResponseInstance((this.#res as Response).body, this.#res)
     }
     const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())

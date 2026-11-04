@@ -85,7 +85,7 @@ function detectResponseType(response: Response): 'json' | 'text' {
   }
 
   // `_contentType` might look like: `application/json; charset=utf-8`, `text/plain`, so we get the first part before `;`
-  const contentType = _contentType.split(';').shift()!
+  const contentType = _contentType.split(';').shift()!.trim()
 
   if (jsonRegex.test(contentType)) {
     return 'json'

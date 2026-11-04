@@ -22,7 +22,7 @@ export type ValidationFunction<
 ) => OutputType | TypedResponse | Promise<OutputType> | Promise<TypedResponse>
 
 const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
-const multipartRegex = /^multipart\/form-data(;\s?boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/i
+const multipartRegex = /^multipart\/form-data(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
 const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
 
 export type ExtractValidationResponse<VF> = VF extends (value: any, c: any) => infer R

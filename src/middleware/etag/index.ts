@@ -91,7 +91,9 @@ function initializeGenerator(
  * ```
  */
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
-  const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
+  const retainedHeaders = new Set(
+    (options?.retainedHeaders ?? RETAINED_304_HEADERS).map((header) => header.toLowerCase())
+  )
   const weak = options?.weak ?? false
   const generator = initializeGenerator(options?.generateDigest)
 
@@ -128,6 +130,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     const matched = ifNoneMatch === '*' || etagMatches(etag, ifNoneMatch)
 
     if (matched) {
+      await res.body?.cancel()
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
@@ -136,7 +139,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
         },
       })
       for (const key of Array.from(c.res.headers.keys())) {
-        if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {
+        if (!retainedHeaders.has(key.toLowerCase())) {
           c.res.headers.delete(key)
         }
       }
