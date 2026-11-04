@@ -266,7 +266,7 @@ const _getQueryParam = (
   let encoded
 
   if (!multiple && key && !/[%+&=]/.test(key)) {
-    // optimized for an unencoded key; a key holding a separator never matches the raw string
+    // optimized for unencoded key
 
     const queryIndex = url.indexOf('?', 8)
     let keyIndex = queryIndex
