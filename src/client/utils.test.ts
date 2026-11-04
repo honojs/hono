@@ -214,6 +214,9 @@ describe('parseResponse', async () => {
   const _app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/json-ows', (c) =>
+      c.json({ message: 'hi' }, 200, { 'Content-Type': 'application/json ; charset=utf-8' })
+    )
     .get('/might-error-json', (c) => {
       if (Math.random() > 0.5) {
         return c.json({ error: 'error' }, 500)
@@ -250,6 +253,12 @@ describe('parseResponse', async () => {
     }),
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/json-ows', () => {
+      return HttpResponse.json(
+        { message: 'hi' },
+        { headers: { 'content-type': 'application/json ; charset=utf-8' } }
+      )
     }),
     http.get('http://localhost/might-error-json', () => {
       if (Math.random() > 0.5) {
@@ -320,6 +329,10 @@ describe('parseResponse', async () => {
       const result = await parseResponse(client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should auto parse the json response - whitespace before a parameter', async () => {
+      const result = await parseResponse(client['json-ows'].$get())
+      expect(result).toEqual({ message: 'hi' })
     }),
     it('should auto parse the json response - sync fetch', async () => {
       const result = await parseResponse(await client.json.$get())
