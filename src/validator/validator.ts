@@ -142,11 +142,7 @@ export const validator = <
         break
       }
       case 'query':
-        value = Object.fromEntries(
-          Object.entries(c.req.queries()).map(([k, v]) => {
-            return v.length === 1 ? [k, v[0]] : [k, v]
-          })
-        )
+        value = c.req.queries()
         break
       case 'param':
         value = c.req.param() as Record<string, string>
