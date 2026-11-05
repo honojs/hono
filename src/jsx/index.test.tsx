@@ -482,6 +482,12 @@ describe('render to string', () => {
       expect(template.toString()).toBe('<div>Content</div>')
     })
 
+    it('should be ignored used in ref props with a ref object', () => {
+      const ref = { current: null }
+      const template = <div ref={ref}>Content</div>
+      expect(template.toString()).toBe('<div>Content</div>')
+    })
+
     it('should raise an error if used in other props', () => {
       const onClick = () => {}
       const template = <button data-handler={onClick}>Click</button>

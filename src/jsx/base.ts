@@ -165,7 +165,8 @@ export const attributeToBuffer = (
   v: unknown,
   tag?: string
 ): void => {
-  if (v === null || v === undefined) {
+  // refs only make sense in the DOM
+  if (key === 'ref' || v === null || v === undefined) {
     return
   }
   if (typeof v === 'boolean' && booleanAttributes.has(key)) {
@@ -175,7 +176,7 @@ export const attributeToBuffer = (
     return
   }
   if (typeof v === 'function') {
-    if (!key.startsWith('on') && key !== 'ref') {
+    if (!key.startsWith('on')) {
       throw new Error(
         `Invalid prop '${key}' of type 'function' supplied to ${tag ? `'${tag}'` : 'a JSX element'}.`
       )
