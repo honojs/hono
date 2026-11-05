@@ -24,6 +24,7 @@ import type {
   OnHandlerInterface,
   RouterRoute,
   Schema,
+  UnknownErrorHandler,
 } from './types'
 import { COMPOSED_HANDLER } from './utils/constants'
 import { createMountedRequest } from './utils/mount'
@@ -38,6 +39,11 @@ const errorHandler: ErrorHandler = (err, c) => {
     const res = err.getResponse()
     return c.newResponse(res.body, res)
   }
+  console.error(err)
+  return c.text('Internal Server Error', 500)
+}
+
+const unknownErrorHandler: UnknownErrorHandler = (err, c) => {
   console.error(err)
   return c.text('Internal Server Error', 500)
 }
@@ -197,6 +203,7 @@ class Hono<
       getPath: this.getPath,
     })
     clone.errorHandler = this.errorHandler
+    clone.unknownErrorHandler = this.unknownErrorHandler
     clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
@@ -205,6 +212,7 @@ class Hono<
   #notFoundHandler: NotFoundHandler = notFoundHandler
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private errorHandler: ErrorHandler = errorHandler
+  private unknownErrorHandler: UnknownErrorHandler = unknownErrorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -289,6 +297,11 @@ class Hono<
    */
   onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
     this.errorHandler = handler
+    return this
+  }
+
+  onUnknownError = (handler: UnknownErrorHandler): Hono<E, S, BasePath> => {
+    this.unknownErrorHandler = handler
     return this
   }
 
@@ -415,7 +428,7 @@ class Hono<
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
-    throw err
+    return this.unknownErrorHandler(err, c)
   }
 
   #dispatch(
@@ -462,7 +475,12 @@ class Hono<
         : (res ?? this.#notFoundHandler(c))
     }
 
-    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
+    const composed = compose(
+      matchResult[0],
+      this.errorHandler,
+      this.unknownErrorHandler,
+      this.#notFoundHandler
+    )
 
     return (async () => {
       try {
