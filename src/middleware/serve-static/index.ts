@@ -9,6 +9,7 @@ import { parseAccept } from '../../utils/accept'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getMimeType } from '../../utils/mime'
 import { tryDecodeURI } from '../../utils/url'
+import { addAcceptEncodingToVary } from '../vary'
 import { defaultJoin } from './path'
 
 export type ServeStaticOptions<E extends Env = Env> = {
@@ -104,6 +105,12 @@ export const serveStatic = <E extends Env = Env>(
       c.header('Content-Type', mimeType || 'application/octet-stream')
 
       if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
+        const currentVary = c.res.headers.get('Vary')
+        const nextVary = addAcceptEncodingToVary(currentVary)
+        if (nextVary !== currentVary) {
+          c.header('Vary', nextVary)
+        }
+
         const acceptEncodingSet = new Set(
           parseAccept(c.req.header('Accept-Encoding') ?? '')
             .filter((encoding) => encoding.q > 0)
@@ -119,7 +126,6 @@ export const serveStatic = <E extends Env = Env>(
           if (compressedContent) {
             content = compressedContent
             c.header('Content-Encoding', encoding)
-            c.header('Vary', 'Accept-Encoding', { append: true })
             break
           }
         }
