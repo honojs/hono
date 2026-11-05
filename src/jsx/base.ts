@@ -1,7 +1,12 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
-import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
-import { DOM_RENDERER, DOM_MEMO } from './constants'
+import type {
+  HtmlEscaped,
+  HtmlEscapedString,
+  StringBuffer,
+  StringBufferWithCallbacks,
+} from '../utils/html'
+import { DOM_RENDERER, DOM_MEMO, RENDERED_JSX } from './constants'
 import {
   captureRenderContext,
   createContext,
@@ -82,7 +87,7 @@ const emptyTags = [
   'track',
   'wbr',
 ]
-export const booleanAttributes = [
+export const booleanAttributes = new Set([
   'allowfullscreen',
   'async',
   'autofocus',
@@ -109,7 +114,10 @@ export const booleanAttributes = [
   'required',
   'reversed',
   'selected',
-]
+  'shadowrootclonable',
+  'shadowrootdelegatesfocus',
+  'shadowrootserializable',
+])
 
 type SuspendedContext = <T>(callback: () => T) => T
 
@@ -135,6 +143,78 @@ const resolveFunctionComponentResult = (
     }
     return suspendedContext ? suspendedContext(render) : runWithRenderContext(render)
   })
+
+// Rendered JSX is escaped for use as child content, but still contains markup.
+export const markRenderedJSX = (value: HtmlEscapedString): HtmlEscapedString => {
+  ;(value as unknown as Record<symbol, boolean>)[RENDERED_JSX] = true
+  return value
+}
+
+const isEscapedAttribute = (value: unknown): value is HtmlEscapedString =>
+  value instanceof String && (value as unknown as HtmlEscaped).isEscaped && !(RENDERED_JSX in value)
+
+const objectToAttributeString = (v: object): string | Promise<string> => {
+  const s = v.toString() as string | Promise<string>
+  return s instanceof Promise ? s.then(String) : String(s)
+}
+
+export const attributeToBuffer = (
+  buffer: StringBuffer,
+  prefix: string,
+  key: string,
+  v: unknown,
+  tag?: string
+): void => {
+  if (v === null || v === undefined) {
+    return
+  }
+  if (typeof v === 'boolean' && booleanAttributes.has(key)) {
+    if (v) {
+      buffer[0] += `${prefix}${key}=""`
+    }
+    return
+  }
+  if (typeof v === 'function') {
+    if (!key.startsWith('on') && key !== 'ref') {
+      throw new Error(
+        `Invalid prop '${key}' of type 'function' supplied to ${tag ? `'${tag}'` : 'a JSX element'}.`
+      )
+    }
+    // maybe event handler for client components, just ignore in server components
+    return
+  }
+
+  buffer[0] += `${prefix}${key}="`
+  if (key === 'style' && typeof v === 'object') {
+    // object to style strings
+    let styleStr = ''
+    styleObjectForEach(v as Record<string, unknown>, (property, value) => {
+      if (value != null) {
+        styleStr += `${styleStr ? ';' : ''}${property}:${value}`
+      }
+    })
+    escapeToBuffer(styleStr, buffer)
+  } else if (typeof v === 'string') {
+    escapeToBuffer(v, buffer)
+  } else if (typeof v === 'number' || isEscapedAttribute(v)) {
+    buffer[0] += `${v}`
+  } else {
+    const s =
+      v instanceof Promise
+        ? v.then((r) =>
+            typeof r === 'object' && r !== null && !isEscapedAttribute(r)
+              ? objectToAttributeString(r)
+              : r
+          )
+        : objectToAttributeString(v as object)
+    if (s instanceof Promise) {
+      buffer.unshift('"', s)
+      return
+    }
+    escapeToBuffer(s, buffer)
+  }
+  buffer[0] += '"'
+}
 
 const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
   for (let i = 0, len = children.length; i < len; i++) {
@@ -232,7 +312,7 @@ export class JSXNode implements HtmlEscaped {
         ? 'callbacks' in buffer
           ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
           : buffer[0]
-        : stringBufferToString(buffer, buffer.callbacks)
+        : stringBufferToString(buffer, buffer.callbacks).then(markRenderedJSX)
     }
     return runWithRenderContext(render)
   }
@@ -255,47 +335,19 @@ export class JSXNode implements HtmlEscaped {
       }
       if (key === 'children') {
         // skip children
-      } else if (key === 'style' && typeof v === 'object') {
-        // object to style strings
-        let styleStr = ''
-        styleObjectForEach(v, (property, value) => {
-          if (value != null) {
-            styleStr += `${styleStr ? ';' : ''}${property}:${value}`
-          }
-        })
-        buffer[0] += ' style="'
-        escapeToBuffer(styleStr, buffer)
-        buffer[0] += '"'
-      } else if (typeof v === 'string') {
-        buffer[0] += ` ${key}="`
-        escapeToBuffer(v, buffer)
-        buffer[0] += '"'
-      } else if (v === null || v === undefined) {
-        // Do nothing
-      } else if (typeof v === 'number' || (v as HtmlEscaped).isEscaped) {
-        buffer[0] += ` ${key}="${v}"`
-      } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
-        if (v) {
-          buffer[0] += ` ${key}=""`
-        }
-      } else if (key === 'dangerouslySetInnerHTML') {
+      } else if (
+        key === 'dangerouslySetInnerHTML' &&
+        typeof v === 'object' &&
+        v !== null &&
+        '__html' in v
+      ) {
         if (children.length > 0) {
           throw new Error('Can only set one of `children` or `props.dangerouslySetInnerHTML`.')
         }
 
         children = [raw(v.__html)]
-      } else if (v instanceof Promise) {
-        buffer[0] += ` ${key}="`
-        buffer.unshift('"', v)
-      } else if (typeof v === 'function') {
-        if (!key.startsWith('on') && key !== 'ref') {
-          throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
-        }
-        // maybe event handler for client components, just ignore in server components
       } else {
-        buffer[0] += ` ${key}="`
-        escapeToBuffer(v.toString(), buffer)
-        buffer[0] += '"'
+        attributeToBuffer(buffer, ' ', key, v, tag)
       }
     }
 
