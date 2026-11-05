@@ -61,6 +61,16 @@ export interface RouterRoute {
   handler: H
 }
 
+export type ValidPath<P extends string> = string extends P
+  ? P
+  : P extends `${string}**${string}`
+    ? never
+    : P
+
+export type ValidPaths<Ps extends readonly string[]> = {
+  [K in keyof Ps]: Ps[K] extends string ? ValidPath<Ps[K]> : Ps[K]
+}
+
 ////////////////////////////////////////
 //////                            //////
 //////          Handlers          //////
@@ -172,7 +182,7 @@ export interface HandlerInterface<
     I extends Input = BlankInput,
     E2 extends Env = E,
   >(
-    path: P,
+    path: ValidPath<P>,
     handler: H<E2, MergedPath, I, R>
   ): HonoBase<
     E,
@@ -221,7 +231,7 @@ export interface HandlerInterface<
     // Middleware
     M1 extends H<E2, MergedPath, I> = H<E2, MergedPath, I>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
   ): HonoBase<
     E,
@@ -286,7 +296,7 @@ export interface HandlerInterface<
     M1 extends H<E2, MergedPath, I> = H<E2, MergedPath, I>,
     M2 extends H<E3, MergedPath, I2> = H<E3, MergedPath, I2>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2> & M2, H<E4, MergedPath, I3, R>]
   ): HonoBase<
     E,
@@ -364,7 +374,7 @@ export interface HandlerInterface<
     M2 extends H<E3, MergedPath, I2> = H<E3, MergedPath, I2>,
     M3 extends H<E4, MergedPath, I3> = H<E4, MergedPath, I3>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -458,7 +468,7 @@ export interface HandlerInterface<
     M3 extends H<E4, MergedPath, I3> = H<E4, MergedPath, I3>,
     M4 extends H<E5, MergedPath, I4> = H<E5, MergedPath, I4>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -562,7 +572,7 @@ export interface HandlerInterface<
     M4 extends H<E5, MergedPath, I4> = H<E5, MergedPath, I4>,
     M5 extends H<E6, MergedPath, I5> = H<E6, MergedPath, I5>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -676,7 +686,7 @@ export interface HandlerInterface<
     M5 extends H<E6, MergedPath, I5> = H<E6, MergedPath, I5>,
     M6 extends H<E7, MergedPath, I6> = H<E7, MergedPath, I6>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -800,7 +810,7 @@ export interface HandlerInterface<
     M6 extends H<E7, MergedPath, I6> = H<E7, MergedPath, I6>,
     M7 extends H<E8, MergedPath, I7> = H<E8, MergedPath, I7>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -934,7 +944,7 @@ export interface HandlerInterface<
     M7 extends H<E8, MergedPath, I7> = H<E8, MergedPath, I7>,
     M8 extends H<E9, MergedPath, I8> = H<E9, MergedPath, I8>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1004,7 +1014,7 @@ export interface HandlerInterface<
     M8 extends H<E9, MergedPath, I8> = H<E9, MergedPath, I8>,
     M9 extends H<E10, MergedPath, I9> = H<E10, MergedPath, I9>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1051,7 +1061,7 @@ export interface HandlerInterface<
 
   // app.get(path, ...handlers[])
   <P extends string, I extends Input = BlankInput, R extends HandlerResponse<any> = any>(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E, MergePath<BasePath, P>, I, R>, ...H<E, MergePath<BasePath, P>, I, R>[]]
   ): HonoBase<
     E,
@@ -1062,7 +1072,7 @@ export interface HandlerInterface<
 
   // app.get(path)
   <P extends string, R extends HandlerResponse<any> = any, I extends Input = BlankInput>(
-    path: P
+    path: ValidPath<P>
   ): HonoBase<
     E,
     S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>,
@@ -1103,7 +1113,7 @@ export interface MiddlewareHandlerInterface<
 
   // app.use(path, handler)
   <P extends string, MergedPath extends MergePath<BasePath, P>, E2 extends Env = E>(
-    path: P,
+    path: ValidPath<P>,
     handler: MiddlewareHandler<E2, MergedPath, any, any>
   ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath, MergedPath>
 
@@ -1128,7 +1138,7 @@ export interface MiddlewareHandlerInterface<
     E2 extends Env = E,
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath, MergedPath>
 
@@ -1156,7 +1166,7 @@ export interface MiddlewareHandlerInterface<
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>, MiddlewareHandler<E4, P>]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath, MergedPath>
 
@@ -1187,7 +1197,7 @@ export interface MiddlewareHandlerInterface<
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1226,7 +1236,7 @@ export interface MiddlewareHandlerInterface<
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1269,7 +1279,7 @@ export interface MiddlewareHandlerInterface<
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1316,7 +1326,7 @@ export interface MiddlewareHandlerInterface<
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1367,7 +1377,7 @@ export interface MiddlewareHandlerInterface<
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1422,7 +1432,7 @@ export interface MiddlewareHandlerInterface<
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
   >(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       MiddlewareHandler<E2, P>,
       MiddlewareHandler<E3, P>,
@@ -1443,7 +1453,7 @@ export interface MiddlewareHandlerInterface<
 
   //// app.use(path, ...handlers[])
   <P extends string, E2 extends Env = E>(
-    path: P,
+    path: ValidPath<P>,
     ...handlers: MiddlewareHandler<E2, MergePath<BasePath, P>>[]
   ): HonoBase<E, S, BasePath, MergePath<BasePath, P>>
 }
@@ -1469,7 +1479,7 @@ export interface OnHandlerInterface<
     E2 extends Env = E,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     handler: H<E2, MergedPath, I, R>
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2]>,
@@ -1492,7 +1502,7 @@ export interface OnHandlerInterface<
     M1 extends H<E2, MergedPath, I> = H<E2, MergedPath, I>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3]>,
@@ -1519,7 +1529,7 @@ export interface OnHandlerInterface<
     M2 extends H<E3, MergedPath, I2> = H<E3, MergedPath, I2>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2> & M2, H<E4, MergedPath, I3, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
@@ -1554,7 +1564,7 @@ export interface OnHandlerInterface<
     M3 extends H<E4, MergedPath, I3> = H<E4, MergedPath, I3>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1600,7 +1610,7 @@ export interface OnHandlerInterface<
     M4 extends H<E5, MergedPath, I4> = H<E5, MergedPath, I4>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1651,7 +1661,7 @@ export interface OnHandlerInterface<
     M5 extends H<E6, MergedPath, I5> = H<E6, MergedPath, I5>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1707,7 +1717,7 @@ export interface OnHandlerInterface<
     M6 extends H<E7, MergedPath, I6> = H<E7, MergedPath, I6>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1768,7 +1778,7 @@ export interface OnHandlerInterface<
     M7 extends H<E8, MergedPath, I7> = H<E8, MergedPath, I7>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1834,7 +1844,7 @@ export interface OnHandlerInterface<
     M8 extends H<E9, MergedPath, I8> = H<E9, MergedPath, I8>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1905,7 +1915,7 @@ export interface OnHandlerInterface<
     M9 extends H<E10, MergedPath, I9> = H<E10, MergedPath, I9>,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -1948,7 +1958,7 @@ export interface OnHandlerInterface<
     I extends Input = BlankInput,
   >(
     method: M,
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E, MergePath<BasePath, P>, I, R>, ...H<E, MergePath<BasePath, P>, I, R>[]]
   ): HonoBase<
     E,
@@ -1967,7 +1977,7 @@ export interface OnHandlerInterface<
     E2 extends Env = E,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     handler: H<E2, MergedPath, I, R>
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2]>,
@@ -1990,7 +2000,7 @@ export interface OnHandlerInterface<
     M1 extends H<E2, MergedPath, I> = H<E2, MergedPath, I>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3]>,
@@ -2017,7 +2027,7 @@ export interface OnHandlerInterface<
     M2 extends H<E3, MergedPath, I2> = H<E3, MergedPath, I2>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2> & M2, H<E4, MergedPath, I3, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
@@ -2052,7 +2062,7 @@ export interface OnHandlerInterface<
     M3 extends H<E4, MergedPath, I3> = H<E4, MergedPath, I3>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2098,7 +2108,7 @@ export interface OnHandlerInterface<
     M4 extends H<E5, MergedPath, I4> = H<E5, MergedPath, I4>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2149,7 +2159,7 @@ export interface OnHandlerInterface<
     M5 extends H<E6, MergedPath, I5> = H<E6, MergedPath, I5>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2205,7 +2215,7 @@ export interface OnHandlerInterface<
     M6 extends H<E7, MergedPath, I6> = H<E7, MergedPath, I6>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2266,7 +2276,7 @@ export interface OnHandlerInterface<
     M7 extends H<E8, MergedPath, I7> = H<E8, MergedPath, I7>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2332,7 +2342,7 @@ export interface OnHandlerInterface<
     M8 extends H<E9, MergedPath, I8> = H<E9, MergedPath, I8>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2403,7 +2413,7 @@ export interface OnHandlerInterface<
     M9 extends H<E10, MergedPath, I9> = H<E10, MergedPath, I9>,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [
       H<E2, MergedPath, I> & M1,
       H<E3, MergedPath, I2> & M2,
@@ -2446,7 +2456,7 @@ export interface OnHandlerInterface<
     I extends Input = BlankInput,
   >(
     methods: M[],
-    path: P,
+    path: ValidPath<P>,
     ...handlers: [H<E, MergePath<BasePath, P>, I, R>, ...H<E, MergePath<BasePath, P>, I, R>[]]
   ): HonoBase<
     E,
@@ -2464,7 +2474,7 @@ export interface OnHandlerInterface<
     E2 extends Env = E,
   >(
     methods: M | M[],
-    paths: Ps,
+    paths: ValidPaths<Ps>,
     ...handlers: H<E2, MergePath<BasePath, Ps[number]>, I, R>[]
   ): HonoBase<
     E,
