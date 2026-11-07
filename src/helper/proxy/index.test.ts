@@ -205,6 +205,112 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
     })
 
+    it.each([false, true])(
+      'process headers from a Request input with strictConnectionProcessing set to %s',
+      async (strictConnectionProcessing) => {
+        const controller = new AbortController()
+        const input = new Request('https://example.com/post', {
+          method: 'POST',
+          body: 'test',
+          signal: controller.signal,
+          headers: {
+            Connection: 'keep-alive, custom-header',
+            'Keep-Alive': 'timeout=5, max=1000',
+            'Proxy-Authorization': 'Basic 123456',
+            'Custom-Header': 'test',
+            'Allowed-Custom-Header': 'test',
+          },
+        })
+
+        const res = await proxy(input, { strictConnectionProcessing })
+        const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as Request
+
+        expect(req.url).toBe(input.url)
+        expect(req.method).toBe('POST')
+        expect(await res.text()).toBe('request body: test')
+        expect(req.headers.get('Connection')).toBeNull()
+        expect(req.headers.get('Keep-Alive')).toBeNull()
+        expect(req.headers.get('Proxy-Authorization')).toBeNull()
+        expect(req.headers.get('Custom-Header')).toBe(strictConnectionProcessing ? null : 'test')
+        expect(req.headers.get('Allowed-Custom-Header')).toBe('test')
+        expect(input.headers.get('Connection')).toBe('keep-alive, custom-header')
+
+        controller.abort('client disconnect')
+        expect(req.signal.aborted).toBe(true)
+        expect(req.signal.reason).toBe('client disconnect')
+      }
+    )
+
+    it('reject invalid Connection tokens from a Request input in strict mode', async () => {
+      const input = new Request('https://example.com/ok', {
+        headers: { Connection: 'invalid header' },
+      })
+
+      await expect(proxy(input, { strictConnectionProcessing: true })).rejects.toMatchObject({
+        status: 400,
+      })
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('preserve explicit init overrides for a Request input', async () => {
+      const input = new Request('https://example.com/post', {
+        method: 'PUT',
+        body: 'original',
+        headers: { Connection: 'invalid header', 'X-Request-Id': 'original' },
+      })
+
+      const res = await proxy(input, {
+        method: 'POST',
+        body: 'replacement',
+        headers: { 'Proxy-Authorization': 'Basic 123456' },
+        strictConnectionProcessing: true,
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as Request
+
+      expect(req.method).toBe('POST')
+      expect(await res.text()).toBe('request body: replacement')
+      expect(req.headers.get('X-Request-Id')).toBeNull()
+      expect(req.headers.get('Proxy-Authorization')).toBe('Basic 123456')
+    })
+
+    it('preserve buffered bodies for keepalive Request inputs', async () => {
+      const input = new Request('https://example.com/post', {
+        method: 'POST',
+        body: 'test',
+        keepalive: true,
+        headers: { Connection: 'keep-alive' },
+      })
+
+      const res = await proxy(input)
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as Request
+
+      expect(req.keepalive).toBe(true)
+      expect(req.headers.get('Connection')).toBeNull()
+      expect(await res.text()).toBe('request body: test')
+    })
+
+    it('prefer raw request data over a Request input', async () => {
+      const input = new Request('https://example.com/post', {
+        method: 'PUT',
+        body: 'original',
+        headers: { Connection: 'invalid header', 'X-Request-Id': 'original' },
+      })
+      const raw = new Request('https://example.com/raw', {
+        method: 'POST',
+        body: 'replacement',
+        headers: { Connection: 'keep-alive', 'X-Request-Id': 'replacement' },
+      })
+
+      const res = await proxy(input, { raw, strictConnectionProcessing: true })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as Request
+
+      expect(req.url).toBe(input.url)
+      expect(req.method).toBe('POST')
+      expect(await res.text()).toBe('request body: replacement')
+      expect(req.headers.get('Connection')).toBeNull()
+      expect(req.headers.get('X-Request-Id')).toBe('replacement')
+    })
+
     it('invalid hop-by-hop headers with strictConnectionProcessing', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>
