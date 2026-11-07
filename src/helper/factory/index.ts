@@ -262,14 +262,14 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     handler9: H<E10, P, I9, R9>
   ): [
     H<E2, P, I, R>,
-    H<E3, P, I2, R>,
-    H<E4, P, I3, R>,
-    H<E5, P, I4, R>,
-    H<E6, P, I5, R>,
-    H<E7, P, I6, R>,
-    H<E8, P, I7, R>,
-    H<E9, P, I8, R>,
-    H<E10, P, I9, R>,
+    H<E3, P, I2, R2>,
+    H<E4, P, I3, R3>,
+    H<E5, P, I4, R4>,
+    H<E6, P, I5, R5>,
+    H<E7, P, I6, R6>,
+    H<E8, P, I7, R7>,
+    H<E9, P, I8, R8>,
+    H<E10, P, I9, R9>,
   ]
 
   // handler x10
