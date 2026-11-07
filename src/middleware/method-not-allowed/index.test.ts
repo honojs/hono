@@ -53,6 +53,28 @@ describe('Method Not Allowed Middleware', () => {
     expect(res.headers.has('Allow')).toBe(false)
   })
 
+  it('does not infer methods from trailing wildcard routes', async () => {
+    const app = new Hono()
+    app.use(methodNotAllowed({ app }))
+    app.get('/api', (c) => c.text('ok'))
+    app.get('/static/*', (c) => c.text('static'))
+
+    // a specific route still yields 405 with an Allow header
+    const resApi = await app.request('/api', { method: 'POST' })
+    expect(resApi.status).toBe(405)
+    expect(resApi.headers.get('Allow')).toBe('GET, HEAD')
+
+    // a wildcard route is no evidence that a resource exists at an
+    // unknown path, so the unknown path stays 404 (#5223)
+    const resUnknown = await app.request('/unknown', { method: 'POST' })
+    expect(resUnknown.status).toBe(404)
+    expect(resUnknown.headers.has('Allow')).toBe(false)
+
+    // the wildcard route itself still serves its method
+    const resStatic = await app.request('/static/foo.png')
+    expect(resStatic.status).toBe(200)
+  })
+
   it('matches parameterized and overlapping routes without duplicate methods', async () => {
     const app = new Hono()
     app.use(methodNotAllowed({ app }))

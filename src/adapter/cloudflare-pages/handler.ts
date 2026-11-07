@@ -122,7 +122,18 @@ declare abstract class FetcherLike {
  * @deprecated `hono/cloudflare-pages` will be removed in v5. Cloudflare recommends Workers with static assets; use `hono` on Workers instead.
  */
 export const serveStatic = (): MiddlewareHandler => {
-  return async (c) => {
+  return async (c, next) => {
+    // Unlike the other runtime adapters, this one cannot delegate to the core
+    // `serveStatic` factory: it never touches a filesystem, it forwards the raw
+    // request to the asset server bound to `env.ASSETS`, and the Pages environment
+    // differs substantially from Deno/Bun/Workers. The core middleware therefore
+    // restricts serving to GET/HEAD (#5514), and that guard does not reach this
+    // adapter. Repeating it here keeps both static paths behaving identically:
+    // a non-GET/HEAD request must not be answered with an asset's content. (#5223)
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      return next()
+    }
+
     const env = c.env as { ASSETS: FetcherLike }
     const res = await env.ASSETS.fetch(c.req.raw)
     if (res.status === 404) {

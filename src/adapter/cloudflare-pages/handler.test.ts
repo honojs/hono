@@ -283,4 +283,51 @@ describe('serveStatic()', () => {
     expect(assetsFetch).toHaveBeenCalledWith(request)
     expect(res.status).toBe(404)
   })
+
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'PROPFIND'])(
+    'Should pass %s requests to the next handler without querying ASSETS',
+    async (method) => {
+      const assetsFetch = vi.fn().mockResolvedValue(new Response('foo.png'))
+      const request = new Request('http://localhost/foo.png', { method })
+      const env = {
+        ASSETS: { fetch: assetsFetch },
+        TOKEN: 'HONOISHOT',
+      }
+
+      const eventContext = createEventContext({ request, env })
+      const app = new Hono<Env>()
+      app.use(serveStatic())
+      app.on(method, '/foo.png', (c) => c.text('Handled downstream', 202))
+      const handler = handle(app)
+      const res = await handler(eventContext)
+
+      // the asset server is never reached, so the request is not answered with
+      // the asset's content; downstream handles it instead
+      expect(assetsFetch).not.toHaveBeenCalled()
+      expect(res.status).toBe(202)
+      expect(await res.text()).toBe('Handled downstream')
+    }
+  )
+
+  it.each(['GET', 'HEAD'])(
+    'Should still serve assets for %s requests',
+    async (method) => {
+      const assetsFetch = vi.fn().mockResolvedValue(new Response('foo.png'))
+      const request = new Request('http://localhost/foo.png', { method })
+      const env = {
+        ASSETS: { fetch: assetsFetch },
+        TOKEN: 'HONOISHOT',
+      }
+
+      const eventContext = createEventContext({ request, env })
+      const app = new Hono<Env>()
+      app.use(serveStatic())
+      const handler = handle(app)
+      const res = await handler(eventContext)
+
+      expect(assetsFetch).toHaveBeenCalledWith(request)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe(method === 'HEAD' ? '' : 'foo.png')
+    }
+  )
 })
