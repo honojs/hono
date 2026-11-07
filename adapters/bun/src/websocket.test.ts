@@ -156,6 +156,69 @@ describe('upgradeWebSocket()', () => {
     websocket.close(ws)
     expect(close).toBeCalled()
   })
+
+  describe('onError', () => {
+    const createSocket = (events: BunWebSocketData['events']) =>
+      ({
+        data: { events, url: new URL('http://localhost'), protocol: '' },
+        readyState: 1,
+      }) as BunServerWebSocket<BunWebSocketData>
+
+    it('Should pass an error thrown by a handler to onError', () => {
+      const onError = vi.fn()
+      const error = new Error('boom')
+      const ws = createSocket({
+        onOpen: () => {
+          throw error
+        },
+        onMessage: () => {
+          throw error
+        },
+        onClose: () => {
+          throw error
+        },
+        onError,
+      })
+
+      websocket.open(ws)
+      websocket.message(ws, 'message')
+      websocket.close(ws)
+
+      expect(onError).toHaveBeenCalledTimes(3)
+      const [evt, context] = onError.mock.calls[0]
+      expect(evt.type).toBe('error')
+      expect(evt.error).toBe(error)
+      expect(context.raw).toBe(ws)
+    })
+
+    it('Should pass a rejection of an async handler to onError', async () => {
+      const onError = vi.fn()
+      const error = new Error('boom')
+      const ws = createSocket({
+        onMessage: async () => {
+          throw error
+        },
+        onError,
+      })
+
+      websocket.message(ws, 'message')
+      await Promise.resolve()
+
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(onError.mock.calls[0][0].error).toBe(error)
+    })
+
+    it('Should rethrow an error when onError is not set', () => {
+      const error = new Error('boom')
+      const ws = createSocket({
+        onMessage: () => {
+          throw error
+        },
+      })
+
+      expect(() => websocket.message(ws, 'message')).toThrow(error)
+    })
+  })
 })
 
 describe('createBunWebSocket()', () => {
