@@ -165,7 +165,7 @@ describe('upgradeWebSocket()', () => {
       }) as BunServerWebSocket<BunWebSocketData>
 
     it('Should pass an error thrown by a handler to onError', () => {
-      const onError = vi.fn()
+      const onError = mock()
       const error = new Error('boom')
       const ws = createSocket({
         onOpen: () => {
@@ -192,7 +192,7 @@ describe('upgradeWebSocket()', () => {
     })
 
     it('Should pass a rejection of an async handler to onError', async () => {
-      const onError = vi.fn()
+      const onError = mock()
       const error = new Error('boom')
       const ws = createSocket({
         onMessage: async () => {
