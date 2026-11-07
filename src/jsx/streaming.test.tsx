@@ -544,6 +544,42 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
   })
 
+  it.each([
+    [null, ''],
+    [false, ''],
+    [1, '1'],
+  ])('async component returning %s', async (value, expected) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Content = async (): Promise<any> => value
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template data-hono-target="H:${suspenseCounter}">${expected}</template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(expected)
+  })
+
   it('reject()', async () => {
     const Content = async () => {
       const content = await Promise.reject()
