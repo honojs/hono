@@ -35,6 +35,34 @@ describe('workerd', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('True')
   })
+
+  it('Should stream JSX Suspense content', async () => {
+    const res = await worker.fetch('/jsx-stream')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    if (!res.body) {
+      throw new Error('Response body is null')
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const firstChunk = await reader.read()
+    expect(firstChunk.done).toBe(false)
+    const initialHtml = decoder.decode(firstChunk.value)
+    expect(initialHtml).toContain('<p>Loading...</p>')
+
+    let html = initialHtml
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      html += decoder.decode(value)
+    }
+
+    expect(html).toContain('<p>Loading...</p>')
+    expect(html).toContain('<template data-hono-target="H:0"><p>Loaded</p></template>')
+  })
 })
 
 describe('workerd with NO_COLOR', () => {
