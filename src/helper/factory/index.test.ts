@@ -356,6 +356,22 @@ describe('createHandler', () => {
       expectTypeOf<Handler1Output>().toEqualTypeOf<{ first: number }>()
       expectTypeOf<Handler2Output>().toEqualTypeOf<{ second: 'second' }>()
     })
+
+    it('Should keep independent return types for nine handlers', () => {
+      const [first, , , , , , , , ninth] = factory.createHandlers(
+        (c) => c.json({ first: 1 }),
+        (c) => c.json({ second: 2 }),
+        (c) => c.json({ third: 3 }),
+        (c) => c.json({ fourth: 4 }),
+        (c) => c.json({ fifth: 5 }),
+        (c) => c.json({ sixth: 6 }),
+        (c) => c.json({ seventh: 7 }),
+        (c) => c.json({ eighth: 8 }),
+        (c) => c.json({ ninth: 'ninth' as const })
+      )
+      expectTypeOf<ExtractOutput<typeof first>>().toEqualTypeOf<{ first: number }>()
+      expectTypeOf<ExtractOutput<typeof ninth>>().toEqualTypeOf<{ ninth: 'ninth' }>()
+    })
   })
 })
 
