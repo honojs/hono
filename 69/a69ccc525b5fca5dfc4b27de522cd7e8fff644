@@ -1,0 +1,25 @@
+adapters/bun/src/websocket.test.ts
+  s_eebc5901743536::t_7983786824880c 159-221
+adapters/bun/src/websocket.ts
+  s_eebc5901743536::t_8753103cd61e17 30-49,100,106-113,123-128
+src/adapter/bun/websocket.test.ts
+  s_eebc5901743536::t_356c0641f935c7 158-220
+src/adapter/bun/websocket.ts
+  s_eebc5901743536::t_3f37e9afca3ade 87-106,114,120-127,137-142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "69a69ccc525b5fca5dfc4b27de522cd7e8fff644",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
