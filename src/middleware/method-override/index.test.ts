@@ -125,6 +125,61 @@ describe('Method Override Middleware', () => {
     })
   })
 
+  describe('Form - a request that is not a form', () => {
+    const app = new Hono()
+    app.use('/posts', methodOverride({ app }))
+    app.post('/posts', async (c) => c.json(await c.req.json()))
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('Should not clone the request', async () => {
+      const clone = vi.spyOn(Request.prototype, 'clone')
+      const res = await app.request('/posts', {
+        method: 'POST',
+        body: JSON.stringify({ message: 'Hello' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'Hello' })
+      expect(clone).not.toHaveBeenCalled()
+    })
+
+    it('Should let the handler cancel the body', async () => {
+      const app = new Hono()
+      app.use('/posts', methodOverride({ app }))
+      app.post('/posts', async (c) => {
+        await c.req.raw.body?.cancel()
+        return c.text('cancelled')
+      })
+      const res = await app.request('/posts', {
+        method: 'POST',
+        body: JSON.stringify({ message: 'Hello' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('cancelled')
+    }, 1000)
+
+    it('Should keep a body read by an earlier middleware readable', async () => {
+      const app = new Hono()
+      app.use('/posts', async (c, next) => {
+        await c.req.json()
+        await next()
+      })
+      app.use('/posts', methodOverride({ app }))
+      app.post('/posts', async (c) => c.json(await c.req.json()))
+      const res = await app.request('/posts', {
+        method: 'POST',
+        body: JSON.stringify({ message: 'Hello' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'Hello' })
+    })
+  })
+
   describe('Header', () => {
     const app = new Hono()
     app.use('/posts/*', methodOverride({ app, header: 'X-METHOD-OVERRIDE' }))
