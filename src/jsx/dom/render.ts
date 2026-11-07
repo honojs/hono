@@ -51,6 +51,7 @@ export type NodeObject = {
   e: SupportedElement | Text | undefined // rendered element
   p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
   a?: boolean // cancel apply() if true
+  h?: boolean // adopted from the server-rendered DOM while hydrating
   o?: NodeObject // original node
   [DOM_STASH]:
     | [
@@ -164,7 +165,8 @@ const isIgnorableAttributeError = (error: unknown): boolean =>
 const applyProps = (
   container: SupportedElement,
   attributes: Props,
-  oldAttributes?: Props
+  oldAttributes?: Props,
+  adopted?: boolean
 ): void => {
   attributes ||= {}
   for (let key in attributes) {
@@ -185,7 +187,9 @@ const applyProps = (
           }
         }
       } else if (key === 'dangerouslySetInnerHTML' && value) {
-        container.innerHTML = value.__html
+        if (!adopted || container.innerHTML !== value.__html) {
+          container.innerHTML = value.__html
+        }
       } else if (key === 'ref') {
         refCleanupMap.get(container)?.()
         let cleanup
@@ -199,6 +203,9 @@ const applyProps = (
       } else if (key === 'style') {
         const style = container.style
         if (typeof value === 'string') {
+          if (adopted && container.getAttribute('style') === value) {
+            continue
+          }
           style.cssText = value
         } else {
           style.cssText = ''
@@ -229,16 +236,23 @@ const applyProps = (
         }
 
         const k = toAttributeName(container, key)
+        const attributeValue =
+          value === null || value === undefined || value === false
+            ? null
+            : value === true
+              ? ''
+              : typeof value === 'string'
+                ? value
+                : value.toString()
+        if (adopted && container.getAttribute(k) === attributeValue) {
+          continue
+        }
 
         try {
-          if (value === null || value === undefined || value === false) {
+          if (attributeValue === null) {
             container.removeAttribute(k)
-          } else if (value === true) {
-            container.setAttribute(k, '')
-          } else if (typeof value === 'string' || typeof value === 'number') {
-            container.setAttribute(k, value as string)
           } else {
-            container.setAttribute(k, value.toString())
+            container.setAttribute(k, attributeValue)
           }
         } catch (e) {
           if (!isIgnorableAttributeError(e)) {
@@ -363,9 +377,56 @@ const removeNode = (node: Node): void => {
   }
 }
 
-const apply = (node: NodeObject, container: Container, isNew: boolean): void => {
+const apply = (node: NodeObject, container: Container, isNew: boolean, hydrate?: boolean): void => {
   node.c = container
-  applyNodeObject(node, container, isNew)
+  applyNodeObject(node, container, isNew, hydrate)
+}
+
+const hoistedTagRegExp = /^(?:title|meta|link|style|script)$/
+
+// Reuse the nodes the server rendered for `next`, in order. Adoption stops at the first
+// mismatch; what is left in the container is removed and the caller creates the rest.
+const adoptChildren = (next: Node[], container: Container): void => {
+  let dom = container.firstChild
+  for (const child of next) {
+    if (child.tag === HONO_PORTAL_ELEMENT) {
+      continue
+    }
+    while (
+      dom?.nodeType === 1 &&
+      (dom as Element).localName !== child.tag &&
+      hoistedTagRegExp.test((dom as Element).localName)
+    ) {
+      const hoisted = dom
+      dom = dom.nextSibling
+      hoisted.remove()
+    }
+    if (isNodeString(child)) {
+      if (child.t === '') {
+        child.e = container.insertBefore(document.createTextNode(''), dom)
+      } else if (dom?.nodeType === 3 && (dom as Text).data.startsWith(child.t)) {
+        if ((dom as Text).data.length > child.t.length) {
+          ;(dom as Text).splitText(child.t.length)
+        }
+        child.e = dom as Text
+        dom = dom.nextSibling
+      } else {
+        break
+      }
+      child.d = false
+    } else if (dom?.nodeType === 1 && (dom as Element).localName === child.tag) {
+      child.e = dom as SupportedElement
+      child.h = true
+      dom = dom.nextSibling
+    } else {
+      break
+    }
+  }
+  while (dom) {
+    const nextDom = dom.nextSibling
+    dom.remove()
+    dom = nextDom
+  }
 }
 
 const findChildNodeIndex = (
@@ -386,12 +447,20 @@ const findChildNodeIndex = (
 }
 
 const cancelBuild: symbol = Symbol()
-const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean): void => {
+const applyNodeObject = (
+  node: NodeObject,
+  container: Container,
+  isNew: boolean,
+  hydrate?: boolean
+): void => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
   remove.forEach(removeNode)
+  if (hydrate) {
+    adoptChildren(next, container)
+  }
 
   const childNodes = (isNew ? undefined : container.childNodes) as NodeListOf<ChildNode>
   let offset: number
@@ -432,12 +501,19 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         child.d = false
         el = child.e ||= document.createTextNode(child.t)
       } else {
+        const adopted = child.h
+        delete child.h
         el = child.e ||= child.n
           ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
           : document.createElement(child.tag as string)
 
-        applyProps(el as HTMLElement, child.props, child.pP)
-        applyNodeObject(child, el as HTMLElement, isNewLocal)
+        applyProps(el as HTMLElement, child.props, child.pP, adopted)
+        applyNodeObject(
+          child,
+          el as HTMLElement,
+          isNewLocal,
+          adopted && !child.props.dangerouslySetInnerHTML
+        )
         if (child.tag === 'select') {
           applySelectValue(el as HTMLSelectElement, child.props)
         }
@@ -834,17 +910,26 @@ export const update = async (
   return promise
 }
 
-export const renderNode = (node: NodeObject, container: Container): void => {
+const buildRootNode = (node: NodeObject): void => {
   const context: Context = []
   ;(context as Context)[5] = [] // error handler stack
   ;(context as Context)[4] = true // start top level render
   build(context, node, undefined)
   ;(context as Context)[4] = false // finish top level render
+}
+
+export const renderNode = (node: NodeObject, container: Container): void => {
+  buildRootNode(node)
 
   const fragment = document.createDocumentFragment()
   apply(node, fragment, true)
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
+}
+
+export const hydrateNode = (node: NodeObject, container: Container): void => {
+  buildRootNode(node)
+  apply(node, container, true, true)
 }
 
 export const render = (jsxNode: Child, container: Container): void => {
