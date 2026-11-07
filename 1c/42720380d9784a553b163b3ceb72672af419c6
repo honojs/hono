@@ -1,0 +1,21 @@
+src/middleware/serve-static/index.test.ts
+  s_eebc5901743536::t_3e2630f4bedc94 173-189
+src/middleware/serve-static/index.ts
+  s_eebc5901743536::t_db701fc7d8ad4e 73-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1c42720380d9784a553b163b3ceb72672af419c6",
+  "prompts": {},
+  "sessions": {
+    "s_eebc5901743536": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4b59199-b4e1-4360-a86d-9ab798da0bfd",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
