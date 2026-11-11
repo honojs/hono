@@ -5,7 +5,7 @@
 
 import type { Child } from '../base'
 import { useState } from '../hooks'
-import { buildNode, renderNode } from './render'
+import { buildNode, hydrateNode, renderNode } from './render'
 import type { NodeObject } from './render'
 
 export interface Root {
@@ -14,15 +14,10 @@ export interface Root {
 }
 export type RootOptions = Record<string, unknown>
 
-/**
- * Create a root object for rendering
- * @param element Render target
- * @param options Options for createRoot (not supported yet)
- * @returns Root object has `render` and `unmount` methods
- */
-export const createRoot = (
+const createRootWith = (
+  mount: typeof renderNode,
   element: HTMLElement | DocumentFragment,
-  options: RootOptions = {}
+  options: RootOptions
 ): Root => {
   let setJsxNode:
     | undefined // initial state
@@ -44,7 +39,7 @@ export const createRoot = (
         // rendered
         setJsxNode(jsxNode)
       } else {
-        renderNode(
+        mount(
           buildNode({
             tag: () => {
               const [_jsxNode, _setJsxNode] = useState(jsxNode)
@@ -66,8 +61,20 @@ export const createRoot = (
 }
 
 /**
+ * Create a root object for rendering
+ * @param element Render target
+ * @param options Options for createRoot (not supported yet)
+ * @returns Root object has `render` and `unmount` methods
+ */
+export const createRoot = (
+  element: HTMLElement | DocumentFragment,
+  options: RootOptions = {}
+): Root => createRootWith(renderNode, element, options)
+
+/**
  * Create a root object and hydrate app to the target element.
- * In hono/jsx/dom, hydrate is equivalent to render.
+ * The DOM rendered by the server is reused where it matches the JSX.
+ * Where it does not match, the DOM is replaced with what the JSX renders.
  * @param element Render target
  * @param reactNode A JSXNode to render
  * @param options Options for createRoot (not supported yet)
@@ -78,7 +85,7 @@ export const hydrateRoot = (
   reactNode: Child,
   options: RootOptions = {}
 ): Root => {
-  const root = createRoot(element, options)
+  const root = createRootWith(hydrateNode, element, options)
   root.render(reactNode)
   return root
 }
