@@ -170,6 +170,23 @@ describe('Serve Static Middleware', () => {
     expect(getContent).not.toBeCalled()
   })
 
+  it.each([
+    '/static/%%36%31dmin/secret.txt',
+    '/static/%6%31dmin/secret.txt',
+    '/static/%%361dmin/secret.txt',
+  ])('Should not bypass authentication through a second decode when opted in - %s', async (url) => {
+    const app = new Hono()
+    app.get('/static/admin/*', (c) => c.text('Unauthorized', 401))
+    app.use('/static/*', baseServeStatic({ getContent, allowPercentInPath: true }))
+
+    const protectedRes = await app.request('/static/admin/secret.txt')
+    expect(protectedRes.status).toBe(401)
+
+    const res = await app.request(url)
+    expect(res.status).toBe(404)
+    expect(getContent).not.toBeCalled()
+  })
+
   it('Should return 404 response - /static/not-found.txt', async () => {
     const res = await app.request('/static/not-found.txt')
     expect(res.status).toBe(404)

@@ -70,10 +70,13 @@ export const serveStatic = <E extends Env = Env>(
       filename = options.path
     } else {
       try {
-        if (!options.allowPercentInPath && c.req.path.includes('%')) {
+        filename = tryDecodeURI(c.req.path)
+        if (
+          c.req.path.includes('%') &&
+          (!options.allowPercentInPath || filename !== c.req.path.replace(/%25/g, '%'))
+        ) {
           throw new Error()
         }
-        filename = tryDecodeURI(c.req.path)
         if (/(?:^|[\/\\])\.{1,2}(?:$|[\/\\])|[\/\\]{2,}|\\/.test(filename)) {
           throw new Error()
         }
