@@ -183,8 +183,9 @@ describe('Serve Static Middleware', () => {
     expect(protectedRes.status).toBe(401)
 
     const res = await app.request(url)
-    expect(res.status).toBe(404)
-    expect(getContent).not.toBeCalled()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello in static/%61dmin/secret.txt')
+    expect(getContent).not.toBeCalledWith('static/admin/secret.txt', expect.anything())
   })
 
   it('Should return 404 response - /static/not-found.txt', async () => {
