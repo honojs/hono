@@ -7,6 +7,7 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
+import { routePath } from './helper/route'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
@@ -323,6 +324,8 @@ class Hono<
    * @param {Function} applicationHandler - other Request Handler
    * @param {MountOptions} [options] - options of `.mount()`
    * @returns {Hono} mounted Hono instance
+   * @throws {Error} If automatic request rewriting encounters duplicate path parameter names or an optional regular expression parameter.
+   * @throws {HTTPException} With status 400 if automatic request rewriting cannot safely preserve the routed path.
    *
    * @example
    * ```ts
@@ -380,9 +383,10 @@ class Hono<
           } catch {} // Do nothing
           return [c.env, executionContext]
         }
-    const mergedPath = mergePath(this._basePath, path)
-    const defaultReplaceRequest = (c: Context): Request =>
-      createMountedRequest(c, mergedPath.replace(/\/$/, ''), mergePath(mergedPath, '*'))
+    const defaultReplaceRequest = (c: Context): Request => {
+      const mountedRoutePath = routePath(c)
+      return createMountedRequest(c, mountedRoutePath.replace(/\/?\*$/, ''), mountedRoutePath)
+    }
 
     const handler: MiddlewareHandler = async (c, next) => {
       const request = replaceRequest ? replaceRequest(c.req.raw) : defaultReplaceRequest(c)

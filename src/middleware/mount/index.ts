@@ -41,7 +41,8 @@ const defaultGetOptions = (c: Context): unknown[] => {
  * @param {Function} applicationHandler - other Request Handler
  * @param {MountOptions} [options] - options of `mount()`
  * @returns {MiddlewareHandler} handler to register with `app.all()`
- * @throws {Error} If the route ends with a wildcard inside a segment (e.g. `/assets*`), or automatic request rewriting encounters duplicate path parameter names.
+ * @throws {Error} If the route ends with a wildcard inside a segment (e.g. `/assets*`), or automatic request rewriting encounters duplicate path parameter names or an optional regular expression parameter.
+ * @throws {HTTPException} With status 400 if automatic request rewriting cannot safely preserve the routed path.
  *
  * @example
  * ```ts

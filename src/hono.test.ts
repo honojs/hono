@@ -2633,6 +2633,20 @@ describe('Optional parameters', () => {
 
 describe('app.mount()', () => {
   describe('Basic', () => {
+    it.each([
+      ['/api', '/api/x/foo'],
+      ['/:tenant', '/acme/x/foo'],
+    ])('Should strip the route() prefix %s', async (base, input) => {
+      const child = new Hono()
+      child.mount('/x', (req) => new Response(getPath(req)))
+      const app = new Hono()
+      app.route(base, child)
+
+      const res = await app.request(input)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/foo')
+    })
+
     const anotherApp = (req: Request, ...params: unknown[]) => {
       const path = getPath(req)
       if (path === '/') {

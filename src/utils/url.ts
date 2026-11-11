@@ -103,6 +103,9 @@ export const tryDecode = (str: string, decoder: Decoder): string => {
  */
 export const tryDecodeURI = (str: string): string => tryDecode(str, decodeURI)
 
+const decodeURIWithPreservedPercent: Decoder = (value) =>
+  decodeURI(value.includes('%25') ? value.replace(/%25/g, '%2525') : value)
+
 export const getPath = (request: Request): string => {
   const url = request.url
   const start = url.indexOf('/', url.indexOf(':') + 4)
@@ -124,7 +127,20 @@ export const getPath = (request: Request): string => {
             ? queryIndex
             : Math.min(queryIndex, hashIndex)
       const path = url.slice(start, end)
-      return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
+      const decoded = tryDecode(path, decodeURIWithPreservedPercent)
+      // A bare '%' can form a new escape or prevent UTF-8 decoding after URL serialization.
+      if (/%(?![0-9A-Fa-f]{2})/.test(path)) {
+        // Only the path matters here, and `url` itself may not be parsable.
+        const rewritten = new URL('http://localhost')
+        rewritten.pathname = decoded.replace(/[\\\t\n\r]/g, encodeURIComponent)
+        if (tryDecode(rewritten.pathname, decodeURIWithPreservedPercent) !== decoded) {
+          return tryDecode(
+            path.replace(/%(?![0-9A-Fa-f]{2})/g, '%25'),
+            decodeURIWithPreservedPercent
+          )
+        }
+      }
+      return decoded
     } else if (charCode === 63 || charCode === 35) {
       // '?' or '#'
       break
@@ -156,30 +172,6 @@ export const getPathNoStrict = (request: Request): string => {
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
-}
-
-// Cut the rest of the path from the raw pathname, not from the decoded one, so that decoded
-// characters are never parsed as URL syntax again (`%5C` -> `\\` -> `/`, `%2E%2E` -> `..`).
-export const stripPathPrefix = (
-  rawPath: string,
-  decodedPath: string,
-  prefixLength: number
-): string => {
-  if (rawPath.at(-1) === '/' && decodedPath.at(-1) !== '/') {
-    rawPath = rawPath.slice(0, -1) // `strict: false` dropped it from the decoded path
-  }
-  let index = 0
-  for (
-    let i = decodedPath.indexOf('/');
-    i !== -1 && i < prefixLength;
-    i = decodedPath.indexOf('/', i + 1)
-  ) {
-    index = rawPath.indexOf('/', index + 1)
-    if (index === -1) {
-      return '/'
-    }
-  }
-  return rawPath.slice(index) || '/'
 }
 
 /**

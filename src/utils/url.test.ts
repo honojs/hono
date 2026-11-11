@@ -1,3 +1,4 @@
+import { Hono } from '../hono'
 import {
   checkOptionalParameter,
   getPath,
@@ -9,7 +10,6 @@ import {
   mergePath,
   splitPath,
   splitRoutingPath,
-  stripPathPrefix,
 } from './url'
 
 describe('url', () => {
@@ -172,6 +172,43 @@ describe('url', () => {
       path = getPath(new Request('https://example.com/issue%23123'))
       expect(path).toBe('/issue%23123')
     })
+
+    it.each([
+      ['/100%', '/100%'],
+      ['/100%foo', '/100%foo'],
+      ['/bad%/ok%20here', '/bad%/ok here'],
+      ['/x%8%36%C3%A9/tail', '/x%2586é/tail'],
+      ['/ad%8F%25min/secret', '/ad%8F%25min/secret'],
+      ['/ad%8F%2525min/secret', '/ad%8F%2525min/secret'],
+      ['/%%36%31dmin/secret', '/%2561dmin/secret'],
+      ['/public/%%32%65%%32%65/admin', '/public/%252e%252e/admin'],
+      ['/foo%252Fbar', '/foo%252Fbar'],
+    ])('getPath - %s remains stable after forwarding', (input, expected) => {
+      const request = new Request(`https://example.com${input}`)
+      const path = getPath(request)
+      expect(path).toBe(expected)
+
+      const url = new URL(request.url)
+      url.pathname = path
+      expect(getPath(new Request(url))).toBe(path)
+    })
+
+    it.each([
+      ['/100%', '/100%'],
+      ['/%%36%31dmin/secret', '/%2561dmin/secret'],
+    ])('getPath - %s does not require a parsable authority', (input, expected) => {
+      const request = { url: `http://example.com:99999${input}` } as Request
+      expect(getPath(request)).toBe(expected)
+    })
+
+    it('getPath - keeps a route containing a literal percent reachable', async () => {
+      const app = new Hono()
+      app.get('/100%', (c) => c.text('matched'))
+
+      const res = await app.request('/100%')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('matched')
+    })
   })
 
   describe('getQueryStrings', () => {
@@ -203,42 +240,10 @@ describe('url', () => {
       const path = getPathNoStrict(new Request('https://example.com/'))
       expect(path).toBe('/')
     })
-  })
 
-  describe('stripPathPrefix', () => {
-    it('Should strip a static prefix', () => {
-      expect(stripPathPrefix('/api/hello', '/api/hello', 4)).toBe('/hello')
-      expect(stripPathPrefix('/api/hello/world/', '/api/hello/world/', 4)).toBe('/hello/world/')
-      expect(stripPathPrefix('/api', '/api', 4)).toBe('/')
-      expect(stripPathPrefix('/api/', '/api/', 4)).toBe('/')
-      expect(stripPathPrefix('/hello', '/hello', 0)).toBe('/hello')
-      expect(stripPathPrefix('/', '/', 0)).toBe('/')
-    })
-
-    it('Should strip a prefix that was decoded for matching', () => {
-      expect(stripPathPrefix('/api/%C3%A9/hello', '/api/é/hello', 6)).toBe('/hello')
-      expect(stripPathPrefix('/api/v1/admin%2Fsecret', '/api/v1/admin%2Fsecret', 7)).toBe(
-        '/admin%2Fsecret'
-      )
-    })
-
-    it('Should keep encoded characters that the URL parser would normalize', () => {
-      expect(stripPathPrefix('/api/admin%5Csecret', '/api/admin\\secret', 4)).toBe(
-        '/admin%5Csecret'
-      )
-      expect(stripPathPrefix('/api/%252e%252e/admin', '/api/%2e%2e/admin', 4)).toBe(
-        '/%252e%252e/admin'
-      )
-    })
-
-    it('Should strip a prefix that ends inside a segment by whole segments', () => {
-      expect(stripPathPrefix('/assets-v2/hello', '/assets-v2/hello', 7)).toBe('/hello')
-      expect(stripPathPrefix('/assets-v2', '/assets-v2', 7)).toBe('/')
-    })
-
-    it('Should handle the trailing slash removed by getPathNoStrict', () => {
-      expect(stripPathPrefix('/api/hello/', '/api/hello', 4)).toBe('/hello')
-      expect(stripPathPrefix('/api/', '/api', 4)).toBe('/')
+    it('getPathNoStrict - removes exactly one trailing slash', () => {
+      expect(getPathNoStrict(new Request('https://example.com/hello//'))).toBe('/hello/')
+      expect(getPathNoStrict(new Request('https://example.com//'))).toBe('/')
     })
   })
 

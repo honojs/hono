@@ -210,6 +210,51 @@ describe('mount()', () => {
     })
   })
 
+  describe('With an optional regular expression parameter', () => {
+    it.each([
+      ['/mount/:id{[0-9]+}?', '/mount'],
+      ['/mount/:id{[0-9]+}?', '/mount/123'],
+      ['/mount/:id{[0-9]+}?', '/mount/123456789012'],
+      ['/mount/:path{.+}?', '/mount/aaaaaaaaaa/admin/secret'],
+      ['/mount/:v{v[0-9]+}?/:id?', '/mount/v1234567890123456/admin'],
+    ])(
+      'Should return 500 for unsupported automatic request rewriting of %s at %s',
+      async (route, path) => {
+        const anotherApp = vi.fn(() => new Response('Unexpected forwarding'))
+        const onError = vi.fn((err: Error) => new Response(err.message, { status: 500 }))
+        const app = new Hono()
+        app.onError(onError)
+        app.all(route, mount(anotherApp))
+
+        const res = await app.request(path)
+
+        expect(res.status).toBe(500)
+        expect(await res.text()).toBe(
+          `mount(): Optional regular expression parameters are not supported in "${route}".`
+        )
+        expect(onError).toHaveBeenCalledOnce()
+        expect(onError.mock.calls[0][0].constructor).toBe(Error)
+        expect(anotherApp).not.toHaveBeenCalled()
+      }
+    )
+
+    it.each(['/mount', '/mount/123'])(
+      'Should support separate route registrations for %s',
+      async (path) => {
+        const anotherApp = vi.fn((req: Request) => new Response(getPath(req)))
+        const app = new Hono()
+        app.all('/mount', mount(anotherApp))
+        app.all('/mount/:id{[0-9]+}', mount(anotherApp))
+
+        const res = await app.request(path)
+
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('/')
+        expect(anotherApp).toHaveBeenCalledOnce()
+      }
+    )
+  })
+
   describe('With a wildcard inside the last segment', () => {
     it.each([
       ['/assets*', '/assets/hello'],
