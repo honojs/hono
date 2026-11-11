@@ -81,6 +81,24 @@ describe('Body Limit Middleware', () => {
         expect(await res.text()).toBe('abc')
       })
 
+      it('should pass a body sent in many tiny chunks', async () => {
+        const app = new Hono()
+        app.use('*', bodyLimit({ maxSize: 10000 }))
+        app.post('/', async (c) => c.text(String((await c.req.text()).length)))
+        const stream = new ReadableStream({
+          start(controller) {
+            for (let i = 0; i < 10000; i++) {
+              controller.enqueue(new Uint8Array([120]))
+            }
+            controller.close()
+          },
+        })
+        const res = await app.request('/', buildRequestInit({ body: stream }))
+
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('10000')
+      })
+
       it('should return 413 response', async () => {
         const readSpy = vi.fn().mockImplementation(() => {
           return {

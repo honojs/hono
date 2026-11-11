@@ -78,33 +78,29 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
     // and Content-Length is ignored. Read the body up-front so the size check
     // is final before the handler runs, regardless of how (or whether) the
     // handler reads the body.
+    // One growing buffer: keeping every chunk lets a body sent in tiny chunks exhaust memory
     let size = 0
-    const chunks: Uint8Array[] = []
+    let buffer = new Uint8Array(0)
     const rawReader = c.req.raw.body.getReader()
     for (;;) {
       const { done, value } = await rawReader.read()
       if (done) {
         break
       }
+      const offset = size
       size += value.length
       if (size > maxSize) {
         return onError(c)
       }
-      chunks.push(value)
+      if (size > buffer.length) {
+        const grown = new Uint8Array(Math.min(maxSize, Math.max(size, buffer.length * 2)))
+        grown.set(buffer.subarray(0, offset))
+        buffer = grown
+      }
+      buffer.set(value, offset)
     }
 
-    const requestInit: RequestInit & { duplex: 'half' } = {
-      body: new ReadableStream({
-        start(controller) {
-          for (const chunk of chunks) {
-            controller.enqueue(chunk)
-          }
-          controller.close()
-        },
-      }),
-      duplex: 'half',
-    }
-    c.req.raw = new Request(c.req.raw, requestInit as RequestInit)
+    c.req.raw = new Request(c.req.raw, { body: buffer.subarray(0, size) })
 
     return next()
   }
