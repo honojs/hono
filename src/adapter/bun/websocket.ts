@@ -84,6 +84,26 @@ export const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c,
   return // failed
 })
 
+const runHandler = (ws: BunServerWebSocket<BunWebSocketData>, handler: () => unknown): void => {
+  const handleError = (error: unknown) => {
+    const onError = ws.data.events.onError
+    if (!onError) {
+      throw error
+    }
+    const event = new Event('error') as Event & { error: unknown }
+    event.error = error
+    onError(event, createWSContext(ws))
+  }
+  try {
+    const result = handler()
+    if (result instanceof Promise) {
+      result.catch(handleError)
+    }
+  } catch (error) {
+    handleError(error)
+  }
+}
+
 /**
  * @deprecated `hono/bun` will be removed in v5. Install `@hono/bun` and import from there instead.
  */
@@ -91,18 +111,20 @@ export const websocket: BunWebSocketHandler<BunWebSocketData> = {
   open(ws) {
     const websocketListeners = ws.data.events
     if (websocketListeners.onOpen) {
-      websocketListeners.onOpen(new Event('open'), createWSContext(ws))
+      runHandler(ws, () => websocketListeners.onOpen!(new Event('open'), createWSContext(ws)))
     }
   },
   close(ws, code, reason) {
     const websocketListeners = ws.data.events
     if (websocketListeners.onClose) {
-      websocketListeners.onClose(
-        new CloseEvent('close', {
-          code,
-          reason,
-        }),
-        createWSContext(ws)
+      runHandler(ws, () =>
+        websocketListeners.onClose!(
+          new CloseEvent('close', {
+            code,
+            reason,
+          }),
+          createWSContext(ws)
+        )
       )
     }
   },
@@ -112,7 +134,12 @@ export const websocket: BunWebSocketHandler<BunWebSocketData> = {
       const normalizedReceiveData: WSMessageReceive =
         typeof message === 'string' ? message : message.buffer
 
-      websocketListeners.onMessage(createWSMessageEvent(normalizedReceiveData), createWSContext(ws))
+      runHandler(ws, () =>
+        websocketListeners.onMessage!(
+          createWSMessageEvent(normalizedReceiveData),
+          createWSContext(ws)
+        )
+      )
     }
   },
 }
