@@ -21,9 +21,9 @@ export type ValidationFunction<
   c: Context<E, P>
 ) => OutputType | TypedResponse | Promise<OutputType> | Promise<TypedResponse>
 
-const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
-const multipartRegex = /^multipart\/form-data(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
-const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/i
+const jsonRegex = /^application\/([\w.-]+\+)?json$/i
+// Decide by the media type alone, like `parseBody()`, so that the two can never disagree on a body
+const getMediaType = (contentType: string): string => contentType.split(';')[0].trim().toLowerCase()
 
 export type ExtractValidationResponse<VF> = VF extends (value: any, c: any) => infer R
   ? R extends Promise<infer PR>
@@ -89,10 +89,11 @@ export const validator = <
   return async (c, next) => {
     let value = {}
     const contentType = c.req.header('Content-Type')
+    const mediaType = contentType ? getMediaType(contentType) : ''
 
     switch (target) {
       case 'json':
-        if (!contentType || !jsonRegex.test(contentType)) {
+        if (!jsonRegex.test(mediaType)) {
           break
         }
         try {
@@ -104,8 +105,8 @@ export const validator = <
         break
       case 'form': {
         if (
-          !contentType ||
-          !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
+          mediaType !== 'multipart/form-data' &&
+          mediaType !== 'application/x-www-form-urlencoded'
         ) {
           break
         }
@@ -117,7 +118,7 @@ export const validator = <
         } else {
           try {
             const arrayBuffer = await c.req.arrayBuffer()
-            formData = await bufferToFormData(arrayBuffer, contentType)
+            formData = await bufferToFormData(arrayBuffer, contentType!)
             c.req.bodyCache.formData = formData
           } catch (e) {
             let message = 'Malformed FormData request.'

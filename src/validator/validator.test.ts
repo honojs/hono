@@ -215,6 +215,25 @@ describe('JSON', () => {
     expect(await res.json()).toEqual({ foo: 'bar' })
   })
 
+  it('Should validate JSON Content-Types with differently formatted parameters', async () => {
+    for (const contentType of [
+      'application/json ; charset=utf-8',
+      'application/json; note="x;y"',
+      'application/json;',
+      'application/vnd.api.v1+json',
+    ]) {
+      const res = await app.request('http://localhost/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': contentType,
+        },
+        body: JSON.stringify({ foo: 'bar' }),
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: 'bar' })
+    }
+  })
+
   it('Should not validate if Content-Type does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
@@ -342,6 +361,26 @@ describe('FormData', () => {
     })
   })
 
+  it('Should validate application/x-www-form-urlencoded with differently formatted parameters', async () => {
+    for (const contentType of [
+      'application/x-www-form-urlencoded ;charset=utf-8',
+      'application/x-www-form-urlencoded;',
+      'application/x-www-form-urlencoded; x_y=1',
+    ]) {
+      const res = await app.request('/post', {
+        method: 'POST',
+        body: 'foo=bar',
+        headers: {
+          'content-type': contentType,
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        foo: 'bar',
+      })
+    }
+  })
+
   it('Should return `foo[]` as an array', async () => {
     const form = new FormData()
     form.append('foo[]', 'bar1')
@@ -392,6 +431,9 @@ describe('Malformed FormData request', () => {
       `multipart/form-data; ${boundary}; charset=utf-8`,
       `multipart/form-data; charset=utf-8; ${boundary}`,
       `multipart/form-data;  ${boundary}`,
+      `multipart/form-data ; ${boundary}`,
+      `multipart/form-data; ${boundary};`,
+      `multipart/form-data; ${boundary}; x_y=1`,
     ]) {
       const res = await app.request('/post', {
         method: 'POST',
