@@ -59,6 +59,23 @@ describe('Method Override Middleware', () => {
     })
 
     describe('application/x-www-form-urlencoded', () => {
+      it.each(['tag', 'tag[]'])('Should preserve repeated %s fields', async (field) => {
+        const app = new Hono()
+        app.use('/posts', methodOverride({ app }))
+        app.delete('/posts', async (c) => {
+          const form = await c.req.formData()
+          return c.json({ values: form.getAll(field), methodField: form.get('_method') })
+        })
+        const params = new URLSearchParams([
+          ['_method', 'DELETE'],
+          [field, 'first'],
+          [field, 'second'],
+        ])
+        const res = await app.request('/posts', { method: 'POST', body: params })
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ values: ['first', 'second'], methodField: null })
+      })
+
       it('Should override POST to DELETE', async () => {
         const params = new URLSearchParams()
         params.append('message', 'Hello')
