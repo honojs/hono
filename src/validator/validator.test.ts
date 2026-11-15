@@ -116,8 +116,7 @@ describe('Basic', () => {
   })
 })
 
-const onErrorHandler: ErrorHandler = (c) => {
-  const e = c.error!
+const onErrorHandler: ErrorHandler = (e, c) => {
   if (e instanceof HTTPException) {
     return c.json({ message: e.message, success: false }, e.status)
   }
