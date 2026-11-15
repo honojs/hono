@@ -41,6 +41,47 @@ const errorHandler: ErrorHandler = (err, c) => {
   return c.text('Internal Server Error', 500)
 }
 
+// Run middleware before a fallback handler, keeping the matched route's `routeIndex` for `c.req.param()`.
+const composeFallback = <E extends Env>(
+  middleware: MiddlewareHandler<E>[],
+  handler: (c: Context<E>) => Response | Promise<Response>,
+  c: Context<E>,
+  overrideResponse?: boolean
+): Promise<Response> => {
+  const routeIndex = c.req.routeIndex
+  const restore = () => {
+    c.req.routeIndex = routeIndex
+  }
+  if (overrideResponse) {
+    c.finalized = false
+  }
+
+  return compose(
+    middleware.map((mw) => [
+      [
+        (c: Context<E>, next: Next) => {
+          restore()
+          return mw(c, () => next().finally(restore))
+        },
+      ],
+    ])
+  )(c, async () => {
+    const res = await handler(c)
+    if (!c.finalized || overrideResponse) {
+      c.res = res
+    }
+  })
+    .then((c) => {
+      if (!c.finalized) {
+        throw new Error(
+          'Context is not finalized. Did you forget to return a Response object or `await next()`?'
+        )
+      }
+      return c.res
+    })
+    .finally(restore)
+}
+
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
 
 export type HonoOptions<E extends Env> = {
@@ -253,6 +294,7 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
+   * @param {...MiddlewareHandler[]} handlers - middleware to run before the error handler
    * @param {ErrorHandler} handler - request Handler for error
    * @returns {Hono} changed Hono instance
    *
@@ -262,10 +304,21 @@ class Hono<
    *   console.error(`${err}`)
    *   return c.text('Custom Error Message', 500)
    * })
+   *
+   * // With middleware
+   * app.onError(languageDetector(), (err, c) => {
+   *   return c.text(messages[c.get('language')], 500)
+   * })
    * ```
    */
-  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
-    this.errorHandler = handler
+  onError = (
+    ...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]
+  ): Hono<E, S, BasePath, CurrentPath> => {
+    const handler = handlers.pop() as ErrorHandler<E>
+    const middleware = handlers as MiddlewareHandler<E>[]
+    this.errorHandler = middleware.length
+      ? (err, c) => composeFallback(middleware, (c) => handler(err, c), c, true)
+      : handler
     return this
   }
 
@@ -274,6 +327,7 @@ class Hono<
    *
    * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
+   * @param {...MiddlewareHandler[]} handlers - middleware to run before the not-found handler
    * @param {NotFoundHandler} handler - request handler for not-found
    * @returns {Hono} changed Hono instance
    *
@@ -282,10 +336,21 @@ class Hono<
    * app.notFound((c) => {
    *   return c.text('Custom 404 Message', 404)
    * })
+   *
+   * // With middleware
+   * app.notFound(languageDetector(), (c) => {
+   *   return c.text(messages[c.get('language')], 404)
+   * })
    * ```
    */
-  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath, CurrentPath> => {
-    this.#notFoundHandler = handler
+  notFound = (
+    ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
+  ): Hono<E, S, BasePath, CurrentPath> => {
+    const handler = handlers.pop() as NotFoundHandler<E>
+    const middleware = handlers as MiddlewareHandler<E>[]
+    this.#notFoundHandler = middleware.length
+      ? (c) => composeFallback(middleware, handler, c)
+      : handler
     return this
   }
 
