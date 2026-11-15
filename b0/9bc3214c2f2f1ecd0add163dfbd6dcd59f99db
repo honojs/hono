@@ -1,0 +1,53 @@
+adapters/vercel/src/handler.test.ts
+  s_43db29fdb20136::t_cb4df97d771a67 27-29,36
+docs/MIGRATION.md
+  s_43db29fdb20136::t_68e9b9290ee376 13
+src/client/client.test.ts
+  s_43db29fdb20136::t_ef5827025928b0 2177
+src/compose.ts
+  s_43db29fdb20136::t_609cb93b967c3d 2,13,20-21,43,45-49,59-64,68-71
+src/helper/dev/index.test.ts
+  s_43db29fdb20136::t_d869b6fe7726cc 44
+src/helper/dev/index.ts
+  s_43db29fdb20136::t_2e5c09122a29ea 11,27-36,45-46
+src/helper/factory/define-handler.test.ts
+  s_43db29fdb20136::t_b0cfd8caad8bb8 202,223-224
+src/hono-base.ts
+  s_43db29fdb20136::t_cfd879e8663e56 14,22,28,35,158-160,174-175,180-183,213-224,249-292,295-296,305-308,331,339,349,352,355-370
+src/hono.test.ts
+  s_43db29fdb20136::t_ed7c751e640741 14,1439-1440,1472-1474,1480,1523-1524,1540,1555,1570,1592,1599,1637-1638,1766-1767,2020,2037,2050,2073,2124,2128,2142,2441-2442,2457-2458,2562-2563,3593-3594
+src/jsx/index.test.tsx
+  s_43db29fdb20136::t_d7b5c32a4406c5 142-143
+src/middleware/combine/index.test.ts
+  s_43db29fdb20136::t_437e076c065619 71-72,87,108,128,187-188,204
+src/middleware/jwk/index.test.ts
+  s_43db29fdb20136::t_64ebafd5cec8a8 834
+src/middleware/jwt/index.test.ts
+  s_43db29fdb20136::t_568f412d51e995 449
+src/middleware/method-not-allowed/index.test.ts
+  s_43db29fdb20136::t_ef61f2229d560d 95
+src/middleware/method-not-allowed/index.ts
+  s_43db29fdb20136::t_b83919307c9629 82
+src/middleware/mount/index.test.ts
+  s_43db29fdb20136::t_e17eb5e161cf02 229,244
+src/types.ts
+  s_43db29fdb20136::t_c6068dcea52f47 116-119
+src/validator/validator.test.ts
+  s_43db29fdb20136::t_2e43306367bb3e 119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b09bc3214c2f2f1ecd0add163dfbd6dcd59f99db",
+  "prompts": {},
+  "sessions": {
+    "s_43db29fdb20136": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d0e5018-93c4-4f1a-90ac-6763e4af9944",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
