@@ -139,8 +139,8 @@ describe('JSX middleware', () => {
     }
 
     let raisedError: any
-    app.onError((c) => {
-      raisedError = c.error!
+    app.onError((e, c) => {
+      raisedError = e
       return c.html('<html><body><h1>Error from onError</h1></body></html>', 500)
     })
     app.get('/', (c) => {
