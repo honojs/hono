@@ -37,17 +37,26 @@ const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
 
 export interface TokenHeader {
   alg: SignatureAlgorithm
-  typ?: 'JWT'
+  typ?: string
   kid?: string
 }
 
-export function isTokenHeader(obj: unknown): obj is TokenHeader {
+// `typ` is a media type, so it is case-insensitive and `application/` may be omitted (RFC 7515 4.1.9)
+const normalizeTyp = (typ: string): string => typ.toLowerCase().replace(/^application\//, '')
+
+const isTyp = (value: unknown, expected: string | string[]): boolean =>
+  typeof value === 'string' &&
+  [expected].flat().some((typ) => normalizeTyp(typ) === normalizeTyp(value))
+
+export function isTokenHeader(obj: unknown, typ?: string | string[]): obj is TokenHeader {
   if (typeof obj === 'object' && obj !== null) {
     const objWithAlg = obj as { [key: string]: unknown }
     return (
       'alg' in objWithAlg &&
       Object.values(AlgorithmTypes).includes(objWithAlg.alg as AlgorithmTypes) &&
-      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT') &&
+      (typ === undefined
+        ? !('typ' in objWithAlg) || isTyp(objWithAlg.typ, 'JWT')
+        : isTyp(objWithAlg.typ, typ)) &&
       // no extension is implemented, so any `crit` must be rejected (RFC 7515 4.1.11)
       !('crit' in objWithAlg)
     )
@@ -88,6 +97,8 @@ export type VerifyOptions = {
   iat?: boolean
   /** Acceptable audience(s) for the token */
   aud?: string | string[] | RegExp
+  /** The expected `typ` header, for example `at+jwt` for OAuth 2.0 access tokens. When set, the token must have it (default: `JWT`, or no `typ`) */
+  typ?: string | string[]
 }
 
 export type VerifyOptionsWithAlg = {
@@ -111,6 +122,7 @@ export const verify = async (
     exp = true,
     iat = true,
     aud,
+    typ,
   } = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions
 
   if (!alg) {
@@ -123,7 +135,7 @@ export const verify = async (
   }
 
   const { header, payload } = decode(token)
-  if (!isTokenHeader(header)) {
+  if (!isTokenHeader(header, typ)) {
     throw new JwtHeaderInvalid(header)
   }
   if (header.alg !== alg) {
@@ -215,7 +227,7 @@ export const verifyWithJwks = async (
 
   const header = decodeHeader(token)
 
-  if (!isTokenHeader(header)) {
+  if (!isTokenHeader(header, verifyOpts.typ)) {
     throw new JwtHeaderInvalid(header)
   }
   if (!header.kid) {
