@@ -410,6 +410,20 @@ describe('Body methods with caching', () => {
       expect(await req.text()).toBe(body)
       expect(await req.arrayBuffer()).toEqual(new TextEncoder().encode(body).buffer)
     })
+
+    // https://github.com/honojs/hono/issues/5631
+    test('req.text() after req.formData() returns the original body', async () => {
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          headers: { 'Content-Type': urlencoded },
+          body,
+        })
+      )
+      expect((await req.formData()).get('foo')).toBe('bar')
+      expect(await req.text()).toBe(body)
+      expect(await req.arrayBuffer()).toEqual(new TextEncoder().encode(body).buffer)
+    })
   })
 
   describe('req.parseBody()', async () => {
@@ -815,6 +829,51 @@ describe('Body cache built from text', () => {
       expect(await req.text()).toBe(body)
     }
   )
+
+  const binary = new Uint8Array([0xff, 0x00, 0x41])
+
+  test.each(['application/octet-stream', 'image/png', 'text/plain; charset=shift_jis', undefined])(
+    'arrayBuffer() after text() keeps the original bytes for %s',
+    async (contentType) => {
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: binary,
+          headers: contentType ? { 'content-type': contentType } : {},
+        })
+      )
+      await req.text()
+      expect(new Uint8Array(await req.arrayBuffer())).toEqual(binary)
+    }
+  )
+
+  test('formData() after text() keeps the bytes of a multipart body', async () => {
+    const data = new FormData()
+    data.append('file', new Blob([binary]), 'x.bin')
+    const req = new HonoRequest(new Request('http://localhost', { method: 'POST', body: data }))
+    await req.text()
+
+    const file = (await req.formData()).get('file') as File
+    expect(new Uint8Array(await file.arrayBuffer())).toEqual(binary)
+  })
+
+  test.each([
+    'application/json',
+    'application/json; charset=utf-8',
+    'application/problem+json',
+    'application/x-www-form-urlencoded',
+    'text/plain;charset=UTF-8',
+  ])('text() is the source for %s', async (contentType) => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: 'a=1',
+        headers: { 'content-type': contentType },
+      })
+    )
+    await req.text()
+    expect(req.bodyCache.arrayBuffer).toBeUndefined()
+  })
 
   test('arrayBuffer() after text() returns the UTF-8 bytes', async () => {
     const req = new HonoRequest(

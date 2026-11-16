@@ -26,6 +26,9 @@ type Body = {
 }
 type BodyCache = Partial<Omit<Body, 'json'>>
 
+const utf8TextRegex =
+  /^(?:text\/|application\/(?:[\w.-]+\+)?json|application\/x-www-form-urlencoded)(?!.*charset=(?!utf-?8\b))/i
+
 type OptionalRequestInitProperties = 'window' | 'priority'
 type RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {
   [Key in OptionalRequestInitProperties]?: RequestInit[Key]
@@ -224,14 +227,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     // and a header read afterwards would not match the serialized bytes
     const contentType = raw.headers.get('content-type')
     if (key === 'text') {
-      const text = (bodyCache.text ??= (
-        bodyCache.arrayBuffer
-          ? (bodyCache.arrayBuffer as unknown as Promise<ArrayBuffer>).then((buffer) =>
-              new TextDecoder().decode(buffer)
-            )
-          : raw.text()
-      ) as never) as unknown as Promise<string>
-      return text as Promise<Body[K]>
+      return (bodyCache.text ??= (
+        !bodyCache.arrayBuffer && contentType && utf8TextRegex.test(contentType)
+          ? raw.text()
+          : this.#cachedBody('arrayBuffer').then((buffer) => new TextDecoder().decode(buffer))
+      ) as never) as unknown as Promise<Body[K]>
     }
     const bytes = (bodyCache.arrayBuffer ??= (
       bodyCache.text
