@@ -446,8 +446,7 @@ describe('JWT', () => {
     app.use('/auth/*', jwt({ secret: 'a-secret', alg: 'HS256' }))
     app.get('/auth/*', (c) => c.text('Authorized'))
 
-    app.onError((c) => {
-      const e = c.error!
+    app.onError((e, c) => {
       if (e instanceof HTTPException && e.cause instanceof Error) {
         return c.json({ name: e.cause.name, message: e.cause.message }, 401)
       }

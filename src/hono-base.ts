@@ -7,35 +7,32 @@
 import { compose, toError } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { GET_RESPONSE } from './context/constants'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
   Env,
-  FallbackHandlerInterface,
+  ErrorHandler,
   FetchEventLike,
   H,
   HandlerInterface,
-  HTTPResponseError,
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
+  Next,
   NotFoundHandler,
   OnHandlerInterface,
   RouterRoute,
   Schema,
 } from './types'
+import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
-
-const METHOD_NAME_NOT_FOUND = '@NOT_FOUND'
-const METHOD_NAME_ERROR = '@ERROR'
 
 const notFoundHandler: NotFoundHandler = (c) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error | HTTPResponseError, c: Context): Response => {
+const errorHandler: ErrorHandler = (err, c) => {
   if ('getResponse' in err) {
     const res = err.getResponse()
     return c.newResponse(res.body, res)
@@ -44,22 +41,45 @@ const errorHandler = (err: Error | HTTPResponseError, c: Context): Response => {
   return c.text('Internal Server Error', 500)
 }
 
-const errorFallback: NotFoundHandler = (c) => errorHandler(c.error!, c)
-
-const rethrow = (err: unknown): never => {
-  throw err
-}
-
-const byDepthDesc = (a: [[H, RouterRoute], unknown], b: [[H, RouterRoute], unknown]): number =>
-  b[0][1].depth! - a[0][1].depth!
-
-const getResponse = (context: Context): Response => {
-  if (!context.finalized) {
-    throw new Error(
-      'Context is not finalized. Did you forget to return a Response object or `await next()`?'
-    )
+// Run middleware before a fallback handler, keeping the matched route's `routeIndex` for `c.req.param()`.
+const composeFallback = <E extends Env>(
+  middleware: MiddlewareHandler<E>[],
+  handler: (c: Context<E>) => Response | Promise<Response>,
+  c: Context<E>,
+  overrideResponse?: boolean
+): Promise<Response> => {
+  const routeIndex = c.req.routeIndex
+  const restore = () => {
+    c.req.routeIndex = routeIndex
   }
-  return context.res
+  if (overrideResponse) {
+    c.finalized = false
+  }
+
+  return compose(
+    middleware.map((mw) => [
+      [
+        (c: Context<E>, next: Next) => {
+          restore()
+          return mw(c, () => next().finally(restore))
+        },
+      ],
+    ])
+  )(c, async () => {
+    const res = await handler(c)
+    if (!c.finalized || overrideResponse) {
+      c.res = res
+    }
+  })
+    .then((c) => {
+      if (!c.finalized) {
+        throw new Error(
+          'Context is not finalized. Did you forget to return a Response object or `await next()`?'
+        )
+      }
+      return c.res
+    })
+    .finally(restore)
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
@@ -124,53 +144,6 @@ class Hono<
   on: OnHandlerInterface<E, S, BasePath>
   use: MiddlewareHandlerInterface<E, S, BasePath>
 
-  /**
-   * `.onError()` adds middleware that runs when an error is caught.
-   * Paths are relative to the current base path and default to `*`, for any HTTP method.
-   * The error is available as `c.error`. Matching middleware runs in registration order,
-   * with nested applications taking priority. If every middleware calls `next()`,
-   * the built-in error handler returns the response.
-   * Errors thrown by this middleware are handled by the built-in error handler.
-   * Non-Error values thrown by handlers are wrapped in an Error with the original value as its cause.
-   * If the thrown value is a string, it is also used as the error message.
-   * Request parameters come from the original route, not this scope, and may be absent.
-   *
-   * @param {string} [path] - path to scope the error middleware
-   * @param {...MiddlewareHandler[]} handlers - middleware to run when handling an error
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * app.onError('/api/*', async (c, next) => {
-   *   console.error(c.error)
-   *   await next()
-   * })
-   * ```
-   */
-  onError: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
-
-  /**
-   * `.notFound()` adds middleware that runs when a not-found response is requested.
-   * It uses the same path scoping and ordering as `.onError()`, including for `c.notFound()`.
-   * If every matching middleware calls `next()`, the built-in not-found handler returns the response.
-   * Request parameters come from the original route, not this scope, and may be absent.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#not-found}
-   *
-   * @param {string} [path] - path to scope the not-found middleware
-   * @param {...MiddlewareHandler[]} handlers - middleware to run when handling not found
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * app.notFound('/api/*', async (c, next) => {
-   *   c.header('x-not-found', 'true')
-   *   await next()
-   * })
-   * ```
-   */
-  notFound: FallbackHandlerInterface<E, S, BasePath, CurrentPath>
-
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -223,14 +196,11 @@ class Hono<
         this.#path = '*'
         handlers.unshift(arg1)
       }
-      handlers.forEach((handler) => this.#addRoute(METHOD_NAME_ALL, this.#path, handler))
+      handlers.forEach((handler) => {
+        this.#addRoute(METHOD_NAME_ALL, this.#path, handler)
+      })
       return this as any
     }
-
-    this.onError = (...handlers: (string | H)[]) =>
-      this.#addRoutes(METHOD_NAME_ERROR, handlers) as any
-    this.notFound = (...handlers: (string | H)[]) =>
-      this.#addRoutes(METHOD_NAME_NOT_FOUND, handlers) as any
 
     const { strict, ...optionsWithoutStrict } = options
     Object.assign(this, optionsWithoutStrict)
@@ -242,9 +212,15 @@ class Hono<
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
+
+  #notFoundHandler: NotFoundHandler = notFoundHandler
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
+  private errorHandler: ErrorHandler = errorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -275,7 +251,18 @@ class Hono<
     app: Hono<SubEnv, SubSchema, SubBasePath, SubCurrentPath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath, CurrentPath> {
     const subApp = this.basePath(path)
-    app.routes.forEach((r) => subApp.#addRoute(r.method, r.path, r.handler, r))
+    app.routes.map((r) => {
+      let handler
+      if (app.errorHandler === errorHandler) {
+        handler = r.handler
+      } else {
+        handler = async (c: Context, next: Next) =>
+          (await compose([], app.errorHandler)(c, () => r.handler(c, next))).res
+        ;(handler as any)[COMPOSED_HANDLER] = r.handler
+      }
+
+      subApp.#addRoute(r.method, r.path, handler, r.basePath)
+    })
     return this
   }
 
@@ -300,85 +287,90 @@ class Hono<
     return subApp
   }
 
-  #addRoute(method: string, path: string, handler: H, baseRoute?: RouterRoute): void {
+  /**
+   * `.onError()` handles an error and returns a customized Response.
+   * Non-Error values thrown by handlers are wrapped in an Error with the original value as its cause.
+   * If the thrown value is a string, it is also used as the error message.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#error-handling}
+   *
+   * @param {...MiddlewareHandler[]} handlers - middleware to run before the error handler
+   * @param {ErrorHandler} handler - request Handler for error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.onError((err, c) => {
+   *   console.error(`${err}`)
+   *   return c.text('Custom Error Message', 500)
+   * })
+   *
+   * // With middleware
+   * app.onError(languageDetector(), (err, c) => {
+   *   return c.text(messages[c.get('language')], 500)
+   * })
+   * ```
+   */
+  onError = (
+    ...handlers: [...MiddlewareHandler<E>[], ErrorHandler<E>]
+  ): Hono<E, S, BasePath, CurrentPath> => {
+    const handler = handlers.pop() as ErrorHandler<E>
+    const middleware = handlers as MiddlewareHandler<E>[]
+    this.errorHandler = middleware.length
+      ? (err, c) => composeFallback(middleware, (c) => handler(err, c), c, true)
+      : handler
+    return this
+  }
+
+  /**
+   * `.notFound()` allows you to customize a Not Found Response.
+   *
+   * @see {@link https://hono.dev/docs/api/hono#not-found}
+   *
+   * @param {...MiddlewareHandler[]} handlers - middleware to run before the not-found handler
+   * @param {NotFoundHandler} handler - request handler for not-found
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
+   * ```ts
+   * app.notFound((c) => {
+   *   return c.text('Custom 404 Message', 404)
+   * })
+   *
+   * // With middleware
+   * app.notFound(languageDetector(), (c) => {
+   *   return c.text(messages[c.get('language')], 404)
+   * })
+   * ```
+   */
+  notFound = (
+    ...handlers: [...MiddlewareHandler<E>[], NotFoundHandler<E>]
+  ): Hono<E, S, BasePath, CurrentPath> => {
+    const handler = handlers.pop() as NotFoundHandler<E>
+    const middleware = handlers as MiddlewareHandler<E>[]
+    this.#notFoundHandler = middleware.length
+      ? (c) => composeFallback(middleware, handler, c)
+      : handler
+    return this
+  }
+
+  #addRoute(method: string, path: string, handler: H, baseRoutePath?: string): void {
     path = mergePath(this._basePath, path)
     const r: RouterRoute = {
-      basePath: mergePath(this._basePath, baseRoute?.basePath ?? '/'),
+      basePath:
+        baseRoutePath !== undefined ? mergePath(this._basePath, baseRoutePath) : this._basePath,
       path,
       method,
       handler,
-      depth: (baseRoute?.depth ?? -1) + 1,
     }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
 
-  #addRoutes(method: string, handlers: (string | H)[]): this {
-    const path = typeof handlers[0] === 'string' ? (handlers.shift() as string) : '*'
-    handlers.forEach((handler) => this.#addRoute(method, path, handler as H))
-    return this
-  }
-
-  #dispatchInternal(method: string, c: Context<E>): Response | Promise<Response> {
-    const matchResult = this.router.match(method, c.req.path)
-    const handlers = matchResult[0].filter(
-      ([[, route]]) => route.method === method
-    ) as (typeof matchResult)[0]
-    const fallback: NotFoundHandler<E> =
-      method === METHOD_NAME_ERROR ? errorFallback : notFoundHandler
-    if (!handlers.length) {
-      return fallback(c)
-    }
-    handlers.sort(byDepthDesc)
-    const res = c[GET_RESPONSE]
-    const finalized = c.finalized
-    if (res?.status && !res.bodyUsed && !res.body?.locked) {
-      const mutableRes = new Response(res.body, res)
-      c.res = undefined
-      c.res = mutableRes
-    }
-    c.finalized = false
-
-    // Capture whether an error is already being handled before compose() updates c.error.
-    const handleError = c.error ? rethrow : (err: unknown) => this.#handleError(err, c)
-
-    const composed = compose(
-      handlers,
-      method === METHOD_NAME_ERROR ? errorHandler : handleError,
-      fallback,
-      false
-    )
-
-    return composed(c)
-      .then(getResponse)
-      .catch(handleError)
-      .finally(() => {
-        // Clear the temporary response before restoring to avoid merging its headers.
-        c.res = undefined
-        if (method !== METHOD_NAME_ERROR) {
-          c.res = res
-        }
-        c.finalized = finalized
-      })
-  }
-
-  #handleError = (err: unknown, c: Context<E>): Response | Promise<Response> => {
-    c.error = toError(err)
-    return this.#dispatchInternal(METHOD_NAME_ERROR, c)
-  }
-
-  #notFound = (c: Context<E>): Response | Promise<Response> =>
-    this.#dispatchInternal(METHOD_NAME_NOT_FOUND, c)
-
-  async #dispatchComposed(
-    c: Context<E>,
-    matchResult: ReturnType<Router<[H, RouterRoute]>['match']>
-  ): Promise<Response> {
-    try {
-      return getResponse(await compose(matchResult[0], this.#handleError, this.#notFound)(c))
-    } catch (err) {
-      return this.#handleError(err, c)
-    }
+  #handleError(err: unknown, c: Context<E>): Response | Promise<Response> {
+    const error = toError(err)
+    c.error = error
+    return this.errorHandler(error, c)
   }
 
   #dispatch(
@@ -401,7 +393,7 @@ class Hono<
       matchResult,
       env,
       executionCtx,
-      notFoundHandler: this.#notFound,
+      notFoundHandler: this.#notFoundHandler,
     })
 
     // Do not `compose` if it has only one handler
@@ -409,7 +401,7 @@ class Hono<
       let res: ReturnType<H>
       try {
         res = matchResult[0][0][0][0](c, async () => {
-          c.res = await this.#notFound(c)
+          c.res = await this.#notFoundHandler(c)
         })
       } catch (err) {
         return this.#handleError(err, c)
@@ -419,13 +411,28 @@ class Hono<
         ? res
             .then(
               (resolved: Response | undefined) =>
-                resolved || (c.finalized ? c.res : this.#notFound(c))
+                resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
             .catch((err: unknown) => this.#handleError(err, c))
-        : (res ?? this.#notFound(c))
+        : (res ?? this.#notFoundHandler(c))
     }
 
-    return this.#dispatchComposed(c, matchResult)
+    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
+
+    return (async () => {
+      try {
+        const context = await composed(c)
+        if (!context.finalized) {
+          throw new Error(
+            'Context is not finalized. Did you forget to return a Response object or `await next()`?'
+          )
+        }
+
+        return context.res
+      } catch (err) {
+        return this.#handleError(err, c)
+      }
+    })()
   }
 
   /**
