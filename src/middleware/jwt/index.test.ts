@@ -3,6 +3,10 @@ import { jwt } from '.'
 import type { JwtVariables } from '.'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
+import { encodeBase64Url } from '../../utils/encode'
+import { AlgorithmTypes } from '../../utils/jwt/jwa'
+import { signing } from '../../utils/jwt/jws'
+import { utf8Encoder } from '../../utils/jwt/utf8'
 
 describe('JWT', () => {
   describe('Credentials in header', () => {
@@ -810,6 +814,36 @@ describe('JWT', () => {
       expect(res.headers.get('WWW-Authenticate')).toBe(
         'Bearer realm="my\\\\api\\\\",error="invalid_request",error_description="no authorization included in request"'
       )
+    })
+  })
+
+  describe('typ of the token', () => {
+    const secret = 'a-secret'
+    const makeToken = async (typ: string) => {
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const signingInput = `${encode(JSON.stringify({ alg: 'HS256', typ }))}.${encode('{"sub":"alice"}')}`
+      const signature = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      return `${signingInput}.${encodeBase64Url(signature).replace(/=/g, '')}`
+    }
+    const status = async (app: Hono, token: string) =>
+      (await app.request('/', { headers: { Authorization: `Bearer ${token}` } })).status
+
+    it('rejects an access token by default and accepts it when its typ is expected', async () => {
+      const token = await makeToken('at+jwt')
+      const byDefault = new Hono()
+      byDefault.use(jwt({ secret, alg: 'HS256' }))
+      byDefault.get('/', (c) => c.text('ok'))
+      const expected = new Hono()
+      expected.use(jwt({ secret, alg: 'HS256', verification: { typ: 'at+jwt' } }))
+      expected.get('/', (c) => c.text('ok'))
+
+      expect(await status(byDefault, token)).toBe(401)
+      expect(await status(expected, token)).toBe(200)
+      expect(await status(expected, await makeToken('JWT'))).toBe(401)
     })
   })
 })

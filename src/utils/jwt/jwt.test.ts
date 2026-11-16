@@ -59,6 +59,35 @@ describe('isTokenHeader', () => {
 
     expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
   })
+
+  it('accepts JWT in any case, with or without the application/ prefix, by default', () => {
+    for (const typ of ['JWT', 'jwt', 'application/jwt', 'Application/JWT']) {
+      expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ })).toBe(true)
+    }
+  })
+
+  it('rejects another typ by default', () => {
+    for (const typ of ['at+jwt', 'application/at+jwt', 'JWT ', 1, null]) {
+      expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ })).toBe(false)
+    }
+  })
+
+  it('accepts only the expected typ when one is given', () => {
+    for (const typ of ['at+jwt', 'AT+JWT', 'application/at+jwt']) {
+      expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ }, 'at+jwt')).toBe(true)
+    }
+    expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ: 'JWT' }, 'at+jwt')).toBe(false)
+    expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256 }, 'at+jwt')).toBe(false)
+  })
+
+  it('accepts any of several expected typ values', () => {
+    const expected = ['JWT', 'at+jwt']
+    expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ: 'at+jwt' }, expected)).toBe(true)
+    expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ: 'JWT' }, expected)).toBe(true)
+    expect(JWT.isTokenHeader({ alg: AlgorithmTypes.HS256, typ: 'secevent+jwt' }, expected)).toBe(
+      false
+    )
+  })
 })
 
 describe('JWT', () => {
@@ -123,6 +152,38 @@ describe('JWT', () => {
     const tok = `${signingInput}.${encodeBase64Url(signature).replace(/=/g, '')}`
     const err = await JWT.verify(tok, secret, AlgorithmTypes.HS256).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(JwtHeaderInvalid)
+  })
+
+  describe('typ', () => {
+    const secret = 'a-secret'
+    const makeToken = async (typ: string) => {
+      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const signingInput = `${encode(JSON.stringify({ alg: 'HS256', typ }))}.${encode('{"message":"hello"}')}`
+      const signature = await signing(
+        secret,
+        AlgorithmTypes.HS256,
+        utf8Encoder.encode(signingInput)
+      )
+      return `${signingInput}.${encodeBase64Url(signature).replace(/=/g, '')}`
+    }
+
+    it('JwtHeaderInvalid for an access token unless its typ is expected', async () => {
+      const tok = await makeToken('at+jwt')
+      const err = await JWT.verify(tok, secret, AlgorithmTypes.HS256).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(JwtHeaderInvalid)
+      expect(await JWT.verify(tok, secret, { alg: AlgorithmTypes.HS256, typ: 'at+jwt' })).toEqual({
+        message: 'hello',
+      })
+    })
+
+    it('JwtHeaderInvalid for a plain JWT when at+jwt is expected', async () => {
+      const tok = await makeToken('JWT')
+      const err = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        typ: 'at+jwt',
+      }).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(JwtHeaderInvalid)
+    })
   })
 
   it('JwtTokenSignatureMismatched for an empty signature', async () => {
