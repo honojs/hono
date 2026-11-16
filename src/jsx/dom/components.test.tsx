@@ -95,6 +95,55 @@ function runner(
         expect(log).toEqual(['unmount', 'mount'])
       })
 
+      it.each([null, false])('with use() and fallback={%s}', async (fallback) => {
+        let resolve: (value: number) => void = () => {}
+        const promise = new Promise<number>((_resolve) => (resolve = _resolve))
+        const Content = () => <p>{use(promise)}</p>
+        render(
+          <div>
+            <Suspense fallback={fallback}>
+              <Content />
+            </Suspense>
+          </div>,
+          root
+        )
+        expect(root.innerHTML).toBe('<div></div>')
+        resolve(1)
+        await new Promise((resolve) => setTimeout(resolve))
+        expect(root.innerHTML).toBe('<div><p>1</p></div>')
+      })
+
+      it('keeps the state of children with fallback={null} when they suspend again', async () => {
+        let mounts = 0
+        let setPromise: (p: Promise<string>) => void = () => {}
+        const Child = ({ text }: { text: string }) => {
+          const [id] = useState(() => ++mounts)
+          return (
+            <p>
+              {text} {id}
+            </p>
+          )
+        }
+        const Content = ({ promise }: { promise: Promise<string> }) => <Child text={use(promise)} />
+        const Component = () => {
+          const [promise, _setPromise] = useState(Promise.resolve('a'))
+          setPromise = _setPromise
+          return (
+            <Suspense fallback={null}>
+              <Content promise={promise} />
+            </Suspense>
+          )
+        }
+        render(<Component />, root)
+        await new Promise((resolve) => setTimeout(resolve))
+        const id = mounts
+        expect(root.innerHTML).toBe(`<p>a ${id}</p>`)
+        setPromise(Promise.resolve('b'))
+        await new Promise((resolve) => setTimeout(resolve))
+        await new Promise((resolve) => setTimeout(resolve))
+        expect(root.innerHTML).toBe(`<p>b ${id}</p>`)
+      })
+
       it('with use() update', async () => {
         const counterMap: Record<number, Promise<number>> = {}
         const getCounter = (count: number) => (counterMap[count] ||= Promise.resolve(count + 1))
