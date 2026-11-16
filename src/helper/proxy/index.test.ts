@@ -243,6 +243,32 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
     })
 
+    it('drop Transfer-Encoding and Keep-Alive from the headers option', async () => {
+      const app = new Hono()
+      app.post('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          headers: { ...c.req.header(), 'X-Forwarded-Host': 'example.com' },
+        })
+      )
+
+      await app.request('/proxy/hop-by-hop', {
+        method: 'POST',
+        body: 'test',
+        headers: {
+          'Transfer-Encoding': 'chunked',
+          'Keep-Alive': 'timeout=5',
+          'Custom-Header': 'test',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Transfer-Encoding')).toBeNull()
+      expect(req.headers.get('Keep-Alive')).toBeNull()
+      expect(req.headers.get('Custom-Header')).toBe('test')
+      expect(req.headers.get('X-Forwarded-Host')).toBe('example.com')
+    })
+
     it('remove response headers listed in the Connection header', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
