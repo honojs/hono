@@ -325,6 +325,70 @@ function runner(
         await new Promise((resolve) => setTimeout(resolve))
         expect(root.innerHTML).toBe('<div>Error</div>')
       })
+
+      describe('when the parent re-renders', () => {
+        const tick = () => new Promise((resolve) => setTimeout(resolve, 10))
+        const Row = ({ label, fail }: { label: string; fail?: boolean }) => {
+          if (fail) {
+            throw new Error(`boom ${label}`)
+          }
+          return <li>{label}</li>
+        }
+        const boundary = (label: string, fail: boolean, key?: string) => (
+          <ErrorBoundary key={key} fallback={<li>caught {label}</li>}>
+            <Row label={label} fail={fail} />
+          </ErrorBoundary>
+        )
+
+        it.each([false, true])('keeps one boundary in sync (child throws: %s)', async (fail) => {
+          let setCount: (count: number) => void = () => {}
+          const App = () => {
+            const [count, set] = useState(0)
+            setCount = set
+            return (
+              <ul>
+                <li>count {count}</li>
+                {boundary('x', fail)}
+              </ul>
+            )
+          }
+          render(<App />, root)
+          const row = fail ? 'caught x' : 'x'
+          expect(root.innerHTML).toBe(`<ul><li>count 0</li><li>${row}</li></ul>`)
+          for (const n of [1, 2]) {
+            setCount(n)
+            await tick()
+            expect(root.innerHTML).toBe(`<ul><li>count ${n}</li><li>${row}</li></ul>`)
+          }
+        })
+
+        it.each([
+          ['keyed', true],
+          ['unkeyed', false],
+        ])(
+          'keeps a %s list in sync after a row is removed and the rest reordered',
+          async (_, keyed) => {
+            let setItems: (items: string[]) => void = () => {}
+            const App = () => {
+              const [items, set] = useState(['a', 'b', 'c'])
+              setItems = set
+              return (
+                <ul>
+                  {items.map((item) => boundary(item, item === 'b', keyed ? item : undefined))}
+                </ul>
+              )
+            }
+            render(<App />, root)
+            expect(root.innerHTML).toBe('<ul><li>a</li><li>caught b</li><li>c</li></ul>')
+            setItems(['b', 'c'])
+            await tick()
+            expect(root.innerHTML).toBe('<ul><li>caught b</li><li>c</li></ul>')
+            setItems(['c', 'b'])
+            await tick()
+            expect(root.innerHTML).toBe('<ul><li>c</li><li>caught b</li></ul>')
+          }
+        )
+      })
     })
   })
 }

@@ -699,7 +699,8 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           build(context, errorHandlerNode, [fallback])
           if (
             (errorHandler.length === 1 || context !== errorHandlerContext) &&
-            errorHandlerNode.c
+            errorHandlerNode.c &&
+            !context[5]!.some(([, , n]) => n === errorHandlerNode)
           ) {
             // render error boundary immediately
             apply(errorHandlerNode, errorHandlerNode.c as Container, false)
