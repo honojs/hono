@@ -85,6 +85,7 @@ interface SecureHeadersOptions {
   xXssProtection?: overridableHeader
   removePoweredBy?: boolean
   permissionsPolicy?: PermissionsPolicyOptions
+  overwrite?: boolean
 }
 
 type HeadersMap = {
@@ -121,6 +122,7 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xXssProtection: true,
   removePoweredBy: true,
   permissionsPolicy: {},
+  overwrite: true,
 }
 
 type SecureHeadersCallback = (
@@ -168,6 +170,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * @param {overridableHeader} [customOptions.xXssProtection=true] - Settings for the X-XSS-Protection header.
  * @param {boolean} [customOptions.removePoweredBy=true] - Settings for remove X-Powered-By header.
  * @param {PermissionsPolicyOptions} [customOptions.permissionsPolicy] - Settings for the Permissions-Policy header.
+ * @param {boolean} [customOptions.overwrite=true] - Whether to replace a header that the response already has. Set `false` to keep a header that a handler set itself.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -226,7 +229,7 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
         ? headersToSet
         : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
-    setHeaders(ctx, headersToSetForReq)
+    setHeaders(ctx, headersToSetForReq, options.overwrite !== false)
 
     if (options?.removePoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
@@ -334,8 +337,11 @@ function getReportToOptions(reportTo: SecureHeadersOptions['reportTo'] = []): st
   return reportTo.map((option) => JSON.stringify(option)).join(', ')
 }
 
-function setHeaders(ctx: Context, headersToSet: [string, string][]) {
+function setHeaders(ctx: Context, headersToSet: [string, string][], overwrite: boolean) {
   headersToSet.forEach(([header, value]) => {
+    if (!overwrite && ctx.res.headers.has(header)) {
+      return
+    }
     ctx.res.headers.set(header, value)
   })
 }

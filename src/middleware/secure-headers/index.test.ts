@@ -668,4 +668,42 @@ describe('Secure Headers Middleware', () => {
       expect(header.includes('report-uri')).toBe(false)
     })
   })
+  describe('overwrite option', () => {
+    const csp = { defaultSrc: ["'self'"], scriptSrc: ["'self'"] }
+    const build = (options: Parameters<typeof secureHeaders>[0]) => {
+      const app = new Hono()
+      app.use('*', secureHeaders(options))
+      app.get('/uploads', (c) => {
+        c.header('Content-Security-Policy', "default-src 'none'")
+        c.header('X-Frame-Options', 'DENY')
+        return c.body('<p>user content</p>', 200, { 'Content-Type': 'text/html' })
+      })
+      app.get('/page', (c) => c.text('page'))
+      return app
+    }
+
+    it('replaces a header set by the handler by default', async () => {
+      const res = await build({ contentSecurityPolicy: csp }).request('/uploads')
+      expect(res.headers.get('Content-Security-Policy')).toBe(
+        "default-src 'self'; script-src 'self'"
+      )
+      expect(res.headers.get('X-Frame-Options')).toBe('SAMEORIGIN')
+    })
+
+    it('keeps a header set by the handler when overwrite is false', async () => {
+      const res = await build({ contentSecurityPolicy: csp, overwrite: false }).request('/uploads')
+      expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'none'")
+      expect(res.headers.get('X-Frame-Options')).toBe('DENY')
+      // Headers the handler did not set are still added.
+      expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff')
+    })
+
+    it('still sets every header on a route that sets none when overwrite is false', async () => {
+      const res = await build({ contentSecurityPolicy: csp, overwrite: false }).request('/page')
+      expect(res.headers.get('Content-Security-Policy')).toBe(
+        "default-src 'self'; script-src 'self'"
+      )
+      expect(res.headers.get('X-Frame-Options')).toBe('SAMEORIGIN')
+    })
+  })
 })
