@@ -655,7 +655,6 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
         prevNode = child
       }
     }
-    // the last child is followed by whatever follows its parent, not by a sibling it had before the reorder
     if (prevNode && !prevNode.s) {
       for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
         p.nN = node.nN

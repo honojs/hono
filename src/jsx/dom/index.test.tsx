@@ -3350,7 +3350,6 @@ describe('DOM', () => {
         )
       }
       render(<List />, root)
-      // every row updates its own state, in the order the rows were first rendered
       const updateRows = () => rowSetters.forEach((set, index) => set(index + 1))
       return { setItems: (items: string[]) => setItems(items), updateRows }
     }
@@ -3389,7 +3388,6 @@ describe('DOM', () => {
           updateRows()
         })
         expect(rows()).toEqual(after)
-        // each row kept its own state while it moved
         expect([...root.querySelectorAll('li')].map((li) => li.getAttribute('data-count'))).toEqual(
           after.map((label) => String(before.indexOf(label) + 1))
         )
