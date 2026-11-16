@@ -103,6 +103,30 @@ describe('handle', () => {
     expect(res.body).toBe('https://hono.dev/test-path')
   })
 
+  it('Should omit body in a 204 result', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.body(null, 204, { 'content-type': 'text/plain' }))
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toEqual({
+      status: '204',
+      headers: { 'content-type': [{ key: 'content-type', value: 'text/plain' }] },
+    })
+    expect(Object.hasOwn(res, 'body')).toBe(false)
+  })
+
+  it('Should keep an empty body in other bodyless results', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => c.body(null, 200))
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res).toMatchObject({ status: '200', body: '' })
+  })
+
   it('Should preserve all values of a multi-value request header', async () => {
     const app = new Hono()
     app.get('/test-path', (c) => c.text(c.req.header('x-forwarded-for') ?? ''))

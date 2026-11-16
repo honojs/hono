@@ -165,6 +165,11 @@ export const handle = (
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
+  // CloudFront answers 502 when a 204 result has a `body` field
+  if (res.status === 204) {
+    return { status: '204', headers: convertHeaders(res.headers) }
+  }
+
   const contentEncoding = res.headers.get('content-encoding')
   const isBase64Encoded =
     isContentTypeBinary(res.headers.get('content-type') || '') ||
