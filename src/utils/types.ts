@@ -50,23 +50,46 @@ export type JSONValue = JSONObject | JSONArray | JSONPrimitive
  * which defaults to `bigint | ReadonlyArray<bigint>`.
  * You can set it to `never` to disable this check.
  */
-export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
+export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = JSONParsedInner<
+  T,
+  TError,
+  never
+>
+
+/**
+ * `true` when `T` is identical to a type in `TSeen`, a union of one-element tuples.
+ */
+type IsSeen<T, TSeen> = TSeen extends unknown
+  ? (<G>() => G extends [T] ? 1 : 2) extends <G>() => G extends TSeen ? 1 : 2
+    ? true
+    : never
+  : never
+
+/**
+ * A recursive type such as `JSONValue` refers to itself, so `JSONParsed` cannot expand it to the end.
+ * `TSeen` holds the types on the current path. A type that is already on the path becomes `JSONValue`.
+ */
+type JSONParsedInner<T, TError, TSeen> = [IsSeen<T, TSeen>] extends [never]
+  ? JSONParsedStep<T, TError, TSeen | [T]>
+  : JSONValue
+
+type JSONParsedStep<T, TError, TSeen> = T extends {
   toJSON(): infer J
 }
   ? (() => J) extends () => JSONPrimitive
     ? J
     : (() => J) extends () => { toJSON(): unknown }
       ? {}
-      : JSONParsed<J, TError>
+      : JSONParsedInner<J, TError, TSeen>
   : T extends JSONPrimitive
     ? T
     : T extends InvalidJSONValue
       ? never
       : T extends ReadonlyArray<unknown>
-        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> } extends infer A
+        ? { [K in keyof T]: JSONParsedInner<InvalidToNull<T[K]>, TError, TSeen> } extends infer A
           ? A extends ReadonlyArray<unknown>
             ? A // plain array or tuple; the mapped type preserves array-ness
-            : JSONParsed<InvalidToNull<T[number]>, TError>[] // array with extra properties; JSON.stringify drops them
+            : JSONParsedInner<InvalidToNull<T[number]>, TError, TSeen>[] // array with extra properties; JSON.stringify drops them
           : never
         : T extends Set<unknown> | Map<unknown, unknown> | Record<string, never>
           ? {}
@@ -77,8 +100,8 @@ export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends {
                   [
                     K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true ? never : K
                   ]: boolean extends IsInvalid<T[K]>
-                    ? JSONParsed<T[K], TError> | undefined
-                    : JSONParsed<T[K], TError>
+                    ? JSONParsedInner<T[K], TError, TSeen> | undefined
+                    : JSONParsedInner<T[K], TError, TSeen>
                 }
             : T extends unknown
               ? T extends TError

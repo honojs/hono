@@ -188,6 +188,27 @@ describe('JSONParsed', () => {
     })
   })
 
+  describe('recursive JSON types', () => {
+    it('Should parse JSONValue', () => {
+      type Actual = JSONParsed<JSONValue>
+      expectTypeOf<Actual>().toExtend<JSONValue>()
+    })
+
+    it('Should parse an object with a self-referential JSON type', () => {
+      type Json = string | number | boolean | null | Json[] | { [key: string]: Json }
+      type Actual = JSONParsed<{ data: Json }>
+      expectTypeOf<Actual>().toExtend<{ data: JSONValue }>()
+    })
+
+    it('Should keep a deep object that is not recursive', () => {
+      type Deep = {
+        a: { b: { c: { d: { e: { f: { g: { h: { i: { j: string } } } } } } } } }
+      }
+      type Actual = JSONParsed<Deep>
+      expectTypeOf<Actual>().toEqualTypeOf<Deep>()
+    })
+  })
+
   describe('Set/Map', () => {
     it('should convert Set to empty object', () => {
       type Actual = JSONParsed<Set<number>>
