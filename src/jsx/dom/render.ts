@@ -342,7 +342,11 @@ const findInsertBefore = (node: Node | undefined): SupportedElement | Text | und
 
 const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
-    node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
+    const stash = node[DOM_STASH]
+    if (stash?.[1][STASH_EFFECT]) {
+      stash[1][STASH_EFFECT].forEach((data: EffectData) => data[2]?.())
+      delete stash[1][STASH_EFFECT]
+    }
 
     refCleanupMap.get(node.e as Element)?.()
     if (node.p === 2) {
@@ -432,11 +436,12 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         child.d = false
         el = child.e ||= document.createTextNode(child.t)
       } else {
+        const isCreated = !child.e
         el = child.e ||= child.n
           ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
           : document.createElement(child.tag as string)
 
-        applyProps(el as HTMLElement, child.props, child.pP)
+        applyProps(el as HTMLElement, child.props, isCreated ? undefined : child.pP)
         applyNodeObject(child, el as HTMLElement, isNewLocal)
         if (child.tag === 'select') {
           applySelectValue(el as HTMLSelectElement, child.props)
