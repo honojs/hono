@@ -169,6 +169,9 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
     ...buildRequestInitFromRequest(raw, strictConnectionProcessing),
     ...preprocessRequestInit(requestInit as RequestInit),
   })
+  // fetch picks the framing itself and rejects these headers, even when they come from `headers`
+  req.headers.delete('transfer-encoding')
+  req.headers.delete('keep-alive')
   req.headers.delete('accept-encoding')
 
   const res = await (customFetch || fetch)(req)
