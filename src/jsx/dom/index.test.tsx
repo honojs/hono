@@ -3329,6 +3329,89 @@ describe('DOM', () => {
     })
   })
 
+  describe('keyed components that update in the same tick as a reorder', () => {
+    const setup = (initial: string[], Wrapper: FC<{ children?: Child }>) => {
+      let setItems: (items: string[]) => void = () => {}
+      const rowSetters: ((count: number) => void)[] = []
+      const Row = ({ label }: { label: string }) => {
+        const [count, setCount] = useState(0)
+        rowSetters.push(setCount)
+        return <li data-count={count}>{label}</li>
+      }
+      const List = () => {
+        const [items, set] = useState(initial)
+        setItems = set
+        return (
+          <Wrapper>
+            {items.map((label) => (
+              <Row key={label} label={label} />
+            ))}
+          </Wrapper>
+        )
+      }
+      render(<List />, root)
+      const updateRows = () => rowSetters.forEach((set, index) => set(index + 1))
+      return { setItems: (items: string[]) => setItems(items), updateRows }
+    }
+    const rows = () => [...root.querySelectorAll('li')].map((li) => li.textContent)
+    const wrappers: [string, FC<{ children?: Child }>][] = [
+      ['an element', ({ children }) => <ul>{children}</ul>],
+      ['a fragment', ({ children }) => <>{children}</>],
+    ]
+
+    describe.each(wrappers)('inside %s', (_, Wrapper) => {
+      it.each([
+        [
+          ['x', 'a', 'c'],
+          ['a', 'c', 'x'],
+        ],
+        [
+          ['a', 'b', 'c', 'd'],
+          ['d', 'c', 'b', 'a'],
+        ],
+        [
+          ['a', 'b', 'c', 'd'],
+          ['b', 'c', 'd', 'a'],
+        ],
+        [
+          ['a', 'b', 'c', 'd'],
+          ['c', 'a', 'd', 'b'],
+        ],
+        [
+          ['a', 'b', 'c'],
+          ['c', 'b', 'a'],
+        ],
+      ])('reorders %j to %j', (before, after) => {
+        const { setItems, updateRows } = setup(before, Wrapper)
+        flushSync(() => {
+          setItems(after)
+          updateRows()
+        })
+        expect(rows()).toEqual(after)
+        expect([...root.querySelectorAll('li')].map((li) => li.getAttribute('data-count'))).toEqual(
+          after.map((label) => String(before.indexOf(label) + 1))
+        )
+      })
+    })
+
+    it('keeps the order when the updates are only scheduled in the same tick', async () => {
+      const { setItems, updateRows } = setup(['x', 'a', 'c'], ({ children }) => <ul>{children}</ul>)
+      setItems(['a', 'c', 'x'])
+      updateRows()
+      await Promise.resolve()
+      expect(rows()).toEqual(['a', 'c', 'x'])
+    })
+
+    it('keeps the order when the rows update before the list', () => {
+      const { setItems, updateRows } = setup(['x', 'a', 'c'], ({ children }) => <ul>{children}</ul>)
+      flushSync(() => {
+        updateRows()
+        setItems(['a', 'c', 'x'])
+      })
+      expect(rows()).toEqual(['a', 'c', 'x'])
+    })
+  })
+
   describe('createPortal', () => {
     it('simple', async () => {
       const App = () => {
