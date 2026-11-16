@@ -5,7 +5,7 @@
 import { PERMALINK } from '../../constants'
 import type { Context } from '../../context'
 import { useContext } from '../../context'
-import { useCallback, useState } from '../../hooks'
+import { useCallback, useRef, useState } from '../../hooks'
 import { createContext } from '../context'
 
 type FormStatus =
@@ -70,22 +70,42 @@ export const useOptimistic = <T, N>(
 }
 
 /**
- * This hook returns the current state and a function to update the state by form action
+ * This hook returns the current state, a function to update the state by form action,
+ * and whether an action is pending
+ * Actions run one at a time, each receiving the state returned by the previous one
  * @param fn
  * @param initialState
  * @param permalink
- * @returns [T, (data: FormData) => void]
+ * @returns [T, (data: FormData) => Promise<void>, boolean]
  */
 export const useActionState = <T>(
   fn: Function,
   initialState: T,
   permalink?: string
-): [T, Function] => {
+): [T, Function, boolean] => {
   const [state, setState] = useState(initialState)
-  const actionState = async (data: FormData) => {
-    setState(await fn(state, data))
-  }
+  const [pendingCount, setPendingCount] = useState(0)
+  const ref = useRef({ fn, state: initialState, pending: 0, queue: Promise.resolve() })
+  ref.current.fn = fn
+
+  const actionState = useCallback((data: FormData) => {
+    const current = ref.current
+    const run = async () => {
+      try {
+        current.state = await current.fn(current.state, data)
+        setState(current.state)
+      } finally {
+        current.pending--
+        setPendingCount((count) => count - 1)
+      }
+    }
+    // Start right away when idle, so a single action is not delayed by the queue
+    const result = current.pending++ ? current.queue.then(run) : run()
+    current.queue = result.catch(() => {})
+    setPendingCount((count) => count + 1)
+    return result
+  }, [])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(actionState as any)[PERMALINK] = permalink
-  return [state, actionState]
+  return [state, actionState, pendingCount > 0]
 }
