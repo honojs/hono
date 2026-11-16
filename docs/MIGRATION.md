@@ -8,9 +8,49 @@ There are some breaking changes.
 
 `hono` is now published as ESM only, and the CommonJS build is removed. On Node.js, version 22.12 or later is required. `require('hono')` still works there, because Node.js 22.12 can `require()` ES modules.
 
+### `onError()` and `notFound()` register routable middleware
+
+`onError()` now accepts middleware with the `(c, next)` signature instead of `(err, c)`. Read the error from `c.error`:
+
+```ts
+// From
+app.onError((err, c) => {
+  console.error(err)
+  return c.text('Custom Error', 500)
+})
+
+// To
+app.onError((c) => {
+  console.error(c.error)
+  return c.text('Custom Error', 500)
+})
+```
+
+`notFound((c) => c.text('Not Found', 404))` keeps the same single-handler syntax. Both APIs also accept an optional path and multiple middleware:
+
+```ts
+app.notFound(
+  '/api/*',
+  async (c, next) => {
+    c.header('x-not-found', 'api')
+    await next()
+  },
+  (c) => c.text('API resource not found', 404)
+)
+```
+
+The following routing rules apply to both APIs:
+
+- Registrations compose rather than replacing the previous handler. Return a response to stop the chain, or call `next()` to delegate.
+- Paths are independent of the request's HTTP method and relative to `basePath()`. Omitting the path registers `*` within the current base path.
+- `route()` imports sub-app handlers, including `notFound()` handlers. More deeply nested sub-apps take priority; at the same depth, handlers run in registration order, not path specificity order.
+- Scopes match the request path, regardless of which app registered the original route. Request parameters still come from the original route, not the fallback scope.
+
+`notFound()` middleware runs for both unmatched requests and explicit `c.notFound()` calls. If the chain reaches its end without a finalized response, the built-in error or not-found handler is used. Errors thrown by `onError()` middleware are handled by the built-in error handler rather than escaping from `app.fetch()`.
+
 ### Non-Error throws go to `onError`
 
-A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `err.cause`, and a thrown string is also used as `err.message`. It no longer propagates out of `app.fetch()`.
+A non-Error value thrown from a handler or middleware, such as a string or a plain object, now goes to `onError` (500 by default) wrapped in an `Error`. The original value is available as `c.error.cause`, and a thrown string is also used as `c.error.message`. It no longer propagates out of `app.fetch()`.
 
 ### `getColorEnabledAsync()` is removed
 
@@ -51,6 +91,20 @@ const body = await c.req.json<{ name: string }>()
 ### `c.json()` throws for a value that is not JSON serializable
 
 `c.json(undefined)` used to return an empty body. It now throws a `TypeError`, like `Response.json()`. The same applies to a function or a symbol.
+
+### Wildcard matching is the same in every router
+
+A `*` at the end of a segment is a wildcard in every router, and it may match nothing. A `*` in the middle of a segment, such as `/x*y`, is not a wildcard. A segment that is only `*` matches one non-empty segment.
+
+| Route          | Path          | v5       |
+| -------------- | ------------- | -------- |
+| `/x*/y`        | `/x/y`        | Match    |
+| `/x*/y`        | `/xz/y`       | Match    |
+| `/x*/y`        | `/x/z/y`      | No match |
+| `/x*y`         | `/xay`        | No match |
+| `/wild/*/card` | `/wild//card` | No match |
+
+TrieRouter and PatternRouter did not match `/x*/y` to `/xz/y` before. In RegExpRouter, `/x*/y` and `/x/*` can not be registered together and throw `UnsupportedPathError`, so SmartRouter falls back to TrieRouter.
 
 ### Runtime adapters moved to `@hono/*` packages
 

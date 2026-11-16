@@ -24,15 +24,17 @@ describe('Adapter for Next.js', () => {
   it('Should not use `route()` if path argument is not passed', async () => {
     const app = new Hono().basePath('/api')
 
-    app.onError((e) => {
-      throw e
-    })
+    const route = vi.spyOn(app, 'route')
+    app.onError((c) => c.text(c.error!.message, 500))
     app.get('/error', () => {
       throw new Error('Custom Error')
     })
 
     const handler = handle(app)
     const req = new Request('http://localhost/api/error')
-    expect(() => handler(req)).toThrowError('Custom Error')
+    const res = await handler(req)
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom Error')
+    expect(route).not.toHaveBeenCalled()
   })
 })

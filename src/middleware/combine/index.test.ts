@@ -68,8 +68,8 @@ describe('some', () => {
     app.get('/', (c) => {
       return c.text('Hello World')
     })
-    app.onError((error, c) => {
-      return c.text(error.message)
+    app.onError((c) => {
+      return c.text(c.error!.message)
     })
     const res = await app.request('http://localhost/')
 
@@ -84,7 +84,7 @@ describe('some', () => {
     app.get('/', (c) => {
       return c.text('Hello World')
     })
-    app.onError((_, c) => {
+    app.onError((c) => {
       return c.text('oops')
     })
     const res = await app.request('http://localhost/')
@@ -105,7 +105,7 @@ describe('some', () => {
       })
     )
     app.get('/', (c) => c.text('OK'))
-    app.onError((_, c) => {
+    app.onError((c) => {
       return c.text('oops')
     })
     const res = await app.request('http://localhost/')
@@ -125,7 +125,7 @@ describe('some', () => {
       })
     )
     app.get('/', (c) => c.text('OK'))
-    app.onError((_, c) => {
+    app.onError((c) => {
       return c.text('oops')
     })
     const res = await app.request('http://localhost/')
@@ -184,8 +184,8 @@ describe('every', () => {
     app.get('/', (c) => {
       return c.text('Hello World')
     })
-    app.onError((error, c) => {
-      return c.text(error.message)
+    app.onError((c) => {
+      return c.text(c.error!.message)
     })
     const res = await app.request('http://localhost/')
 
@@ -201,7 +201,7 @@ describe('every', () => {
     app.get('/', (c) => {
       return c.text('Hello World')
     })
-    app.onError((_, c) => {
+    app.onError((c) => {
       return c.text('oops')
     })
     const res = await app.request('http://localhost/')

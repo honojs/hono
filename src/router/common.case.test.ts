@@ -11,6 +11,8 @@ const getSuiteHierarchy = (suite?: RunnerTestSuite) => {
   return res
 }
 
+const lineTerminators = ['\n', '\r', '\u2028', '\u2029']
+
 export const runTest = ({
   skip = [],
   newRouter,
@@ -29,7 +31,7 @@ export const runTest = ({
     beforeEach(({ task, skip: skipTask }) => {
       const suites = getSuiteHierarchy(task.suite)
       const name = [...suites.slice(2).map((s) => s.name), task.name].join(' > ')
-      const isSkip = skip.find((s) => s.tests.includes(name))
+      const isSkip = skip.find((s) => s.tests.some((t) => name === t || name.startsWith(`${t} > `)))
       if (isSkip) {
         console.log(`Skip: ${isSkip.reason}`)
         skipTask()
@@ -106,6 +108,55 @@ export const runTest = ({
       })
     })
 
+    describe('Wildcard', () => {
+      // Behaviour agreed in #5243. A wildcard with a non-empty prefix consumes zero or
+      // more characters and stays inside its own segment; a standalone `*` segment
+      // consumes at least one when a segment follows it. Either may consume the rest of
+      // the path, separators included, when it ends the route.
+      const cases: [route: string, path: string, shouldMatch: boolean][] = [
+        ['/x*/y', '/x/y', true],
+        ['/x*/y', '/xz/y', true],
+        ['/x*/y', '/xzz/y', true],
+        ['/x*/y', '/x/z/y', false],
+        ['/x*y', '/xy', false],
+        ['/x*y', '/xay', false],
+        ['/x*y/index', '/xy/index', false],
+        ['/x*y/index', '/xay/index', false],
+        ['/a/b*/c', '/a/b/c', true],
+        ['/a/b*/c', '/a/bz/c', true],
+        ['/a/b*/c', '/a/b/z/c', false],
+        ['/wild/*/card', '/wild//card', false],
+        ['/wild/*/card', '/wild/x/card', true],
+        ['/wild/*/card', '/wild/x/y/card', false],
+        ['/assets*', '/assets', true],
+        ['/assets*', '/assets123', true],
+        ['/assets*', '/assets/foo', true],
+        ['/x*/*', '/x', true],
+        ['/x*/*', '/xz', true],
+        ['/x*/*', '/xz/y', true],
+        ['/x*/*', '/x/y/z', true],
+        ['/foo/*/*', '/foo', false],
+        ['/foo/*/*', '/foo/', false],
+        ['/foo/*/*', '/foo//', false],
+        ['/foo/*/*', '/foo//bar', false],
+        ['/foo/*/*', '/foo//bar/baz', false],
+        ['/foo/*/*', '/foo/x', true],
+        ['/foo/*/*', '/foo/x/', true],
+        ['/foo/*/*', '/foo/x/y/z', true],
+      ]
+
+      for (const [route, path, shouldMatch] of cases) {
+        it(`${route} ${shouldMatch ? 'matches' : 'does not match'} ${path}`, async () => {
+          router.add('GET', route, 'wildcard')
+          const res = match('GET', path)
+          expect(res.length).toBe(shouldMatch ? 1 : 0)
+          if (shouldMatch) {
+            expect(res[0].handler).toEqual('wildcard')
+          }
+        })
+      }
+    })
+
     describe('Path segment equal to a pattern token', () => {
       it('Wildcard', async () => {
         router.add('GET', '/a/*', 'wildcard')
@@ -137,6 +188,23 @@ export const runTest = ({
         const res = match('GET', '/a/foo*')
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('prefixed')
+      })
+
+      it.each(['/x*/y', '/x*/y/z', '/x*/y*'])(
+        'Prefixed wildcard in a parent segment: %s',
+        (path) => {
+          router.add('GET', '/x*/y*/*', 'handler')
+          expect(match('GET', path)).toEqual([{ handler: 'handler', params: {} }])
+        }
+      )
+
+      it('Should preserve repeated handlers on overlapping wildcard routes', () => {
+        router.add('GET', '/x*/*', 'handler')
+        router.add('GET', '/x*/y*/*', 'handler')
+        expect(match('GET', '/x*/y')).toEqual([
+          { handler: 'handler', params: {} },
+          { handler: 'handler', params: {} },
+        ])
       })
 
       it('Named parameter with a trailing wildcard', async () => {
@@ -198,6 +266,11 @@ export const runTest = ({
         expect(res.length).toBe(0)
         res = match('GET', '/post/123/123')
         expect(res.length).toBe(0)
+      })
+
+      it.each(lineTerminators)('Regexp dot does not match %j', (char) => {
+        router.add('GET', '/:id{.+}', 'pattern')
+        expect(match('GET', `/a${char}b`)).toEqual([])
       })
 
       it('Parameter with {.*} regexp', () => {
@@ -417,6 +490,10 @@ export const runTest = ({
         expect(res[2].handler).toEqual('/x')
         expect(res[3].handler).toEqual('/x/*')
       })
+
+      it.each(lineTerminators)('Matches a line terminator %j', (char) => {
+        expect(match('GET', `/a${char}b`).map(({ handler }) => handler)).toEqual(['/*', '*'])
+      })
     })
 
     describe('Suffix wildcard', () => {
@@ -478,6 +555,10 @@ export const runTest = ({
       it('GET /pathfoo', async () => {
         const res = match('GET', '/pathfoo')
         expect(res.length).toBe(0)
+      })
+
+      it.each(lineTerminators)('Matches a line terminator %j', (char) => {
+        expect(match('GET', `/path/a${char}b`)).toEqual([{ handler: 'path', params: {} }])
       })
     })
 
@@ -577,6 +658,26 @@ export const runTest = ({
     describe('Trailing wildcard after a middle wildcard', () => {
       beforeEach(() => {
         router.add('GET', '/a/*/b/*', 'b')
+      })
+
+      it('GET /acme/x/y with a named parameter', async () => {
+        router = newRouter()
+        router.add('GET', '/:tenant/*/*', 'tenant')
+        const res = match('GET', '/acme/x/y')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('tenant')
+        expect(res[0].params['tenant']).toBe('acme')
+      })
+
+      it.each([
+        ['/foo/*/*', '/foo/x/y'],
+        ['/x*/*', '/xz/y'],
+        ['/x*/*', '/x/y'],
+      ])('%s matches %s', async (route, path) => {
+        router.add('GET', route, 'wildcard')
+        const res = match('GET', path)
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('wildcard')
       })
 
       it('GET /a/x/b', async () => {
@@ -759,6 +860,15 @@ export const runTest = ({
         expect(res[0].handler).toEqual('any file')
         expect(res[0].params['filename']).toEqual('chunk/nest/123.js')
       })
+
+      it('GET /x/aa/b/x with a quantifier before a slash', () => {
+        router.add('GET', '/x/:prefix{a{2}/b}/x', 'quantifier')
+
+        expect(match('GET', '/x/aa/b/x')).toEqual([
+          { handler: 'quantifier', params: { prefix: 'aa/b' } },
+        ])
+        expect(match('GET', '/x/a/b/x')).toEqual([])
+      })
     })
 
     describe('Capture simple multiple directories', () => {
@@ -899,6 +1009,16 @@ export const runTest = ({
         expect(res[1].handler).toEqual('get () name')
         expect(res[1].params['name']).toEqual('hono')
       })
+
+      it.each(lineTerminators)('line terminator %j', (char) => {
+        router.add('ALL', `/a${char}b/*`, 'middleware')
+        router.add('GET', `/a${char}b/:name`, 'get name')
+        expect(match('GET', `/a${char}b/hono`)).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'get name', params: { name: 'hono' } },
+        ])
+        expect(match('GET', '/ab/hono')).toEqual([])
+      })
     })
 
     describe('REST API', () => {
@@ -1023,6 +1143,236 @@ export const runTest = ({
       it('get /foo', () => {
         const res = match('GET', '/foo')
         expect(res[0].handler).toEqual('foo')
+      })
+    })
+
+    describe.each<[string, string, string, Params, Params]>([
+      ['/v1/*/*', '/v1/:a/:b', '/v1/x/y', {}, { a: 'x', b: 'y' }],
+      ['/v1/*/fixed/*', '/v1/:a/fixed/:b', '/v1/x/fixed/y', {}, { a: 'x', b: 'y' }],
+      [
+        '/v1/*/:id/*',
+        '/v1/:a/:b/:c/:d',
+        '/v1/first/second/third/fourth',
+        { id: 'second' },
+        { a: 'first', b: 'second', c: 'third', d: 'fourth' },
+      ],
+      [
+        '/v1/:first/*/:last/*',
+        '/v1/:a/:b/:c/:d',
+        '/v1/first/second/third/fourth',
+        { first: 'first', last: 'third' },
+        { a: 'first', b: 'second', c: 'third', d: 'fourth' },
+      ],
+    ])(
+      'Wildcard route %s with a parameter route',
+      (wildcardPath, routePath, requestPath, middlewareParams, handlerParams) => {
+        it.each([
+          { method: 'GET', reverse: false },
+          { method: 'GET', reverse: true },
+          { method: 'ALL', reverse: false },
+          { method: 'ALL', reverse: true },
+        ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+          const routes: [string, string, string][] = [
+            [method, wildcardPath, 'middleware'],
+            ['GET', routePath, 'handler'],
+          ]
+          const middleware = { handler: 'middleware', params: middlewareParams }
+          const expected = [middleware, { handler: 'handler', params: handlerParams }]
+          if (reverse) {
+            routes.reverse()
+            expected.reverse()
+          }
+          for (const route of routes) {
+            router.add(...route)
+          }
+
+          expect(match('GET', requestPath)).toEqual(expected)
+          expect(match('GET', `${requestPath}/z`)).toEqual([middleware])
+          expect(match('POST', requestPath)).toEqual(method === 'ALL' ? [middleware] : [])
+        })
+      }
+    )
+
+    describe('Overlapping wildcard routes', () => {
+      it.each([
+        { method: 'GET', reverse: false },
+        { method: 'GET', reverse: true },
+        { method: 'ALL', reverse: false },
+        { method: 'ALL', reverse: true },
+      ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+        const routes: [string, string, string][] = [
+          ['GET', '/v1/:a/*', 'parent'],
+          [method, '/v1/*/*/*', 'child'],
+        ]
+        const parent = { handler: 'parent', params: { a: 'x' } }
+        const child = { handler: 'child', params: {} }
+        const expected = [parent, child]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', '/v1/x')).toEqual([parent])
+        expect(match('GET', '/v1/x/')).toEqual([parent])
+        expect(match('GET', '/v1/x/y/z')).toEqual(expected)
+        expect(match('POST', '/v1/x')).toEqual([])
+        expect(match('POST', '/v1/x/y/z')).toEqual(method === 'ALL' ? [child] : [])
+      })
+    })
+
+    describe('Parameter middleware with a wildcard route', () => {
+      it.each([
+        { routePath: '/v1/*/b', reverse: false },
+        { routePath: '/v1/*/b', reverse: true },
+        { routePath: '/v1/*/b/*', reverse: false },
+        { routePath: '/v1/*/b/*', reverse: true },
+      ])('$routePath with reverse registration: $reverse', ({ routePath, reverse }) => {
+        const routes: [string, string, string][] = [
+          ['GET', '/v1/:a/*', 'middleware'],
+          ['GET', routePath, 'handler'],
+        ]
+        const middleware = { handler: 'middleware', params: { a: 'x' } }
+        const expected = [middleware, { handler: 'handler', params: {} }]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', '/v1/x/b')).toEqual(expected)
+        expect(match('GET', '/v1/x')).toEqual([middleware])
+      })
+    })
+
+    describe.each<[string, string, Params]>([
+      ['/prefix/:x{a}/*', '/prefix/a/static', { x: 'a' }],
+      ['/prefix/:x{a}/*', '/prefix/a', { x: 'a' }],
+      ['/prefix/:x{a}/:y{b}/*', '/prefix/a/b/static', { x: 'a', y: 'b' }],
+    ])('Parameter middleware %s with static route %s', (wildcardPath, routePath, params) => {
+      it.each([
+        { method: 'GET', reverse: false },
+        { method: 'GET', reverse: true },
+        { method: 'ALL', reverse: false },
+        { method: 'ALL', reverse: true },
+      ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+        const routes: [string, string, string][] = [
+          [method, wildcardPath, 'middleware'],
+          ['GET', routePath, 'handler'],
+        ]
+        const middleware = { handler: 'middleware', params }
+        const expected = [middleware, { handler: 'handler', params: {} }]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', routePath)).toEqual(expected)
+        expect(match('GET', `${routePath}/more`)).toEqual([middleware])
+        expect(match('POST', routePath)).toEqual(method === 'ALL' ? [middleware] : [])
+      })
+    })
+
+    describe('Prefixed wildcard route with its prefix as a static route', () => {
+      it.each([
+        { method: 'GET', reverse: false },
+        { method: 'GET', reverse: true },
+        { method: 'ALL', reverse: false },
+        { method: 'ALL', reverse: true },
+      ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+        const routes: [string, string, string][] = [
+          [method, '/p/x*/*', 'middleware'],
+          ['GET', '/p/x', 'handler'],
+        ]
+        const middleware = { handler: 'middleware', params: {} }
+        const expected = [middleware, { handler: 'handler', params: {} }]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', '/p/x')).toEqual(expected)
+        expect(match('GET', '/p/xz')).toEqual([middleware])
+        expect(match('GET', '/p/x/y')).toEqual([middleware])
+        expect(match('POST', '/p/x')).toEqual(method === 'ALL' ? [middleware] : [])
+      })
+    })
+
+    describe('Wildcard routes that end at the same segment', () => {
+      it.each([
+        { method: 'GET', reverse: false },
+        { method: 'GET', reverse: true },
+        { method: 'ALL', reverse: false },
+        { method: 'ALL', reverse: true },
+      ])('$method with reverse registration: $reverse', ({ method, reverse }) => {
+        const routes: [string, string, string][] = [
+          [method, '/x/a*', 'prefix'],
+          ['GET', '/x/a/*', 'tail'],
+        ]
+        const prefix = { handler: 'prefix', params: {} }
+        const expected = [prefix, { handler: 'tail', params: {} }]
+        if (reverse) {
+          routes.reverse()
+          expected.reverse()
+        }
+        for (const route of routes) {
+          router.add(...route)
+        }
+
+        expect(match('GET', '/x/a')).toEqual(expected)
+        expect(match('GET', '/x/a/q')).toEqual(expected)
+        expect(match('GET', '/x/ab')).toEqual([prefix])
+        expect(match('POST', '/x/a/q')).toEqual(method === 'ALL' ? [prefix] : [])
+      })
+
+      it('Should apply both wildcards to a nested route', () => {
+        router.add('GET', '/x/a*', 'prefix')
+        router.add('GET', '/x/a/*', 'tail')
+        router.add('GET', '/x/a/:id', 'route')
+        const prefix = { handler: 'prefix', params: {} }
+        const tail = { handler: 'tail', params: {} }
+        expect(match('GET', '/x/a/q')).toEqual([
+          prefix,
+          tail,
+          { handler: 'route', params: { id: 'q' } },
+        ])
+        expect(match('GET', '/x/a/q/r')).toEqual([prefix, tail])
+        expect(match('GET', '/x/a')).toEqual([prefix, tail])
+        expect(match('GET', '/x/ab')).toEqual([prefix])
+      })
+    })
+
+    describe('Middleware paths that do not nest', () => {
+      it('Should both apply to a route they both match', () => {
+        router.add('GET', '/:a/b/*', 'short')
+        router.add('GET', '/:aaaaaaa/*', 'long')
+        router.add('GET', '/:x/b/c', 'handler')
+        expect(match('GET', '/q/b/c')).toEqual([
+          { handler: 'short', params: { a: 'q' } },
+          { handler: 'long', params: { aaaaaaa: 'q' } },
+          { handler: 'handler', params: { x: 'q' } },
+        ])
+      })
+    })
+
+    describe('Parameter pattern identical to the label pattern', () => {
+      it('Should receive wildcard middleware', () => {
+        router.add('GET', '/v1/*/fixed/*', 'middleware')
+        router.add('GET', '/v1/:a{[^/]+}/fixed/:b', 'handler')
+        expect(match('GET', '/v1/x/fixed/y')).toEqual([
+          { handler: 'middleware', params: {} },
+          { handler: 'handler', params: { a: 'x', b: 'y' } },
+        ])
       })
     })
 

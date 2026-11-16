@@ -59,6 +59,8 @@ export interface RouterRoute {
   path: string
   method: string
   handler: H
+  /** Number of application boundaries crossed by `route()`. */
+  depth?: number
 }
 
 ////////////////////////////////////////
@@ -113,10 +115,8 @@ export type NotFoundHandler<E extends Env = any> = (
 export interface HTTPResponseError extends Error {
   getResponse: () => Response
 }
-export type ErrorHandler<E extends Env = any> = (
-  err: Error | HTTPResponseError,
-  c: Context<E>
-) => Response | Promise<Response>
+/** Error middleware registered with `onError()`. The error is available as `c.error`. */
+export type ErrorHandler<E extends Env = any> = H<E>
 
 ////////////////////////////////////////
 //////                            //////
@@ -1069,6 +1069,396 @@ export interface HandlerInterface<
     BasePath,
     MergePath<BasePath, P>
   >
+}
+
+/**
+ * Fallback middleware composes environments without changing the route schema or current path.
+ * Its scope does not determine request parameters, which come from the original route.
+ */
+export interface FallbackHandlerInterface<
+  E extends Env,
+  S extends Schema,
+  BasePath extends string,
+  CurrentPath extends string,
+> {
+  // 1 handler
+  <E2 extends Env = E>(
+    ...handlers: [H<E2, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
+
+  // path, 1 handler
+  <Path extends string, E2 extends Env = E>(
+    path: Path,
+    ...handlers: [H<E2, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
+
+  // 2 handlers
+  <E2 extends Env = E, E3 extends Env = IntersectNonAnyTypes<[E, E2]>>(
+    ...handlers: [H<E2, string, any, any>, H<E3, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath, CurrentPath>
+
+  // path, 2 handlers
+  <Path extends string, E2 extends Env = E, E3 extends Env = IntersectNonAnyTypes<[E, E2]>>(
+    path: Path,
+    ...handlers: [H<E2, string, any, any>, H<E3, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath, CurrentPath>
+
+  // 3 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+  >(
+    ...handlers: [H<E2, string, any, any>, H<E3, string, any, any>, H<E4, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath, CurrentPath>
+
+  // path, 3 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+  >(
+    path: Path,
+    ...handlers: [H<E2, string, any, any>, H<E3, string, any, any>, H<E4, string, any, any>]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath, CurrentPath>
+
+  // 4 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5]>, S, BasePath, CurrentPath>
+
+  // path, 4 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5]>, S, BasePath, CurrentPath>
+
+  // 5 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>, S, BasePath, CurrentPath>
+
+  // path, 5 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>, S, BasePath, CurrentPath>
+
+  // 6 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>, S, BasePath, CurrentPath>
+
+  // path, 6 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>, S, BasePath, CurrentPath>
+
+  // 7 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>, S, BasePath, CurrentPath>
+
+  // path, 7 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>, S, BasePath, CurrentPath>
+
+  // 8 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>, S, BasePath, CurrentPath>
+
+  // path, 8 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+    ]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>, S, BasePath, CurrentPath>
+
+  // 9 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+      H<E10, string, any, any>,
+    ]
+  ): HonoBase<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
+    S,
+    BasePath,
+    CurrentPath
+  >
+
+  // path, 9 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+      H<E10, string, any, any>,
+    ]
+  ): HonoBase<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
+    S,
+    BasePath,
+    CurrentPath
+  >
+
+  // 10 handlers
+  <
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+    E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
+  >(
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+      H<E10, string, any, any>,
+      H<E11, string, any, any>,
+    ]
+  ): HonoBase<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
+    S,
+    BasePath,
+    CurrentPath
+  >
+
+  // path, 10 handlers
+  <
+    Path extends string,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+    E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
+  >(
+    path: Path,
+    ...handlers: [
+      H<E2, string, any, any>,
+      H<E3, string, any, any>,
+      H<E4, string, any, any>,
+      H<E5, string, any, any>,
+      H<E6, string, any, any>,
+      H<E7, string, any, any>,
+      H<E8, string, any, any>,
+      H<E9, string, any, any>,
+      H<E10, string, any, any>,
+      H<E11, string, any, any>,
+    ]
+  ): HonoBase<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
+    S,
+    BasePath,
+    CurrentPath
+  >
+
+  // Homogeneous arrays and longer middleware chains.
+  <E2 extends Env = E>(
+    ...handlers: H<E2, string, any, any>[]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
+  <Path extends string, E2 extends Env = E>(
+    path: Path,
+    ...handlers: H<E2, string, any, any>[]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath, CurrentPath>
 }
 
 ////////////////////////////////////////

@@ -5,7 +5,9 @@
 
 import type { Context, ExecutionContext } from '../../context'
 import { routePath } from '../../helper/route'
+import { GET_MATCH_RESULT } from '../../request/constants'
 import type { MiddlewareHandler } from '../../types'
+import { getPattern, splitRoutingPath } from '../../utils/url'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ApplicationHandler = (request: Request, ...args: any) => Response | Promise<Response>
@@ -18,11 +20,45 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest | false
     }
 
+const getPathPrefixLength = (c: Context, pathPrefix: string): number => {
+  if (!/[:*]/.test(pathPrefix)) {
+    return pathPrefix.length
+  }
+
+  const path = c.req.path
+  const matchResult = c.req[GET_MATCH_RESULT]
+  const paramNames = new Set<string>()
+  let length = 0
+  for (const part of splitRoutingPath(pathPrefix)) {
+    const pattern = getPattern(part)
+    if (pattern && pattern !== '*') {
+      const name = pattern[1]
+      if (paramNames.has(name)) {
+        throw new Error(`mount(): Duplicate path parameter "${name}" in "${routePath(c)}".`)
+      }
+      paramNames.add(name)
+    }
+    if (pattern && pattern !== '*' && pattern[2] !== true) {
+      const value =
+        matchResult.length === 2
+          ? matchResult[1][matchResult[0][c.req.routeIndex][1][pattern[1]]]
+          : matchResult[0][c.req.routeIndex][1][pattern[1]]
+      length += value.length + 1
+    } else if (pattern || part.endsWith('*')) {
+      const end = path.indexOf('/', length + 1)
+      length = end === -1 ? path.length : end
+    } else {
+      length += part.length + 1
+    }
+  }
+  return length
+}
+
 const defaultReplaceRequest = (c: Context): Request => {
   // e.g. `/another-app/*` (basePath is already merged) -> `/another-app`
-  const pathPrefix = routePath(c).replace(/\/\*$/, '')
+  const pathPrefix = routePath(c).replace(/\/?\*$/, '')
   const url = new URL(c.req.raw.url)
-  url.pathname = c.req.path.slice(pathPrefix.length) || '/'
+  url.pathname = c.req.path.slice(getPathPrefixLength(c, pathPrefix)) || '/'
   return new Request(url, c.req.raw)
 }
 
@@ -42,6 +78,7 @@ const defaultGetOptions = (c: Context): unknown[] => {
  * @param {Function} applicationHandler - other Request Handler
  * @param {MountOptions} [options] - options of `mount()`
  * @returns {MiddlewareHandler} handler to register with `app.all()`
+ * @throws {Error} If automatic request rewriting encounters duplicate path parameter names.
  *
  * @example
  * ```ts

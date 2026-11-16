@@ -4,7 +4,8 @@
  */
 
 import { hc } from '../../client'
-import type { Client, ClientRequestOptions } from '../../client/types'
+import type { ClientRequestOptions } from '../../client'
+import type { Client } from '../../client/types'
 import type { ExecutionContext } from '../../context'
 import type { Hono } from '../../hono'
 import type { Schema } from '../../types'

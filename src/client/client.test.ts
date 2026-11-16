@@ -2174,7 +2174,7 @@ describe('ApplyGlobalResponse Type Helper', () => {
     // Use explicit status code for proper type narrowing
     const app = new Hono().get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
 
-    // In real app: app.onError((err, c) => c.json({ error: err.message }, 500))
+    // In real app: app.onError((c) => c.json({ error: c.error!.message }, 500))
     type AppWithOnError = ApplyGlobalResponse<
       typeof app,
       {

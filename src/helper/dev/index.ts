@@ -8,7 +8,11 @@ import type { Env, RouterRoute } from '../../types'
 import { getColorEnabled } from '../../utils/color'
 import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
-interface ShowRoutesOptions {
+interface InspectRoutesOptions {
+  includeInternal?: boolean
+}
+
+interface ShowRoutesOptions extends InspectRoutesOptions {
   verbose?: boolean
   colorize?: boolean
 }
@@ -24,16 +28,21 @@ const handlerName = (handler: Function): string => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
 }
 
-export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
-  return hono.routes.map(({ path, method, handler }: RouterRoute) => {
-    const targetHandler = findTargetHandler(handler)
-    return {
-      path,
-      method,
-      name: handlerName(targetHandler),
-      isMiddleware: isMiddleware(targetHandler),
-    }
-  })
+export const inspectRoutes = <E extends Env>(
+  hono: Hono<E>,
+  opts?: InspectRoutesOptions
+): RouteData[] => {
+  return hono.routes
+    .filter(({ method }) => opts?.includeInternal || method[0] !== '@')
+    .map(({ path, method, handler }: RouterRoute) => {
+      const targetHandler = findTargetHandler(handler)
+      return {
+        path,
+        method,
+        name: handlerName(targetHandler),
+        isMiddleware: isMiddleware(targetHandler),
+      }
+    })
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions): void => {
@@ -42,8 +51,11 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
   let maxMethodLength = 0
   let maxPathLength = 0
 
-  inspectRoutes(hono)
-    .filter(({ isMiddleware }) => opts?.verbose || !isMiddleware)
+  inspectRoutes(hono, opts)
+    .filter(
+      ({ method, isMiddleware }) =>
+        opts?.verbose || !isMiddleware || (opts?.includeInternal && method[0] === '@')
+    )
     .map((route) => {
       const key = `${route.method}-${route.path}`
       ;(routeData[key] ||= []).push(route)

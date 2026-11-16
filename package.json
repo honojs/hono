@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "5.0.0-rc.0",
+  "version": "5.0.0-rc.1",
   "description": "Web framework built on Web Standards",
   "main": "dist/index.js",
   "type": "module",

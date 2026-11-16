@@ -1,6 +1,7 @@
 import type { ParamIndexMap, ParamStash } from '../../router'
 import { UnsupportedPathError } from '../../router'
 import { runTest } from '../common.case.test'
+import { ONLY_WILDCARD_REG_EXP_STR, TAIL_WILDCARD_REG_EXP_STR } from './node'
 import { RegExpRouter } from './router'
 
 describe('RegExpRouter', () => {
@@ -55,6 +56,36 @@ describe('RegExpRouter', () => {
         expect(() => {
           router.add('GET', '/:class/:id', ':class')
         }).toThrowError(UnsupportedPathError)
+      })
+    })
+
+    describe('Prefixed wildcard and tail wildcard as siblings', () => {
+      // `/x*/y` matches `/xz/y` but not `/x/z/y`, and `/x/*` is the other way
+      // round, so the two only partially overlap and cannot share a node.
+      it('GET /x*/y then /x/*', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x*/y', 'prefixed')
+        expect(() => {
+          router.add('GET', '/x/*', 'tail')
+        }).toThrowError(UnsupportedPathError)
+      })
+
+      it('GET /x/* then /x*/y', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x/*', 'tail')
+        expect(() => {
+          router.add('GET', '/x*/y', 'prefixed')
+        }).toThrowError(UnsupportedPathError)
+      })
+
+      it('a prefixed wildcard and a route-final wildcard still coexist', () => {
+        const router = new RegExpRouter<string>()
+        router.add('GET', '/x*/y', 'prefixed')
+        router.add('GET', '/x*', 'route final')
+        expect(router.match('GET', '/x/y')[0].map(([handler]) => handler)).toEqual([
+          'prefixed',
+          'route final',
+        ])
       })
     })
 
@@ -146,15 +177,21 @@ describe('RegExpRouter', () => {
     })
 
     describe('Pattern that matches an empty string', () => {
-      it.each(['/api/:id{[0-9]?}', '/user/:id{[0-9]*}', '/:id{(?:a|)}', '/:id{a{0,3}}'])(
-        '%s',
-        (path) => {
-          const router = new RegExpRouter<string>()
-          expect(() => {
-            router.add('GET', path, 'ok')
-          }).toThrowError(UnsupportedPathError)
-        }
-      )
+      it.each([
+        '/api/:id{[0-9]?}',
+        '/user/:id{[0-9]*}',
+        '/:id{(?:a|)}',
+        '/:id{a{0,3}}',
+        `/:id{${ONLY_WILDCARD_REG_EXP_STR}}`,
+        `/:id{(?:${ONLY_WILDCARD_REG_EXP_STR})}`,
+        `/:id{${TAIL_WILDCARD_REG_EXP_STR}}`,
+        `/:id{(?:${TAIL_WILDCARD_REG_EXP_STR})}`,
+      ])('%s', (path) => {
+        const router = new RegExpRouter<string>()
+        expect(() => {
+          router.add('GET', path, 'ok')
+        }).toThrowError(UnsupportedPathError)
+      })
 
       it('Should still accept a pattern that requires at least one character', () => {
         const router = new RegExpRouter<string>()
@@ -169,6 +206,20 @@ describe('RegExpRouter', () => {
     })
   })
 
+  it.each([
+    ['[^]+', 'a\nb'],
+    ['(?:/[^]+)', '/a\nb'],
+  ])('Should extract parameters when the pattern is %s', (pattern, value) => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', `/:value{${pattern}}/foo/:id`, 'handler')
+
+    const [res, stash] = router.match('GET', `/${value}/foo/end`)
+    const params = res[0][1] as ParamIndexMap
+    expect(res[0][0]).toBe('handler')
+    expect((stash as ParamStash)[params.value]).toBe(value)
+    expect((stash as ParamStash)[params.id]).toBe('end')
+  })
+
   describe('Wildcard after label', () => {
     it('Should be able to add a tail wildcard after a label', () => {
       const router = new RegExpRouter<string>()
@@ -179,20 +230,6 @@ describe('RegExpRouter', () => {
       expect(res.length).toBe(2)
       expect(res[0][0]).toBe('label')
       expect(res[1][0]).toBe('wildcard')
-    })
-
-    it('Should prioritize the only wildcard over the tail wildcard regardless of the order', () => {
-      for (const paths of [
-        ['/a*', '/a/*'],
-        ['/a/*', '/a*'],
-      ]) {
-        const router = new RegExpRouter<string>()
-        for (const path of paths) {
-          router.add('GET', path, path)
-        }
-        const [res] = router.match('GET', '/a')
-        expect(res[0][0]).toBe('/a*')
-      }
     })
   })
 

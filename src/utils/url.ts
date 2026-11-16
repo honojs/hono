@@ -23,7 +23,7 @@ export const splitRoutingPath = (routePath: string): string[] => {
 const extractGroupsFromPath = (path: string): { groups: [string, string][]; path: string } => {
   const groups: [string, string][] = []
 
-  path = path.replace(/\{[^}]+\}/g, (match, index) => {
+  path = path.replace(/\{(?:\{[\d,]+\}|[^}])+\}/g, (match, index) => {
     const mark = `@${index}`
     groups.push([mark, match])
     return mark

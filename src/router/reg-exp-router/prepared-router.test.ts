@@ -60,6 +60,23 @@ describe('PreparedRegExpRouter', async () => {
       expect(router.match('GET', '/hello')).toEqual([[['get hello', {}]], []])
     })
 
+    it('should capture parameters of middleware on a static path', () => {
+      const params = buildInitParams({
+        paths: ['/prefix/:x{a}/*', '/prefix/a/static'],
+      })
+      const router = new PreparedRegExpRouter(...params)
+      router.add('GET', '/prefix/:x{a}/*', 'middleware')
+      router.add('GET', '/prefix/a/static', 'handler')
+      expect(router.match('GET', '/prefix/a/static')).toEqual([
+        [
+          ['middleware', { x: 1 }],
+          ['handler', {}],
+        ],
+        ['/prefix/a/static', 'a'],
+      ])
+      expect(router.match('POST', '/prefix/a/static')).toEqual([[], ['/prefix/a/static', 'a']])
+    })
+
     it('should throw an error if the path is not pre-registered', () => {
       const params = buildInitParams({
         paths: ['/hello'],
@@ -122,10 +139,38 @@ describe('buildInitParams() and serializeInitParams()', () => {
     })
     expect(params).toEqual([
       {
-        [METHOD_NAME_ALL]: [/^.*$()/, [0, []], {}],
+        [METHOD_NAME_ALL]: [/^[^]*$()/, [0, []], {}],
       },
       {},
     ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should build init params with a static path under parameter middleware', () => {
+    const params = buildInitParams({
+      paths: ['/prefix/:x{a}/*', '/prefix/a/static'],
+    })
+    expect(params).toEqual([
+      {
+        [METHOD_NAME_ALL]: [
+          /^\/prefix\/(a)(?:|\/[^]*)$()/,
+          [0, 0, []],
+          { '/prefix/a/static': [[], ['/prefix/a/static', 'a']] },
+        ],
+      },
+      {
+        '/prefix/:x{a}/*': [[[2, '/prefix/a/static'], { x: 1 }]],
+        '/prefix/a/static': [[['']]],
+      },
+    ])
+    expect((0, eval)(serializeInitParams(params))).toEqual(params)
+  })
+
+  it('should preserve undefined captures in a static path stash', () => {
+    const params = buildInitParams({
+      paths: ['/:z{Z}/*', '/:x{a}/*', '/a/q'],
+    })
+    expect(params[0][METHOD_NAME_ALL]![2]['/a/q'][1]).toEqual(['/a/q', undefined, undefined, 'a'])
     expect((0, eval)(serializeInitParams(params))).toEqual(params)
   })
 
@@ -136,7 +181,7 @@ describe('buildInitParams() and serializeInitParams()', () => {
     expect(params).toEqual([
       {
         [METHOD_NAME_ALL]: [
-          /^(?:\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())|.*$())/,
+          /^(?:\/hello\/([^/]+)(?:$()|\/posts\/([^/]+)$())|[^]*$())/,
           [0, 0, [], 0, [], []],
           {
             '/hello': [[], []],
