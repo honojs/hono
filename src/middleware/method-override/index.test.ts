@@ -1,3 +1,4 @@
+import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { methodOverride } from './index'
 
@@ -216,6 +217,91 @@ describe('Method Override Middleware', () => {
         method: 'GET',
         queryValue: 'delete', // It does not modify the queries.
       })
+    })
+  })
+
+  describe('Override to GET or HEAD', () => {
+    const handler = (c: Context) =>
+      c.json({
+        method: c.req.method,
+        contentType: c.req.header('content-type') ?? null,
+        contentLength: c.req.header('content-length') ?? null,
+      })
+    const createApp = (options: Record<string, string>) => {
+      const app = new Hono()
+      app.use('/posts', methodOverride({ app, ...options }))
+      app.on(['get', 'post'], '/posts', handler)
+      return app
+    }
+
+    it.each(['GET', 'HEAD', 'get'])(
+      'Should override POST with a body to %s by header',
+      async (method) => {
+        const res = await createApp({ header: 'X-METHOD-OVERRIDE' }).request('/posts', {
+          method: 'POST',
+          headers: { 'X-METHOD-OVERRIDE': method, 'Content-Type': 'text/plain' },
+          body: 'Hello',
+        })
+        expect(res.status).toBe(200)
+        if (method !== 'HEAD') {
+          expect(await res.json()).toEqual({
+            method: 'GET',
+            contentType: null,
+            contentLength: null,
+          })
+        }
+      }
+    )
+
+    it('Should override POST with a body to GET by query', async () => {
+      const res = await createApp({ query: '_method' }).request('/posts?_method=GET', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: 'Hello',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ method: 'GET', contentType: null, contentLength: null })
+    })
+
+    it('Should override POST to GET by multipart/form-data', async () => {
+      const form = new FormData()
+      form.append('message', 'Hello')
+      form.append('_method', 'GET')
+      const res = await createApp({}).request('/posts', { method: 'POST', body: form })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ method: 'GET', contentType: null, contentLength: null })
+    })
+
+    it('Should override POST to GET by application/x-www-form-urlencoded', async () => {
+      const res = await createApp({}).request('/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ message: 'Hello', _method: 'GET' }),
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ method: 'GET', contentType: null, contentLength: null })
+    })
+  })
+
+  describe('Content-Length after removing the method field', () => {
+    it('Should not keep the Content-Length of the original form body', async () => {
+      const app = new Hono()
+      app.use('/posts', methodOverride({ app }))
+      app.delete('/posts', async (c) => {
+        const body = await c.req.text()
+        const contentLength = c.req.header('content-length')
+        return c.json({ body, contentLength: contentLength ?? null })
+      })
+      const res = await app.request('/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': '28',
+        },
+        body: '_method=DELETE&message=Hello',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ body: 'message=Hello', contentLength: null })
     })
   })
 })
