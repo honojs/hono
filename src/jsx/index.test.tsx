@@ -234,15 +234,26 @@ describe('render to string', () => {
     [true, '<div></div>'],
     [0, '<div>0</div>'],
     [1, '<div>1</div>'],
-  ])('Async component returning %s', async (value, expected) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const AsyncValue = async (): Promise<any> => value
-    const template = (
-      <div>
-        <AsyncValue />
-      </div>
-    )
-    expect((await template.toString()).toString()).toBe(expected)
+    ['text', '<div>text</div>'],
+  ])('Component returning %s, sync and async', async (value, expected) => {
+    const SyncValue = () => value
+    const AsyncValue = async () => value
+    expect(
+      (
+        <div>
+          <SyncValue />
+        </div>
+      ).toString()
+    ).toBe(expected)
+    expect(
+      (
+        await (
+          <div>
+            <AsyncValue />
+          </div>
+        ).toString()
+      ).toString()
+    ).toBe(expected)
   })
 
   it('Async component returning an array of async components', async () => {

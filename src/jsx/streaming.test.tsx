@@ -549,8 +549,7 @@ d.replaceWith(c.content)
     [false, ''],
     [1, '1'],
   ])('async component returning %s', async (value, expected) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Content = async (): Promise<any> => value
+    const Content = async () => value
 
     const stream = renderToReadableStream(
       <Suspense fallback={<p>Loading...</p>}>

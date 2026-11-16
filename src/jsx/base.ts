@@ -22,12 +22,9 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
-type FunctionComponentResult =
-  | HtmlEscapedString
-  | JSXNode
-  | Child[]
-  | Promise<HtmlEscapedString | JSXNode | Child[] | null>
-  | null
+// what a component may return, sync or async: anything a child can be
+type FunctionComponentValue = HtmlEscapedString | Child
+type FunctionComponentResult = FunctionComponentValue | Promise<FunctionComponentValue>
 export type FC<P = Props> = {
   (props: P): FunctionComponentResult
   defaultProps?: Partial<P> | undefined
