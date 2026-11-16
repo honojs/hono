@@ -227,6 +227,35 @@ describe('render to string', () => {
     expect((await template.toString()).toString()).toBe('<span>a</span><span>b</span>')
   })
 
+  it.each([
+    [null, '<div></div>'],
+    [undefined, '<div></div>'],
+    [false, '<div></div>'],
+    [true, '<div></div>'],
+    [0, '<div>0</div>'],
+    [1, '<div>1</div>'],
+    ['text', '<div>text</div>'],
+  ])('Component returning %s, sync and async', async (value, expected) => {
+    const SyncValue = () => value
+    const AsyncValue = async () => value
+    expect(
+      (
+        <div>
+          <SyncValue />
+        </div>
+      ).toString()
+    ).toBe(expected)
+    expect(
+      (
+        await (
+          <div>
+            <AsyncValue />
+          </div>
+        ).toString()
+      ).toString()
+    ).toBe(expected)
+  })
+
   it('Async component returning an array of async components', async () => {
     const AsyncItem = async ({ x }: { x: number }) => <span>{x}</span>
     const AsyncItems = async () => [<AsyncItem key={0} x={0} />, <AsyncItem key={1} x={1} />]
