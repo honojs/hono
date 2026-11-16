@@ -2992,12 +2992,13 @@ type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T
       status: T['status']
     }
   : never
+// `*` is available via `c.req.param('*')`, but the client cannot pass it
 export type AddParam<I, P extends string> =
-  ParamKeys<P> extends never
+  Exclude<ParamKeys<P>, '*'> extends never
     ? I
     : I extends { param: infer _ }
       ? I
-      : I & { param: UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>> }
+      : I & { param: UnionToIntersection<ParamKeyToRecord<Exclude<ParamKeys<P>, '*'>>> }
 
 type AddDollar<T extends string> = `$${Lowercase<T>}`
 
@@ -3095,7 +3096,9 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
       ? `${Name}?`
       : Name
     : NameWithPattern
-  : never
+  : Component extends '*'
+    ? '*'
+    : never
 
 export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
