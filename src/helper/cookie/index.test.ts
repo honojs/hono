@@ -87,7 +87,7 @@ describe('Cookie Middleware', () => {
     it('Get signed cookies', async () => {
       const req = new Request('http://localhost/cookie-signed-get-all')
       const cookieString =
-        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+        'fortune_cookie=lots-of-money.GRYdIC166DbOlob9nZKh8GyhKhwzvCRaKnNhldUePRs%3D; fruit_cookie=mango.Mhq7SGgAHTNNpOW3ho5%2Bds3hqmwO37%2Fo1PqgNpH0NIY%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
@@ -98,7 +98,7 @@ describe('Cookie Middleware', () => {
       const req = new Request('http://localhost/cookie-signed-get-all')
       // fruit_cookie has invalid signature
       const cookieString =
-        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+        'fortune_cookie=lots-of-money.GRYdIC166DbOlob9nZKh8GyhKhwzvCRaKnNhldUePRs%3D; fruit_cookie=mango.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
@@ -108,7 +108,7 @@ describe('Cookie Middleware', () => {
     it('Get signed cookie', async () => {
       const req = new Request('http://localhost/cookie-signed-get-one')
       const cookieString =
-        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+        'fortune_cookie=lots-of-money.GRYdIC166DbOlob9nZKh8GyhKhwzvCRaKnNhldUePRs%3D; fruit_cookie=mango.Mhq7SGgAHTNNpOW3ho5%2Bds3hqmwO37%2Fo1PqgNpH0NIY%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
@@ -118,7 +118,7 @@ describe('Cookie Middleware', () => {
       const req = new Request('http://localhost/cookie-signed-get-one')
       // fortune_cookie has invalid signature
       const cookieString =
-        'fortune_cookie=lots-of-money.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg=; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+        'fortune_cookie=lots-of-money.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg=; fruit_cookie=mango.Mhq7SGgAHTNNpOW3ho5%2Bds3hqmwO37%2Fo1PqgNpH0NIY%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
@@ -193,7 +193,7 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
+        'delicious_cookie=macha.UwFhuSeRHyXL%2BKBtsjMkUHxmBuWOQurr4QV0RbaJIEI%3D; Path=/'
       )
     })
 
@@ -208,7 +208,7 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/a'
+        'delicious_cookie=macha.UwFhuSeRHyXL%2BKBtsjMkUHxmBuWOQurr4QV0RbaJIEI%3D; Path=/a'
       )
     })
 
@@ -306,7 +306,7 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
-        '__Secure-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+        '__Secure-delicious_cookie=macha.RplKkm9TCDSKRFkx4fgUJIfZBgO7I7SSCKPzsTlDqEY%3D; Path=/; Secure'
       )
     })
 
@@ -325,7 +325,7 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
-        '__Host-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+        '__Host-delicious_cookie=macha.SvCNOGRC70NbbZRBsgiMcK1UCNLizZkfIpk1EsAxrYs%3D; Path=/; Secure'
       )
     })
 
@@ -370,7 +370,7 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
-        'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
+        'great_cookie=banana.xMTXC7bj3guMqrifoBjgdmY7P7PD1NHAdkAgrQ1tHo4%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
       )
     })
 
@@ -486,7 +486,7 @@ describe('Cookie Middleware', () => {
         'secret chocolate chips'
       )
       expect(cookie).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
+        'delicious_cookie=macha.UwFhuSeRHyXL%2BKBtsjMkUHxmBuWOQurr4QV0RbaJIEI%3D; Path=/'
       )
     })
 
@@ -503,7 +503,7 @@ describe('Cookie Middleware', () => {
         }
       )
       expect(cookie).toBe(
-        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Domain=example.com; Path=/; HttpOnly; Secure'
+        'delicious_cookie=macha.UwFhuSeRHyXL%2BKBtsjMkUHxmBuWOQurr4QV0RbaJIEI%3D; Domain=example.com; Path=/; HttpOnly; Secure'
       )
     })
   })

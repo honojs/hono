@@ -106,6 +106,10 @@ A `*` at the end of a segment is a wildcard in every router, and it may match no
 
 TrieRouter and PatternRouter did not match `/x*/y` to `/xz/y` before. In RegExpRouter, `/x*/y` and `/x/*` can not be registered together and throw `UnsupportedPathError`, so SmartRouter falls back to TrieRouter.
 
+### Signed cookies include the cookie name in the signature
+
+`setSignedCookie()`, `getSignedCookie()`, `serializeSigned()` and `parseSigned()` now sign `name=value` instead of `value`. A value signed for one cookie name no longer verifies under another name. Signed cookies issued by v4 fail verification in v5, so users are treated as if the cookie were missing and the application should set it again.
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.

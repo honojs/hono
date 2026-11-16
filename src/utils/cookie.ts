@@ -163,7 +163,7 @@ export const parseSigned = async (
       continue
     }
 
-    const isVerified = await verifySignature(signature, signedValue, secretKey)
+    const isVerified = await verifySignature(signature, `${key}=${signedValue}`, secretKey)
     parsedCookie[key] = isVerified ? signedValue : false
   }
 
@@ -273,7 +273,7 @@ export const serializeSigned = async (
   secret: string | BufferSource,
   opt: CookieOptions = {}
 ): Promise<string> => {
-  const signature = await makeSignature(value, secret)
+  const signature = await makeSignature(`${name}=${value}`, secret)
   value = `${value}.${signature}`
   value = encodeURIComponent(value)
   return _serialize(name, value, opt)
