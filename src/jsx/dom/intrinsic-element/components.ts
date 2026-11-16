@@ -342,12 +342,17 @@ export const form: FC<
       ev.preventDefault()
       const formData = new FormData(ev.target as HTMLFormElement)
       setState([formData, true])
-      const actionRes = currentAction(formData)
-      if (actionRes instanceof Promise) {
-        registerAction(actionRes)
-        await actionRes
+      try {
+        const actionRes = currentAction(formData)
+        if (actionRes instanceof Promise) {
+          registerAction(actionRes)
+          await actionRes
+        }
+      } finally {
+        // reset even if the action throws or rejects, so the form does not stay pending
+        // the error itself is not caught: it is reported like any other uncaught error
+        setState([null, true])
       }
-      setState([null, true])
     },
     []
   )

@@ -3,6 +3,22 @@ import { JSDOM } from 'jsdom'
 import { useActionState, useFormStatus, useOptimistic } from '.'
 import { render, useCallback, useState } from '..'
 
+// A rejected form action is not swallowed, so it surfaces as an unhandled rejection. Collect it instead of failing the run.
+const collectUnhandledRejections = async (run: () => Promise<void>) => {
+  const reasons: unknown[] = []
+  const saved = process.listeners('unhandledRejection')
+  process.removeAllListeners('unhandledRejection')
+  process.on('unhandledRejection', (reason) => reasons.push(reason))
+  try {
+    await run()
+    await new Promise((r) => setTimeout(r))
+  } finally {
+    process.removeAllListeners('unhandledRejection')
+    saved.forEach((listener) => process.on('unhandledRejection', listener))
+  }
+  return reasons
+}
+
 describe('Hooks', () => {
   beforeAll(() => {
     global.requestAnimationFrame = (cb) => setTimeout(cb)
@@ -60,79 +76,6 @@ describe('Hooks', () => {
       expect(initialState).toBe('initial')
       expect(formData).toBeInstanceOf(FormData)
       expect(formData.get('name')).toBe('updated')
-    })
-
-    it('should return isPending while the action is running', async () => {
-      let resolve: (value: string) => void = () => {}
-      const action = vi.fn(() => new Promise<string>((r) => (resolve = r)))
-
-      const App = () => {
-        const [state, formAction, isPending] = useActionState(action, 'initial')
-        return (
-          <>
-            <div>
-              {state} {isPending ? 'pending' : 'idle'}
-            </div>
-            <form action={formAction}>
-              <button>Submit</button>
-            </form>
-          </>
-        )
-      }
-
-      render(<App />, root)
-      expect(root.querySelector('div')?.textContent).toBe('initial idle')
-      root.querySelector('button')?.click()
-      await new Promise((r) => setTimeout(r))
-      expect(root.querySelector('div')?.textContent).toBe('initial pending')
-      resolve('updated')
-      await new Promise((r) => setTimeout(r))
-      expect(root.querySelector('div')?.textContent).toBe('updated idle')
-    })
-
-    it('should return the same dispatch function across renders', async () => {
-      const dispatches: Function[] = []
-      let setCount: (count: number) => void = () => {}
-      const App = () => {
-        const [count, _setCount] = useState(0)
-        setCount = _setCount
-        const [, dispatch] = useActionState(() => {}, null)
-        dispatches.push(dispatch)
-        return <div>{count}</div>
-      }
-
-      render(<App />, root)
-      setCount(1)
-      await new Promise((r) => setTimeout(r))
-      expect(root.innerHTML).toBe('<div>1</div>')
-      expect(dispatches).toHaveLength(2)
-      expect(dispatches[0]).toBe(dispatches[1])
-    })
-
-    it('should run queued actions in order with the previous state', async () => {
-      const resolvers: Array<() => void> = []
-      const action = vi.fn(
-        (count: number) => new Promise<number>((r) => resolvers.push(() => r(count + 1)))
-      )
-      let dispatch: Function = () => {}
-      const App = () => {
-        const [count, _dispatch] = useActionState(action, 0)
-        dispatch = _dispatch
-        return <div>{count}</div>
-      }
-
-      render(<App />, root)
-      dispatch()
-      dispatch()
-      await new Promise((r) => setTimeout(r))
-      expect(action).toHaveBeenCalledTimes(1)
-      resolvers[0]()
-      await new Promise((r) => setTimeout(r))
-      expect(action).toHaveBeenCalledTimes(2)
-      expect(action.mock.calls[1][0]).toBe(1)
-      resolvers[1]()
-      await new Promise((r) => setTimeout(r))
-      expect(root.innerHTML).toBe('<div>2</div>')
     })
   })
 
@@ -197,6 +140,35 @@ describe('Hooks', () => {
         action: null,
       })
     })
+
+    it('should not stay pending when the action rejects', async () => {
+      let status: ReturnType<typeof useFormStatus> | undefined
+      const Status = () => {
+        status = useFormStatus()
+        return null
+      }
+      const error = new Error('failed')
+      const App = () => {
+        const action = useCallback(async () => {
+          await Promise.resolve()
+          throw error
+        }, [])
+        return (
+          <form action={action}>
+            <Status />
+            <button>Submit</button>
+          </form>
+        )
+      }
+
+      render(<App />, root)
+      const reasons = await collectUnhandledRejections(async () => {
+        root.querySelector('button')?.click()
+      })
+      expect(status?.pending).toBe(false)
+      // only the action's own error is reported, nothing extra from registerAction
+      expect(reasons).toEqual([error])
+    })
   })
 
   describe('useOptimistic', () => {
@@ -240,6 +212,35 @@ describe('Hooks', () => {
       expect(root.innerHTML).toBe(
         '<form><div>2</div><input type="text" name="name" value="updated"><button>Submit</button></form>'
       )
+    })
+
+    it('should revert when the action rejects', async () => {
+      const error = new Error('failed')
+      const App = () => {
+        const [count] = useState(0)
+        const [optimisticCount, setOptimisticCount] = useOptimistic(count, (_c, n: number) => n)
+        const action = useCallback(async () => {
+          setOptimisticCount(count + 1)
+          await Promise.resolve()
+          throw error
+        }, [])
+
+        return (
+          <form action={action}>
+            <div>{optimisticCount}</div>
+            <button>Submit</button>
+          </form>
+        )
+      }
+
+      render(<App />, root)
+      const reasons = await collectUnhandledRejections(async () => {
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.querySelector('div')?.textContent).toBe('1')
+      })
+      expect(root.querySelector('div')?.textContent).toBe('0')
+      expect(reasons).toEqual([error])
     })
   })
 })

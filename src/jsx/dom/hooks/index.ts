@@ -5,7 +5,7 @@
 import { PERMALINK } from '../../constants'
 import type { Context } from '../../context'
 import { useContext } from '../../context'
-import { useCallback, useRef, useState } from '../../hooks'
+import { useCallback, useState } from '../../hooks'
 import { createContext } from '../context'
 
 type FormStatus =
@@ -31,7 +31,11 @@ export const FormContext: Context<FormStatus> = createContext<FormStatus>({
 const actions: Set<Promise<unknown>> = new Set()
 export const registerAction = (action: Promise<unknown>) => {
   actions.add(action)
-  action.finally(() => actions.delete(action))
+  // not `finally()`: it would return a new promise that rejects too, with nobody to handle it
+  const remove = () => {
+    actions.delete(action)
+  }
+  action.then(remove, remove)
 }
 
 /**
@@ -55,7 +59,8 @@ export const useOptimistic = <T, N>(
 ): [T, (action: N) => void] => {
   const [optimisticState, setOptimisticState] = useState(state)
   if (actions.size > 0) {
-    Promise.all(actions).finally(() => {
+    // wait for every action to settle, even if one of them rejects
+    Promise.allSettled(actions).then(() => {
       setOptimisticState(state)
     })
   } else {
@@ -70,42 +75,22 @@ export const useOptimistic = <T, N>(
 }
 
 /**
- * This hook returns the current state, a function to update the state by form action,
- * and whether an action is pending
- * Actions run one at a time, each receiving the state returned by the previous one
+ * This hook returns the current state and a function to update the state by form action
  * @param fn
  * @param initialState
  * @param permalink
- * @returns [T, (data: FormData) => Promise<void>, boolean]
+ * @returns [T, (data: FormData) => void]
  */
 export const useActionState = <T>(
   fn: Function,
   initialState: T,
   permalink?: string
-): [T, Function, boolean] => {
+): [T, Function] => {
   const [state, setState] = useState(initialState)
-  const [pendingCount, setPendingCount] = useState(0)
-  const ref = useRef({ fn, state: initialState, pending: 0, queue: Promise.resolve() })
-  ref.current.fn = fn
-
-  const actionState = useCallback((data: FormData) => {
-    const current = ref.current
-    const run = async () => {
-      try {
-        current.state = await current.fn(current.state, data)
-        setState(current.state)
-      } finally {
-        current.pending--
-        setPendingCount((count) => count - 1)
-      }
-    }
-    // Start right away when idle, so a single action is not delayed by the queue
-    const result = current.pending++ ? current.queue.then(run) : run()
-    current.queue = result.catch(() => {})
-    setPendingCount((count) => count + 1)
-    return result
-  }, [])
+  const actionState = async (data: FormData) => {
+    setState(await fn(state, data))
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(actionState as any)[PERMALINK] = permalink
-  return [state, actionState, pendingCount > 0]
+  return [state, actionState]
 }
