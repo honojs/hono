@@ -19,8 +19,13 @@ export class PatternRouter<T> implements Router<T> {
           : '$'
     path = path.replace(/\*$/, '')
     if (path.at(-1) === '?') {
+      const parent = path.slice(0, -1).replace(/\/[^/]+$/, '') || '/'
+      if (parent.endsWith('*')) {
+        // the shorter route would turn the wildcard into a trailing one
+        throw new UnsupportedPathError(path)
+      }
       path = path.slice(0, -1)
-      this.add(method, path.replace(/\/[^/]+$/, '') || '/', handler)
+      this.add(method, parent, handler)
     }
 
     const parts = (path.match(/\/?(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/?[^\/\?]+/g) || []).map(

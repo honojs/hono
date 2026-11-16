@@ -4,8 +4,7 @@ import {
   METHOD_NAME_ALL,
   UnsupportedPathError,
 } from '../../router'
-import { checkOptionalParameter } from '../../utils/url'
-import { createNullObject } from '../utils'
+import { checkOptionalParameter, createNullObject } from '../utils'
 import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
 import { match, emptyParam } from './matcher'
 import {

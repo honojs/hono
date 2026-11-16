@@ -1,6 +1,6 @@
 import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
-import { checkOptionalParameter } from '../../utils/url'
+import { checkOptionalParameter } from '../utils'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
