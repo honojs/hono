@@ -4,7 +4,7 @@ import { ErrorBoundary as ErrorBoundaryDom, Suspense as SuspenseDom, render } fr
 import { ErrorBoundary as ErrorBoundaryCommon, Suspense as SuspenseCommon } from '..' // for common
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-import { use, useState } from '../hooks'
+import { use, useEffect, useState } from '../hooks'
 
 runner('Common', SuspenseCommon, ErrorBoundaryCommon)
 runner('DOM', SuspenseDom, ErrorBoundaryDom)
@@ -58,6 +58,41 @@ function runner(
         resolve(1)
         await new Promise((resolve) => setTimeout(resolve))
         expect(root.innerHTML).toBe('<p>1</p>')
+      })
+
+      it('keeps attributes and runs effects again when children suspend again', async () => {
+        const log: string[] = []
+        let setPromise: (p: Promise<string>) => void = () => {}
+        const Child = ({ text }: { text: string }) => {
+          useEffect(() => {
+            log.push('mount')
+            return () => {
+              log.push('unmount')
+            }
+          }, [])
+          return <p class='page'>{text}</p>
+        }
+        const Content = ({ promise }: { promise: Promise<string> }) => <Child text={use(promise)} />
+        const Component = () => {
+          const [promise, _setPromise] = useState(Promise.resolve('a'))
+          setPromise = _setPromise
+          return (
+            <Suspense fallback={<span>loading</span>}>
+              <Content promise={promise} />
+            </Suspense>
+          )
+        }
+        render(<Component />, root)
+        await new Promise((resolve) => setTimeout(resolve))
+        await new Promise((resolve) => setTimeout(resolve))
+        expect(root.innerHTML).toBe('<p class="page">a</p>')
+        log.length = 0
+
+        setPromise(Promise.resolve('b'))
+        await new Promise((resolve) => setTimeout(resolve))
+        await new Promise((resolve) => setTimeout(resolve))
+        expect(root.innerHTML).toBe('<p class="page">b</p>')
+        expect(log).toEqual(['unmount', 'mount'])
       })
 
       it('with use() update', async () => {
