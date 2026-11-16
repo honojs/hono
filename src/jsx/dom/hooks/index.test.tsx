@@ -61,6 +61,79 @@ describe('Hooks', () => {
       expect(formData).toBeInstanceOf(FormData)
       expect(formData.get('name')).toBe('updated')
     })
+
+    it('should return isPending while the action is running', async () => {
+      let resolve: (value: string) => void = () => {}
+      const action = vi.fn(() => new Promise<string>((r) => (resolve = r)))
+
+      const App = () => {
+        const [state, formAction, isPending] = useActionState(action, 'initial')
+        return (
+          <>
+            <div>
+              {state} {isPending ? 'pending' : 'idle'}
+            </div>
+            <form action={formAction}>
+              <button>Submit</button>
+            </form>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.querySelector('div')?.textContent).toBe('initial idle')
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.querySelector('div')?.textContent).toBe('initial pending')
+      resolve('updated')
+      await new Promise((r) => setTimeout(r))
+      expect(root.querySelector('div')?.textContent).toBe('updated idle')
+    })
+
+    it('should return the same dispatch function across renders', async () => {
+      const dispatches: Function[] = []
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        const [, dispatch] = useActionState(() => {}, null)
+        dispatches.push(dispatch)
+        return <div>{count}</div>
+      }
+
+      render(<App />, root)
+      setCount(1)
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>1</div>')
+      expect(dispatches).toHaveLength(2)
+      expect(dispatches[0]).toBe(dispatches[1])
+    })
+
+    it('should run queued actions in order with the previous state', async () => {
+      const resolvers: Array<() => void> = []
+      const action = vi.fn(
+        (count: number) => new Promise<number>((r) => resolvers.push(() => r(count + 1)))
+      )
+      let dispatch: Function = () => {}
+      const App = () => {
+        const [count, _dispatch] = useActionState(action, 0)
+        dispatch = _dispatch
+        return <div>{count}</div>
+      }
+
+      render(<App />, root)
+      dispatch()
+      dispatch()
+      await new Promise((r) => setTimeout(r))
+      expect(action).toHaveBeenCalledTimes(1)
+      resolvers[0]()
+      await new Promise((r) => setTimeout(r))
+      expect(action).toHaveBeenCalledTimes(2)
+      expect(action.mock.calls[1][0]).toBe(1)
+      resolvers[1]()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>2</div>')
+    })
   })
 
   describe('useFormStatus', () => {
