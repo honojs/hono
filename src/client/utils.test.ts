@@ -208,6 +208,20 @@ describe('deepMerge', () => {
       timeout: 2,
     })
   })
+
+  it('should replace a class instance instead of merging it', () => {
+    const target = { signal: new AbortController().signal }
+    const source = { signal: new AbortController().signal }
+    const result = deepMerge(target, source)
+    expect(result.signal).toBe(source.signal)
+    expect(result.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('should merge a null-prototype object', () => {
+    const target = { headers: Object.assign(Object.create(null), { a: '1' }) }
+    const source = { headers: { b: '2' } }
+    expect(deepMerge(target, source).headers).toEqual({ a: '1', b: '2' })
+  })
 })
 
 describe('parseResponse', async () => {
