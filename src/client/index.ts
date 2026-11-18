@@ -3,9 +3,10 @@
  * The HTTP Client for Hono.
  */
 
-export { hc } from './client'
+export { hc, hcx } from './client'
 export { parseResponse, DetailedError } from './utils'
 export type {
+  ClientX,
   InferResponseType,
   InferRequestType,
   Fetch,
