@@ -228,6 +228,15 @@ describe('Compress Middleware', () => {
       return c.text('a'.repeat(1024))
     })
 
+    it('should convert strong ETag to weak ETag for HEAD requests', async () => {
+      const res = await app.request('/strong-etag', {
+        method: 'HEAD',
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('ETag')).toBe('W/"strong-etag"')
+    })
+
     it('should convert strong ETag to weak ETag when compressing', async () => {
       const res = await app.request('/strong-etag', {
         headers: { 'Accept-Encoding': 'gzip' },
@@ -395,13 +404,29 @@ describe('Compress Middleware', () => {
       await testCompression('/no-transform', 'gzip', null)
     })
 
-    it('should handle HEAD requests without compression', async () => {
+    it('should send the headers of the compressed response for HEAD requests', async () => {
       const req = new Request('http://localhost/large', {
         method: 'HEAD',
         headers: new Headers({ 'Accept-Encoding': 'gzip' }),
       })
       const res = await app.request(req)
-      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Encoding')).toBe('gzip')
+      expect(res.headers.get('Content-Length')).toBeNull()
+      expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+      expect(await res.text()).toBe('')
+    })
+
+    it('should keep Content-Length for HEAD requests when GET is not compressed', async () => {
+      const small = await app.request('/small', {
+        method: 'HEAD',
+        headers: { 'Accept-Encoding': 'gzip' },
+      })
+      expect(small.headers.get('Content-Encoding')).toBeNull()
+      expect(small.headers.get('Content-Length')).toBe('5')
+
+      const noEncoding = await app.request('/large', { method: 'HEAD' })
+      expect(noEncoding.headers.get('Content-Encoding')).toBeNull()
+      expect(noEncoding.headers.get('Content-Length')).toBe('1024')
     })
 
     it('should compress custom 404 Not Found responses', async () => {
