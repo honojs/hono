@@ -63,7 +63,11 @@ export const removeIndexString = (urlString: string) => {
 }
 
 function isObject(item: unknown): item is ObjectType {
-  return typeof item === 'object' && item !== null && !Array.isArray(item)
+  if (typeof item !== 'object' || item === null) {
+    return false
+  }
+  const proto = Object.getPrototypeOf(item)
+  return proto === null || Object.getPrototypeOf(proto) === null
 }
 
 export function deepMerge<T>(target: T, source: Record<string, unknown>): T {

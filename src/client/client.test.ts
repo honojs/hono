@@ -1554,6 +1554,23 @@ describe('RequestInit work as expected', () => {
     expect(data).toEqual({ 'x-hono': 'awesome' })
   })
 
+  it('Should keep a valid AbortSignal when both the client and the request set one', async () => {
+    const requestController = new AbortController()
+    let received: RequestInit | undefined
+    const signalClient = hc<AppType>('http://localhost', {
+      init: { signal: new AbortController().signal },
+      fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+        received = init
+        new Request(input, init)
+        return new Response('ok')
+      },
+    })
+
+    await signalClient.headers.$get(undefined, { init: { signal: requestController.signal } })
+
+    expect(received?.signal).toBe(requestController.signal)
+  })
+
   it('credentials is include', async () => {
     const res = await client.credentials.$get()
 
