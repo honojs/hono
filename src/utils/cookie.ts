@@ -130,7 +130,7 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
 
     let cookieValue = trimCookieWhitespace(pairStr.substring(valueStartPos + 1))
-    if (cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
+    if (cookieValue.length >= 2 && cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
       cookieValue = cookieValue.slice(1, -1)
     }
     if (validCookieValueRegEx.test(cookieValue)) {
