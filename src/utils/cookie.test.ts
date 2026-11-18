@@ -25,6 +25,15 @@ describe('Parse cookie', () => {
     expect(cookie['best_cookie']).toBe(' sugar ')
   })
 
+  it('Should parse an empty quoted cookie value', () => {
+    expect(parse('foo=""')).toEqual({ foo: '' })
+  })
+
+  it('Should not accept a lone double quote as a cookie value', () => {
+    expect(parse('foo="')).toEqual({})
+    expect(parse('foo="; bar=baz')).toEqual({ bar: 'baz' })
+  })
+
   it('Should not throw a URIError when parsing an invalid string', () => {
     const cookieString = 'yummy_cookie="choco%2";'
     const cookie: Cookie = parse(cookieString)
