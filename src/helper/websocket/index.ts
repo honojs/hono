@@ -9,11 +9,21 @@ import type { MiddlewareHandler, TypedResponse } from '../../types'
 import type { StatusCode } from '../../utils/http-status'
 
 /**
+ * The message event of a WebSocket. `MessageEvent` is not generic without the DOM lib.
+ */
+export type WSMessageEvent = Omit<MessageEvent, 'data'> & { readonly data: WSMessageReceive }
+
+/**
+ * The binary type of a WebSocket. `BinaryType` is not declared without the DOM lib.
+ */
+export type WSBinaryType = 'blob' | 'arraybuffer'
+
+/**
  * WebSocket Event Listeners type
  */
 export interface WSEvents<T = unknown> {
   onOpen?: (evt: Event, ws: WSContext<T>) => void
-  onMessage?: (evt: MessageEvent<WSMessageReceive>, ws: WSContext<T>) => void
+  onMessage?: (evt: WSMessageEvent, ws: WSContext<T>) => void
   onClose?: (evt: CloseEvent, ws: WSContext<T>) => void
   onError?: (evt: Event, ws: WSContext<T>) => void
 }
@@ -79,7 +89,7 @@ export class WSContext<T = unknown> {
     this.#init.send(source, options ?? {})
   }
   raw?: T
-  binaryType: BinaryType = 'arraybuffer'
+  binaryType: WSBinaryType = 'arraybuffer'
   get readyState(): WSReadyState {
     return this.#init.readyState
   }
@@ -92,8 +102,8 @@ export class WSContext<T = unknown> {
 
 export type WSMessageReceive = string | Blob | ArrayBufferLike
 
-export const createWSMessageEvent = (source: WSMessageReceive): MessageEvent<WSMessageReceive> => {
-  return new MessageEvent<WSMessageReceive>('message', {
+export const createWSMessageEvent = (source: WSMessageReceive): WSMessageEvent => {
+  return new MessageEvent('message', {
     data: source,
   })
 }

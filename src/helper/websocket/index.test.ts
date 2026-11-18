@@ -1,4 +1,4 @@
-import type { WSContextInit } from '.'
+import type { WSBinaryType, WSContextInit, WSEvents, WSMessageEvent, WSMessageReceive } from '.'
 import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
 import { Context } from '../../context'
 
@@ -12,6 +12,14 @@ describe('`createWSMessageEvent`', () => {
   it('Should `createWSMessageEvent` type is `message`', () => {
     const event = createWSMessageEvent('')
     expect(event.type).toBe('message')
+  })
+})
+describe('WebSocket helper types', () => {
+  it('Should not depend on the DOM-only `BinaryType` and generic `MessageEvent`', () => {
+    expectTypeOf<WSMessageEvent['data']>().toEqualTypeOf<WSMessageReceive>()
+    expectTypeOf<WSContext['binaryType']>().toEqualTypeOf<WSBinaryType>()
+    expectTypeOf<NonNullable<WSEvents['onMessage']>>().parameter(0).toEqualTypeOf<WSMessageEvent>()
+    expectTypeOf(createWSMessageEvent('')).toEqualTypeOf<WSMessageEvent>()
   })
 })
 describe('defineWebSocketHelper', () => {
