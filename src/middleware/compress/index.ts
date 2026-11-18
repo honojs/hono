@@ -95,7 +95,6 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       ctx.res.status === 206 || // partial content, Content-Range refers to the uncompressed bytes
       ctx.res.headers.has('Content-Encoding') || // already encoded
       ctx.res.headers.has('Transfer-Encoding') || // already encoded or chunked
-      ctx.req.method === 'HEAD' || // HEAD request
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
       !shouldCompress(ctx.res) || // not compressible type
       !shouldTransform(ctx.res) // cache-control: no-transform
@@ -121,9 +120,11 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       return
     }
 
-    // Compress the response
-    const stream = new CompressionStream(encoding)
-    ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
+    // Compress the response. A HEAD response carries the same headers without the body.
+    ctx.res =
+      ctx.req.method === 'HEAD'
+        ? new Response(null, ctx.res)
+        : new Response(ctx.res.body.pipeThrough(new CompressionStream(encoding)), ctx.res)
     ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
 
