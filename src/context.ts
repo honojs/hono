@@ -397,6 +397,29 @@ export class Context<
   }
 
   /**
+   * The response headers set so far, or `undefined` if none have been set.
+   *
+   * Unlike {@link Context.res}, reading this does not create a `Response`, so it can
+   * be used to find out whether anything has touched the response headers without
+   * paying for that allocation. It returns the same `Headers` instance `c.header()`
+   * would write into, which means mutating it mutates the response.
+   *
+   * @example
+   * ```ts
+   * app.use(async (c, next) => {
+   *   await next()
+   *   // does not allocate a Response when no header has been set
+   *   if (c.preparedHeaders?.has('x-request-id')) {
+   *     // ...
+   *   }
+   * })
+   * ```
+   */
+  get preparedHeaders(): Headers | undefined {
+    return this.#res ? this.#res.headers : this.#preparedHeaders
+  }
+
+  /**
    * @see {@link https://hono.dev/docs/api/context#res}
    * The Response object for the current request.
    */
