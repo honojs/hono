@@ -6,13 +6,20 @@
 import type { Context } from '../../context'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
 import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
+import { getSetCookies } from '../../utils/headers'
+
+const getDefaultPath = (c: Context): string => {
+  const requestPath = new URL(c.req.raw.url).pathname
+  return requestPath.slice(0, requestPath.lastIndexOf('/')) || '/'
+}
 
 /**
  * Parses a Set-Cookie header string and extracts the cookie name, domain, and path.
  * These three attributes form the unique identifier for a cookie according to RFC 6265.
  */
 const parseSetCookieHeader = (
-  setCookieHeader: string
+  setCookieHeader: string,
+  defaultPath: string
 ): { name: string; domain: string; path: string } => {
   const parts = setCookieHeader.split(';').map((part) => part.trim())
   const nameValuePair = parts[0]
@@ -20,7 +27,7 @@ const parseSetCookieHeader = (
   const name = nameEndIndex !== -1 ? nameValuePair.substring(0, nameEndIndex) : nameValuePair
 
   let domain = ''
-  let path = '/'
+  let path = defaultPath
 
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i]
@@ -31,55 +38,14 @@ const parseSetCookieHeader = (
     const attrName = part.substring(0, eqIndex).toLowerCase()
     const attrValue = part.substring(eqIndex + 1)
     if (attrName === 'domain') {
-      // Domain comparison is case-insensitive per RFC 6265
-      domain = attrValue.toLowerCase()
+      // RFC 6265 ignores one leading dot in a Domain attribute.
+      domain = attrValue.replace(/^\./, '').toLowerCase()
     } else if (attrName === 'path') {
-      path = attrValue
+      path = attrValue.startsWith('/') ? attrValue : defaultPath
     }
   }
 
   return { name, domain, path }
-}
-
-/**
- * Gets all Set-Cookie headers as an array.
- * Uses getSetCookie() if available (modern environments), otherwise parses the header manually.
- */
-const getSetCookies = (headers: Headers): string[] => {
-  // Use getSetCookie if available (standard in modern environments)
-  if (typeof headers.getSetCookie === 'function') {
-    return headers.getSetCookie()
-  }
-
-  // Fallback: parse the comma-separated header
-  // Note: This is tricky because cookie values can contain commas in Expires attribute
-  const setCookieHeader = headers.get('Set-Cookie')
-  if (!setCookieHeader) {
-    return []
-  }
-
-  // Split by comma followed by a cookie name pattern (word followed by =)
-  // This handles the Expires=Mon, 01 Jan 2024... case
-  const cookies: string[] = []
-  let current = ''
-
-  const parts = setCookieHeader.split(',')
-  for (const part of parts) {
-    const trimmed = part.trim()
-    // Check if this looks like the start of a new cookie (name=value pattern)
-    // or if it's part of a date in Expires
-    if (current && /^[\w!#$%&'*.^`|~+-]+=/.test(trimmed)) {
-      cookies.push(current.trim())
-      current = trimmed
-    } else {
-      current += (current ? ',' : '') + part
-    }
-  }
-  if (current) {
-    cookies.push(current.trim())
-  }
-
-  return cookies
 }
 
 /**
@@ -99,13 +65,14 @@ const isSameCookie = (
  */
 const replaceSetCookieHeaders = (
   headers: Headers,
-  newCookieInfo: { name: string; domain: string; path: string }
+  newCookieInfo: { name: string; domain: string; path: string },
+  defaultPath: string
 ): void => {
   const existingCookies = getSetCookies(headers)
 
   // Filter out cookies with matching identity
   const filteredCookies = existingCookies.filter((cookieStr) => {
-    const existing = parseSetCookieHeader(cookieStr)
+    const existing = parseSetCookieHeader(cookieStr, defaultPath)
     return !isSameCookie(existing, newCookieInfo)
   })
 
@@ -212,27 +179,11 @@ export const generateCookie = (name: string, value: string, opt?: CookieOptions)
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
   const cookie = generateCookie(name, value, opt)
+  const defaultPath = getDefaultPath(c)
+  const cookieInfo = parseSetCookieHeader(cookie, defaultPath)
 
-  // Compute the final cookie name (with prefix if applicable)
-  let finalName = name
-  if (opt?.prefix === 'secure') {
-    finalName = '__Secure-' + name
-  } else if (opt?.prefix === 'host') {
-    finalName = '__Host-' + name
-  }
-
-  // Build cookie identity for deduplication (RFC 6265: name + domain + path)
-  const cookieInfo = {
-    name: finalName,
-    domain: opt?.domain?.toLowerCase() ?? '',
-    path: opt?.path ?? '/',
-  }
-
-  // Remove any existing cookie with the same identity before adding the new one
-  // This ensures we comply with RFC 6265 Section 4.1:
-  // "Servers SHOULD NOT include more than one Set-Cookie header field in
-  // the same response with the same cookie-name."
-  replaceSetCookieHeaders(c.res.headers, cookieInfo)
+  // Remove earlier cookies with the same effective name, domain, and path.
+  replaceSetCookieHeaders(c.res.headers, cookieInfo, defaultPath)
 
   c.header('Set-Cookie', cookie, { append: true })
 }
@@ -271,24 +222,11 @@ export const setSignedCookie = async (
   opt?: CookieOptions
 ): Promise<void> => {
   const cookie = await generateSignedCookie(name, value, secret, opt)
-
-  // Compute the final cookie name (with prefix if applicable)
-  let finalName = name
-  if (opt?.prefix === 'secure') {
-    finalName = '__Secure-' + name
-  } else if (opt?.prefix === 'host') {
-    finalName = '__Host-' + name
-  }
-
-  // Build cookie identity for deduplication (RFC 6265: name + domain + path)
-  const cookieInfo = {
-    name: finalName,
-    domain: opt?.domain?.toLowerCase() ?? '',
-    path: opt?.path ?? '/',
-  }
+  const defaultPath = getDefaultPath(c)
+  const cookieInfo = parseSetCookieHeader(cookie, defaultPath)
 
   // Remove any existing cookie with the same identity before adding the new one
-  replaceSetCookieHeaders(c.res.headers, cookieInfo)
+  replaceSetCookieHeaders(c.res.headers, cookieInfo, defaultPath)
 
   c.header('set-cookie', cookie, { append: true })
 }

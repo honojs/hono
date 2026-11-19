@@ -1,4 +1,3 @@
-import type { Context } from '../../context'
 import {
   deleteCookie,
   getCookie,
@@ -8,10 +7,12 @@ import {
   generateCookie,
   generateSignedCookie,
 } from '.'
+import type { Context } from '../../context'
 import { Hono } from '../../hono'
 
-type HeadersWithSetCookie = Headers & {
+type HeadersWithSetCookie = Omit<Headers, 'getSetCookie'> & {
   getSetCookie?: () => string[]
+  getAll?: (name: string) => string[]
 }
 
 const readSetCookies = (headers: HeadersWithSetCookie): string[] => {
@@ -57,12 +58,17 @@ const expectCookieSetEqual = (actual: string[], expected: string[]): void => {
 const responseCookies = (res: Response): string[] =>
   readSetCookies(res.headers as HeadersWithSetCookie)
 
-const createStubContext = (): { context: Context; headers: HeadersWithSetCookie } => {
+const createStubContext = (
+  url = 'http://localhost/'
+): {
+  context: Context
+  headers: HeadersWithSetCookie
+} => {
   const response = new Response()
   const headers = response.headers as HeadersWithSetCookie
   const context = {
     req: {
-      raw: new Request('http://localhost/'),
+      raw: new Request(url),
     },
     res: response,
     header: (name: string, value?: string, options?: { append?: boolean }) => {
@@ -284,6 +290,7 @@ describe('Cookie Middleware', () => {
       const res = await testApp.request(req)
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('test-value')
+    })
 
     describe('get null if the value is undefined', () => {
       const app = new Hono()
@@ -676,6 +683,23 @@ describe('Cookie Middleware', () => {
   })
 
   describe('Set-Cookie helper utilities', () => {
+    it('merges cookies into a response without getSetCookie', async () => {
+      const app = new Hono()
+      app.get('/', (c) => {
+        const headers = c.res.headers as HeadersWithSetCookie
+        headers.getSetCookie = undefined
+        c.header('Set-Cookie', 'other=stay; Path=/; HttpOnly', { append: true })
+        setCookie(c, 'session', 'new')
+        return c.text('Done')
+      })
+
+      const res = await app.request('http://localhost/')
+      expect(res.headers.getSetCookie()).toEqual([
+        'other=stay; Path=/; HttpOnly',
+        'session=new; Path=/',
+      ])
+    })
+
     it('dedup works when getSetCookie is not available on Headers', () => {
       const { context, headers } = createStubContext()
       headers.getSetCookie = undefined
@@ -700,11 +724,101 @@ describe('Cookie Middleware', () => {
 
       setCookie(context, 'legacy', 'updated')
 
-      const cookies = readSetCookies(headers)
-      expect(cookies.some((cookie) => cookie.includes('legacy=updated'))).toBe(true)
-      expect(cookies.some((cookie) => cookie.includes('other=stay'))).toBe(true)
-      expect(cookies.some((cookie) => cookie.includes('value,with,commas'))).toBe(false)
-      expect(cookies.some((cookie) => cookie.includes('Wed, 21 Oct 2015'))).toBe(false)
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        'other=stay; Path=/; HttpOnly',
+        'legacy=updated; Path=/',
+      ])
+    })
+
+    it('keeps unmatched cookies in order after replacing interleaved cookies', () => {
+      const { context, headers } = createStubContext()
+      headers.getSetCookie = undefined
+      context.header('Set-Cookie', 'session=old; Path=/; Expires=Wed, 21 Oct 2015 07:28:00 GMT', {
+        append: true,
+      })
+      context.header('Set-Cookie', 'other=one; Path=/api; HttpOnly', { append: true })
+      context.header('Set-Cookie', 'session=other-path; Path=/admin', { append: true })
+      context.header('Set-Cookie', 'last=two; Path=/; Secure', { append: true })
+
+      setCookie(context, 'session', 'new')
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        'other=one; Path=/api; HttpOnly',
+        'session=other-path; Path=/admin',
+        'last=two; Path=/; Secure',
+        'session=new; Path=/',
+      ])
+    })
+
+    it('uses Workers getAll before the combined header fallback', () => {
+      const { context, headers } = createStubContext()
+      headers.getSetCookie = undefined
+      const getAll = vi.fn((name) => {
+        expect(name).toBe('Set-Cookie')
+        return Headers.prototype.getSetCookie.call(headers)
+      })
+      headers.getAll = getAll
+      context.header('Set-Cookie', 'session=old; Path=/', { append: true })
+      context.header('Set-Cookie', 'other=stay; Path=/; Expires=Wed, 21 Oct 2015 07:28:00 GMT', {
+        append: true,
+      })
+
+      setCookie(context, 'session', 'new')
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        'other=stay; Path=/; Expires=Wed, 21 Oct 2015 07:28:00 GMT',
+        'session=new; Path=/',
+      ])
+      expect(getAll).toHaveBeenCalledWith('Set-Cookie')
+    })
+
+    it('uses the request default path for a cookie without Path', () => {
+      const { context, headers } = createStubContext('http://localhost/account/login')
+      context.header('Set-Cookie', 'session=old; HttpOnly', { append: true })
+
+      setCookie(context, 'session', 'new', { path: '/account' })
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual(['session=new; Path=/account'])
+    })
+
+    it('treats a leading Domain dot as the same domain', () => {
+      const { context, headers } = createStubContext()
+      context.header('Set-Cookie', 'session=old; Domain=.Example.com; Path=/', { append: true })
+
+      setCookie(context, 'session', 'new', { domain: 'example.com' })
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        'session=new; Domain=example.com; Path=/',
+      ])
+    })
+
+    it('uses the serialized identity for a Host cookie', () => {
+      const { context, headers } = createStubContext()
+      setCookie(context, 'sid', 'one', {
+        prefix: 'host',
+        domain: 'example.com',
+        path: '/admin',
+      })
+      setCookie(context, 'sid', 'two', {
+        prefix: 'host',
+        domain: 'example.com',
+        path: '/admin',
+      })
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        '__Host-sid=two; Path=/; Secure',
+      ])
+    })
+
+    it('uses the serialized identity for a signed Host cookie', async () => {
+      const { context, headers } = createStubContext()
+      const options = { prefix: 'host', domain: 'example.com', path: '/admin' } as const
+      await setSignedCookie(context, 'sid', 'one', 'secret', options)
+      await setSignedCookie(context, 'sid', 'two', 'secret', options)
+
+      expect(Headers.prototype.getSetCookie.call(headers)).toEqual([
+        await generateSignedCookie('sid', 'two', 'secret', options),
+      ])
     })
   })
 

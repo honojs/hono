@@ -3,6 +3,41 @@
  * HTTP Headers utility.
  */
 
+export const getSetCookies = (headers: Headers): string[] => {
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie()
+  }
+
+  const getAll = (headers as Headers & { getAll?: (name: string) => string[] }).getAll
+  if (typeof getAll === 'function') {
+    return getAll.call(headers, 'Set-Cookie')
+  }
+
+  const setCookieHeader = headers.get('Set-Cookie')
+  if (!setCookieHeader) {
+    return []
+  }
+
+  const cookies: string[] = []
+  let current = ''
+
+  for (const part of setCookieHeader.split(',')) {
+    const trimmed = part.trim()
+    // A date comma does not start a new cookie.
+    if (current && /^[\w!#$%&'*.^`|~+-]+=/.test(trimmed)) {
+      cookies.push(current.trim())
+      current = trimmed
+    } else {
+      current += (current ? ',' : '') + part
+    }
+  }
+  if (current) {
+    cookies.push(current.trim())
+  }
+
+  return cookies
+}
+
 // note: https://www.iana.org/assignments/http-fields/http-fields.xhtml
 
 export type RequestHeader =

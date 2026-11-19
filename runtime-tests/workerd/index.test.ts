@@ -35,6 +35,15 @@ describe('workerd', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('True')
   })
+
+  it('Should keep separate Set-Cookie headers after deduplication', async () => {
+    const res = await worker.fetch('/cookie-dedupe')
+    expect(res.status).toBe(200)
+    expect(res.headers.getSetCookie()).toEqual([
+      'other=stay; Path=/; HttpOnly',
+      'session=new; Path=/',
+    ])
+  })
 })
 
 describe('workerd with NO_COLOR', () => {
