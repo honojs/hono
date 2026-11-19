@@ -1,7 +1,7 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
-import { DOM_RENDERER, DOM_MEMO } from './constants'
+import { DOM_RENDERER, DOM_MEMO, SIGNAL, signalHook } from './constants'
 import {
   captureRenderContext,
   createContext,
@@ -35,6 +35,22 @@ export type FC<P = Props> = {
 }
 export type DOMAttributes = HonoJSX.HTMLAttributes
 
+// The shape of a signal created by `hono/jsx/signal`. The renderers depend only on this shape.
+export type SignalLike<T = unknown> = {
+  readonly value: T
+  peek(): T
+  subscribe(fn: (value: T) => void): () => void
+  readonly [SIGNAL]: true
+}
+type WithSignal<T> = {
+  [K in keyof T]: K extends 'children' | 'ref' | 'dangerouslySetInnerHTML' | `on${string}`
+    ? T[K]
+    : T[K] | SignalLike<T[K]>
+}
+type IntrinsicElementsWithSignal = {
+  [K in keyof HonoJSX.IntrinsicElements]: WithSignal<HonoJSX.IntrinsicElements[K]>
+}
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
@@ -44,7 +60,7 @@ export namespace JSX {
   }
   // `HonoJSX.IntrinsicElements`, not the top-level alias: the bundled dts emit renames the namespace
   // import correctly but drops an import alias that collides with this member name (TS2310).
-  export interface IntrinsicElements extends HonoJSX.IntrinsicElements {
+  export interface IntrinsicElements extends IntrinsicElementsWithSignal {
     [tagName: string]: Props
   }
   export interface IntrinsicAttributes {
@@ -156,9 +172,12 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
       }
     } else if (child instanceof Promise) {
       buffer.unshift('', child)
+    } else if (!Array.isArray(child) && (child as SignalLike)[SIGNAL]) {
+      // render the current value. no subscription on the server
+      childrenToStringToBuffer([(child as SignalLike<Child>).value], buffer)
     } else {
       // `child` type is `Child[]`, so stringify recursively
-      childrenToStringToBuffer(child, buffer)
+      childrenToStringToBuffer(child as Child[], buffer)
     }
   }
 }
@@ -171,6 +190,7 @@ export type Child =
   | null
   | undefined
   | boolean
+  | SignalLike<string | number | boolean | null | undefined>
   | Child[]
 
 export const renderChildren = (children: Child[]): HtmlEscapedString | Promise<HtmlEscapedString> =>
@@ -253,6 +273,10 @@ export class JSXNode implements HtmlEscaped {
       if (!isValidAttributeName(key)) {
         continue
       }
+      if (typeof v === 'object' && v !== null && v[SIGNAL]) {
+        // render the current value. no subscription on the server
+        v = v.value
+      }
       if (key === 'children') {
         // skip children
       } else if (key === 'style' && typeof v === 'object') {
@@ -321,7 +345,10 @@ class JSXFunctionNode extends JSXNode {
       props.children = children.length === 1 ? children[0] : children
     }
 
-    const res = (this.tag as Function).call(null, props)
+    const run = signalHook.r
+    const res = run
+      ? run(() => (this.tag as Function).call(null, props))
+      : (this.tag as Function).call(null, props)
 
     if (typeof res === 'boolean' || res == null) {
       // boolean or null or undefined
