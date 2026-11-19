@@ -207,6 +207,13 @@ describe('JSONParsed', () => {
       type Actual = JSONParsed<Deep>
       expectTypeOf<Actual>().toEqualTypeOf<Deep>()
     })
+
+    it('Should keep the parsed type of a self-referential object', () => {
+      type Tree = { children: Tree[] }
+      type Actual = JSONParsed<Tree>['children'][number]
+      expectTypeOf<Actual>().toEqualTypeOf<JSONParsed<Tree>>()
+      expectTypeOf<Actual>().not.toEqualTypeOf<JSONValue>()
+    })
   })
 
   describe('Set/Map', () => {

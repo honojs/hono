@@ -100,8 +100,8 @@ type JSONParsedStep<T, TError, TSeen> = T extends {
                   [
                     K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true ? never : K
                   ]: boolean extends IsInvalid<T[K]>
-                    ? JSONParsedInner<T[K], TError, TSeen> | undefined
-                    : JSONParsedInner<T[K], TError, TSeen>
+                    ? JSONParsedInner<T[K], TError, never> | undefined
+                    : JSONParsedInner<T[K], TError, never>
                 }
             : T extends unknown
               ? T extends TError
