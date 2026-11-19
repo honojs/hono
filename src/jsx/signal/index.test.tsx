@@ -382,6 +382,25 @@ describe('batch', () => {
     expect(fn).toHaveBeenCalledTimes(2)
   })
 
+  it('should run the effects once if batch() is called in an effect', () => {
+    const a = signal(0)
+    const b = signal(0)
+    const values: number[] = []
+    effect(() => {
+      const value = a.value
+      batch(() => {
+        b.value = value
+      })
+    })
+    effect(() => {
+      values.push(b.value)
+    })
+    batch(() => {
+      a.value = 1
+    })
+    expect(values).toEqual([0, 1])
+  })
+
   it('should flush even if the callback throws', () => {
     const count = signal(0)
     const values: number[] = []
