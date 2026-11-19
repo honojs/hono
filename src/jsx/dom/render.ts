@@ -1,4 +1,4 @@
-import type { Child, FC, JSXNode, Props, MemorableFC } from '../base'
+import type { Child, FC, JSXNode, Props, MemorableFC, SignalLike } from '../base'
 import { toArray } from '../children'
 import {
   DOM_ERROR_HANDLER,
@@ -6,7 +6,10 @@ import {
   DOM_MEMO,
   DOM_RENDERER,
   DOM_STASH,
+  SIGNAL,
+  signalHook,
 } from '../constants'
+import type { SignalScope } from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
@@ -52,6 +55,7 @@ export type NodeObject = {
   p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
   a?: boolean // cancel apply() if true
   o?: NodeObject // original node
+  g?: SignalScope // scope to track the signals read in the component
   [DOM_STASH]:
     | [
         number, // current hook index
@@ -67,6 +71,8 @@ type NodeString = {
   t: string // text content
   d: boolean // is dirty
   s?: boolean // skip build and apply
+  g?: SignalLike // signal bound to the text
+  u?: () => void // unsubscribe from the signal
 } & {
   e?: Text
   // like a NodeObject
@@ -106,6 +112,15 @@ export type Context =
 export const buildDataStack: [Context, Node][] = []
 
 const refCleanupMap: WeakMap<Element, () => void> = new WeakMap()
+
+type SignalBinding = [
+  () => void, // unsubscribe
+  Props | undefined, // the last applied prop
+]
+const signalBindingMap: WeakMap<Element, Record<string, SignalBinding>> = new WeakMap()
+
+const signalToText = (value: unknown): string =>
+  value === null || value === undefined || typeof value === 'boolean' ? '' : `${value}`
 
 let nameSpaceContext: JSXContext<string> | undefined = undefined
 export const getNameSpaceContext = () => nameSpaceContext
@@ -149,7 +164,8 @@ const applySelectValue = (select: HTMLSelectElement, props: Props): void => {
     return
   }
 
-  select.value = normalizeFormValue(props['value'])
+  const value = props['value']
+  select.value = normalizeFormValue(value?.[SIGNAL] ? value.peek() : value)
   if (!select.multiple && select.selectedIndex === -1) {
     select.selectedIndex = 0
   }
@@ -161,6 +177,45 @@ const applySelectValue = (select: HTMLSelectElement, props: Props): void => {
 const isIgnorableAttributeError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === 'InvalidCharacterError'
 
+// Bind a signal to the prop, or unbind it if the next value is not a signal.
+// The prop is updated directly whenever the signal changes, without re-rendering the component.
+const bindSignalProp = (
+  container: SupportedElement,
+  key: string,
+  value: unknown,
+  oldAttributes?: Props
+): void => {
+  let bindings = signalBindingMap.get(container)
+  if (!bindings) {
+    signalBindingMap.set(container, (bindings = {}))
+  }
+  let prev: Props | undefined
+  const binding = bindings[key]
+  if (binding) {
+    binding[0]()
+    prev = binding[1]
+    delete bindings[key]
+  } else if (oldAttributes && key in oldAttributes) {
+    prev = { [key]: oldAttributes[key] }
+  }
+  const set = (v: unknown) => {
+    const next = { [key]: v }
+    applyProps(container, next, prev)
+    if (key === 'value' && container.nodeName === 'SELECT') {
+      applySelectValue(container as HTMLSelectElement, next)
+    }
+    return (prev = next)
+  }
+  if ((value as SignalLike)?.[SIGNAL]) {
+    const newBinding: SignalBinding = (bindings[key] = [() => {}, prev])
+    newBinding[0] = (value as SignalLike).subscribe((v) => {
+      newBinding[1] = set(v)
+    })
+  } else {
+    set(value)
+  }
+}
+
 const applyProps = (
   container: SupportedElement,
   attributes: Props,
@@ -170,6 +225,10 @@ const applyProps = (
   for (let key in attributes) {
     const value = attributes[key]
     if (key !== 'children' && (!oldAttributes || oldAttributes[key] !== value)) {
+      if (value?.[SIGNAL] || oldAttributes?.[key]?.[SIGNAL]) {
+        bindSignalProp(container, key, value, oldAttributes)
+        continue
+      }
       key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
@@ -252,6 +311,10 @@ const applyProps = (
     for (let key in oldAttributes) {
       const value = oldAttributes[key]
       if (key !== 'children' && !(key in attributes)) {
+        if (value?.[SIGNAL]) {
+          bindSignalProp(container, key, undefined)
+          continue
+        }
         key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
@@ -286,6 +349,12 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
       }
     : node.props
   try {
+    const createScope = signalHook.s
+    if (createScope) {
+      // re-render the component when a signal read in it changes
+      node.g ||= createScope(() => flushSync(() => update([0, false], node)))
+      return [node.g(() => func.call(null, props) as Child)]
+    }
     return [func.call(null, props) as Child]
   } finally {
     buildDataStack.pop()
@@ -345,16 +414,28 @@ const removeNode = (node: Node): void => {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
 
     refCleanupMap.get(node.e as Element)?.()
+    const bindings = signalBindingMap.get(node.e as Element)
+    if (bindings) {
+      for (const key in bindings) {
+        bindings[key][0]()
+      }
+      signalBindingMap.delete(node.e as Element)
+    }
     if (node.p === 2) {
       node.vC?.forEach((n) => (n.p = 2))
     }
     node.vC?.forEach(removeNode)
+  } else if (node.u) {
+    node.u()
+    node.u = undefined
   }
   if (!node.p) {
     node.e?.remove()
     delete node.e
   }
   if (typeof node.tag === 'function') {
+    node.g?.()
+    delete node.g
     updateMap.delete(node)
     fallbackUpdateFnArrayMap.delete(node)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,6 +512,15 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         }
         child.d = false
         el = child.e ||= document.createTextNode(child.t)
+        if (child.g && !child.u) {
+          // update the text node directly whenever the signal changes
+          child.u = child.g.subscribe((v) => {
+            const t = signalToText(v)
+            if (child.t !== t) {
+              ;(child.e as Text).textContent = child.t = t
+            }
+          })
+        }
       } else {
         el = child.e ||= child.n
           ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
@@ -609,6 +699,11 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
 
         if (oldChild) {
           if (isNodeString(child)) {
+            if ((oldChild as unknown as NodeString).g !== child.g) {
+              ;(oldChild as unknown as NodeString).u?.()
+              ;(oldChild as unknown as NodeString).u = undefined
+              ;(oldChild as unknown as NodeString).g = child.g
+            }
             if ((oldChild as unknown as NodeString).t !== child.t) {
               ;(oldChild as unknown as NodeString).t = child.t // update text content
               ;(oldChild as unknown as NodeString).d = true
@@ -723,6 +818,8 @@ export const buildNode = (node: Child): Node | undefined => {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
     return { t: node.toString(), d: true } as NodeString
+  } else if ((node as SignalLike)[SIGNAL]) {
+    return { t: signalToText((node as SignalLike).peek()), d: true, g: node } as NodeString
   } else {
     if ('vR' in node) {
       node = {
