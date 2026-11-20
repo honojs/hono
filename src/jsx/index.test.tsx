@@ -1623,6 +1623,54 @@ d.replaceWith(c.content)
       expect(adminHtml).toBe('<div>Welcome Admin admin. Secret Data: 42</div>')
       expect(attackerHtml).toBe('<div>Access Denied for attacker</div>')
     })
+
+    it('isolates the values of sibling Providers', async () => {
+      let releaseA!: () => void
+      let releaseB!: () => void
+      const gateA = new Promise<void>((resolve) => (releaseA = resolve))
+      const gateB = new Promise<void>((resolve) => (releaseB = resolve))
+      const Child = async ({ gate }: { gate: Promise<void> }) => {
+        await gate
+        return <span>{useContext(ThemeContext)}</span>
+      }
+
+      const result = (
+        <>
+          <ThemeContext.Provider value='A'>
+            <Child gate={gateA} />
+          </ThemeContext.Provider>
+          <ThemeContext.Provider value='B'>
+            <Child gate={gateB} />
+          </ThemeContext.Provider>
+        </>
+      ).toString()
+      releaseA()
+      await Promise.resolve()
+      releaseB()
+
+      expect(String(await result)).toBe('<span>A</span><span>B</span>')
+    })
+
+    it('isolates the value of a nested Provider from its parent', async () => {
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const Child = async () => {
+        await gate
+        return <span>{useContext(ThemeContext)}</span>
+      }
+
+      const result = (
+        <ThemeContext.Provider value='X'>
+          <ThemeContext.Provider value='Y'>
+            <Child />
+          </ThemeContext.Provider>
+          <Child />
+        </ThemeContext.Provider>
+      ).toString()
+      release()
+
+      expect(String(await result)).toBe('<span>Y</span><span>X</span>')
+    })
   })
 
   describe('async with html helper', () => {
