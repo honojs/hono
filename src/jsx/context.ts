@@ -213,23 +213,44 @@ export const captureRenderContext = (): (<T>(callback: () => T) => T) => {
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
   const context: Context<T> = ((props): HtmlEscapedString | Promise<HtmlEscapedString> => {
+    const renderChildrenOf = () =>
+      typeof props.children === 'string'
+        ? renderChildren([props.children])
+        : isUntrustedObject(props.children)
+          ? renderUntrustedObject(props.children)
+          : props.children
+            ? (Array.isArray(props.children)
+                ? new JSXFragmentNode('', {}, props.children)
+                : props.children
+              ).toString()
+            : raw('')
+
+    const store = getCurrentStore()
+    const storage = store && loadAsyncLocalStorage()
+    if (store && storage) {
+      // Give the children their own store so an async child that resumes later
+      // still reads this Provider's value, not that of a sibling or a parent.
+      const ownStore: RenderStore = new WeakMap()
+      for (const c of globalContexts) {
+        const current = store.get(c)
+        if (current) {
+          ownStore.set(c, [...current])
+        }
+      }
+      getContextValuesIn(ownStore, context).push(props.value)
+      const rendered = storage.run(ownStore, renderChildrenOf)
+      return rendered instanceof Promise
+        ? rendered.then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
+        : raw(rendered)
+    }
+
     // Resolve the target array once, synchronously: the pop in `.finally()`
     // below may run later and must operate on the same array as the push.
-    const contextValues = getContextValuesIn(getCurrentStore(), context)
+    const contextValues = getContextValuesIn(store, context)
     contextValues.push(props.value)
     let rendered
     try {
-      rendered =
-        typeof props.children === 'string'
-          ? renderChildren([props.children])
-          : isUntrustedObject(props.children)
-            ? renderUntrustedObject(props.children)
-            : props.children
-              ? (Array.isArray(props.children)
-                  ? new JSXFragmentNode('', {}, props.children)
-                  : props.children
-                ).toString()
-              : raw('')
+      rendered = renderChildrenOf()
     } catch (e) {
       contextValues.pop()
       throw e
