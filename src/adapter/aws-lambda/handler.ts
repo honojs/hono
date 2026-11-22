@@ -385,7 +385,9 @@ export abstract class EventProcessor<E extends LambdaEvent> {
       isBase64Encoded = isContentEncodingBinary(contentEncoding)
     }
 
-    const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+    const body = isBase64Encoded
+      ? encodeBase64(await res.arrayBuffer())
+      : new TextDecoder('utf-8', { ignoreBOM: true }).decode(await res.arrayBuffer())
 
     const result: APIGatewayProxyResult = {
       body: body,

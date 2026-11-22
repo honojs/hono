@@ -103,6 +103,18 @@ describe('handle', () => {
     expect(res.body).toBe('https://hono.dev/test-path')
   })
 
+  it('Should keep a leading UTF-8 BOM in a text body', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) =>
+      c.body('\uFEFFname\r\nexample\r\n', 200, { 'content-type': 'text/csv; charset=utf-8' })
+    )
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.body).toBe('\uFEFFname\r\nexample\r\n')
+  })
+
   it('Should omit body in a 204 result', async () => {
     const app = new Hono()
     app.get('/test-path', (c) => c.body(null, 204, { 'content-type': 'text/plain' }))

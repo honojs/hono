@@ -192,6 +192,18 @@ describe('EventProcessor.createResult with contentTypesAsBinary', () => {
     expect(result.isBase64Encoded).toBe(false)
     expect(result.body).toBe('test text content')
   })
+
+  it('Should keep a leading UTF-8 BOM in a text body', async () => {
+    const processor = getProcessor(event)
+    const response = new Response('\uFEFFname\r\nexample\r\n', {
+      headers: { 'content-type': 'text/csv; charset=utf-8' },
+    })
+
+    const result = await processor.createResult(event, response, { isContentTypeBinary: undefined })
+
+    expect(result.isBase64Encoded).toBe(false)
+    expect(result.body).toBe('\uFEFFname\r\nexample\r\n')
+  })
 })
 
 describe('EventProcessor.createRequest', () => {
