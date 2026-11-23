@@ -1,0 +1,108 @@
+name: perf
+on:
+  pull_request:
+    types: [labeled, synchronize]
+    branches: ['*']
+    paths-ignore:
+      - 'adapters/**'
+      - 'docs/**'
+      - '.vscode/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'LICENSE'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  perf-measures-check-on-pr:
+    name: 'Type & Bundle size Check on PR'
+    runs-on: ubuntu-latest
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'perf') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'perf')
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: ./.github/actions/perf-measures
+        with:
+          target-ref: 'auto'
+
+  http-benchmark-on-pr:
+    name: 'HTTP Speed Check on PR'
+    runs-on: ubuntu-latest
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'perf') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'perf')
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: '.tool-versions'
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
+          run_install: true
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: '.tool-versions'
+      - name: Install bombardier
+        run: |
+          wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
+          chmod +x bombardier
+          sudo mv bombardier /usr/local/bin/
+      - name: Run HTTP benchmark
+        run: |
+          cd benchmarks/http-server
+          bun run benchmark.ts
+      - name: Comment PR
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('benchmarks/http-server/benchmark-results.md', 'utf8');
+
+            // Minimize previous benchmark comments
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            for (const comment of comments.data) {
+              if (comment.body.includes('## HTTP Performance Benchmark')) {
+                await github.graphql(`
+                  mutation {
+                    minimizeComment(input: { subjectId: "${comment.node_id}", classifier: OUTDATED }) {
+                      minimizedComment {
+                        isMinimized
+                      }
+                    }
+                  }
+                `);
+              }
+            }
+
+            // Post new comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: results
+            });
+      - name: Show benchmark results for forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "## HTTP Performance Benchmark Results"
+          echo "Note: Cannot post comment due to security restrictions on fork PRs"
+          cat benchmarks/http-server/benchmark-results.md
