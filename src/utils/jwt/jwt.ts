@@ -188,14 +188,14 @@ export const verify = async (
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
-  // the decoder ignores whitespace, so check the alphabet first to keep one signature per token string
-  if (!/^[A-Za-z0-9_-]*={0,2}$/.test(tokenParts[2])) {
-    throw new JwtTokenInvalid(token)
-  }
   let signature: Uint8Array<ArrayBuffer>
   try {
     signature = decodeBase64Url(tokenParts[2])
   } catch {
+    throw new JwtTokenInvalid(token)
+  }
+  // accept only the canonical encoding to keep one token string per signature
+  if (encodeSignaturePart(signature.buffer) !== tokenParts[2]) {
     throw new JwtTokenInvalid(token)
   }
   const verified = await verifying(publicKey, alg, signature, utf8Encoder.encode(headerPayload))
