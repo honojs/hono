@@ -21,6 +21,19 @@ describe('mergePath', () => {
     expect(mergePath('http://localhost/', 'api')).toBe('http://localhost/api')
     expect(mergePath('http://localhost/', '/')).toBe('http://localhost/')
   })
+
+  it('Should remove trailing slashes of the base', () => {
+    expect(mergePath('http://localhost///', '/api')).toBe('http://localhost/api')
+    expect(mergePath('/', '/api')).toBe('/api')
+    expect(mergePath('', '/api')).toBe('/api')
+  })
+
+  it('Should not be slow with many slashes in the base', () => {
+    const base = '/'.repeat(100000) + 'a'
+    const start = performance.now()
+    expect(mergePath(base, '/api')).toBe(base + '/api')
+    expect(performance.now() - start).toBeLessThan(100)
+  })
 })
 
 describe('replaceUrlParams', () => {

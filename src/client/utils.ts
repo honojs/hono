@@ -9,10 +9,12 @@ import type { ClientResponse, FilterClientResponseByStatusCode, ObjectType } fro
 export { DetailedError }
 
 export const mergePath = (base: string, path: string) => {
-  base = base.replace(/\/+$/, '')
-  base = base + '/'
+  let end = base.length
+  while (base[end - 1] === '/') {
+    end--
+  }
   path = path.replace(/^\/+/, '')
-  return base + path
+  return base.slice(0, end) + '/' + path
 }
 
 const networkPathRegExp = /^(?:[/\\][\t\n\r]*){2}/
