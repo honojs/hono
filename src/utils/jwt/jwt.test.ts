@@ -144,6 +144,21 @@ describe('JWT', () => {
     }
   })
 
+  it.each([AlgorithmTypes.HS256, AlgorithmTypes.HS512])(
+    'JwtTokenInvalid for a non-canonical %s signature',
+    async (alg) => {
+      const secret = 'a-secret'
+      const tok = await JWT.sign({ message: 'hello world' }, secret, alg)
+      expect(await JWT.verify(tok, secret, alg)).toEqual({ message: 'hello world' })
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+      const last = alphabet[alphabet.indexOf(tok.slice(-1)) ^ 1]
+      for (const malformed of [`${tok}=`, `${tok}==`, `${tok.slice(0, -1)}${last}`]) {
+        const err = await JWT.verify(malformed, secret, alg).catch((e: unknown) => e)
+        expect(err).toBeInstanceOf(JwtTokenInvalid)
+      }
+    }
+  )
+
   it('JwtHeaderInvalid for a header with crit', async () => {
     const secret = 'a-secret'
     const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
@@ -1155,7 +1170,7 @@ describe('verifyWithJwks header.alg fallback', () => {
       headerAlg,
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1192,7 +1207,7 @@ describe('verifyWithJwks security', () => {
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1224,7 +1239,7 @@ describe('verifyWithJwks security', () => {
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS384', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1256,7 +1271,7 @@ describe('verifyWithJwks security', () => {
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS512', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1305,7 +1320,7 @@ describe('verifyWithJwks security', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1352,7 +1367,7 @@ describe('verifyWithJwks security', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1401,7 +1416,7 @@ describe('verifyWithJwks security', () => {
     // Attacker would sign with the public key bytes as HMAC secret
     // We don't need to actually sign for this test - just verify rejection
     const signatureBuffer = await signing('fake-secret', 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1451,7 +1466,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1499,7 +1514,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1538,7 +1553,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = encodeBase64Url(signatureBuffer).replace(/=/g, '')
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
