@@ -15,12 +15,19 @@ export const mergePath = (base: string, path: string) => {
   return base + path
 }
 
+// `//host` and `/\host` point to another host. URL parsers also ignore tabs and newlines.
+const networkPathRegExp = /^(?:[/\\][\t\n\r]*){2}/
+
 export const replaceUrlParam = (urlString: string, params: Record<string, string | undefined>) => {
+  const isNetworkPath = networkPathRegExp.test(urlString)
   for (const [k, v] of Object.entries(params)) {
     const reg = new RegExp('/:' + k + '(?:{[^/]+})?\\??(?=/|$)')
     urlString = urlString.replace(reg, () => (v ? `/${v}` : ''))
   }
-  return urlString
+  // A param value must not turn a relative URL into a URL of another host.
+  return !isNetworkPath && networkPathRegExp.test(urlString)
+    ? urlString.replace(/^[/\\\t\n\r]+/, '/')
+    : urlString
 }
 
 export const buildSearchParams = (query: Record<string, string | string[]>) => {

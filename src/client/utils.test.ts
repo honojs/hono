@@ -24,6 +24,36 @@ describe('mergePath', () => {
 })
 
 describe('replaceUrlParams', () => {
+  it.each([
+    ['//example.com/path', '/example.com/path'],
+    ['/example.com/path', '/example.com/path'],
+    ['\\\\example.com/path', '/example.com/path'],
+    ['\\/example.com/path', '/example.com/path'],
+    ['\t/example.com/path', '/example.com/path'],
+    ['/\n/example.com/path', '/example.com/path'],
+  ])('Should not make a URL of another host from the param %j', (id, expected) => {
+    expect(replaceUrlParam('/:id', { id })).toBe(expected)
+  })
+
+  it('Should not make a URL of another host from two params', () => {
+    expect(replaceUrlParam('/:a/:b', { a: '/', b: 'example.com/path' })).toBe('/example.com/path')
+    expect(replaceUrlParam('/:a?/:b', { a: undefined, b: '/example.com/path' })).toBe(
+      '/example.com/path'
+    )
+  })
+
+  it('Should keep slashes in a param which do not change the host', () => {
+    expect(replaceUrlParam('/files/:path', { path: '//a//b' })).toBe('/files///a//b')
+    expect(replaceUrlParam('http://localhost/:id', { id: '//example.com' })).toBe(
+      'http://localhost///example.com'
+    )
+    expect(replaceUrlParam('/:id', { id: 'a//b' })).toBe('/a//b')
+  })
+
+  it('Should keep a base URL which starts with two slashes', () => {
+    expect(replaceUrlParam('//api.example.com/:id', { id: '123' })).toBe('//api.example.com/123')
+  })
+
   it('Should replace correctly', () => {
     const url = 'http://localhost/posts/:postId/comments/:commentId'
     const params = {
