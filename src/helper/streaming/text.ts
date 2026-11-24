@@ -6,7 +6,7 @@ import { stream } from './'
 export const streamText = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+  onError?: (e: Error, stream: StreamingApi) => void | Promise<void>
 ): Response => {
   c.header('Content-Type', TEXT_PLAIN)
   c.header('X-Content-Type-Options', 'nosniff')
