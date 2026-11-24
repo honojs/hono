@@ -234,8 +234,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
       }
     } else if (child instanceof Promise) {
       buffer.unshift('', child)
-    } else {
-      // `child` type is `Child[]`, so stringify recursively
+    } else if (Array.isArray(child)) {
       childrenToStringToBuffer(child, buffer)
     }
   }
