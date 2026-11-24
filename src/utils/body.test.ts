@@ -257,6 +257,27 @@ describe('Parse Body Util', () => {
     expect(({} as Record<string, unknown>).injected).toBeUndefined()
   })
 
+  it.each(['constructor.prototype.polluted', 'a.constructor.prototype.polluted'])(
+    'should skip the key %s to prevent prototype pollution',
+    async (key) => {
+      const data = new FormData()
+      data.append(key, 'malicious')
+
+      const req = createRequest(FORM_URL, 'POST', data)
+
+      expect(await parseBody(req, { dot: true })).toEqual({})
+    }
+  )
+
+  it('should parse a key with constructor that is not followed by prototype', async () => {
+    const data = new FormData()
+    data.append('constructor.name', 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({ constructor: { name: 'value' } })
+  })
+
   it('should parse key ending with __proto__ as a normal value', async () => {
     const data = new FormData()
     data.append('a.__proto__', 'value')

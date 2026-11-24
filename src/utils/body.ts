@@ -229,7 +229,7 @@ const handleParsingNestedValues = (
   value: BodyDataValue<Partial<ParseBodyOptions>>,
   state: { count: number }
 ): void => {
-  if (/(?:^|\.)__proto__\./.test(key)) {
+  if (/(?:^|\.)(?:__proto__|constructor\.prototype)\./.test(key)) {
     return
   }
 
