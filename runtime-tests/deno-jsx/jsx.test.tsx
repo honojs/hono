@@ -1,6 +1,7 @@
 /** @jsxImportSource ../../src/jsx */
 import { assertEquals } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
+import { batch, computed, effect, signal } from '../../src/jsx/signal/index.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../src/utils/html.ts'
@@ -186,4 +187,61 @@ Deno.test('JSX: number', async () => {
 Deno.test('JSX: style', async () => {
   const html = <div style={{ fontSize: '12px', color: null }}></div>
   assertEquals(html.toString(), '<div style="font-size:12px"></div>')
+})
+
+Deno.test('JSX: signal', () => {
+  const text = signal('<Hono>')
+  const upper = computed(() => text.value.toUpperCase())
+  const html = (
+    <p title={text} class={upper}>
+      {text} {upper}
+    </p>
+  )
+
+  assertEquals(
+    html.toString(),
+    '<p title="&lt;Hono&gt;" class="&lt;HONO&gt;">&lt;Hono&gt; &lt;HONO&gt;</p>'
+  )
+})
+
+Deno.test('JSX: signal with null, undefined and boolean', () => {
+  const none = signal<string | undefined>(undefined)
+  const html = (
+    <button title={none}>
+      {none}
+      {signal(null)}
+      {signal(false)}
+    </button>
+  )
+
+  // react-jsx : <button>
+  // precompile : <button > // Extra whitespace is allowed because it is a specification.
+
+  assertEquals(html.toString().replace(/\s+/g, ''), '<button></button>')
+})
+
+Deno.test('JSX: signal in a component', () => {
+  const count = signal(0)
+  let effectCount = 0
+  const Counter = ({ initial }: { initial: number }) => {
+    const local = signal(initial)
+    const double = computed(() => local.value * 2)
+    effect(() => {
+      count.value
+      effectCount++
+    })
+    return (
+      <p>
+        {local} * 2 = {double.value}
+      </p>
+    )
+  }
+
+  assertEquals((<Counter initial={1} />).toString(), '<p>1 * 2 = 2</p>')
+  assertEquals((<Counter initial={2} />).toString(), '<p>2 * 2 = 4</p>')
+
+  batch(() => {
+    count.value = 1
+  })
+  assertEquals(effectCount, 0)
 })

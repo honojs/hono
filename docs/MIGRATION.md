@@ -106,6 +106,18 @@ A `*` at the end of a segment is a wildcard in every router, and it may match no
 
 TrieRouter and PatternRouter did not match `/x*/y` to `/xz/y` before. In RegExpRouter, `/x*/y` and `/x/*` can not be registered together and throw `UnsupportedPathError`, so SmartRouter falls back to TrieRouter.
 
+### JSX attributes accept a signal
+
+The attributes of the intrinsic elements accept a signal of `hono/jsx/signal`. So the type of an attribute in `JSX.IntrinsicElements` is now `T | SignalLike<T>`. If you read an attribute from the props typed with `JSX.IntrinsicElements`, narrow it first.
+
+```diff
+ const Link = (props: JSX.IntrinsicElements['a']) => {
+-  const isExternal = props.href?.startsWith('http')
++  const isExternal = typeof props.href === 'string' && props.href.startsWith('http')
+   return <a {...props} rel={isExternal ? 'noopener' : undefined} />
+ }
+```
+
 ### Runtime adapters moved to `@hono/*` packages
 
 The runtime adapters under `hono/<runtime>` are no longer bundled with `hono`. Install the corresponding package and import from it.

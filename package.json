@@ -177,6 +177,10 @@
       "types": "./dist/jsx/dom/server.d.ts",
       "default": "./dist/jsx/dom/server.js"
     },
+    "./jsx/signal": {
+      "types": "./dist/jsx/signal/index.d.ts",
+      "default": "./dist/jsx/signal/index.js"
+    },
     "./jwt": {
       "types": "./dist/middleware/jwt/index.d.ts",
       "default": "./dist/middleware/jwt/index.js"
