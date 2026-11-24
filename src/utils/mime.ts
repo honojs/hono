@@ -12,7 +12,8 @@ export const getMimeType = (
   if (!match) {
     return
   }
-  return mimes[match[1].toLowerCase()]
+  const mimeType = mimes[match[1].toLowerCase()]
+  return typeof mimeType === 'string' ? mimeType : undefined
 }
 
 export const getExtension = (mimeType: string): string | undefined => {

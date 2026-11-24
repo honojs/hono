@@ -18,6 +18,11 @@ describe('mime', () => {
     expect(getMimeType('IMAGE.JPG')).toBe('image/jpeg')
   })
 
+  it('getMimeType returns undefined for an extension that is an inherited property name', () => {
+    expect(getMimeType('hello.constructor')).toBeUndefined()
+    expect(getMimeType('hello.constructor', mime)).toBeUndefined()
+  })
+
   it('getMimeType returns charset parameter for text and XML-based formats', () => {
     expect(getMimeType('icon.svg')).toBe('image/svg+xml; charset=utf-8')
     expect(getMimeType('page.xhtml')).toBe('application/xhtml+xml; charset=utf-8')
