@@ -405,7 +405,8 @@ export const computed = <T>(fn: () => T): ReadonlySignal<T> =>
  * In a component, the effect is created in the first render and disposed when the component is
  * unmounted. It runs during the first render, so use a `ref` callback to access the DOM.
  * It re-runs only when a signal read in it changes. `fn` of the latest render is used then.
- * On the server, the effect in a component does not run.
+ * On the server, the effect in a component does not run. But the one after `await` in an async
+ * component runs and is never disposed, so do not call `effect()` there.
  *
  * @experimental
  * `effect` is an experimental feature.
