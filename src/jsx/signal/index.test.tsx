@@ -1320,32 +1320,87 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<button>2</button>')
       batch(() => (root.querySelector('button') as HTMLButtonElement).click())
       expect(root.innerHTML).toBe('<button>4</button>')
-      expect(fn).toHaveBeenCalledTimes(2)
+      // evaluated for the change of the signal, and again for the re-render
+      expect(fn).toHaveBeenCalledTimes(3)
     })
 
-    it('should use the function of the latest render in computed() and effect()', () => {
+    it('should evaluate the computed again when the component is re-rendered', () => {
       const count = signal(0)
-      const log: string[] = []
+      const label = signal('a')
+      const fn = vi.fn()
       const Child = ({ label }: { label: string }) => {
         const text = computed(() => `${label}:${count.value}`)
-        effect(() => {
-          log.push(`${label}:${count.value}`)
+        const length = computed(() => {
+          fn()
+          return text.value.length
         })
-        return <span>{text}</span>
+        return (
+          <span title={text}>
+            {text} {length.value}
+          </span>
+        )
       }
-      const label = signal('a')
       const App = () => <Child label={label.value} />
       render(<App />, root)
-      expect(root.innerHTML).toBe('<span>a:0</span>')
+      expect(root.innerHTML).toBe('<span title="a:0">a:0 3</span>')
       batch(() => {
         label.value = 'b'
       })
-      // a change of props does not re-run them
-      expect(root.innerHTML).toBe('<span>a:0</span>')
+      expect(root.innerHTML).toBe('<span title="b:0">b:0 3</span>')
+      batch(() => {
+        label.value = 'long'
+      })
+      expect(root.innerHTML).toBe('<span title="long:0">long:0 6</span>')
       batch(() => {
         count.value = 1
       })
-      expect(root.innerHTML).toBe('<span>b:1</span>')
+      expect(root.innerHTML).toBe('<span title="long:1">long:1 6</span>')
+    })
+
+    it('should follow the props in the effect through a computed', () => {
+      const label = signal('a')
+      const other = signal(0)
+      const log: string[] = []
+      const Child = ({ label }: { label: string; other: number }) => {
+        const current = computed(() => label)
+        effect(() => {
+          log.push(current.value)
+        })
+        return <span>{current}</span>
+      }
+      const App = () => <Child label={label.value} other={other.value} />
+      render(<App />, root)
+      expect(log).toEqual(['a'])
+      batch(() => {
+        other.value = 1
+      })
+      expect(log).toEqual(['a'])
+      batch(() => {
+        label.value = 'b'
+      })
+      expect(root.innerHTML).toBe('<span>b</span>')
+      expect(log).toEqual(['a', 'b'])
+    })
+
+    it('should not re-run the effect that reads the props directly when the props change', () => {
+      const count = signal(0)
+      const label = signal('a')
+      const log: string[] = []
+      const Child = ({ label }: { label: string }) => {
+        effect(() => {
+          log.push(`${label}:${count.value}`)
+        })
+        return <span>child</span>
+      }
+      const App = () => <Child label={label.value} />
+      render(<App />, root)
+      batch(() => {
+        label.value = 'b'
+      })
+      expect(log).toEqual(['a:0'])
+      batch(() => {
+        count.value = 1
+      })
       expect(log).toEqual(['a:0', 'b:1'])
     })
 
@@ -1646,8 +1701,7 @@ describe('DOM', () => {
         rerender.value = 1
       })
       expect(root.innerHTML).toBe('<p>1:10</p>')
-      expect(created.length).toBe(2)
-      expect(created[0]).not.toBe(created[1])
+      expect(new Set(created).size).toBe(created.length)
     })
   })
 

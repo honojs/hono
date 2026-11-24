@@ -36,6 +36,7 @@ type Reactive = {
   h?: unknown[][] // signals, computeds and effects created in the component. only for a component
   i?: number // index of the next one to be created in the component
   c?: number // number of the ones created in the first render of the component
+  p?: Reactive // source that changes whenever the component is re-rendered
 }
 
 // The renderer may swallow an error in a re-render, so log it too
@@ -328,11 +329,13 @@ export const batch = <T>(fn: () => T): T => {
 signalHook.s = (onChange) => {
   const created: unknown[][] = []
   const run = () => isStale(observer) && onChange()
+  const rendered: Reactive = { v: 0, s: new Set() }
   const observer: Reactive = {
     v: 0,
     d: new Map(),
     n: () => pendingEffects.add(run),
     h: created,
+    p: rendered,
   }
   const dispose = () => {
     // dispose the effects. a signal and a computed are objects
@@ -340,6 +343,12 @@ signalHook.s = (onChange) => {
     created.length = 0
   }
   return ((fn?: () => unknown) => {
+    if (fn && observer.c !== undefined) {
+      // the props may have changed, so the computeds in the component are evaluated again
+      rendered.v++
+      globalVersion++
+      notify(rendered)
+    }
     untrack(observer)
     // it is rendered or unmounted now, so the pending re-render is not needed
     pendingEffects.delete(run)
@@ -402,15 +411,27 @@ export const signal = <T>(initialValue: T): Signal<T> =>
  * `fn` is evaluated lazily, and the result is cached until a dependency changes.
  *
  * In a component, the computed is created in the first render and kept until the component is
- * unmounted. It is evaluated again only when a signal read in it changes, so read the values that
- * change through signals. `fn` of the latest render is used then.
+ * unmounted. It is evaluated again with `fn` of the latest render when the component is
+ * re-rendered, so it follows the props.
  *
  * @experimental
  * `computed` is an experimental feature.
  * The behavior in a component might be changed.
  */
 export const computed = <T>(fn: () => T): ReadonlySignal<T> =>
-  perComponent(1, (getFn) => createComputed(() => getFn()()), fn)
+  perComponent(
+    1,
+    (getFn) => {
+      const rendered = currentObserver?.p
+      return createComputed(() => {
+        if (rendered) {
+          track(rendered)
+        }
+        return getFn()()
+      })
+    },
+    fn
+  )
 
 /**
  * Run `fn` immediately, and re-run it whenever the signals read in it change.
@@ -418,7 +439,8 @@ export const computed = <T>(fn: () => T): ReadonlySignal<T> =>
  *
  * In a component, the effect is created in the first render and disposed when the component is
  * unmounted. It runs during the first render, so use a `ref` callback to access the DOM.
- * It re-runs only when a signal read in it changes. `fn` of the latest render is used then.
+ * It re-runs only when a signal read in it changes, with `fn` of the latest render. To follow a
+ * prop, read it through a `computed()`.
  * On the server, the effect in a component does not run. But the one after `await` in an async
  * component runs and is never disposed, so do not call `effect()` there.
  *
