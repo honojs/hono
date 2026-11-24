@@ -125,4 +125,21 @@ describe('Basic Streaming Helper', () => {
     expect(onError).toBeCalledTimes(1)
     expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
   })
+
+  it('Check stream Response if error occurred with a sync onError', async () => {
+    const res = stream(
+      c,
+      async () => {
+        throw new Error('error')
+      },
+      (e, stream) => {
+        stream.write(`caught: ${e.message}`)
+      }
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const { value } = await res.body.getReader().read()
+    expect(new TextDecoder().decode(value)).toBe('caught: error')
+  })
 })

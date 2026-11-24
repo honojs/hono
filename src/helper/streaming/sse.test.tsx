@@ -186,6 +186,25 @@ describe('SSE Streaming helper', () => {
     expect(onError).toBeCalledWith(new Error('Test error'), expect.anything()) // 2nd argument is StreamingApi instance
   })
 
+  it('Check stream Response if error occurred with a sync onError', async () => {
+    let caught: string | undefined
+    const res = streamSSE(
+      c,
+      async () => {
+        throw new Error('Test error')
+      },
+      (e) => {
+        caught = e.message
+      }
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const { value } = await res.body.getReader().read()
+    expect(new TextDecoder().decode(value)).toBe('event: error\ndata: Test error\n\n')
+    expect(caught).toBe('Test error')
+  })
+
   it('Check streamSSE Response via Promise<string>', async () => {
     const res = streamSSE(c, async (stream) => {
       await stream.writeSSE({ data: Promise.resolve('Async Message') })

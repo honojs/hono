@@ -48,7 +48,7 @@ export class SSEStreamingApi extends StreamingApi {
 const run = async (
   stream: SSEStreamingApi,
   cb: (stream: SSEStreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+  onError?: (e: Error, stream: SSEStreamingApi) => void | Promise<void>
 ): Promise<void> => {
   try {
     await cb(stream)
@@ -73,7 +73,7 @@ const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStrea
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+  onError?: (e: Error, stream: SSEStreamingApi) => void | Promise<void>
 ): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)

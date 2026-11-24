@@ -7,7 +7,7 @@ const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStrea
 export const stream = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+  onError?: (e: Error, stream: StreamingApi) => void | Promise<void>
 ): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new StreamingApi(writable, readable)
