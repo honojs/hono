@@ -674,6 +674,17 @@ describe('SSR', () => {
     expect((<Component />).toString()).toBe('&lt;hello&gt;')
   })
 
+  it('should render a signal returned from an async component', async () => {
+    const text = signal('<hello>')
+    const Component = async () => text
+    const html = await (
+      <div>
+        <Component />
+      </div>
+    ).toString()
+    expect(html.toString()).toBe('<div>&lt;hello&gt;</div>')
+  })
+
   it('should render a signal with the precompile runtime and the html helper', () => {
     const text = signal('<"a">')
     const none = signal<string | undefined>(undefined)

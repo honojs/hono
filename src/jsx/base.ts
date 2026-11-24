@@ -27,7 +27,7 @@ type FunctionComponentResult =
   | JSXNode
   | SignalChild
   | Child[]
-  | Promise<HtmlEscapedString | JSXNode | Child[]>
+  | Promise<HtmlEscapedString | JSXNode | SignalChild | Child[]>
   | null
 export type FC<P = Props> = {
   (props: P): FunctionComponentResult
@@ -139,7 +139,8 @@ const resolveFunctionComponentResult = (
     if (
       typeof resolved !== 'string' &&
       !Array.isArray(resolved) &&
-      !(resolved instanceof JSXNode)
+      !(resolved instanceof JSXNode) &&
+      !(resolved as SignalChild)?.[SIGNAL]
     ) {
       return resolved
     }
