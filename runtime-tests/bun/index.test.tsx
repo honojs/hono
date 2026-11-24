@@ -4,6 +4,7 @@ import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
 import type { PropsWithChildren } from '../../src/jsx'
+import { batch, computed, effect, signal } from '../../src/jsx/signal'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 
@@ -102,6 +103,44 @@ describe('JWT Auth Middleware', () => {
     const res = await app.request(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
+  })
+})
+
+describe('JSX Signal', () => {
+  const app = new Hono()
+  const siteName = signal('<Hono>')
+  let effectCount = 0
+
+  const Page = ({ path }: { path: string }) => {
+    const title = computed(() => `${siteName.value} - ${path}`)
+    const count = signal(1)
+    effect(() => {
+      siteName.value
+      effectCount++
+    })
+    return (
+      <p title={title}>
+        {title} {count}
+      </p>
+    )
+  }
+
+  app.get('*', (c) => c.html(<Page path={c.req.path} />))
+
+  it('Should render the current value of signals', async () => {
+    const res = await app.request('http://localhost/top')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<p title="&lt;Hono&gt; - /top">&lt;Hono&gt; - /top 1</p>')
+  })
+
+  it('Should not run the effect in a component', async () => {
+    await app.request('http://localhost/top')
+    batch(() => {
+      siteName.value = 'Hono'
+    })
+    expect(effectCount).toBe(0)
+    const res = await app.request('http://localhost/about')
+    expect(await res.text()).toBe('<p title="Hono - /about">Hono - /about 1</p>')
   })
 })
 
