@@ -175,7 +175,6 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCal
     } else if (child instanceof Promise) {
       buffer.unshift('', child)
     } else if (!Array.isArray(child) && (child as SignalLike)[SIGNAL]) {
-      // render the current value. no subscription on the server
       childrenToStringToBuffer([(child as SignalLike<Child>).value], buffer)
     } else {
       // `child` type is `Child[]`, so stringify recursively
@@ -276,7 +275,6 @@ export class JSXNode implements HtmlEscaped {
         continue
       }
       if (typeof v === 'object' && v !== null && v[SIGNAL]) {
-        // render the current value. no subscription on the server
         v = v.value
       }
       if (key === 'children') {

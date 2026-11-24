@@ -23,7 +23,6 @@ export const jsxAttr = (
     return raw('')
   }
   if (typeof v === 'object' && v !== null && (v as unknown as SignalLike)[SIGNAL]) {
-    // render the current value. no subscription on the server
     return jsxAttr(key, (v as unknown as SignalLike<string>).value)
   }
   const buffer: StringBuffer = [`${key}="`] as StringBuffer

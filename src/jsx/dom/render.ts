@@ -178,7 +178,6 @@ const isIgnorableAttributeError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === 'InvalidCharacterError'
 
 // Bind a signal to the prop, or unbind it if the next value is not a signal.
-// The prop is updated directly whenever the signal changes, without re-rendering the component.
 const bindSignalProp = (
   container: SupportedElement,
   key: string,
@@ -351,7 +350,6 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   try {
     const createScope = signalHook.s
     if (createScope) {
-      // re-render the component when a signal read in it changes
       node.g ||= createScope(() => flushSync(() => update([0, false], node)))
       return [node.g(() => func.call(null, props) as Child)]
     }
@@ -513,7 +511,6 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         child.d = false
         el = child.e ||= document.createTextNode(child.t)
         if (child.g && !child.u) {
-          // update the text node directly whenever the signal changes
           child.u = child.g.subscribe((v) => {
             const t = signalToText(v)
             if (child.t !== t) {

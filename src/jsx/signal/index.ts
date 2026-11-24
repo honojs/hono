@@ -87,7 +87,6 @@ const untrack = (observer: Reactive): void => {
   observer.d!.clear()
 }
 
-// true if any of the dependencies has changed since it was read
 const isStale = (observer: Reactive): boolean => {
   for (const [source, version] of observer.d!) {
     source.r?.()
@@ -155,7 +154,6 @@ const notify = (source: Reactive): void => {
   }
 }
 
-// `subscribe()` is an effect. So in a component, it is kept and disposed like `effect()`
 const createSubscribe =
   <T>(read: () => T) =>
   (fn: (value: T) => void): (() => void) => {
@@ -315,7 +313,6 @@ export const batch = <T>(fn: () => T): T => {
 // for the DOM renderer. `onChange` runs with the effects when a signal read in the scope changes
 signalHook.s = (onChange) => {
   const created: unknown[][] = []
-  // a computed may be notified but not changed, so check the versions
   const run = () => isStale(observer) && onChange()
   const observer: Reactive = {
     v: 0,

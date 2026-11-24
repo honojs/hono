@@ -44,7 +44,6 @@ export const html = (
       } else if (child instanceof Promise) {
         buffer.unshift('', child)
       } else if (child[SIGNAL]) {
-        // render the current value of a signal of `hono/jsx/signal`. no subscription
         children[i--] = child.value
       } else {
         escapeToBuffer(child.toString(), buffer)
