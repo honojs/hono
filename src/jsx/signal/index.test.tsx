@@ -1,4 +1,6 @@
 /** @jsxImportSource ../ */
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { JSDOM } from 'jsdom'
 import { batch, computed, effect, signal, untracked } from '.'
 import type { ReadonlySignal } from '.'
@@ -18,6 +20,17 @@ const spySubscription = <T,>(target: ReadonlySignal<T>) => {
     }
   }
   return counts
+}
+
+setFlagsFromString('--expose-gc')
+const gc: () => void = runInNewContext('gc')
+// true if the object held by the WeakRef is collected
+const isCollected = async (ref: WeakRef<object>): Promise<boolean> => {
+  for (let i = 0; i < 10 && ref.deref(); i++) {
+    await new Promise((resolve) => setTimeout(resolve))
+    gc()
+  }
+  return !ref.deref()
 }
 
 describe('signal', () => {
@@ -165,6 +178,98 @@ describe('computed', () => {
       count.value = 2
     })
     expect(values).toEqual([5, 10])
+  })
+
+  it('should be up to date without subscribers', () => {
+    const count = signal(1)
+    const other = signal(0)
+    const fn = vi.fn(() => count.value * 2)
+    const double = computed(fn)
+    const quadruple = computed(() => double.value * 2)
+    expect(quadruple.value).toBe(4)
+    count.value = 2
+    count.value = 3
+    expect(quadruple.value).toBe(12)
+    expect(fn).toHaveBeenCalledTimes(2)
+    // not evaluated again if the dependencies are not changed
+    other.value++
+    expect(quadruple.value).toBe(12)
+    expect(double.value).toBe(6)
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('should be up to date after the subscribers are gone', () => {
+    const count = signal(1)
+    const fn = vi.fn(() => count.value * 2)
+    const double = computed(fn)
+    const values: number[] = []
+    const dispose = effect(() => {
+      values.push(double.value)
+    })
+    batch(() => {
+      count.value = 2
+    })
+    expect(values).toEqual([2, 4])
+    dispose()
+    expect(double.value).toBe(4)
+    expect(fn).toHaveBeenCalledTimes(2)
+    count.value = 3
+    expect(double.value).toBe(6)
+
+    // subscribed again
+    const dispose2 = effect(() => {
+      values.push(double.value)
+    })
+    batch(() => {
+      count.value = 4
+    })
+    expect(values).toEqual([2, 4, 6, 8])
+    expect(fn).toHaveBeenCalledTimes(4)
+    dispose2()
+  })
+
+  it('should not re-run the effect if the value is not changed', () => {
+    const count = signal(1)
+    const isPositive = computed(() => count.value > 0)
+    const label = computed(() => (isPositive.value ? 'positive' : 'negative'))
+    const fn = vi.fn(() => {
+      label.value
+    })
+    effect(fn)
+    batch(() => {
+      count.value = 2
+    })
+    expect(fn).toHaveBeenCalledTimes(1)
+    batch(() => {
+      count.value = -1
+    })
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('should not be referenced by the dependencies without subscribers', async () => {
+    const config = signal({ siteName: 'Hono' })
+    const create = () => {
+      const captured = {}
+      const title = computed(() => [config.value.siteName, captured])
+      title.value
+      return new WeakRef(captured)
+    }
+    expect(await isCollected(create())).toBe(true)
+  })
+
+  it('should not be referenced by the dependencies after the subscribers are gone', async () => {
+    const count = signal(0)
+    const create = () => {
+      const captured = {}
+      const double = computed(() => [count.value * 2, captured])
+      const quadruple = computed(() => double.value)
+      effect(() => {
+        quadruple.value
+      })()
+      quadruple.subscribe(() => {})()
+      return new WeakRef(captured)
+    }
+    expect(await isCollected(create())).toBe(true)
   })
 
   it('should cache and rethrow an error', () => {
@@ -559,6 +664,19 @@ describe('SSR', () => {
     })
     expect(fn).toHaveBeenCalledTimes(2)
     dispose()
+  })
+
+  it('should not keep the computed in a component after the render', async () => {
+    const config = signal({ siteName: 'Hono' })
+    const refs: WeakRef<object>[] = []
+    const Page = ({ path }: { path: string }) => {
+      const captured = {}
+      refs.push(new WeakRef(captured))
+      const title = computed(() => [config.value.siteName, path, captured][0] as string)
+      return <title>{title}</title>
+    }
+    expect((<Page path='/' />).toString()).toBe('<title>Hono</title>')
+    expect(await isCollected(refs[0])).toBe(true)
   })
 
   it('should not subscribe to the signal', () => {
@@ -1215,6 +1333,34 @@ describe('DOM', () => {
         count.value = 1
       })
       expect(log).toEqual(['run 0', 'cleanup 0'])
+    })
+
+    it('should not keep the computed after unmount', async () => {
+      const show = signal(true)
+      const count = signal(0)
+      const refs: WeakRef<object>[] = []
+      const Child = () => {
+        const captured = {}
+        refs.push(new WeakRef(captured))
+        const double = computed(() => [count.value * 2, captured][0] as number)
+        const quadruple = computed(() => double.value * 2)
+        effect(() => {
+          quadruple.value
+        })
+        return <p>{double.value}</p>
+      }
+      const App = () => <div>{show.value && <Child />}</div>
+      render(<App />, root)
+      batch(() => {
+        count.value = 1
+      })
+      expect(root.innerHTML).toBe('<div><p>2</p></div>')
+      batch(() => {
+        show.value = false
+      })
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(await isCollected(refs[0])).toBe(true)
+      expect(await isCollected(refs[1])).toBe(true)
     })
 
     it('should not track the signals read in the effect as dependencies of the component', () => {

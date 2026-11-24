@@ -23,12 +23,13 @@ export interface Signal<T> extends ReadonlySignal<T> {
   value: T
 }
 
-type Source = {
-  s: Set<Observer> // subscribers
-}
-type Observer = {
-  d: Set<Source> // dependencies
-  n: () => void // notify that a dependency has changed
+// A signal has `s`. An effect and a component have `d`. A computed has both.
+type Reactive = {
+  v: number // version. incremented when the value changes
+  s?: Set<Reactive> // subscribers
+  d?: Map<Reactive, number> // dependencies, and their versions when they were read
+  n?: () => void // notify that a dependency may have changed
+  r?: () => void // make the value and the version up to date. only for a computed
   h?: unknown[][] // signals, computeds and effects created in the component. only for a component
   i?: number // index of the next one to be created in the component
 }
@@ -45,26 +46,56 @@ const perComponent = <T, A>(create: (getArg: () => A) => T, arg: A): T => {
   return (slot[0] ||= create(() => slot[1] as A))
 }
 
-let currentObserver: Observer | undefined
+let currentObserver: Reactive | undefined
+let globalVersion = 0 // incremented when any signal is written
 let batchDepth = 0
 let isScheduled = false
 let isFlushing = false
 let isServerRender = false
 const pendingEffects: Set<() => void> = new Set()
 
-const track = (source: Source): void => {
-  if (currentObserver) {
-    source.s.add(currentObserver)
-    currentObserver.d.add(source)
+// A computed subscribes to its dependencies only while it has subscribers. So a computed that
+// nobody subscribes to is not referenced by its dependencies, and can be collected.
+const subscribe = (source: Reactive, observer: Reactive): void => {
+  if (!source.s!.size) {
+    source.d?.forEach((_, dependency) => subscribe(dependency, source))
+  }
+  source.s!.add(observer)
+}
+
+const unsubscribe = (source: Reactive, observer: Reactive): void => {
+  if (source.s!.delete(observer) && !source.s!.size) {
+    source.d?.forEach((_, dependency) => unsubscribe(dependency, source))
   }
 }
 
-const untrack = (observer: Observer): void => {
-  observer.d.forEach((source) => source.s.delete(observer))
-  observer.d.clear()
+const track = (source: Reactive): void => {
+  const observer = currentObserver
+  if (observer) {
+    observer.d!.set(source, source.v)
+    if (!observer.s || observer.s.size) {
+      subscribe(source, observer)
+    }
+  }
 }
 
-const runWith = <T>(observer: Observer | undefined, fn: () => T): T => {
+const untrack = (observer: Reactive): void => {
+  observer.d!.forEach((_, source) => unsubscribe(source, observer))
+  observer.d!.clear()
+}
+
+// true if any of the dependencies has changed since it was read
+const isStale = (observer: Reactive): boolean => {
+  for (const [source, version] of observer.d!) {
+    source.r?.()
+    if (source.v !== version) {
+      return true
+    }
+  }
+  return false
+}
+
+const runWith = <T>(observer: Reactive | undefined, fn: () => T): T => {
   const prev = currentObserver
   currentObserver = observer
   try {
@@ -111,9 +142,9 @@ const flush = (): void => {
   }
 }
 
-const notify = (source: Source): void => {
-  // an observer removes itself from `source.s` when it is notified or re-run, so iterate over a copy
-  ;[...source.s].forEach((observer) => observer.n())
+const notify = (source: Reactive): void => {
+  // the subscribers may change while they are notified, so iterate over a copy
+  ;[...source.s!].forEach((observer) => observer.n!())
   if (pendingEffects.size && !batchDepth && !isScheduled && !isFlushing) {
     isScheduled = true
     queueMicrotask(flush)
@@ -137,9 +168,9 @@ const createSubscribe =
 
 const createSignal = <T>(initialValue: T): Signal<T> => {
   let value = initialValue
-  const source: Source = { s: new Set() }
+  const reactive: Reactive = { v: 0, s: new Set() }
   const read = () => {
-    track(source)
+    track(reactive)
     return value
   }
   return {
@@ -150,7 +181,9 @@ const createSignal = <T>(initialValue: T): Signal<T> => {
     set value(newValue: T) {
       if (!Object.is(value, newValue)) {
         value = newValue
-        notify(source)
+        reactive.v++
+        globalVersion++
+        notify(reactive)
       }
     },
     peek: () => value,
@@ -161,34 +194,51 @@ const createSignal = <T>(initialValue: T): Signal<T> => {
 const createComputed = <T>(fn: () => T): ReadonlySignal<T> => {
   let value: T
   let error: unknown
-  let state = 0 // 0: dirty, 1: computing, 2: cached, 3: cached error
-  const source: Source = { s: new Set() }
-  const observer: Observer = {
-    d: new Set(),
+  let state = 0 // 0: not computed, 1: computing, 2: has a value, 3: has an error
+  let isNotified = false // a dependency may have changed. it is notified only while it has subscribers
+  let checkedAt = -1 // `globalVersion` when it was confirmed to be up to date
+  const reactive: Reactive = {
+    v: 0,
+    s: new Set(),
+    d: new Map(),
     n: () => {
-      if (state > 1) {
-        state = 0
-        // stop tracking until the next read, so that an unused computed can be collected
-        untrack(observer)
-        notify(source)
+      if (!isNotified) {
+        isNotified = true
+        notify(reactive)
       }
+    },
+    r: () => {
+      if (state === 1) {
+        throw new Error('Cycle detected')
+      }
+      // With subscribers, it is notified of a change. Without them, nothing has changed if no
+      // signal was written since the last check.
+      if (state && (reactive.s!.size ? !isNotified : checkedAt === globalVersion)) {
+        return
+      }
+      if (!state || isStale(reactive)) {
+        const prevState = state
+        const prevValue = value
+        untrack(reactive)
+        state = 1
+        try {
+          value = runWith(reactive, fn)
+          state = 2
+        } catch (e) {
+          error = e
+          state = 3
+        }
+        if (state === 3 || state !== prevState || !Object.is(prevValue, value)) {
+          reactive.v++
+        }
+      }
+      isNotified = false
+      checkedAt = globalVersion
     },
   }
   const read = () => {
-    track(source)
-    if (state === 1) {
-      throw new Error('Cycle detected')
-    }
-    if (!state) {
-      state = 1
-      try {
-        value = runWith(observer, fn)
-        state = 2
-      } catch (e) {
-        error = e
-        state = 3
-      }
-    }
+    reactive.r!()
+    track(reactive)
     if (state === 3) {
       throw error
     }
@@ -206,6 +256,7 @@ const createComputed = <T>(fn: () => T): ReadonlySignal<T> => {
 
 const createEffect = (fn: () => void | (() => void)): (() => void) => {
   let cleanup: void | (() => void)
+  let hasRun = false
   let disposed = false
   const runCleanup = () => {
     const c = cleanup
@@ -215,21 +266,24 @@ const createEffect = (fn: () => void | (() => void)): (() => void) => {
     }
   }
   const run = () => {
-    if (!disposed) {
+    // a computed may be notified but not changed, so check the versions
+    if (!disposed && (!hasRun || isStale(reactive))) {
+      hasRun = true
       runCleanup()
-      untrack(observer)
-      cleanup = runWith(observer, fn)
+      untrack(reactive)
+      cleanup = runWith(reactive, fn)
     }
   }
-  const observer: Observer = {
-    d: new Set(),
+  const reactive: Reactive = {
+    v: 0,
+    d: new Map(),
     n: () => pendingEffects.add(run),
   }
   run()
   return () => {
     disposed = true
     pendingEffects.delete(run)
-    untrack(observer)
+    untrack(reactive)
     runCleanup()
   }
 }
@@ -256,9 +310,12 @@ export const batch = <T>(fn: () => T): T => {
 // for the DOM renderer. `onChange` runs with the effects when a signal read in the scope changes
 signalHook.s = (onChange) => {
   const created: unknown[][] = []
-  const observer: Observer = {
-    d: new Set(),
-    n: () => pendingEffects.add(onChange),
+  // a computed may be notified but not changed, so check the versions
+  const run = () => isStale(observer) && onChange()
+  const observer: Reactive = {
+    v: 0,
+    d: new Map(),
+    n: () => pendingEffects.add(run),
     h: created,
   }
   const dispose = () => {
@@ -269,7 +326,7 @@ signalHook.s = (onChange) => {
   return ((fn?: () => unknown) => {
     untrack(observer)
     // it is rendered or unmounted now, so the pending re-render is not needed
-    pendingEffects.delete(onChange)
+    pendingEffects.delete(run)
     if (fn) {
       const isFirst = !created.length
       observer.i = 0
