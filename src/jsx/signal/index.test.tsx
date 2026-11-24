@@ -700,6 +700,20 @@ describe('SSR', () => {
     expect(await isCollected(refs[0])).toBe(true)
   })
 
+  it('should not subscribe in a component', () => {
+    const count = signal(0)
+    const fn = vi.fn()
+    const App = () => {
+      count.subscribe(fn)
+      return <p>text</p>
+    }
+    expect((<App />).toString()).toBe('<p>text</p>')
+    batch(() => {
+      count.value = 1
+    })
+    expect(fn).not.toHaveBeenCalled()
+  })
+
   it('should not subscribe to the signal', () => {
     const text = signal('a')
     const counts = spySubscription(text)
@@ -1367,6 +1381,37 @@ describe('DOM', () => {
       expect(log).toEqual(['run 0', 'cleanup 0'])
     })
 
+    it('should keep the subscription of subscribe() for each instance', () => {
+      const show = signal(true)
+      const count = signal(0)
+      const rerender = signal(0)
+      const fn = vi.fn()
+      const Child = () => {
+        rerender.value
+        count.subscribe(fn)
+        return <p>child</p>
+      }
+      const App = () => <div>{show.value && <Child />}</div>
+      render(<App />, root)
+      for (let i = 1; i <= 3; i++) {
+        batch(() => {
+          rerender.value = i
+        })
+      }
+      expect(fn.mock.calls).toEqual([[0]])
+      batch(() => {
+        count.value = 1
+      })
+      expect(fn.mock.calls).toEqual([[0], [1]])
+      batch(() => {
+        show.value = false
+      })
+      batch(() => {
+        count.value = 2
+      })
+      expect(fn.mock.calls).toEqual([[0], [1]])
+    })
+
     it('should not keep the computed after unmount', async () => {
       const show = signal(true)
       const count = signal(0)
@@ -1393,6 +1438,36 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div></div>')
       expect(await isCollected(refs[0])).toBe(true)
       expect(await isCollected(refs[1])).toBe(true)
+    })
+
+    it('should not track the signals read in the flush caused by batch() in a component', () => {
+      const a = signal(0)
+      const b = signal(0)
+      const Child = vi.fn(() => <span>{b.value}</span>)
+      const Parent = vi.fn(() => {
+        // the re-render of Child runs in this batch
+        batch(() => {})
+        return <span>{a.value}</span>
+      })
+      render(
+        <p>
+          <Child />
+          <Parent />
+        </p>,
+        root
+      )
+      b.value = 1
+      render(
+        <p>
+          <Child />
+          <Parent />
+        </p>,
+        root
+      )
+      batch(() => {
+        b.value = 2
+      })
+      expect(Parent).toHaveBeenCalledTimes(2)
     })
 
     it('should not track the signals read in the effect as dependencies of the component', () => {

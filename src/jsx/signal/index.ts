@@ -14,7 +14,10 @@ export interface ReadonlySignal<T> {
   readonly value: T
   /** Read the value without tracking it as a dependency. */
   peek(): T
-  /** Call `fn` with the current value and whenever it changes. Returns an unsubscribe function. */
+  /**
+   * Call `fn` with the current value and whenever it changes. Returns an unsubscribe function.
+   * It is an effect. So in a component, it is kept and disposed like `effect()`.
+   */
   subscribe(fn: (value: T) => void): () => void
   readonly [SIGNAL]: true
 }
@@ -123,7 +126,8 @@ const flush = (): void => {
         try {
           // skip the one that was disposed or already run by the others in this loop
           if (pendingEffects.delete(run)) {
-            run()
+            // batch() may be called in a component or a computed, so do not track here
+            runWith(undefined, run)
           }
         } catch (e) {
           // run the remaining effects, then throw the first error
@@ -151,12 +155,13 @@ const notify = (source: Reactive): void => {
   }
 }
 
+// `subscribe()` is an effect. So in a component, it is kept and disposed like `effect()`
 const createSubscribe =
   <T>(read: () => T) =>
   (fn: (value: T) => void): (() => void) => {
     let initialized = false
     let prev: T
-    return createEffect(() => {
+    return effect(() => {
       const value = read()
       if (!initialized || !Object.is(prev, value)) {
         initialized = true
