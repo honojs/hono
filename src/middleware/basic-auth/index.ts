@@ -103,6 +103,12 @@ export const basicAuth = (
     users.unshift({ username: options.username, password: options.password })
   }
 
+  for (const user of users) {
+    if (typeof user.username !== 'string' || typeof user.password !== 'string') {
+      throw new Error('basic auth middleware requires "username" and "password" to be strings')
+    }
+  }
+
   return async function basicAuth(ctx, next) {
     const requestUser = auth(ctx.req.raw)
     if (requestUser) {

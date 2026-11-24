@@ -445,3 +445,30 @@ describe('Basic Auth realm', () => {
     expect(res.headers.get('WWW-Authenticate')).toBe('Basic realm="my \\"api\\"\\\\"')
   })
 })
+
+describe('Basic Auth with non-string credentials', () => {
+  it.each([undefined, null, 123])('Should throw an error if the password is %s', (password) => {
+    expect(() => basicAuth({ username: 'hono', password: password as unknown as string })).toThrow(
+      'basic auth middleware requires "username" and "password" to be strings'
+    )
+  })
+
+  it('Should throw an error if the username is undefined', () => {
+    expect(() =>
+      basicAuth({ username: undefined as unknown as string, password: 'hono' })
+    ).toThrow()
+  })
+
+  it('Should throw an error if the password of an additional user is undefined', () => {
+    expect(() =>
+      basicAuth(
+        { username: 'hono', password: 'hono' },
+        { username: 'hono-b', password: undefined as unknown as string }
+      )
+    ).toThrow()
+  })
+
+  it('Should accept an empty password', () => {
+    expect(() => basicAuth({ username: 'hono', password: '' })).not.toThrow()
+  })
+})
