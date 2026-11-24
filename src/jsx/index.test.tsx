@@ -161,6 +161,14 @@ describe('JSX middleware', () => {
 })
 
 describe('render to string', () => {
+  it.each([{ length: Infinity }, { length: 3 }, { foo: 'bar' }])(
+    'Should render nothing for a plain object child - %j',
+    (child) => {
+      const template = <div>{child as unknown as string}</div>
+      expect(template.toString()).toBe('<div></div>')
+    }
+  )
+
   it('Nested array', () => {
     const template = (
       <p>
