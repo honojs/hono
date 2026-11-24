@@ -35,16 +35,30 @@ type Reactive = {
   r?: () => void // make the value and the version up to date. only for a computed
   h?: unknown[][] // signals, computeds and effects created in the component. only for a component
   i?: number // index of the next one to be created in the component
+  c?: number // number of the ones created in the first render of the component
+}
+
+// The renderer may swallow an error in a re-render, so log it too
+const throwOrderError = (): never => {
+  const error = new Error(
+    'signal(), computed() and effect() must be called in the same order in every render'
+  )
+  console.error(error)
+  throw error
 }
 
 // In a component, return the one created by the same call in the first render.
 // `getArg` returns the argument of the latest render.
-const perComponent = <T, A>(create: (getArg: () => A) => T, arg: A): T => {
+const perComponent = <T, A>(kind: number, create: (getArg: () => A) => T, arg: A): T => {
   const observer = currentObserver
   if (!observer?.h) {
     return create(() => arg)
   }
-  const slot = (observer.h[observer.i!++] ||= []) as [T?, A?]
+  const index = observer.i!++
+  if (observer.c !== undefined && (index >= observer.c || observer.h[index][2] !== kind)) {
+    throwOrderError()
+  }
+  const slot = (observer.h[index] ||= [undefined, undefined, kind]) as [T?, A?, number?]
   slot[1] = arg
   return (slot[0] ||= create(() => slot[1] as A))
 }
@@ -330,12 +344,15 @@ signalHook.s = (onChange) => {
     // it is rendered or unmounted now, so the pending re-render is not needed
     pendingEffects.delete(run)
     if (fn) {
-      const isFirst = !created.length
       observer.i = 0
       try {
-        return runWith(observer, fn)
+        const result = runWith(observer, fn)
+        if (observer.i !== (observer.c ??= observer.i)) {
+          throwOrderError()
+        }
+        return result
       } catch (e) {
-        if (isFirst) {
+        if (observer.c === undefined) {
           // the component may never be mounted, so do not leave the effects
           dispose()
         }
@@ -363,7 +380,7 @@ signalHook.r = (fn) => {
  *
  * In a component, the signal is created in the first render and kept until the component is
  * unmounted. `signal()`, `computed()` and `effect()` have to be called in the same order in every
- * render, so do not call them in a condition or a loop.
+ * render, so do not call them in a condition or a loop. It throws if the order changes.
  *
  * @experimental
  * `signal` is an experimental feature.
@@ -378,7 +395,7 @@ signalHook.r = (fn) => {
  * ```
  */
 export const signal = <T>(initialValue: T): Signal<T> =>
-  perComponent((getInitialValue) => createSignal(getInitialValue()), initialValue)
+  perComponent(0, (getInitialValue) => createSignal(getInitialValue()), initialValue)
 
 /**
  * Create a read-only signal derived from other signals.
@@ -393,7 +410,7 @@ export const signal = <T>(initialValue: T): Signal<T> =>
  * The behavior in a component might be changed.
  */
 export const computed = <T>(fn: () => T): ReadonlySignal<T> =>
-  perComponent((getFn) => createComputed(() => getFn()()), fn)
+  perComponent(1, (getFn) => createComputed(() => getFn()()), fn)
 
 /**
  * Run `fn` immediately, and re-run it whenever the signals read in it change.
@@ -412,7 +429,7 @@ export const computed = <T>(fn: () => T): ReadonlySignal<T> =>
  * @returns A function to dispose the effect.
  */
 export const effect = (fn: () => void | (() => void)): (() => void) =>
-  isServerRender ? () => {} : perComponent((getFn) => createEffect(() => getFn()()), fn)
+  isServerRender ? () => {} : perComponent(2, (getFn) => createEffect(() => getFn()()), fn)
 
 /**
  * Run `fn` without tracking the signals read in it.

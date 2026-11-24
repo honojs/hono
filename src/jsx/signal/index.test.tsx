@@ -1349,6 +1349,97 @@ describe('DOM', () => {
       expect(log).toEqual(['a:0', 'b:1'])
     })
 
+    describe('call order', () => {
+      const message =
+        'signal(), computed() and effect() must be called in the same order in every render'
+      let consoleError: ReturnType<typeof vi.spyOn>
+      beforeEach(() => {
+        consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      })
+      afterEach(() => {
+        consoleError.mockRestore()
+      })
+
+      const renderWith = (body: (flag: boolean) => void) => {
+        const flag = signal(true)
+        const rendered = vi.fn()
+        const App = () => {
+          body(flag.value)
+          rendered()
+          return <p>{String(flag.value)}</p>
+        }
+        render(
+          <ErrorBoundary fallback={<p>error</p>}>
+            <App />
+          </ErrorBoundary>,
+          root
+        )
+        expect(root.innerHTML).toBe('<p>true</p>')
+        batch(() => {
+          flag.value = false
+        })
+        return rendered
+      }
+      const expectOrderError = () => {
+        expect(root.innerHTML).toBe('<p>error</p>')
+        expect(consoleError).toHaveBeenCalledTimes(1)
+        expect((consoleError.mock.calls[0][0] as Error).message).toBe(message)
+      }
+
+      it('should throw if the number of calls decreases', () => {
+        renderWith((flag) => {
+          if (flag) {
+            signal(0)
+          }
+          signal(0)
+        })
+        expectOrderError()
+      })
+
+      it('should throw if the number of calls increases', () => {
+        const fn = vi.fn()
+        renderWith((flag) => {
+          signal(0)
+          if (!flag) {
+            effect(fn)
+          }
+        })
+        expectOrderError()
+        expect(fn).not.toHaveBeenCalled()
+      })
+
+      it('should throw if the kind of a call changes', () => {
+        renderWith((flag) => {
+          if (flag) {
+            signal(0)
+          } else {
+            computed(() => 0)
+          }
+        })
+        expectOrderError()
+      })
+
+      it('should throw if nothing was called in the first render', () => {
+        renderWith((flag) => {
+          if (!flag) {
+            signal(0)
+          }
+        })
+        expectOrderError()
+      })
+
+      it('should not throw if the order is not changed', () => {
+        const rendered = renderWith(() => {
+          signal(0)
+          computed(() => 0)
+          effect(() => {})
+        })
+        expect(root.innerHTML).toBe('<p>false</p>')
+        expect(rendered).toHaveBeenCalledTimes(2)
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+    })
+
     it('should run the effect once and re-run it when a dependency changes', () => {
       const log: string[] = []
       const Counter = () => {
