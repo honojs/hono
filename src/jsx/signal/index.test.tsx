@@ -4,8 +4,10 @@ import { runInNewContext } from 'node:vm'
 import { JSDOM } from 'jsdom'
 import { batch, computed, effect, signal, untracked } from '.'
 import type { ReadonlySignal } from '.'
+import { html } from '../../helper/html'
 import { SIGNAL } from '../constants'
 import { ErrorBoundary, memo, render, useState } from '../dom'
+import { jsxAttr, jsxTemplate } from '../jsx-runtime'
 
 // count how many times the signal is subscribed and unsubscribed
 const spySubscription = <T,>(target: ReadonlySignal<T>) => {
@@ -670,6 +672,19 @@ describe('SSR', () => {
     const text = signal('<hello>')
     const Component = () => text
     expect((<Component />).toString()).toBe('&lt;hello&gt;')
+  })
+
+  it('should render a signal with the precompile runtime and the html helper', () => {
+    const text = signal('<"a">')
+    const none = signal<string | undefined>(undefined)
+    const style = signal({ fontSize: 10 })
+    expect(jsxAttr('title', text as never).toString()).toBe('title="&lt;&quot;a&quot;&gt;"')
+    expect(jsxAttr('title', none as never).toString()).toBe('')
+    expect(jsxAttr('style', style as never).toString()).toBe('style="font-size:10px"')
+    expect(jsxTemplate`<p>${text}${none}</p>`.toString()).toBe('<p>&lt;&quot;a&quot;&gt;</p>')
+    expect(html`<p>${[text, signal(1)]}${signal(false)}</p>`.toString()).toBe(
+      '<p>&lt;&quot;a&quot;&gt;1</p>'
+    )
   })
 
   it('should not keep the computed in a component after the render', async () => {
