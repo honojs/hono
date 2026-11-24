@@ -226,7 +226,7 @@ describe('mount()', () => {
     ])('Should reject automatic request rewriting for %s', async (route) => {
       const anotherApp = vi.fn(() => new Response('AnotherApp'))
       const app = new Hono()
-      app.onError((c) => c.text(c.error!.message, 500))
+      app.onError((err, c) => c.text(err.message, 500))
       app.all(route, mount(anotherApp))
 
       const res = await app.request('/api/a/1234/hello')
@@ -241,7 +241,7 @@ describe('mount()', () => {
       const subApp = new Hono()
       subApp.all('/:id{[0-9]+}/*', mount(anotherApp))
       const app = new Hono()
-      app.onError((c) => c.text(c.error!.message, 500))
+      app.onError((err, c) => c.text(err.message, 500))
       app.route('/api/:id{[a-z]+}', subApp)
 
       const res = await app.request('/api/a/1234')

@@ -199,8 +199,7 @@ describe('defineHandler', () => {
           () => ({ id: 1 }) as unknown as { id: string }
         )
       )
-      const onError = vi.fn((c: Context) => {
-        const err = c.error!
+      const onError = vi.fn((err: Error, c: Context) => {
         const { issues } = (err as HTTPException).cause as {
           issues: { slot: string; issues: unknown[] }[]
         }
@@ -221,8 +220,8 @@ describe('defineHandler', () => {
         '/',
         defineHandler({ json: z.object({ name: z.string() }) })(() => ({ ok: true }))
       )
-      app.onError((c) => {
-        const { issues } = (c.error as HTTPException).cause as { issues: { slot: string }[] }
+      app.onError((err, c) => {
+        const { issues } = (err as HTTPException).cause as { issues: { slot: string }[] }
         return c.json({ message: 'invalid', slot: issues[0].slot }, 400)
       })
       const { path, ...init } = post('/', { name: 1 })

@@ -79,12 +79,7 @@ export const methodNotAllowed = <E extends Env = Env>(
       for (const route of options.app.routes) {
         // Hono does not distinguish middleware registered with `app.use()` from handlers
         // registered with `app.all()`, so `ALL` routes cannot contribute to the Allow header.
-        // Methods beginning with `@` are reserved for internal routes.
-        if (
-          route.method === METHOD_NAME_ALL ||
-          route.method === 'HEAD' ||
-          route.method[0] === '@'
-        ) {
+        if (route.method === METHOD_NAME_ALL || route.method === 'HEAD') {
           continue
         }
 
