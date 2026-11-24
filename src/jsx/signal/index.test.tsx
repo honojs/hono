@@ -666,6 +666,12 @@ describe('SSR', () => {
     dispose()
   })
 
+  it('should render a signal returned from a component', async () => {
+    const text = signal('<hello>')
+    const Component = () => text
+    expect((<Component />).toString()).toBe('&lt;hello&gt;')
+  })
+
   it('should not keep the computed in a component after the render', async () => {
     const config = signal({ siteName: 'Hono' })
     const refs: WeakRef<object>[] = []
@@ -780,6 +786,17 @@ describe('DOM', () => {
       const text = signal('<b>bold</b>')
       render(<p>{text}</p>, root)
       expect(root.innerHTML).toBe('<p>&lt;b&gt;bold&lt;/b&gt;</p>')
+    })
+
+    it('should render a signal returned from a component', () => {
+      const count = signal(0)
+      const Component = () => count
+      render(<Component />, root)
+      expect(root.innerHTML).toBe('0')
+      batch(() => {
+        count.value = 1
+      })
+      expect(root.innerHTML).toBe('1')
     })
 
     it('should keep the subscription when the component is re-rendered', async () => {

@@ -25,6 +25,7 @@ export type Props = Record<string, any>
 type FunctionComponentResult =
   | HtmlEscapedString
   | JSXNode
+  | SignalChild
   | Child[]
   | Promise<HtmlEscapedString | JSXNode | Child[]>
   | null
@@ -42,6 +43,7 @@ export type SignalLike<T = unknown> = {
   subscribe(fn: (value: T) => void): () => void
   readonly [SIGNAL]: true
 }
+type SignalChild = SignalLike<string | number | boolean | null | undefined>
 type WithSignal<T> = {
   [K in keyof T]: K extends 'children' | 'ref' | 'dangerouslySetInnerHTML' | `on${string}`
     ? T[K]
@@ -190,7 +192,7 @@ export type Child =
   | null
   | undefined
   | boolean
-  | SignalLike<string | number | boolean | null | undefined>
+  | SignalChild
   | Child[]
 
 export const renderChildren = (children: Child[]): HtmlEscapedString | Promise<HtmlEscapedString> =>
@@ -362,8 +364,8 @@ class JSXFunctionNode extends JSXNode {
       }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
-    } else if (Array.isArray(res)) {
-      childrenToStringToBuffer(res, buffer)
+    } else if (Array.isArray(res) || res[SIGNAL]) {
+      childrenToStringToBuffer([res], buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
       if (res.callbacks) {
