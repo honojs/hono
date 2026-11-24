@@ -90,9 +90,12 @@ export const createMountedRequest = (
   // URL parsing treats backslashes as separators and removes tabs and line breaks.
   url.pathname = path.replace(/[\\\t\n\r]/g, encodeURIComponent)
   if (path.includes('%')) {
+    // Keep the result. The bundler removes a `decodeURI()` call whose result is not used.
+    let decoded: string | undefined
     try {
-      decodeURI(path)
-    } catch {
+      decoded = decodeURI(path)
+    } catch {}
+    if (decoded === undefined) {
       // Invalid UTF-8 can prevent adjacent encoded characters from decoding.
       const reparsedPath = tryDecode(url.pathname, (value) =>
         decodeURI(value.replace(/%25/g, '%2525'))
