@@ -4,8 +4,21 @@
  */
 
 import type { Context } from '../../context'
-import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
-import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
+import {
+  parse,
+  parseEncrypted,
+  parseSigned,
+  serialize,
+  serializeEncrypted,
+  serializeSigned,
+} from '../../utils/cookie'
+import type {
+  Cookie,
+  CookieOptions,
+  CookiePrefixOptions,
+  EncryptedCookie,
+  SignedCookie,
+} from '../../utils/cookie'
 
 interface GetCookie {
   (c: Context, key: string): string | undefined
@@ -135,6 +148,107 @@ export const setSignedCookie = async (
   opt?: CookieOptions
 ): Promise<void> => {
   const cookie = await generateSignedCookie(name, value, secret, opt)
+  c.header('set-cookie', cookie, { append: true })
+}
+
+interface GetEncryptedCookie {
+  (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
+  (c: Context, secret: string | BufferSource): Promise<EncryptedCookie>
+  (
+    c: Context,
+    secret: string | BufferSource,
+    key: string,
+    prefixOptions?: CookiePrefixOptions
+  ): Promise<string | undefined | false>
+}
+
+/**
+ * Get an encrypted cookie value. Returns the decrypted plaintext,
+ * `undefined` if the cookie doesn't exist, or `false` if decryption fails.
+ * @example
+ * ```ts
+ * app.get('/read', async (c) => {
+ *   const value = await getEncryptedCookie(c, secret, 'session')
+ *   // value: string | undefined | false
+ * })
+ * ```
+ */
+export const getEncryptedCookie: GetEncryptedCookie = async (
+  c,
+  secret,
+  key?,
+  prefix?: CookiePrefixOptions
+) => {
+  const cookie = c.req.raw.headers.get('Cookie')
+  if (typeof key === 'string') {
+    if (!cookie) {
+      return undefined
+    }
+    let finalKey = key
+    if (prefix === 'secure') {
+      finalKey = '__Secure-' + key
+    } else if (prefix === 'host') {
+      finalKey = '__Host-' + key
+    }
+    const obj = await parseEncrypted(cookie, secret, finalKey)
+    return obj[finalKey]
+  }
+  if (!cookie) {
+    return {}
+  }
+  const obj = await parseEncrypted(cookie, secret)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return obj as any
+}
+
+/**
+ * Generate an encrypted cookie string without setting it on the response.
+ * Useful for testing or manual header manipulation.
+ */
+export const generateEncryptedCookie = async (
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt?: CookieOptions
+): Promise<string> => {
+  let cookie
+  if (opt?.prefix === 'secure') {
+    cookie = await serializeEncrypted('__Secure-' + name, value, secret, {
+      path: '/',
+      ...opt,
+      secure: true,
+    })
+  } else if (opt?.prefix === 'host') {
+    cookie = await serializeEncrypted('__Host-' + name, value, secret, {
+      ...opt,
+      path: '/',
+      secure: true,
+      domain: undefined,
+    })
+  } else {
+    cookie = await serializeEncrypted(name, value, secret, { path: '/', ...opt })
+  }
+  return cookie
+}
+
+/**
+ * Set an encrypted cookie using AES-256-GCM.
+ * The cookie value is encrypted and the plaintext is not visible in the cookie header.
+ * @example
+ * ```ts
+ * app.get('/write', async (c) => {
+ *   await setEncryptedCookie(c, 'session', 'user-data', secret)
+ * })
+ * ```
+ */
+export const setEncryptedCookie = async (
+  c: Context,
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt?: CookieOptions
+): Promise<void> => {
+  const cookie = await generateEncryptedCookie(name, value, secret, opt)
   c.header('set-cookie', cookie, { append: true })
 }
 
