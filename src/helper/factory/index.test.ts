@@ -135,7 +135,7 @@ describe('createHandler', () => {
     const handlers = factory.createHandlers(
       validator('query', () => {
         return {
-          page: '1',
+          page: ['1'],
         }
       }),
       (c) => {
@@ -154,7 +154,7 @@ describe('createHandler', () => {
         {
           in: {
             query: {
-              page: string
+              page: string[]
             }
           }
         },
@@ -188,7 +188,7 @@ describe('createHandler', () => {
       }),
       validator('query', () => {
         return {
-          page: '1',
+          page: ['1'],
         }
       }),
       validator('json', () => {
