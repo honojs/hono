@@ -108,7 +108,7 @@ const decodeURIWithPreservedPercent: Decoder = (value) =>
 
 export const getPath = (request: Request): string => {
   const url = request.url
-  const start = url.indexOf('/', url.indexOf(':') + 4)
+  const start = url.charCodeAt(0) === 47 ? 0 : url.indexOf('/', url.indexOf(':') + 4)
   let i = start
   for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)

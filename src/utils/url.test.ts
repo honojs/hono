@@ -127,6 +127,17 @@ describe('url', () => {
       expect(getPath(new Request(url))).toBe(new URL(url).pathname)
     })
 
+    it.each([
+      ['/public/admin/secret', '/public/admin/secret'],
+      ['/a/admin', '/a/admin'],
+      ['/a:b/admin/secret', '/a:b/admin/secret'],
+      ['/public/admin?name=foo#section', '/public/admin'],
+      ['/public/%61dmin', '/public/admin'],
+      ['/', '/'],
+    ])('getPath - URL without the scheme and the host - %s', (url, expected) => {
+      expect(getPath({ url } as Request)).toBe(expected)
+    })
+
     it('getPath - with fragment', () => {
       let path = getPath(new Request('https://example.com/users/#user-list'))
       expect(path).toBe('/users/')
