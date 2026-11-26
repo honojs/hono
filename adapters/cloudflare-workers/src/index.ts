@@ -4,5 +4,6 @@
  */
 
 export { serveStatic } from './serve-static-module'
-export { upgradeWebSocket } from './websocket'
+export { upgradeWebSocket, createHibernationWebSocket } from './websocket'
+export type { HibernationWebSocket, HibernationWebSocketOptions } from './websocket'
 export { getConnInfo } from './conninfo'

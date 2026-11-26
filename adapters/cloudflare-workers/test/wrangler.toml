@@ -1,0 +1,10 @@
+name = "hono-cloudflare-workers-test"
+main = "./worker.ts"
+compatibility_date = "2026-07-01"
+
+[durable_objects]
+bindings = [{ name = "ROOM", class_name = "Room" }]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
