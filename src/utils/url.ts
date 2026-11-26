@@ -64,8 +64,8 @@ export const getPattern = (label: string, next?: string): Pattern | null => {
       if (match[2]) {
         patternCache[cacheKey] =
           next && next[0] !== ':' && next[0] !== '*'
-            ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
-            : [label, match[1], new RegExp(`^${match[2]}$`)]
+            ? [cacheKey, match[1], new RegExp(`^(?:${match[2]})(?=/${next})`)]
+            : [label, match[1], new RegExp(`^(?:${match[2]})$`)]
       } else {
         patternCache[cacheKey] = [label, match[1], true]
       }

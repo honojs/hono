@@ -366,4 +366,29 @@ describe('except', () => {
     expect(middleware2).not.toBeCalled()
     expect(await res.text()).toBe('Hello Public User 123')
   })
+  it.each(['/api/login', '/api/health'])(
+    'Should skip the middleware only for the alternatives in a constrained param - %s',
+    async (path) => {
+      const middleware = vi.fn(nextMiddleware)
+      app.use('/api/*', except('/api/:name{login|health}', middleware))
+      app.get('/api/:name', (c) => c.text(c.req.param('name')))
+
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      expect(middleware).not.toBeCalled()
+    }
+  )
+
+  it.each(['/api/loginX', '/api/xhealth', '/api/admin'])(
+    'Should call the middleware for a path that only starts or ends like an alternative - %s',
+    async (path) => {
+      const middleware = vi.fn(nextMiddleware)
+      app.use('/api/*', except('/api/:name{login|health}', middleware))
+      app.get('/api/:name', (c) => c.text(c.req.param('name')))
+
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      expect(middleware).toBeCalledTimes(1)
+    }
+  )
 })

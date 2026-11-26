@@ -73,12 +73,12 @@ describe('url', () => {
 
     it('regex pattern', () => {
       const res = getPattern(':id{[0-9]+}')
-      expect(res).toEqual([':id{[0-9]+}', 'id', /^[0-9]+$/])
+      expect(res).toEqual([':id{[0-9]+}', 'id', /^(?:[0-9]+)$/])
     })
 
     it('regex pattern with next', () => {
       const res = getPattern(':id{[0-9]+}', 'next')
-      expect(res).toEqual([':id{[0-9]+}#next', 'id', /^[0-9]+(?=\/next)/])
+      expect(res).toEqual([':id{[0-9]+}#next', 'id', /^(?:[0-9]+)(?=\/next)/])
     })
 
     it('wildcard', () => {
