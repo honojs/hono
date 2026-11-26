@@ -52,13 +52,13 @@ export class Node<T> {
       }
     }
 
-    curNode.#methods.push({
-      [method]: {
-        handler,
-        possibleKeys: [...possibleKeys],
-        score: ++order,
-      },
-    })
+    const methodMap: Record<string, HandlerSet<T>> = createNullObject()
+    methodMap[method] = {
+      handler,
+      possibleKeys: [...possibleKeys],
+      score: ++order,
+    }
+    curNode.#methods.push(methodMap)
   }
 
   #pushHandlerSets(
