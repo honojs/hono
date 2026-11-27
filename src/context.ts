@@ -9,6 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import { getSetCookies } from './utils/headers'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
@@ -419,7 +420,7 @@ export class Context<
           continue
         }
         if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
+          const cookies = getSetCookies(this.#res.headers)
           _res.headers.delete('set-cookie')
           for (const cookie of cookies) {
             _res.headers.append('set-cookie', cookie)

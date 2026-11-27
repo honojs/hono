@@ -6,6 +6,87 @@
 import type { Context } from '../../context'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
 import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
+import { getSetCookies } from '../../utils/headers'
+
+const getDefaultPath = (c: Context): string => {
+  const requestPath = new URL(c.req.raw.url).pathname
+  return requestPath.slice(0, requestPath.lastIndexOf('/')) || '/'
+}
+
+/**
+ * Parses a Set-Cookie header string and extracts the cookie name, domain, and path.
+ * These three attributes form the unique identifier for a cookie according to RFC 6265.
+ */
+const parseSetCookieHeader = (
+  setCookieHeader: string,
+  defaultPath: string
+): { name: string; domain: string; path: string } => {
+  const parts = setCookieHeader.split(';').map((part) => part.trim())
+  const nameValuePair = parts[0]
+  const nameEndIndex = nameValuePair.indexOf('=')
+  const name = nameEndIndex !== -1 ? nameValuePair.substring(0, nameEndIndex) : nameValuePair
+
+  let domain = ''
+  let path = defaultPath
+
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i]
+    const eqIndex = part.indexOf('=')
+    if (eqIndex === -1) {
+      continue
+    }
+    const attrName = part.substring(0, eqIndex).toLowerCase()
+    const attrValue = part.substring(eqIndex + 1)
+    if (attrName === 'domain') {
+      // RFC 6265 ignores one leading dot in a Domain attribute.
+      domain = attrValue.replace(/^\./, '').toLowerCase()
+    } else if (attrName === 'path') {
+      path = attrValue.startsWith('/') ? attrValue : defaultPath
+    }
+  }
+
+  return { name, domain, path }
+}
+
+/**
+ * Checks if two cookies have the same identity (name + domain + path).
+ * According to RFC 6265, these three attributes form the unique cookie identifier.
+ */
+const isSameCookie = (
+  a: { name: string; domain: string; path: string },
+  b: { name: string; domain: string; path: string }
+): boolean => {
+  // Name is case-sensitive, domain is case-insensitive (already lowercased), path is case-sensitive
+  return a.name === b.name && a.domain === b.domain && a.path === b.path
+}
+
+/**
+ * Removes existing Set-Cookie headers that match the given cookie identity.
+ */
+const replaceSetCookieHeaders = (
+  headers: Headers,
+  newCookieInfo: { name: string; domain: string; path: string },
+  defaultPath: string
+): void => {
+  const existingCookies = getSetCookies(headers)
+
+  // Filter out cookies with matching identity
+  const filteredCookies = existingCookies.filter((cookieStr) => {
+    const existing = parseSetCookieHeader(cookieStr, defaultPath)
+    return !isSameCookie(existing, newCookieInfo)
+  })
+
+  // Only modify headers if we actually removed something
+  if (filteredCookies.length !== existingCookies.length) {
+    // Delete all Set-Cookie headers
+    headers.delete('Set-Cookie')
+
+    // Re-add the filtered cookies
+    for (const cookie of filteredCookies) {
+      headers.append('Set-Cookie', cookie)
+    }
+  }
+}
 
 interface GetCookie {
   (c: Context, key: string): string | undefined
@@ -98,6 +179,12 @@ export const generateCookie = (name: string, value: string, opt?: CookieOptions)
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
   const cookie = generateCookie(name, value, opt)
+  const defaultPath = getDefaultPath(c)
+  const cookieInfo = parseSetCookieHeader(cookie, defaultPath)
+
+  // Remove earlier cookies with the same effective name, domain, and path.
+  replaceSetCookieHeaders(c.res.headers, cookieInfo, defaultPath)
+
   c.header('Set-Cookie', cookie, { append: true })
 }
 
@@ -135,6 +222,12 @@ export const setSignedCookie = async (
   opt?: CookieOptions
 ): Promise<void> => {
   const cookie = await generateSignedCookie(name, value, secret, opt)
+  const defaultPath = getDefaultPath(c)
+  const cookieInfo = parseSetCookieHeader(cookie, defaultPath)
+
+  // Remove any existing cookie with the same identity before adding the new one
+  replaceSetCookieHeaders(c.res.headers, cookieInfo, defaultPath)
+
   c.header('set-cookie', cookie, { append: true })
 }
 
