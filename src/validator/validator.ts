@@ -168,7 +168,7 @@ export const validator = <
 
     c.req.addValidatedData(target, res as never)
 
-    return (await next()) as ExtractValidationResponse<VF>
+    await next()
   }
 }
 
